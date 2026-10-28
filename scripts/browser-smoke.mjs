@@ -287,6 +287,37 @@ try {
     'S02 attendance appeal Chrome smoke failed: ' + JSON.stringify(attendanceChecks ?? attendanceResult));
   console.log('S02 attendance ledger, appeal preview and learner isolation Chrome smoke passed');
 
+
+  // S03: 30-minute trial is a local selection preview, never a real booking.
+  for (const width of [360, 390, 1440]) {
+    await socket.send('Emulation.setDeviceMetricsOverride', {
+      width, height: 900, deviceScaleFactor: 1, mobile: false,
+    });
+    await socket.send('Page.navigate', { url: url + 'student/lessons' });
+    await waitFor(async () => {
+      const response = await socket.send('Runtime.evaluate', {
+        expression: "Boolean(document.querySelector('#trial-preview [data-preview-slot]'))",
+        returnByValue: true,
+      });
+      return response.result?.value === true;
+    }, 'hydrated trial scheduling preview at ' + width + 'px');
+    const result = await socket.send('Runtime.evaluate', {
+      expression: "(async()=>{const pause=()=>new Promise(r=>setTimeout(r,180));const switcher=document.querySelector('#learner-switch');switcher.value='demo-new';switcher.dispatchEvent(new Event('change',{bubbles:true}));await pause();const slot=document.querySelector('#trial-preview [data-preview-slot]');const noRealAvailability=document.querySelector('#trial-preview')?.textContent.includes('لا توجد مواعيد حقيقية');slot?.click();await pause();const selected=slot?.getAttribute('aria-pressed')==='true';document.querySelector('#trial-review-button')?.click();await pause();const summary=!!document.querySelector('#trial-review-summary')?.textContent.includes('ليس حجزًا');const disabled=document.querySelector('#trial-submit-disabled')?.disabled===true;const unassigned=document.querySelector('#trial-review-summary')?.textContent.includes('لم يتم تعيين شيخ');switcher.value='demo-active';switcher.dispatchEvent(new Event('change',{bubbles:true}));await pause();const isolated=!document.querySelector('#trial-review-summary')&&!document.querySelector('#trial-preview [data-preview-slot]');return {noRealAvailability,selected,summary,disabled,unassigned,isolated};})()",
+      awaitPromise: true, returnByValue: true,
+    });
+    const checks = result.result?.value;
+    assert(checks && Object.values(checks).every(Boolean),
+      'S03 trial preview Chrome smoke at ' + width + ': ' + JSON.stringify(checks ?? result));
+    const layout = await socket.send('Runtime.evaluate', {
+      expression: "({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,dir:document.documentElement.dir})",
+      returnByValue: true,
+    });
+    assert.equal(layout.result?.value?.dir, 'rtl');
+    assert(layout.result?.value?.scrollWidth <= width, 'S03 horizontal overflow at ' + width);
+    console.log('S03 trial preview, no booking, profile isolation Chrome smoke passed at ' + width);
+  }
+
+
 } finally {
   socket?.close();
   for (const child of children.reverse()) child.kill('SIGTERM');
