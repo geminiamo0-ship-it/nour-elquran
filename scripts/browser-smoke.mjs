@@ -389,7 +389,10 @@ try {
     expression:`document.querySelector('[aria-label="فتح فهرس المصحف"]')?.focus()`,
     returnByValue:true,
   });
-  await socket.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+  // Chromium's native Enter activation needs both the physical keydown and its
+  // character event in CDP; keyDown without text may not synthesize button click.
+  await socket.send('Input.dispatchKeyEvent',{type:'rawKeyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+  await socket.send('Input.dispatchKeyEvent',{type:'char',key:'Enter',code:'Enter',text:'\\r',unmodifiedText:'\\r',windowsVirtualKeyCode:13});
   await socket.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
   await waitFor(async()=>{
     const r=await socket.send('Runtime.evaluate',{
