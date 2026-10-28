@@ -144,3 +144,11 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `components/QuranRecitationPlayer.tsx` + CSS: compact audio dock, separate advanced listening options controlled by `aria-expanded` and floating panel, all existing six qaris, page/surah/ayah sequences, repeat, speed and seek preserved.
 - `components/MadinahReader.tsx` + CSS: actual collapsible one-row icon toolbelt, smaller header/footer, correct dynamic Quran canvas sizing with audio open; no additional media calls or backend.
 - `scripts/browser-smoke.mjs`: 375×667 compact player visual/geometry and all-feature options checks with screenshot.
+
+## Quran stylus/mobile and classroom canonical views (#97)
+- `quranInteraction.ts` + tests: same-key rapid double-tap semantics, separate word and verse keys.
+- `components/QuranInk.tsx` and CSS: capture touch/pen/mouse drawing, SVG transparent hit rect, `touch-action:none` only in draw modes, cancellation-safe ink with normalized SVG coordinates.
+- `components/QuranAyahOverlay.tsx` and `components/ReaderPrintedPage.tsx`: accurate source polygon selection on one tap and note editor on second or keyboard Enter.
+- `components/SmoothMadinahPage.tsx` and CSS: fixed-ratio decoded image swap with short optional turn-sheen animation, reduced-motion preference, no image text manipulation.
+- `components/MadinahReader.tsx` and CSS: vertical floating pen palette under icons, 5 colors, eraser, undo/redo, browsing, no extra horizontal tools or page reflow.
+- `docs/QURAN_CANONICAL_MUSHAF_AND_LESSON_VIEWS.md`: future immutable lesson snapshot filtered through same renderer; one original student Mushaf accumulates approved teacher marks, separated from sibling profiles. Backend deferred.
