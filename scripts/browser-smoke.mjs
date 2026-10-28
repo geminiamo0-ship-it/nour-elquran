@@ -283,6 +283,31 @@ try {
 
 
 
+
+  // P0: on printed page the exact ayah SVG polygon itself must open the editor.
+  await socket.send('Emulation.setDeviceMetricsOverride', {
+    width: 390, height: 844, deviceScaleFactor: 1, mobile: false,
+  });
+  await socket.send('Page.navigate', { url: url + 'student/mushaf' });
+  await waitFor(async () => {
+    const read=await socket.send('Runtime.evaluate', {
+      expression:"Boolean(document.querySelector('[aria-label^=\"افتح ملاحظة الآية\"]'))",
+      returnByValue:true,
+    });
+    return Boolean(read.result?.value);
+  }, 'publisher ayah polygon click regions ready');
+  const interaction=await socket.send('Runtime.evaluate', {
+    expression:"(async()=>{const pause=()=>new Promise(r=>setTimeout(r,200)); const sheet=document.querySelector('[aria-label^=\"مصحف المدينة، الصفحة\"]'); const before=sheet?.getBoundingClientRect(); const first=document.querySelector('[aria-label^=\"افتح ملاحظة الآية\"]');first?.click();await pause(); const editor=!!document.querySelector('#quran-note'); const close=!!document.querySelector('[aria-label=\"إغلاق لوحة الملاحظات\"]'); const note=document.querySelector('#quran-note');if(note){const setter=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;setter.call(note,'مراجعة تطبيقية');note.dispatchEvent(new Event('input',{bubbles:true}));}await pause();[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='حفظ الملاحظة')?.click();await pause();const saved=document.body.textContent.includes('اتحفظت الملاحظة مؤقتًا')||document.body.textContent.includes('ملاحظات الصفحة');document.querySelector('[aria-label=\"إغلاق لوحة الملاحظات\"]')?.click();await pause();const dismissed=!document.querySelector('#quran-note');const after=sheet?.getBoundingClientRect();return {editor,close,saved,dismissed,stable:!!before&&!!after&&Math.abs(before.height-after.height)<3,large:!!before&&before.height>420};})()",
+    awaitPromise:true,returnByValue:true,
+  });
+  const interactionValues=interaction.result?.value;
+  assert(interactionValues && Object.values(interactionValues).every(Boolean),
+    'Quran printed verse click, note save and compact mobile sheet failed: '+JSON.stringify(interactionValues??interaction));
+  console.log('Quran P0 printed-page polygon tap, note editor, save, dismissal and viewport geometry passed');
+  await socket.send('Emulation.setDeviceMetricsOverride', {
+    width:1440,height:900,deviceScaleFactor:1,mobile:false,
+  });
+
   // S01: semantic progress table, in-row report details, no approved report filters.
   await socket.send('Page.navigate', { url: url + 'student/progress' });
   await waitFor(async () => {
