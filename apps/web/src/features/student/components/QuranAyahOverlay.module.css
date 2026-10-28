@@ -1,0 +1,6 @@
+.overlay,.disabled{position:absolute;inset:0;width:100%;height:100%;z-index:3;overflow:hidden}
+.overlay{pointer-events:none}.disabled{pointer-events:none}
+.hotspot,.annotated,.selected{pointer-events:visibleFill;fill:#fff;fill-opacity:0.001;stroke:transparent;stroke-width:0;cursor:pointer}
+.annotated{fill:#edc851;fill-opacity:.14;stroke:#b48a34;stroke-width:1}
+.selected{fill:#f6d157;fill-opacity:.23;stroke:#956e24;stroke-width:1.4}
+.hotspot:focus-visible,.annotated:focus-visible,.selected:focus-visible{outline:none;stroke:#2f6a4f;stroke-width:3;fill-opacity:.16}
