@@ -225,7 +225,7 @@ try {
     ['lessons', 'سجل الحصص'], ['training', 'التحضير قبل التسميع'],
     ['progress', 'السجل الأكاديمي'], ['notebook', 'دفتر الطالب الخاص'],
     ['subscription', 'ملخص الاشتراك'], ['account', 'ملفات الطلاب'],
-    ['mushaf', 'المصحف الشريف التفاعلي'],
+    ['mushaf', 'مصحف نور القرآن'],
   ]) {
     const response = await fetch(url + 'student/' + section, { signal: AbortSignal.timeout(10000) });
     assert.equal(response.status, 200, 'Student route did not render: ' + section);
@@ -244,7 +244,7 @@ try {
     return Boolean(result.result?.value);
   }, 'hydrated real Madinah Mushaf reader');
   const mushafResult = await socket.send('Runtime.evaluate', {
-    expression: "(async () => { const sleep=t=>new Promise(r=>setTimeout(r,t)); const input=document.querySelector('#quran-page-input');const initiallyFirst=input?.value==='1';const next=document.querySelector('button[aria-label=\"الصفحة التالية\"]');next?.click();await sleep(180);const second=document.querySelector('#quran-page-input')?.value==='2'; const ayah=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='آية بآية'); ayah?.click();await sleep(100);const toggled=ayah?.getAttribute('aria-pressed')==='true';const switcher=document.querySelector('#learner-switch');switcher.value='demo-active';switcher.dispatchEvent(new Event('change',{bubbles:true}));await sleep(180);const isolated=document.querySelector('#quran-page-input')?.value==='1';return {initiallyFirst,second,toggled,isolated};})()",
+    expression: "(async () => { const sleep=t=>new Promise(r=>setTimeout(r,t)); const input=document.querySelector('#quran-page-input');const initiallyFirst=input?.value==='1';const next=document.querySelector('button[aria-label=\"الصفحة التالية\"]');next?.click();await sleep(180);const second=document.querySelector('#quran-page-input')?.value==='2'; const ayah=document.querySelector('button[title=\"آية بآية\"]'); ayah?.click();await sleep(100);const toggled=ayah?.getAttribute('aria-pressed')==='true';const switcher=document.querySelector('#learner-switch');switcher.value='demo-active';switcher.dispatchEvent(new Event('change',{bubbles:true}));await sleep(180);const isolated=document.querySelector('#quran-page-input')?.value==='1';return {initiallyFirst,second,toggled,isolated};})()",
     awaitPromise: true, returnByValue: true,
   });
   const mushafValues = mushafResult.result?.value;
@@ -270,7 +270,7 @@ try {
     return Boolean(check.result?.value);
   }, 'immersive Quran mobile layout');
   const readingResult = await socket.send('Runtime.evaluate', {
-    expression: "(async()=>{const sleep=t=>new Promise(r=>setTimeout(r,t)); const img=document.querySelector('[aria-label^=\"مصحف المدينة، الصفحة\"]'); const initial=img?.getBoundingClientRect(); const next=document.querySelector('button[aria-label=\"تقليب إلى الصفحة التالية\"]'); next?.click(); await sleep(120);const after=document.querySelector('[aria-label^=\"مصحف المدينة، الصفحة\"]')?.getBoundingClientRect(); const fixed=!!initial&&!!after&&initial.height>100&&Math.abs(initial.height-after.height)<2; const immersive=[...document.querySelectorAll('button')].some(x=>x.textContent.includes('الخروج من وضع القراءة')); const show=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='إظهار الأدوات');show?.click();await sleep(100);const search=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='بحث شامل');search?.click();await sleep(100);const query=!!document.querySelector('#whole-quran-query');const tools=[...document.querySelectorAll('button')].some(x=>x.textContent.trim()==='ماركر');const notes=[...document.querySelectorAll('button')].some(x=>x.textContent.includes('جميع ملاحظاتي'));return {fixed,immersive,query,tools,notes};})()",
+    expression: "(async()=>{const sleep=t=>new Promise(r=>setTimeout(r,t)); const img=document.querySelector('[aria-label^=\"مصحف المدينة، الصفحة\"]'); const initial=img?.getBoundingClientRect(); const next=document.querySelector('button[aria-label=\"تقليب إلى الصفحة التالية\"]'); next?.click(); await sleep(120);const after=document.querySelector('[aria-label^=\"مصحف المدينة، الصفحة\"]')?.getBoundingClientRect(); const fixed=!!initial&&!!after&&initial.height>100&&Math.abs(initial.height-after.height)<2; const immersive=[...document.querySelectorAll('button')].some(x=>x.textContent.includes('الخروج من وضع القراءة')); const show=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='إظهار الأدوات');show?.click();await sleep(100);const search=document.querySelector('button[aria-label=\"بحث شامل في المصحف\"]');search?.click();await sleep(100);const query=!!document.querySelector('#whole-quran-query');const tools=!!document.querySelector('button[title=\"ماركر\"]');const notes=[...document.querySelectorAll('button')].some(x=>x.textContent.includes('جميع ملاحظاتي'));return {fixed,immersive,query,tools,notes};})()",
     awaitPromise:true, returnByValue:true,
   });
   const readingChecks=readingResult.result?.value;
@@ -327,6 +327,34 @@ try {
   await socket.send('Emulation.setDeviceMetricsOverride', {
     width:1440,height:900,deviceScaleFactor:1,mobile:false,
   });
+
+
+  // QuranFlash-inspired information architecture, but Noor's own visual system.
+  // Desktop must display two fully interactive physical pages, not a tiny card.
+  await socket.send('Emulation.setDeviceMetricsOverride', {width:1440,height:900,deviceScaleFactor:1,mobile:false});
+  await socket.send('Page.navigate',{url:url+'student/mushaf'});
+  await waitFor(async()=>{
+    const out=await socket.send('Runtime.evaluate',{
+      expression:`(()=>{const b=document.querySelector('[aria-label="تقليب إلى الصفحة التالية"]');return !!b&&Object.keys(b).some(k=>k.includes('reactProps'));})()`,returnByValue:true,
+    });return Boolean(out.result?.value);
+  },'desktop Quran reader shell');
+  const spread=await socket.send('Runtime.evaluate',{
+    expression:`(async()=>{const pause=()=>new Promise(r=>setTimeout(r,210));const next=document.querySelector('[aria-label="تقليب إلى الصفحة التالية"]');next?.click();await pause();next?.click();await pause();const actual=document.querySelector('[data-spread-pages]')?.getAttribute('data-spread-pages');const pages=document.querySelectorAll('[aria-label^="مصحف المدينة، الصفحة"]').length;return {actual,pages};})()`,
+    awaitPromise:true,returnByValue:true,
+  });
+  assert(spread.result?.value?.actual==='2,3'&&spread.result?.value?.pages===2,
+    'Desktop Quran spread must have two physical interactive leaves: '+JSON.stringify(spread.result?.value));
+  await socket.send('Runtime.evaluate',{
+    expression:`document.querySelector('[aria-label="فتح فهرس المصحف"]')?.click()`,
+    returnByValue:true,
+  });
+  const drawerVisible=await socket.send('Runtime.evaluate',{
+    expression:`Boolean(document.querySelector('[aria-label="أقسام فهرس المصحف"]'))`,returnByValue:true,
+  });
+  assert(drawerVisible.result?.value===true,'Quran index should open in a separate responsive drawer');
+  const desktopSpreadImage=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+  fs.writeFileSync(path.join(screenshots,'quran-desktop-spread-index-1440.png'),Buffer.from(desktopSpreadImage.data,'base64'));
+  console.log('Desktop Noor Quran 2-page spread and index drawer regression passed');
 
   // S01: semantic progress table, in-row report details, no approved report filters.
   await socket.send('Page.navigate', { url: url + 'student/progress' });

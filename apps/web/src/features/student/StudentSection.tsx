@@ -26,10 +26,10 @@ export function StudentSection({ section }: { section: StudentSectionName }) {
   const meta = sections[section];
   // Profile key ensures no unsent note/input from another learner survives switching.
   return <div>
-    <header className={styles.pageHeader}><div>
+    {section !== 'mushaf' && <header className={styles.pageHeader}><div>
       <p className={styles.eyebrow}>مساحتي التعليمية / {meta.title}</p>
       <h1>{meta.title}</h1><p>{meta.caption}</p>
-    </div></header>
+    </div></header>}
     <Component key={selected.profile.id} />
   </div>;
 }

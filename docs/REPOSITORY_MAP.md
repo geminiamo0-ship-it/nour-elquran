@@ -127,3 +127,9 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `quranSearch.ts`, `components/QuranSearchPanel.tsx` and CSS: search full 6236 Hafs ayat with authoritatively verified page markers.
 - `components/MadinahReader.tsx` and CSS: immersive controls, anchored highlights, all notes jump, search integration and mobile next/previous.
 - `quranReading.test.ts` and browser smoke: bounded preload, Arabic normalization, note isolation, stable layout and visible controls.
+
+## Quran reader native components and route layout
+- `StudentShell.tsx`, `StudentSection.tsx`, `components/MushafWorkspace.tsx`: remove dashboard chrome and panel wrappers specifically for the Mushaf route.
+- `quranReaderLayout.ts` and test: desktop physical spread `[2,3]`, `[4,5]` etc with opening page alone and single-page responsive override.
+- `components/ReaderPrintedPage.tsx`: fetch verified publisher sidecar for EACH visible printed leaf; compose `SmoothMadinahPage`, `QuranInk` and `QuranAyahOverlay` to keep click targets accurate on both spread pages.
+- `components/MadinahReader.tsx` and CSS: own Noor visual design, compact toolbar, large page canvas, index drawer for surahs/bookmarks/notes, preferences for single/double/auto and swipe mode; original source text unchanged.
