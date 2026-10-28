@@ -342,7 +342,12 @@ export function MadinahReader() {
     </div>
     <div className={css.readerFoot}>
       <span>الملاحظات والتظليل والرسم الآن محلية مؤقتة لملف {selected.profile.name}، ولا تتم مزامنتها مع الشيخ أو الخادم بعد.</span>
-      <button type="button" className={css.button} onClick={()=>setShowAside(true)}>ملاحظاتي والآيات</button>
+      <button type="button" className={css.button} aria-label="تقليب إلى الصفحة السابقة"
+        disabled={page===1} onClick={()=>go(page-1)}>السابق</button>
+      <strong aria-live="polite">{page} / 604</strong>
+      <button type="button" className={css.button} aria-label="تقليب إلى الصفحة التالية"
+        disabled={page===604} onClick={()=>go(page+1)}>التالي</button>
+      <button type="button" className={css.button} onClick={()=>{setShowAside(v=>!v);setHideChrome(false);}}>الآيات والملاحظات</button>
     </div>
   </div>;
 }
