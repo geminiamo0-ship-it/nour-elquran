@@ -211,3 +211,37 @@
   .readerFoot .navButton{padding:3px 5px}
   .readerFoot .footerNotes{padding:3px 4px}
 }
+
+/* The two ink icons act as one anchor. Palette floats DOWN, never taking Quran height. */
+.inkAnchor{display:flex;align-items:center;position:relative;flex:0 0 auto;min-height:32px}
+.inkPalette{position:absolute;inset-inline-start:0;top:calc(100% + 7px);width:48px;
+  z-index:45;display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 5px 9px;
+  border:1px solid #d6c39d;border-radius:13px;background:#fffdf7;
+  box-shadow:0 14px 30px #28433535;transform-origin:top right;
+  animation:inkPaletteDrop 210ms cubic-bezier(.2,.9,.2,1) both}
+.inkPalette .colorDot{width:28px;height:28px;min-height:28px;border-radius:50%;flex-shrink:0;
+  border:2px solid #fff;box-shadow:0 0 0 1px #a6a08f;transition:transform 140ms ease}
+.inkPalette .colorDot[aria-pressed="true"]{box-shadow:0 0 0 2px #2a513b;transform:scale(1.08)}
+.paletteDivider{height:1px;width:29px;background:#e3dac7;flex-shrink:0}
+.paletteIcon{width:34px;height:32px;display:grid;place-items:center;border:0;border-radius:8px;
+  font-size:21px;line-height:1;background:transparent;color:#30523e;cursor:pointer}
+.paletteIcon:hover,.paletteIcon[aria-pressed="true"]{background:#e9eedf}
+.paletteIcon:disabled{opacity:.35;cursor:not-allowed}
+.inkPalette button:focus-visible{outline:2px solid #ac8438;outline-offset:2px}
+@keyframes inkPaletteDrop {
+  from {opacity:0;transform:translateY(-9px) scale(.95)}
+  to {opacity:1;transform:translateY(0) scale(1)}
+}
+@media(max-width:700px){
+ .inkAnchor{min-height:31px}
+ .inkPalette{width:44px;top:calc(100% + 5px);gap:7px;padding:7px 4px;
+   max-height:calc(100dvh - 145px);overflow-y:auto}
+ .inkPalette .colorDot{width:26px;height:26px;min-height:26px}
+ .paletteIcon{width:32px;height:30px}
+}
+@media(prefers-reduced-motion:reduce){
+ .inkPalette{animation:none!important}
+ .inkPalette .colorDot{transition:none!important}
+}
+
+.inkPalette .paletteIcon svg{width:19px;height:19px;display:block;flex:0 0 auto}

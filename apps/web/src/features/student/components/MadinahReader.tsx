@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ReaderIcon } from './ReaderIcon';
+import { isQuranDoubleTap, type QuranTap } from '../quranInteraction';
 import { QuranRecitationPlayer } from './QuranRecitationPlayer';
 import { quranAudioKey, type QuranAudioRequest, type QuranAudioScope } from '../quranReciters';
 import type { QuranAyahReference } from '../quranSource';
@@ -77,6 +78,8 @@ export function MadinahReader() {
   const [audioRequest,setAudioRequest]=useState<QuranAudioRequest|null>(null);
   const [audioVerse,setAudioVerse]=useState<QuranAyahReference|null>(null);
   const startTouch=useRef<{x:number;y:number}|null>(null);
+  const lastVerseTap=useRef<QuranTap|null>(null);
+  const [inkPaletteOpen,setInkPaletteOpen]=useState(false);
 
   useEffect(()=>{
     const update=()=>setCompactDevice(window.innerWidth<900);
@@ -156,13 +159,27 @@ export function MadinahReader() {
 
   function go(n:number,focus?:string) {
     const next=clampQuranPage(n);
-    setPage(next);setPageEntry(String(next));setLocalSearch('');
+    setPage(next);setPageEntry(String(next));setLocalSearch('');lastVerseTap.current=null;
     setPendingKey(focus??null);
+  }
+  function handleVerseTap(target:QuranTarget) {
+    if(!validTarget(target))return;
+    const key=targetKey(target);
+    const now=Date.now();
+    if(isQuranDoubleTap(lastVerseTap.current,key,now)) {
+      lastVerseTap.current=null;
+      selectTarget(target);
+      return;
+    }
+    lastVerseTap.current={key,at:now};
+    setSelectedTarget(target);
+    setShowAside(false);
   }
   function selectTarget(target:QuranTarget) {
     if(!validTarget(target))return;
     setSelectedTarget(target);
     const old=visible.find(n=>n.type==='private'&&targetKey(n.target)===targetKey(target));
+    lastVerseTap.current=null;
     setDraft(old?.text??'');setShowAside(true);setShowSearch(false);setShowNotes(false);setShowIndex(false);setShowSettings(false);setSavedNotice('');
   }
   function saveNote() {
@@ -208,7 +225,9 @@ export function MadinahReader() {
     setShowAside(false);
   }
   function chooseTool(tool:InkMode) {
+    lastVerseTap.current=null;
     setInkMode(tool);setHideChrome(false);setShowAside(false);
+    setInkPaletteOpen(tool!=='off');
   }
 
   return <div className={[css.reader,immersive?css.immersive:''].join(' ')} dir="rtl">
@@ -237,12 +256,34 @@ export function MadinahReader() {
       </div>
     </header>
     <nav className={[css.toolbar,hideChrome?css.toolbarCollapsed:''].join(' ')} aria-label="أدوات المصحف">
-      <button type="button" className={inkMode==='marker'?css.activeTool:css.tool}
-        aria-pressed={inkMode==='marker'} title="ماركر"
-        onClick={()=>chooseTool(inkMode==='marker'?'off':'marker')}><ReaderIcon name="marker" /><span>ماركر</span></button>
-      <button type="button" className={inkMode==='pen'?css.activeTool:css.tool}
-        aria-pressed={inkMode==='pen'} title="قلم"
-        onClick={()=>chooseTool(inkMode==='pen'?'off':'pen')}><ReaderIcon name="pen" /><span>قلم</span></button>
+      <div className={css.inkAnchor}>
+        <button type="button" className={inkMode==='marker'?css.activeTool:css.tool}
+          aria-pressed={inkMode==='marker'} aria-expanded={inkPaletteOpen}
+          aria-controls="quran-ink-palette" title="ماركر"
+          onClick={()=>chooseTool(inkMode==='marker'?'off':'marker')}><ReaderIcon name="marker" /><span>ماركر</span></button>
+        <button type="button" className={inkMode==='pen'?css.activeTool:css.tool}
+          aria-pressed={inkMode==='pen'} aria-expanded={inkPaletteOpen}
+          aria-controls="quran-ink-palette" title="قلم"
+          onClick={()=>chooseTool(inkMode==='pen'?'off':'pen')}><ReaderIcon name="pen" /><span>قلم</span></button>
+        {inkPaletteOpen && !hideChrome && <div className={css.inkPalette} id="quran-ink-palette"
+          role="group" aria-label="ألوان وأدوات الرسم">
+          <button type="button" className={css.paletteIcon} aria-label="إغلاق لوحة القلم"
+            title="إخفاء لوحة القلم" onClick={()=>setInkPaletteOpen(false)}><ReaderIcon name="close" /></button>
+          <div className={css.paletteDivider} />
+          {palette.map(c=><button key={c} type="button" className={css.colorDot}
+            style={{background:c}} aria-label={'لون '+c} aria-pressed={color===c}
+            title={'لون '+c} onClick={()=>setColor(c)}/>)}
+          <div className={css.paletteDivider} />
+          <button type="button" className={css.paletteIcon} title="ممحاة" aria-label="ممحاة"
+            aria-pressed={inkMode==='eraser'} onClick={()=>chooseTool('eraser')}><ReaderIcon name="eraser" /></button>
+          <button type="button" className={css.paletteIcon} title="تراجع" aria-label="تراجع"
+            disabled={!(inkByPage[page]?.length)} onClick={undoInk}><ReaderIcon name="undo" /></button>
+          <button type="button" className={css.paletteIcon} title="إعادة" aria-label="إعادة"
+            disabled={!(redoByPage[page]?.length)} onClick={redoInk}><ReaderIcon name="redo" /></button>
+          <button type="button" className={css.paletteIcon} title="العودة للتصفح" aria-label="العودة للتصفح"
+            onClick={()=>chooseTool('off')}><ReaderIcon name="hand" /></button>
+        </div>}
+      </div>
       <button type="button" className={css.tool} onClick={()=>openDrawer('search')}
         aria-label="بحث شامل في المصحف" title="بحث شامل"><ReaderIcon name="search" /><span>بحث شامل</span></button>
       <button type="button" className={css.tool} onClick={()=>openDrawer('notes')} title="الملاحظات">
@@ -259,19 +300,7 @@ export function MadinahReader() {
         <span className={css.toolsToggleGlyph} aria-hidden="true">{hideChrome?'⌄':'⌃'}</span>
       </button>
     </nav>
-    {!hideChrome && inkMode!=='off' && <div className={css.contextTools} role="group" aria-label="أدوات القلم والماركر">
-      <button type="button" className={css.smallButton} onClick={()=>chooseTool('off')}>تصفح</button>
-      <button type="button" className={css.smallButton} onClick={()=>chooseTool('eraser')}>ممحاة</button>
-      <div className={css.colors} aria-label="ألوان التحديد">
-        {palette.map(c=><button key={c} type="button" className={css.colorDot}
-          style={{background:c}} aria-label={'لون '+c} aria-pressed={color===c}
-          onClick={()=>setColor(c)}/>)}
-      </div>
-      <button type="button" className={css.smallButton} onClick={undoInk}
-        disabled={!(inkByPage[page]?.length)}>تراجع</button>
-      <button type="button" className={css.smallButton} onClick={redoInk}
-        disabled={!(redoByPage[page]?.length)}>إعادة</button>
-    </div>}
+
     {error && <div role="alert" className={css.warning}>{error}
       <button type="button" onClick={()=>setRefresh(x=>x+1)}>إعادة المحاولة</button>
     </div>}
@@ -282,7 +311,7 @@ export function MadinahReader() {
       <main className={css.bookStage} aria-label="صفحات مصحف المدينة">
         {mode==='madinah' ?
           <div className={spreadPages.length===2?css.doubleBook:css.singleBook} data-spread-pages={spreadPages.join(",")}>
-            {spreadPages.map(leaf=><div key={leaf} className={css.leaf}
+            {spreadPages.map((leaf,slot)=><div key={'page-slot-'+slot} className={css.leaf}
               onTouchStart={e=>{startTouch.current={x:e.touches[0]?.clientX??0,y:e.touches[0]?.clientY??0};}}
               onTouchEnd={e=>{
                 const start=startTouch.current,end=e.changedTouches[0];startTouch.current=null;
@@ -293,7 +322,7 @@ export function MadinahReader() {
               <ReaderPrintedPage page={leaf} color={color} inkMode={inkMode}
                 strokes={inkByPage[leaf]??[]} onInkChange={changeInkFor}
                 selectedKey={audioVerse ? quranAudioKey(audioVerse) : selectedKey} noteKeys={noteByKey}
-                onSelect={selectTarget}/>
+                onSelect={handleVerseTap} onOpenNote={selectTarget}/>
               </div>)}
           </div>:
           <div className={css.ayahDisplay} aria-label="عرض القرآن آية بآية">
@@ -305,7 +334,7 @@ export function MadinahReader() {
                   className={css.ayahRow} style={{fontSize}}>
                   <button type="button" className={css.ayahRef} style={{background:marked[key]}}
                     aria-pressed={selectedKey===key}
-                    onClick={()=>selectTarget({page,surah:region.surah,ayah:region.ayah,wordIndex:null})}>
+                    onClick={()=>handleVerseTap({page,surah:region.surah,ayah:region.ayah,wordIndex:null})}>
                     ﴿{key}﴾{noteByKey.has(key)?' ●':''}
                   </button>{' '}
                   {text?text.split(/(\s+)/u).map((part,i)=>{
@@ -314,7 +343,7 @@ export function MadinahReader() {
                     const k=key+':w'+wordIndex,n=wordIndex;
                     return <button key={i} type="button" className={css.word}
                       style={{background:marked[k]}} aria-pressed={selectedKey===k}
-                      onClick={()=>selectTarget({page,surah:region.surah,ayah:region.ayah,wordIndex:n})}>{part}</button>;
+                      onClick={()=>handleVerseTap({page,surah:region.surah,ayah:region.ayah,wordIndex:n})}>{part}</button>;
                   }):<span>جار تحميل النص العثماني…</span>}
                 </div>;
               })}
