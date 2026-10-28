@@ -335,7 +335,7 @@ try {
   await socket.send('Page.navigate',{url:url+'student/mushaf'});
   await waitFor(async()=>{
     const out=await socket.send('Runtime.evaluate',{
-      expression:`Boolean(document.querySelector('[aria-label="تقليب إلى الصفحة التالية"]'))`,returnByValue:true,
+      expression:`(()=>{const b=document.querySelector('[aria-label="تقليب إلى الصفحة التالية"]');return !!b&&Object.keys(b).some(k=>k.includes('reactProps'));})()`,returnByValue:true,
     });return Boolean(out.result?.value);
   },'desktop Quran reader shell');
   const spread=await socket.send('Runtime.evaluate',{
