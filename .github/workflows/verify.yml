@@ -1,0 +1,76 @@
+name: Verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository-policy:
+    name: repository-policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Governance and pull-request issue linkage
+        run: python3 .github/scripts/verify_repo.py
+      - name: Parse GitHub YAML files
+        run: |
+          ruby -e 'require "yaml"; Dir[".github/**/*.yml", ".github/**/*.yaml"].each { |f| YAML.load_file(f); puts "YAML OK: #{f}" }'
+  governance-tests:
+    name: governance-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test repository policy checker
+        run: python3 -m unittest discover -s tests/governance -p 'test_*.py' -v
+  code-quality:
+    name: code-quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check if application workspace exists
+        id: app
+        run: |
+          if [ -f package.json ]; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; echo "NO APPLICATION YET: code lint, typecheck, test and build NOT executed."; fi
+      - uses: actions/setup-node@v4
+        if: steps.app.outputs.exists == 'true'
+        with:
+          node-version: '22'
+      - name: Require scripts and lockfile
+        if: steps.app.outputs.exists == 'true'
+        run: |
+          test -f pnpm-lock.yaml
+          node -e 'let p=require("./package.json"); for(let x of ["lint","typecheck","test","build","smoke"]) if(!p.scripts?.[x]) throw new Error("Missing script "+x); if(!p.packageManager?.startsWith("pnpm@")) throw new Error("Pin pnpm version");'
+      - name: Install pnpm and frozen dependencies
+        if: steps.app.outputs.exists == 'true'
+        run: |
+          corepack enable
+          corepack prepare "$(node -p 'require("./package.json").packageManager')" --activate
+          pnpm install --frozen-lockfile
+      - name: Lint
+        if: steps.app.outputs.exists == 'true'
+        run: pnpm lint
+      - name: Typecheck
+        if: steps.app.outputs.exists == 'true'
+        run: pnpm typecheck
+      - name: Unit and integration tests
+        if: steps.app.outputs.exists == 'true'
+        run: pnpm test
+      - name: Production build
+        if: steps.app.outputs.exists == 'true'
+        run: pnpm build
+      - name: Smoke
+        if: steps.app.outputs.exists == 'true'
+        run: pnpm smoke

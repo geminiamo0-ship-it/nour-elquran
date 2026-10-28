@@ -1,0 +1,26 @@
+name: Bug / regression
+description: Reproducible bug with root cause and proof of fix
+title: "[BUG] "
+labels: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Expected vs actual behavior
+      description: Environment, browser, route, role, exact steps
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction evidence
+      description: Log references/screenshots with no secrets or user/child data
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Fix acceptance and regression tests
+      value: "- [ ] "
+    validations:
+      required: true

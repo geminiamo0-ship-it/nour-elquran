@@ -1,0 +1,34 @@
+name: Feature / UI slice
+description: Approved feature with explicit workflow, mocks and verification
+title: "[FEATURE] "
+labels: []
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome and user journey
+      description: Explain who benefits and how to reproduce the intended experience
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope, routes, components and file ownership
+      description: Describe states (loading, empty, error), mobile RTL, permissions and data contracts
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Verifiable checklist including mock behavior and tests
+      value: "- [ ] "
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Tests, risks and handoff
+      description: Commands, screenshots, role isolation, changes to status/map/ADR
+    validations:
+      required: true

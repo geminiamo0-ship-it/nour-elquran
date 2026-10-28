@@ -1,0 +1,6 @@
+# Ownership hints; actual approvals require protected branch rules.
+/AGENTS.md @geminiamo0-ship-it
+/PROJECT_STATUS.md @geminiamo0-ship-it
+/NOOR_MASTER_PLAN.md @geminiamo0-ship-it
+/.github/ @geminiamo0-ship-it
+/docs/ @geminiamo0-ship-it
