@@ -53,3 +53,8 @@
 - S01–S03 may use typed mock-only UI where no database exists. S04/S08 canonical Quran/audio require source evidence before genuine media claims. S09 consent/privacy and S12 payments must not simulate successful upload or purchase as real. Production-only flows are explicitly backend-gated.
 - After each PR record: issue, exact head, tests, merge SHA, what is real/mocked, UI screenshot review, remaining blocker and next slice.
 - Next strict task once S01 is merged: S02 attendance counts, register and 7-day appeals. Teacher is authoritative for presence; admin can review and correct, not the student.
+
+## 2026-10-28 delivery update — S02/S03
+- S02 attendance preview PR #74 merged into main as `782f02a1`; #73 stays open for server-side appeals/teacher authority and visual review. No live attendance or upload.
+- S03 active on Issue #76 / `feat/76-student-trial-scheduling-s03`: 30-minute **illustrative** slot selection and local review, typed UTC six-hour cutoff, no teacher assignment and no real reservation. The full S03 definition of done remains blocked on authorized #46/#47 booking APIs and reviewer acceptance; this frontend slice alone does not complete S03.
+- Do not start canonical reader/audio/recording work without edition, licensing and consent decisions. Continue student-first order.
