@@ -221,7 +221,7 @@ export function MadinahReader() {
         <button type="button" className={css.iconButton} aria-label="إعدادات القراءة" title="الإعدادات"
           onClick={()=>openDrawer('settings')}><ReaderIcon name="settings" /></button>
         <button type="button" className={css.exitButton} onClick={()=>{if(compactDevice&&immersive){window.location.assign('/student');return;}else setImmersive(v=>!v);setShowAside(false);}}>
-          {immersive?'الخروج من وضع القراءة':'وضع القراءة'}
+          <span className={css.exitLabel}>{immersive?'الخروج من وضع القراءة':'وضع القراءة'}</span><span className={css.exitGlyph} aria-hidden="true">↗</span>
         </button>
       </div>
     </header>
