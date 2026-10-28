@@ -12,9 +12,9 @@ import {
   validTarget, visibleAnnotations, notePreview, targetKey, type QuranTarget,
   type QuranAnnotation, type QuranInkStroke,
 } from '../quranAnnotations';
-import { SmoothMadinahPage } from './SmoothMadinahPage';
-import { QuranAyahOverlay } from './QuranAyahOverlay';
-import { QuranInk, type InkMode } from './QuranInk';
+import { ReaderPrintedPage } from './ReaderPrintedPage';
+import { getVisibleSpread, type ReaderPageMode } from '../quranReaderLayout';
+import type { InkMode } from './QuranInk';
 import { QuranSearchPanel } from './QuranSearchPanel';
 import css from './MadinahReader.module.css';
 
@@ -55,7 +55,14 @@ export function MadinahReader() {
   const [redoByPage,setRedoByPage]=useState<Record<number,QuranInkStroke[]>>({});
   const [showSearch,setShowSearch]=useState(false);
   const [showNotes,setShowNotes]=useState(false);
-  const [showAside,setShowAside]=useState(true);
+  const [showAside,setShowAside]=useState(false);
+  const [showIndex,setShowIndex]=useState(false);
+  const [showSettings,setShowSettings]=useState(false);
+  const [indexTab,setIndexTab]=useState<'surahs'|'juz'|'marks'|'notes'>('surahs');
+  const [bookmarks,setBookmarks]=useState<number[]>([]);
+  const [spreadMode,setSpreadMode]=useState<ReaderPageMode>('auto');
+  const [compactDevice,setCompactDevice]=useState(false);
+  const [turnMode,setTurnMode]=useState<'swipe'|'buttons'>('swipe');
   const [immersive,setImmersive]=useState(false);
   const [hideChrome,setHideChrome]=useState(false);
   const [fontSize,setFontSize]=useState(27);
@@ -65,7 +72,10 @@ export function MadinahReader() {
   const startTouch=useRef<{x:number;y:number}|null>(null);
 
   useEffect(()=>{
+    const update=()=>setCompactDevice(window.innerWidth<900);
+    update();window.addEventListener('resize',update);
     if(window.matchMedia('(max-width:700px)').matches){setImmersive(true);setHideChrome(true);setShowAside(false);}
+    return ()=>window.removeEventListener('resize',update);
   },[]);
   useEffect(()=>{
     if(!immersive)return;
@@ -109,7 +119,7 @@ export function MadinahReader() {
       setSelectedTarget(target);
       const original=notes.find(n=>n.learnerId===selected.profile.id&&targetKey(n.target)===targetKey(target));
       setDraft(original?.text??'');
-      setShowAside(true);setShowNotes(false);
+      setShowAside(true);setShowNotes(false);setShowIndex(false);setShowSettings(false);
       if(mode==='ayah'){
         window.requestAnimationFrame(()=>document.getElementById('quran-ayah-'+pendingKey.replace(':','-'))?.scrollIntoView({block:'center',behavior:'smooth'}));
       }
@@ -146,7 +156,7 @@ export function MadinahReader() {
     if(!validTarget(target))return;
     setSelectedTarget(target);
     const old=visible.find(n=>n.type==='private'&&targetKey(n.target)===targetKey(target));
-    setDraft(old?.text??'');setShowAside(true);setShowSearch(false);setShowNotes(false);setSavedNotice('');
+    setDraft(old?.text??'');setShowAside(true);setShowSearch(false);setShowNotes(false);setShowIndex(false);setShowSettings(false);setSavedNotice('');
   }
   function saveNote() {
     if(!selectedTarget||!validTarget(selectedTarget))return;
@@ -161,8 +171,9 @@ export function MadinahReader() {
     });
     setSavedNotice(text?'اتحفظت الملاحظة مؤقتًا في جلسة القراءة.':'اتمسحت الملاحظة المؤقتة.');
   }
-  function changeInk(strokes:QuranInkStroke[]) {
-    setInkByPage(prev=>({...prev,[page]:strokes}));setRedoByPage(prev=>({...prev,[page]:[]}));
+  function changeInkFor(targetPage:number,strokes:QuranInkStroke[]) {
+    setInkByPage(prev=>({...prev,[targetPage]:strokes}));
+    setRedoByPage(prev=>({...prev,[targetPage]:[]}));
   }
   function undoInk() {
     const current=inkByPage[page]??[];
@@ -179,94 +190,93 @@ export function MadinahReader() {
   }
   const selectedKey=selectedTarget?targetKey(selectedTarget):null;
   const activeSurah=surahs.filter(s=>s.pageNumber<=page).at(-1)?.number??'';
+  const spreadPages=getVisibleSpread(page,spreadMode,compactDevice);
+  function openDrawer(kind:'index'|'notes'|'search'|'settings'|'ayah') {
+    setShowAside(true);setShowIndex(kind==='index');setShowNotes(kind==='notes');
+    setShowSearch(kind==='search');setShowSettings(kind==='settings');setHideChrome(false);
+  }
+  function chooseTool(tool:InkMode) {
+    setInkMode(tool);setHideChrome(false);setShowAside(false);
+  }
 
-  return <div className={[css.reader,immersive?css.immersive:'',hideChrome&&immersive?css.readingOnly:''].join(' ')}>
-    <div className={css.readerHeader}>
-      <strong>مصحف المدينة · حفص عن عاصم</strong>
+  return <div className={[css.reader,immersive?css.immersive:''].join(' ')} dir="rtl">
+    <header className={css.readerHeader}>
+      <div className={css.identity}>
+        <span className={css.brandMark} aria-hidden="true">۞</span>
+        <div><strong>مصحف نور القرآن</strong><small>مصحف المدينة · حفص عن عاصم</small></div>
+      </div>
       <div className={css.headerActions}>
-        {immersive&&<button type="button" className={css.button} onClick={()=>setHideChrome(v=>!v)}>
-          {hideChrome?'إظهار الأدوات':'إخفاء الأدوات'}</button>}
-        <button type="button" className={css.button} onClick={()=>{setImmersive(v=>!v);setHideChrome(false);}}>
-          {immersive?'الخروج من وضع القراءة':'وضع القراءة'}</button>
-      </div>
-    </div>
-    <div className={css.chrome}>
-      <div className={css.toolbar} role="group" aria-label="أوضاع المصحف">
-        <button type="button" className={mode==='madinah'?css.active:css.button}
-          aria-pressed={mode==='madinah'} onClick={()=>setMode('madinah')}>مصحف المدينة</button>
-        <button type="button" className={mode==='ayah'?css.active:css.button}
-          aria-pressed={mode==='ayah'} onClick={()=>{setMode('ayah');setInkMode('off');}}>آية بآية</button>
-        <button type="button" className={showSearch?css.active:css.button}
-          onClick={()=>{setShowSearch(true);setShowNotes(false);setShowAside(true);}}>بحث شامل</button>
-        <button type="button" className={showNotes?css.active:css.button}
-          onClick={()=>{setShowNotes(true);setShowSearch(false);setShowAside(true);}}>جميع ملاحظاتي ({visible.length})</button>
-        <button type="button" className={css.button}
-          onClick={()=>setShowAside(v=>!v)}>{showAside?'إخفاء القائمة':'الآيات والملاحظات'}</button>
-        {mode==='ayah'&&<><label htmlFor="quran-font-size">حجم النص</label>
-          <input id="quran-font-size" type="range" min="22" max="42" step="2" value={fontSize}
-            onChange={e=>setFontSize(Number(e.target.value))}/></>}
-      </div>
-      <div className={css.toolbar} role="group" aria-label="أدوات القلم والماركر">
-        {(['off','pen','marker','eraser'] as InkMode[]).map((tool)=>
-          <button key={tool} type="button" disabled={mode!=='madinah'} aria-pressed={inkMode===tool}
-            className={inkMode===tool?css.active:css.button} onClick={()=>setInkMode(tool)}>
-            {({off:'تصفح',pen:'قلم',marker:'ماركر',eraser:'ممحاة'} as const)[tool]}</button>)}
-        <div className={css.colors} aria-label="ألوان التحديد">
-          {palette.map(c=><button key={c} type="button" className={css.colorDot}
-            style={{background:c}} aria-label={'لون '+c} aria-pressed={color===c}
-            onClick={()=>setColor(c)}/>)}
-        </div>
-        <button type="button" className={css.button} onClick={undoInk}
-          disabled={!(inkByPage[page]?.length)}>تراجع</button>
-        <button type="button" className={css.button} onClick={redoInk}
-          disabled={!(redoByPage[page]?.length)}>إعادة</button>
-      </div>
-      <form className={css.navigation} onSubmit={e=>{
-        e.preventDefault();const n=Number(pageEntry);
-        if(Number.isInteger(n)&&n>=1&&n<=QURAN_PAGE_COUNT)go(n);
-      }}>
-        <button type="button" className={css.button} disabled={page===1}
-          aria-label="الصفحة السابقة" onClick={()=>go(page-1)}>السابق</button>
-        <label htmlFor="quran-page-input">الصفحة</label>
-        <input id="quran-page-input" type="number" min="1" max="604" step="1"
-          value={pageEntry} onChange={e=>setPageEntry(e.target.value)} dir="ltr"/>
-        <span>من {QURAN_PAGE_COUNT}</span>
-        <button type="submit" className={css.button}>انتقال</button>
-        <button type="button" className={css.button} disabled={page===QURAN_PAGE_COUNT}
-          aria-label="الصفحة التالية" onClick={()=>go(page+1)}>التالي</button>
-      </form>
-      <div className={css.navigation} role="group" aria-label="الانتقال إلى سورة">
-        <label htmlFor="quran-surah-select">انتقال لسورة</label>
+        <label htmlFor="quran-surah-select" className={css.visuallyHidden}>الانتقال إلى سورة</label>
         <select id="quran-surah-select" className={css.surahSelect} value={activeSurah}
           disabled={!surahs.length} onChange={e=>{
             const chosen=surahs.find(x=>x.number===Number(e.target.value));
             if(chosen)go(chosen.pageNumber);
           }}>
-          {!surahs.length?<option value="">جار تحميل فهرس السور…</option>:
-            surahs.map(x=><option key={x.number} value={x.number}>{x.number} — {x.nameArabic} (ص {x.pageNumber})</option>)}
+          {!surahs.length?<option value="">السور</option>:
+            surahs.map(x=><option key={x.number} value={x.number}>{x.nameArabic}</option>)}
         </select>
-        {indexError&&<span role="status">يمكن الانتقال برقم الصفحة عند تعذر تحميل الفهرس.</span>}
+        <button type="button" className={css.iconButton} aria-label="فتح فهرس المصحف" title="الفهرس"
+          onClick={()=>openDrawer('index')}>☰</button>
+        <button type="button" className={css.iconButton} aria-label="إعدادات القراءة" title="الإعدادات"
+          onClick={()=>openDrawer('settings')}>⚙</button>
+        <button type="button" className={css.exitButton} onClick={()=>{setImmersive(v=>!v);setShowAside(false);}}>
+          {immersive?'الخروج من وضع القراءة':'وضع القراءة'}
+        </button>
       </div>
-    </div>
-    {error&&<div role="alert" className={css.warning}>{error}
-      <button type="button" onClick={()=>setRefresh(x=>x+1)}>إعادة المحاولة</button></div>}
+    </header>
+    <nav className={css.toolbar} aria-label="أدوات المصحف">
+      <button type="button" className={inkMode==='marker'?css.activeTool:css.tool}
+        aria-pressed={inkMode==='marker'} title="ماركر"
+        onClick={()=>chooseTool(inkMode==='marker'?'off':'marker')}><span aria-hidden>▰</span><span>ماركر</span></button>
+      <button type="button" className={inkMode==='pen'?css.activeTool:css.tool}
+        aria-pressed={inkMode==='pen'} title="قلم"
+        onClick={()=>chooseTool(inkMode==='pen'?'off':'pen')}><span aria-hidden>✎</span><span>قلم</span></button>
+      <button type="button" className={css.tool} onClick={()=>openDrawer('search')}
+        aria-label="بحث شامل في المصحف" title="بحث شامل"><span aria-hidden>⌕</span><span>بحث شامل</span></button>
+      <button type="button" className={css.tool} onClick={()=>openDrawer('notes')} title="الملاحظات">
+        <span aria-hidden>▤</span><span>جميع ملاحظاتي ({visible.length})</span></button>
+      <button type="button" className={css.tool} onClick={()=>{setMode(mode==='madinah'?'ayah':'madinah');setInkMode('off');}}
+        title="آية بآية" aria-pressed={mode==='ayah'}><span aria-hidden>۞</span><span>آية بآية</span></button>
+      <button type="button" className={css.tool} onClick={()=>openDrawer('settings')} title="التفسير والتلاوة">
+        <span aria-hidden>☷</span><span>الإعدادات</span></button>
+      <button type="button" className={css.iconButton} onClick={()=>setHideChrome(v=>!v)}>
+        {hideChrome?'إظهار الأدوات':'إخفاء الأدوات'}
+      </button>
+    </nav>
+    {!hideChrome && inkMode!=='off' && <div className={css.contextTools} role="group" aria-label="أدوات القلم والماركر">
+      <button type="button" className={css.smallButton} onClick={()=>chooseTool('off')}>تصفح</button>
+      <button type="button" className={css.smallButton} onClick={()=>chooseTool('eraser')}>ممحاة</button>
+      <div className={css.colors} aria-label="ألوان التحديد">
+        {palette.map(c=><button key={c} type="button" className={css.colorDot}
+          style={{background:c}} aria-label={'لون '+c} aria-pressed={color===c}
+          onClick={()=>setColor(c)}/>)}
+      </div>
+      <button type="button" className={css.smallButton} onClick={undoInk}
+        disabled={!(inkByPage[page]?.length)}>تراجع</button>
+      <button type="button" className={css.smallButton} onClick={redoInk}
+        disabled={!(redoByPage[page]?.length)}>إعادة</button>
+    </div>}
+    {error && <div role="alert" className={css.warning}>{error}
+      <button type="button" onClick={()=>setRefresh(x=>x+1)}>إعادة المحاولة</button>
+    </div>}
     <div className={css.grid}>
-      <div className={css.pageShell}
-        onTouchStart={e=>{startTouch.current={x:e.touches[0]?.clientX??0,y:e.touches[0]?.clientY??0};}}
-        onTouchEnd={e=>{
-          const start=startTouch.current,end=e.changedTouches[0];startTouch.current=null;
-          if(!start||!end||inkMode!=='off'||mode!=='madinah')return;
-          const dx=end.clientX-start.x,dy=end.clientY-start.y;
-          if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.6)go(page+(dx>0?1:-1));
-        }}>
-        {mode==='madinah'?
-          <SmoothMadinahPage page={page} overlay={<>
-            <QuranInk page={page} mode={inkMode} color={color}
-              strokes={inkByPage[page]??[]} onChange={changeInk}/>
-            <QuranAyahOverlay page={page} regions={regions}
-              selectedKey={selectedKey} noteKeys={noteByKey}
-              enabled={inkMode==='off' && !loading} onSelect={selectTarget}/>
-          </>}/>:
+      <main className={css.bookStage} aria-label="صفحات مصحف المدينة">
+        {mode==='madinah' ?
+          <div className={spreadPages.length===2?css.doubleBook:css.singleBook}>
+            {spreadPages.map(leaf=><div key={leaf} className={css.leaf}
+              onTouchStart={e=>{startTouch.current={x:e.touches[0]?.clientX??0,y:e.touches[0]?.clientY??0};}}
+              onTouchEnd={e=>{
+                const start=startTouch.current,end=e.changedTouches[0];startTouch.current=null;
+                if(!start||!end||inkMode!=='off'||turnMode!=='swipe')return;
+                const dx=end.clientX-start.x,dy=end.clientY-start.y;
+                if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.6)go(page+(dx>0?1:-1));
+              }}>
+              <ReaderPrintedPage page={leaf} color={color} inkMode={inkMode}
+                strokes={inkByPage[leaf]??[]} onInkChange={changeInkFor}
+                selectedKey={selectedKey} noteKeys={noteByKey}
+                onSelect={selectTarget}/>
+              </div>)}
+          </div>:
           <div className={css.ayahDisplay} aria-label="عرض القرآن آية بآية">
             {loading?<p>جار تحميل آيات الصفحة…</p>:regions.length===0?<p>لا توجد بيانات آيات متاحة.</p>:
               regions.map(region=>{
@@ -274,97 +284,133 @@ export function MadinahReader() {
                 let wordIndex=0;
                 return <div id={'quran-ayah-'+key.replace(':','-')} key={key}
                   className={css.ayahRow} style={{fontSize}}>
-                  <button type="button" aria-pressed={selectedKey===key}
-                    className={css.ayahRef} style={{background:marked[key]}}
+                  <button type="button" className={css.ayahRef} style={{background:marked[key]}}
+                    aria-pressed={selectedKey===key}
                     onClick={()=>selectTarget({page,surah:region.surah,ayah:region.ayah,wordIndex:null})}>
-                    ﴿{key}﴾{noteByKey.has(key)?' 📝':''}
+                    ﴿{key}﴾{noteByKey.has(key)?' ●':''}
                   </button>{' '}
                   {text?text.split(/(\s+)/u).map((part,i)=>{
                     if(!part.trim())return <span key={i}>{part}</span>;
                     wordIndex++;
                     const k=key+':w'+wordIndex,n=wordIndex;
-                    return <button key={i} type="button" className={css.word} style={{background:marked[k]}}
-                      aria-pressed={selectedKey===k}
-                      onClick={()=>selectTarget({page,surah:region.surah,ayah:region.ayah,wordIndex:n})}>
-                      {part}</button>;
+                    return <button key={i} type="button" className={css.word}
+                      style={{background:marked[k]}} aria-pressed={selectedKey===k}
+                      onClick={()=>selectTarget({page,surah:region.surah,ayah:region.ayah,wordIndex:n})}>{part}</button>;
                   }):<span>جار تحميل النص العثماني…</span>}
                 </div>;
               })}
           </div>}
-        <div className={css.pageCaption}>صفحة {pageName(page)} من 604 · اضغط على آية في المصحف لإضافة ملاحظة، أو اختر «آية بآية» لتحديد كلمة.</div>
-      </div>
-      {showAside&&<aside className={css.sidebar} aria-label="آيات الصفحة والملاحظات">
+      </main>
+      {showAside && <aside className={css.sidebar} aria-label="قائمة المصحف" role="dialog" aria-modal={false}>
         <div className={css.sheetHeading}>
-          <strong>{showSearch?'البحث في القرآن':showNotes?'جميع ملاحظاتي':selectedTarget?'ملاحظة الآية':'آيات الصفحة'}</strong>
-          <button type="button" className={css.button} aria-label="إغلاق لوحة الملاحظات"
-            onClick={()=>{setShowAside(false);setShowSearch(false);setShowNotes(false);}}>إغلاق ×</button>
+          <strong>{showSettings?'إعدادات القراءة':showSearch?'البحث في المصحف':showNotes?'جميع ملاحظاتي':showIndex?'فهرس المصحف':selectedTarget?'ملاحظة الآية':'آيات الصفحة'}</strong>
+          <button type="button" className={css.smallButton} aria-label="إغلاق لوحة الملاحظات"
+            onClick={()=>{setShowAside(false);setShowSearch(false);setShowNotes(false);setShowSettings(false);setShowIndex(false);}}>إغلاق ×</button>
         </div>
-        {showSearch&&<QuranSearchPanel onNavigate={(target,key)=>{
+        {showSettings ? <div className={css.settingsPanel}>
+          <fieldset><legend>عرض الصفحة</legend>
+            {(['auto','single','double'] as ReaderPageMode[]).map(m=><label key={m}>
+              <input type="radio" name="reader-page-mode" value={m} checked={spreadMode===m}
+                onChange={()=>setSpreadMode(m)}/>
+              {m==='auto'?'تلقائي':m==='single'?'صفحة واحدة':'صفحتان (شاشة كبيرة)'}
+            </label>)}
+          </fieldset>
+          <fieldset><legend>حركة تقليب الصفحة</legend>
+            <label><input type="radio" checked={turnMode==='swipe'} onChange={()=>setTurnMode('swipe')}/> السحب والأزرار</label>
+            <label><input type="radio" checked={turnMode==='buttons'} onChange={()=>setTurnMode('buttons')}/> الأزرار فقط</label>
+          </fieldset>
+          <label htmlFor="quran-font-size">حجم خط وضع «آية بآية»</label>
+          <input id="quran-font-size" type="range" min="22" max="42" step="2" value={fontSize}
+            onChange={e=>setFontSize(Number(e.target.value))}/>
+          <div className={css.info}><strong>التفسير والتلاوة:</strong> سيُتاحان بعد إضافة مصادر موثقة وحقوق استخدامها. لا نعرض خدمات وهمية.</div>
+          {indexError&&<p role="status">فهرس السور غير متاح مؤقتًا؛ استخدم رقم الصفحة.</p>}
+        </div> : showSearch ? <QuranSearchPanel onNavigate={(target,key)=>{
           go(target,key);setShowSearch(false);setMode('ayah');
-        }}/>}
-        {showNotes&&!showSearch&&<section className={css.noteList} aria-label="جميع ملاحظاتي">
-          <h3>جميع ملاحظاتي</h3>
-          {visible.length===0?<p>لم تحفظ ملاحظات بعد في هذه المعاينة.</p>:
+        }}/> : showNotes ? <div className={css.noteList} aria-label="جميع ملاحظاتي">
+          {visible.length===0?<p>لا توجد ملاحظات شخصية محفوظة في هذه الجلسة.</p>:
             visible.map(n=><button key={n.id} type="button" className={css.noteJump}
               onClick={()=>{go(n.target.page,n.target.surah+':'+n.target.ayah);setMode('ayah');}}>
               <strong>{n.type==='teacher'?'ملاحظة الشيخ':'ملاحظتي'} · {targetKey(n.target)} · ص {n.target.page}</strong>
               <span>{n.text}</span></button>)}
-        </section>}
-        {!showSearch&&!showNotes&&<>
-        {selectedTarget&&<div className={css.note}>
-          <h3>آية {selectedTarget.surah}:{selectedTarget.ayah}
-            {selectedTarget.wordIndex!==null?' · الكلمة '+selectedTarget.wordIndex:''}</h3>
-          <div className={css.toolbar}>
-            <button type="button" className={css.button} onClick={()=>setMarked(prev=>({
-              ...prev,[targetKey(selectedTarget)]:color
-            }))}>تظليل هذا الموضع</button>
-            <button type="button" className={css.button} onClick={()=>setMarked(prev=>{
-              const next={...prev};delete next[targetKey(selectedTarget)];return next;
-            })}>إزالة التظليل</button>
+        </div> : showIndex ? <>
+          <div className={css.tabs} role="group" aria-label="أقسام فهرس المصحف">
+            {([{id:'surahs',text:'السور'},{id:'juz',text:'الأجزاء'},{id:'marks',text:'العلامات'},{id:'notes',text:'ملاحظاتي'}] as const)
+              .map(t=><button key={t.id} type="button" aria-pressed={indexTab===t.id}
+                className={indexTab===t.id?css.activeTab:css.tab} onClick={()=>setIndexTab(t.id)}>{t.text}</button>)}
           </div>
-          <label htmlFor="quran-note">ملاحظة شخصية على الموضع المحدد (حتى 500 حرف)</label>
-          <textarea id="quran-note" maxLength={500} rows={4} value={draft}
-            onChange={e=>setDraft(e.target.value)}/>
-          <button type="button" className={css.active} onClick={saveNote}>حفظ الملاحظة</button>
-          {savedNotice&&<p role="status" className={css.saveNotice}>{savedNotice}</p>}
-        </div>}
-
-        <h3>آيات هذه الصفحة</h3>
-        <label htmlFor="quran-page-search">بحث في الصفحة الحالية</label>
-        <input id="quran-page-search" placeholder="نص الآية أو 2:255" value={localSearch}
-          onChange={e=>setLocalSearch(e.target.value)}/>
-        {loading&&<p role="status">تحميل مواضع الآيات…</p>}
-        <div className={css.ayahLinks} aria-label="اختيار آية من الصفحة">
-          {filtered.map(region=>{
-            const key=refOf(region);
-            return <button type="button" key={key} aria-pressed={selectedKey===key}
-              className={selectedKey===key?css.active:css.button}
-              style={{borderColor:marked[key]??undefined}}
-              onClick={()=>selectTarget({page,surah:region.surah,ayah:region.ayah,wordIndex:null})}>
-              {key}{noteByKey.has(key)?' ●':''}</button>;
-          })}
-        </div>
-        {visible.filter(n=>n.target.page===page).length>0&&<div className={css.noteList}>
-          <h3>ملاحظات الصفحة</h3>
-          {visible.filter(n=>n.target.page===page).map(n=>
-            <button key={n.id} type="button" className={css.noteJump}
-              onClick={()=>{selectTarget(n.target);setShowNotes(false);}}>
-              <strong>{targetKey(n.target)} · {n.type==='teacher'?'ملاحظة الشيخ':'ملاحظتي'}</strong>
-              <span>{n.text}</span></button>)}
-        </div>}
+          {indexTab==='surahs' ? <div className={css.indexRows}>
+            {surahs.map(s=><button key={s.number} type="button" onClick={()=>{go(s.pageNumber);setShowAside(false);}}>
+              <span>{s.number} · {s.nameArabic}</span><small>ص {s.pageNumber}</small>
+            </button>)}
+            {!surahs.length&&<p>جار تحميل فهرس السور من المصدر المعتمد…</p>}
+          </div> : indexTab==='juz'? <p className={css.info}>بدايات الأجزاء تحتاج فهرس صفحات مستقلًا موثقًا؛ التنقل بالسور والصفحات متاح الآن.</p>:
+          indexTab==='marks'?<div className={css.indexRows}>
+            <button type="button" onClick={()=>setBookmarks(prev=>prev.includes(page)?prev.filter(n=>n!==page):[...prev,page].sort((a,b)=>a-b))}>
+              {bookmarks.includes(page)?'إزالة علامة الصفحة الحالية':'إضافة علامة للصفحة الحالية'} · {page}
+            </button>
+            {bookmarks.map(n=><button type="button" key={n} onClick={()=>{go(n);setShowAside(false);}}>صفحة {n}</button>)}
+          </div>:<div className={css.noteList}>
+            {visible.length===0?<p>لا توجد ملاحظات في هذه الجلسة.</p>:
+              visible.map(n=><button key={n.id} className={css.noteJump} type="button"
+                onClick={()=>{go(n.target.page,n.target.surah+':'+n.target.ayah);setMode('ayah');}}>
+                {targetKey(n.target)} · ص {n.target.page} — {n.text}</button>)}
+          </div>}
+        </> : <>
+          {selectedTarget && <div className={css.note}>
+            <h3>آية {selectedTarget.surah}:{selectedTarget.ayah}
+              {selectedTarget.wordIndex!==null?' · الكلمة '+selectedTarget.wordIndex:''}</h3>
+            <div className={css.contextTools}>
+              <button type="button" className={css.smallButton} onClick={()=>setMarked(prev=>({
+                ...prev,[targetKey(selectedTarget)]:color
+              }))}>تظليل هذا الموضع</button>
+              <button type="button" className={css.smallButton} onClick={()=>setMarked(prev=>{
+                const next={...prev};delete next[targetKey(selectedTarget)];return next;
+              }}>إزالة التظليل</button>
+            </div>
+            <label htmlFor="quran-note">ملاحظة على الموضع المحدد (حتى 500 حرف)</label>
+            <textarea id="quran-note" maxLength={500} rows={4} value={draft}
+              onChange={e=>setDraft(e.target.value)}/>
+            <button type="button" className={css.primaryButton} onClick={saveNote}>حفظ الملاحظة</button>
+            {savedNotice&&<p role="status" className={css.saveNotice}>{savedNotice}</p>}
+          </div>}
+          <h3>آيات هذه الصفحة</h3>
+          <label htmlFor="quran-page-search">البحث في الصفحة الحالية</label>
+          <input id="quran-page-search" value={localSearch} onChange={e=>setLocalSearch(e.target.value)}
+            placeholder="رقم الآية أو نصها"/>
+          <div className={css.ayahLinks} aria-label="اختيار آية من الصفحة">
+            {filtered.map(region=>{
+              const key=refOf(region);
+              return <button type="button" key={key} className={selectedKey===key?css.activeTab:css.tab}
+                aria-pressed={selectedKey===key}
+                onClick={()=>selectTarget({page,surah:region.surah,ayah:region.ayah,wordIndex:null})}>
+                {key}{noteByKey.has(key)?' ●':''}</button>;
+            })}
+          </div>
+          {visible.filter(n=>n.target.page===page).map(n=><button key={n.id} className={css.noteJump} type="button"
+            onClick={()=>selectTarget(n.target)}>{targetKey(n.target)} · {n.text}</button>)}
         </>}
-        {!showSearch&&!showNotes&&<p className={css.info}>ستظهر ملاحظات الشيخ المعتمدة من سجل الفصل بعد ربط خدمة التقارير الآمنة. لا تعرض هذه المعاينة بيانات شيخ وهمية.</p>}
+        <p className={css.info}>الملاحظات والرسم في هذه النسخة محليان ومؤقتان، وليسا متزامنين مع الشيخ أو حساب الطالب بعد.</p>
       </aside>}
     </div>
-    <div className={css.readerFoot}>
-      <span>الملاحظات والتظليل والرسم الآن محلية مؤقتة لملف {selected.profile.name}، ولا تتم مزامنتها مع الشيخ أو الخادم بعد.</span>
-      <button type="button" className={css.button} aria-label="تقليب إلى الصفحة السابقة"
+    <footer className={css.readerFoot} aria-label="شريط التنقل بين صفحات المصحف">
+      <button type="button" className={css.navButton} aria-label="تقليب إلى الصفحة السابقة"
         disabled={page===1} onClick={()=>go(page-1)}>السابق</button>
-      <strong aria-live="polite">{page} / 604</strong>
-      <button type="button" className={css.button} aria-label="تقليب إلى الصفحة التالية"
+      <button type="button" className={css.navButton} aria-label="الصفحة السابقة"
+        disabled={page===1} onClick={()=>go(page-1)} title="الصفحة السابقة">‹</button>
+      <form className={css.pageForm} onSubmit={e=>{
+        e.preventDefault();const n=Number(pageEntry);
+        if(Number.isInteger(n)&&n>=1&&n<=QURAN_PAGE_COUNT)go(n);
+      }}>
+        <label htmlFor="quran-page-input">الصفحة</label>
+        <input id="quran-page-input" type="number" dir="ltr" min="1" max="604" step="1"
+          value={pageEntry} onChange={e=>setPageEntry(e.target.value)}/>
+        <span>من 604</span><button type="submit">انتقال</button>
+      </form>
+      <button type="button" className={css.navButton} aria-label="الصفحة التالية"
+        disabled={page===604} onClick={()=>go(page+1)} title="الصفحة التالية">›</button>
+      <button type="button" className={css.navButton} aria-label="تقليب إلى الصفحة التالية"
         disabled={page===604} onClick={()=>go(page+1)}>التالي</button>
-      <button type="button" className={css.button} onClick={()=>{setShowAside(v=>!v);setShowNotes(false);setShowSearch(false);}}>الآيات</button>
-      <button type="button" className={css.button} onClick={()=>{setShowAside(true);setShowNotes(true);setShowSearch(false);}}>ملاحظاتي</button>
-    </div>
+      <button type="button" className={css.footerNotes} onClick={()=>openDrawer('notes')}>ملاحظاتي</button>
+    </footer>
   </div>;
 }
