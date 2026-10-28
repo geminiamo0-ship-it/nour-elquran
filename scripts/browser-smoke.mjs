@@ -345,6 +345,14 @@ try {
   const spreadValues=spread.result?.value;
   assert(spreadValues&&Object.values(spreadValues).every(Boolean),
     'Desktop Quran next/previous must turn physical spreads without repeated leaves: '+JSON.stringify(spreadValues??spread));
+  // The desktop Quran route is an app, not a second scrollable dashboard panel.
+  const desktopGeometry=await socket.send('Runtime.evaluate',{
+    expression:`(()=>{const stage=document.querySelector('main[aria-label="صفحات مصحف المدينة"]');const reader=stage?.parentElement?.parentElement;const footer=document.querySelector('footer[aria-label="شريط التنقل بين صفحات المصحف"]');const r=reader?.getBoundingClientRect();const f=footer?.getBoundingClientRect();return {fullViewport:!!r&&Math.abs(r.top)<2&&Math.abs(r.bottom-innerHeight)<2,footerVisible:!!f&&f.top>=0&&f.bottom<=innerHeight+1,bodyLocked:document.body.style.overflow==='hidden'};})()`,
+    returnByValue:true,
+  });
+  const desktopGeometryValues=desktopGeometry.result?.value;
+  assert(desktopGeometryValues&&Object.values(desktopGeometryValues).every(Boolean),
+    'Desktop Quran should own the viewport with visible navigation: '+JSON.stringify(desktopGeometryValues??desktopGeometry));
   await socket.send('Runtime.evaluate',{
     expression:`document.querySelector('[aria-label="فتح فهرس المصحف"]')?.click()`,
     returnByValue:true,
