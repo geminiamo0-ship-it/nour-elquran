@@ -57,3 +57,9 @@ Date / Issue / PR / exact head SHA; changed paths; tests and exact Actions URL; 
 - The Quran fixture uses the already approved V3 sample, explicitly not an authoritative Quran edition; full licensed canonical text/audio and realtime media are not supplied. No actual homework is submitted, no session joined, no real student records/billing/authorization or media saved.
 - Learner-local study notes/assignment drafts are in-memory and explicitly not teacher-approved grades or published reports. Switching sibling profiles keys page-local forms, while the shared provider partitions all local state by learner ID. Phone/email are not recorded to session storage.
 - Needs exact-head CI lint/strict TS/unit/Next build/Chrome 360/390/1440 + all 7 routed pages + Mushaf interaction checks; screenshots and accessibility manual review; keep Issue #44 open for integration and final acceptance. M3 auth/RLS remains required before any real data.
+
+## 2026-10-28 — CORE-02 #40 vinext compatibility probe (unmerged)
+- Dedicated branch `feat/40-vinext-compatibility-spike` proposes isolated CI-only vinext 1.3.1 scan, Cloudflare-targeted build and local SSR/RTL/cookie smoke. No app source migration, production config, account, paid service or deployment.
+- Files: `scripts/vinext-spike.sh`, `.github/workflows/vinext-spike.yml`, `docs/adr/0003-vinext-compatibility-spike.md`. The workflow runs on the focused PR and can be dispatched manually.
+- **Evidence pending:** check exact PR HEAD and both Verify and Vinext compatibility workflow results; inspect scanner logs and any build/runtime errors. A successful local Node server is **not** Workers runtime validation. Keep #40 OPEN until actual Workers/staging and ADR acceptance.
+- Main ruleset enforcement #1 still requires GitHub owner verification; repo stays PUBLIC. No changes to sensitive data or secrets.
