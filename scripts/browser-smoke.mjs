@@ -260,13 +260,32 @@ try {
     return Boolean(result.result?.value);
   }, 'hydrated progress route');
   const progressResult = await socket.send('Runtime.evaluate', {
-    expression: "(async()=>{ const pause=()=>new Promise(r=>setTimeout(r,150)); const switcher=document.querySelector('#learner-switch'); switcher.value='demo-active'; switcher.dispatchEvent(new Event('change',{bubbles:true})); await pause(); const table=document.querySelector('table'); const headers=[...document.querySelectorAll('table thead th')].map(x=>x.textContent); const noFilters=!document.querySelector('[aria-label=\"تصفية التقارير بحسب التقييم\"]'); const button=document.querySelector('table tbody button[aria-expanded]'); const before=button?.getAttribute('aria-expanded')==='false'; button?.click(); await pause(); const expanded=button?.getAttribute('aria-expanded')==='true'; const details=document.querySelector('table tbody tr td[colspan]')?.textContent.includes('المصحف المشروح'); switcher.value='demo-new'; switcher.dispatchEvent(new Event('change',{bubbles:true})); await pause(); const isolated=!document.querySelector('table')&&document.querySelector('#student-main')?.textContent.includes('لا توجد تقارير منشورة'); return {table:!!table,headers:headers.length===5,noFilters,before,expanded,details,isolated}; })()",
+    expression: "(async()=>{ const pause=()=>new Promise(r=>setTimeout(r,150)); const switcher=document.querySelector('#learner-switch'); switcher.value='demo-active'; switcher.dispatchEvent(new Event('change',{bubbles:true})); await pause(); const table=document.querySelector('table'); const headers=[...table.querySelectorAll('thead th')].map(x=>x.textContent); const noFilters=!document.querySelector('[aria-label=\"تصفية التقارير بحسب التقييم\"]'); const button=document.querySelector('table tbody button[aria-expanded]'); const before=button?.getAttribute('aria-expanded')==='false'; button?.click(); await pause(); const expanded=button?.getAttribute('aria-expanded')==='true'; const details=document.querySelector('table tbody tr td[colspan]')?.textContent.includes('المصحف المشروح'); switcher.value='demo-new'; switcher.dispatchEvent(new Event('change',{bubbles:true})); await pause(); const isolated=!document.querySelector('table')&&document.querySelector('#student-main')?.textContent.includes('لا توجد تقارير منشورة'); return {table:!!table,headers:headers.length===5,noFilters,before,expanded,details,isolated}; })()",
     awaitPromise: true, returnByValue: true,
   });
   const prog = progressResult.result?.value;
   assert(prog && Object.values(prog).every(Boolean),
     'S01 progress table Chrome smoke: ' + JSON.stringify(prog ?? progressResult));
   console.log('S01 progress RTL table, inline expansion, no filters and sibling isolation passed');
+
+
+  // S02: approved attendance categories and local appeal preview only; sibling switch clears it.
+  await socket.send('Page.navigate', { url: url + 'student/progress' });
+  await waitFor(async () => {
+    const result = await socket.send('Runtime.evaluate', {
+      expression: "document.querySelector('#learner-switch')?.options.length >= 5",
+      returnByValue: true,
+    });
+    return Boolean(result.result?.value);
+  }, 'hydrated attendance route');
+  const attendanceResult = await socket.send('Runtime.evaluate', {
+    expression: "(async()=>{ const pause=()=>new Promise(r=>setTimeout(r,180)); const switcher=document.querySelector('#learner-switch'); switcher.value='demo-active'; switcher.dispatchEvent(new Event('change',{bubbles:true})); await pause(); const ledger=!!document.querySelector('[aria-label=\"جدول سجل الحضور والغياب\"] table'); const counts=document.querySelector('[aria-label=\"ملخص الحضور\"]')?.textContent.includes('أُعيدت جدولتها'); const button=[...document.querySelectorAll('button')].find(x=>x.textContent.includes('طلب مراجعة الغياب')); const canAppeal=!!button; button?.click(); await pause(); const reason=!!document.querySelector('#attendance-appeal-reason'); const noSend=document.querySelector('#student-main')?.textContent.includes('لن يُرفع الملف أو يُرسل الطلب'); switcher.value='demo-new'; switcher.dispatchEvent(new Event('change',{bubbles:true})); await pause(); const isolated=!document.querySelector('[aria-label=\"جدول سجل الحضور والغياب\"] table')&&document.querySelector('#student-main')?.textContent.includes('لا توجد سجلات حضور'); return {ledger,counts,canAppeal,reason,noSend,isolated}; })()",
+    awaitPromise: true, returnByValue: true,
+  });
+  const attendanceChecks = attendanceResult.result?.value;
+  assert(attendanceChecks && Object.values(attendanceChecks).every(Boolean),
+    'S02 attendance appeal Chrome smoke failed: ' + JSON.stringify(attendanceChecks ?? attendanceResult));
+  console.log('S02 attendance ledger, appeal preview and learner isolation Chrome smoke passed');
 
 } finally {
   socket?.close();

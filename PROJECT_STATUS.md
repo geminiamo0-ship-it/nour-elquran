@@ -63,3 +63,10 @@ Date / Issue / PR / exact head SHA; changed paths; tests and exact Actions URL; 
 - Branch: `feat/44-student-az-reports-s01` under #44. Updates `ProgressWorkspace` from unapproved filters/cards to RTL semantic academic table. Adds newest published-per-lesson normalization, page size 5, inline accessible details and honest missing archive.
 - Tests: helper and SSR plus appended real Chrome interaction smoke; **CI not yet verified at this point**. No backend, payment, real Quran or deployment changes.
 - Next: complete exact-head CI; if passing merge S01, then S02 attendance and 7-day self-service appeals.
+
+## 2026-10-28 — STU-AZ S02 attendance + seven-day appeal preview (PR pending)
+- Branch `feat/73-student-attendance-appeals-s02`, Issue #73; builds on merged S01 PR #72 (`6ff52349`).
+- `attendance.ts` models teacher-recorded outcomes (present, absent, cancelled, rescheduled, pending), deduplicated latest per lesson, seven-day server timestamp policy, allowed local evidence types/sizes and invented demo sample records.
+- `AttendanceWorkspace` is within Student Progress below academic report table: separate four-category counts and detailed RTL register, opened eligible appeal with required written reason and optional file *selection only*.
+- There is NO transport/API submission; preview says explicitly not sent, disabled send; expiry shows contact-admin exception text. Never infer a no-show from video attendance.
+- Validation requires #73 exact-head CI/Chrome/fixtures. UI review and authorized backend audit pending.
