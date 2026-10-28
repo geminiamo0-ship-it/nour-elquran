@@ -113,3 +113,8 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - Working branch `fix/90-quran-spread-turn-navigation` (do not push directly to main). Reader previously rendered [2,3] for page 2 **and** page 3, so Next could look broken on desktop. `quranReaderLayout.ts` now provides `getAdjacentReaderPage`; `MadinahReader.tsx` uses it for both swipe and four footer buttons. Page number, surah and ayah jumps remain direct, not spread-normalized.
 - Unit regression in `quranReaderLayout.test.ts`; Chrome desktop 1→[2,3]→[4,5]→[2,3]→1 plus tablet 768px single-leaf navigation and screenshot in `scripts/browser-smoke.mjs`.
 - **Next:** create linked Draft PR, inspect exact-head CI, fix failures, obtain mobile/tablet/desktop visual review and required human approval. Do not merge/close #90 until acceptance. No Vercel previews, backend/Postgres, R2, Quran asset edits or production deployment.
+
+## 2026-10-28 — next verification: tablet fullscreen Quran (#90 / draft PR #96)
+- Added a tablet (<900px) immersive reader mount/resize rule to `apps/web/src/features/student/components/MadinahReader.tsx`, using existing scroll-lock cleanup and compact exit action. Prior 701–899px reader stayed below student shell and could hide its footer.
+- Added real 768x900 Chrome viewport, visible page/footer, body scroll-lock and non-scrolling inner stage assertions to `scripts/browser-smoke.mjs`; do not confuse source edits with a passed run.
+- **Next exact step:** inspect PR #96 latest HEAD, verify all Verify jobs and browser screenshot at that SHA, correct failures; seek human tablet/keyboard review before merging. Do not change production, R2 or backend.
