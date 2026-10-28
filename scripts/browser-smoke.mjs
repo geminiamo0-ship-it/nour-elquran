@@ -335,21 +335,21 @@ try {
   await socket.send('Page.navigate',{url:url+'student/mushaf'});
   await waitFor(async()=>{
     const out=await socket.send('Runtime.evaluate',{
-      expression:`Boolean(document.querySelector('[aria-label=\"تقليب إلى الصفحة التالية\"]'))`,returnByValue:true,
+      expression:`Boolean(document.querySelector('[aria-label="تقليب إلى الصفحة التالية"]'))`,returnByValue:true,
     });return Boolean(out.result?.value);
   },'desktop Quran reader shell');
   const spread=await socket.send('Runtime.evaluate',{
-    expression:`(async()=>{const pause=()=>new Promise(r=>setTimeout(r,210));const next=document.querySelector('[aria-label=\"تقليب إلى الصفحة التالية\"]');next?.click();await pause();next?.click();await pause();const actual=document.querySelector('[data-spread-pages]')?.getAttribute('data-spread-pages');const pages=document.querySelectorAll('[aria-label^=\"مصحف المدينة، الصفحة\"]').length;return {actual,pages};})()`,
+    expression:`(async()=>{const pause=()=>new Promise(r=>setTimeout(r,210));const next=document.querySelector('[aria-label="تقليب إلى الصفحة التالية"]');next?.click();await pause();next?.click();await pause();const actual=document.querySelector('[data-spread-pages]')?.getAttribute('data-spread-pages');const pages=document.querySelectorAll('[aria-label^="مصحف المدينة، الصفحة"]').length;return {actual,pages};})()`,
     awaitPromise:true,returnByValue:true,
   });
   assert(spread.result?.value?.actual==='2,3'&&spread.result?.value?.pages===2,
     'Desktop Quran spread must have two physical interactive leaves: '+JSON.stringify(spread.result?.value));
   await socket.send('Runtime.evaluate',{
-    expression:`document.querySelector('[aria-label=\"فتح فهرس المصحف\"]')?.click()`,
+    expression:`document.querySelector('[aria-label="فتح فهرس المصحف"]')?.click()`,
     returnByValue:true,
   });
   const drawerVisible=await socket.send('Runtime.evaluate',{
-    expression:`Boolean(document.querySelector('[aria-label=\"أقسام فهرس المصحف\"]'))`,returnByValue:true,
+    expression:`Boolean(document.querySelector('[aria-label="أقسام فهرس المصحف"]'))`,returnByValue:true,
   });
   assert(drawerVisible.result?.value===true,'Quran index should open in a separate responsive drawer');
   const desktopSpreadImage=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
