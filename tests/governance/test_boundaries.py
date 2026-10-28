@@ -32,6 +32,14 @@ class ImportBoundaryTest(unittest.TestCase):
         self.write("apps/web/src/features/beta/components/X.ts", "export const X = 1;")
         self.assertTrue(any("cross-feature" in e for e in checker.check(self.root)))
 
+    def test_rejects_unresolved_deep_feature_import(self):
+        self.write("apps/web/src/features/alpha/index.ts", 'import { X } from "@/features/beta/internal/X";')
+        self.assertTrue(any("cross-feature" in e for e in checker.check(self.root)))
+
+    def test_rejects_shared_to_missing_feature(self):
+        self.write("apps/web/src/shared/ui/Badge.tsx", 'import "@/features/missing";')
+        self.assertTrue(any("shared cannot" in e for e in checker.check(self.root)))
+
     def test_rejects_shared_to_feature(self):
         self.write("apps/web/src/shared/ui/Badge.tsx", 'import "@/features/alpha";')
         self.write("apps/web/src/features/alpha/index.ts", "export const x = 1;")
