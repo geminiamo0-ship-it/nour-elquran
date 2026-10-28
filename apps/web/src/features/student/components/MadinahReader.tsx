@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ReaderIcon } from './ReaderIcon';
 import { useStudent } from '../StudentContext';
 import {
   clampQuranPage, parseQuranAyahRegions, parseQuranChapter,
@@ -35,6 +37,7 @@ const palette=['#f6cd46','#86c5a8','#ec99a4','#81b5e4','#d2a7df'];
 
 export function MadinahReader() {
   const {selected}=useStudent();
+  const router=useRouter();
   const [page,setPage]=useState(1);
   const [pageEntry,setPageEntry]=useState('1');
   const [mode,setMode]=useState<QuranViewMode>('madinah');
@@ -202,7 +205,7 @@ export function MadinahReader() {
   return <div className={[css.reader,immersive?css.immersive:''].join(' ')} dir="rtl">
     <header className={css.readerHeader}>
       <div className={css.identity}>
-        <span className={css.brandMark} aria-hidden="true">۞</span>
+        <span className={css.brandMark}><ReaderIcon name="book" /></span>
         <div><strong>مصحف نور القرآن</strong><small>مصحف المدينة · حفص عن عاصم · نص قرآني موثّق</small></div>
       </div>
       <div className={css.headerActions}>
@@ -216,10 +219,10 @@ export function MadinahReader() {
             surahs.map(x=><option key={x.number} value={x.number}>{x.nameArabic}</option>)}
         </select>
         <button type="button" className={css.iconButton} aria-label="فتح فهرس المصحف" title="الفهرس"
-          onClick={()=>openDrawer('index')}>☰</button>
+          onClick={()=>openDrawer('index')}><ReaderIcon name="index" /></button>
         <button type="button" className={css.iconButton} aria-label="إعدادات القراءة" title="الإعدادات"
-          onClick={()=>openDrawer('settings')}>⚙</button>
-        <button type="button" className={css.exitButton} onClick={()=>{setImmersive(v=>!v);setShowAside(false);}}>
+          onClick={()=>openDrawer('settings')}><ReaderIcon name="settings" /></button>
+        <button type="button" className={css.exitButton} onClick={()=>{if(compactDevice&&immersive)router.push('/student');else setImmersive(v=>!v);setShowAside(false);}}>
           {immersive?'الخروج من وضع القراءة':'وضع القراءة'}
         </button>
       </div>
@@ -227,18 +230,18 @@ export function MadinahReader() {
     <nav className={css.toolbar} aria-label="أدوات المصحف">
       <button type="button" className={inkMode==='marker'?css.activeTool:css.tool}
         aria-pressed={inkMode==='marker'} title="ماركر"
-        onClick={()=>chooseTool(inkMode==='marker'?'off':'marker')}><span aria-hidden>▰</span><span>ماركر</span></button>
+        onClick={()=>chooseTool(inkMode==='marker'?'off':'marker')}><ReaderIcon name="marker" /><span>ماركر</span></button>
       <button type="button" className={inkMode==='pen'?css.activeTool:css.tool}
         aria-pressed={inkMode==='pen'} title="قلم"
-        onClick={()=>chooseTool(inkMode==='pen'?'off':'pen')}><span aria-hidden>✎</span><span>قلم</span></button>
+        onClick={()=>chooseTool(inkMode==='pen'?'off':'pen')}><ReaderIcon name="pen" /><span>قلم</span></button>
       <button type="button" className={css.tool} onClick={()=>openDrawer('search')}
-        aria-label="بحث شامل في المصحف" title="بحث شامل"><span aria-hidden>⌕</span><span>بحث شامل</span></button>
+        aria-label="بحث شامل في المصحف" title="بحث شامل"><ReaderIcon name="search" /><span>بحث شامل</span></button>
       <button type="button" className={css.tool} onClick={()=>openDrawer('notes')} title="الملاحظات">
-        <span aria-hidden>▤</span><span>جميع ملاحظاتي ({visible.length})</span></button>
+        <ReaderIcon name="notes" /><span>جميع ملاحظاتي ({visible.length})</span></button>
       <button type="button" className={css.tool} onClick={()=>{setMode(mode==='madinah'?'ayah':'madinah');setInkMode('off');}}
-        title="آية بآية" aria-pressed={mode==='ayah'}><span aria-hidden>۞</span><span>آية بآية</span></button>
+        title="آية بآية" aria-pressed={mode==='ayah'}><ReaderIcon name="ayah" /><span>آية بآية</span></button>
       <button type="button" className={css.tool} onClick={()=>openDrawer('settings')} title="التفسير والتلاوة">
-        <span aria-hidden>☷</span><span>الإعدادات</span></button>
+        <ReaderIcon name="settings" /><span>الإعدادات</span></button>
       <button type="button" className={css.iconButton} onClick={()=>setHideChrome(v=>!v)}>
         {hideChrome?'إظهار الأدوات':'إخفاء الأدوات'}
       </button>
@@ -373,7 +376,7 @@ export function MadinahReader() {
             <button type="button" className={css.primaryButton} onClick={saveNote}>حفظ الملاحظة</button>
             {savedNotice&&<p role="status" className={css.saveNotice}>{savedNotice}</p>}
           </div>}
-          <h3>آيات هذه الصفحة</h3>
+          {!selectedTarget&&<><h3>آيات هذه الصفحة</h3>
           <label htmlFor="quran-page-search">البحث في الصفحة الحالية</label>
           <input id="quran-page-search" value={localSearch} onChange={e=>setLocalSearch(e.target.value)}
             placeholder="رقم الآية أو نصها"/>
@@ -387,7 +390,8 @@ export function MadinahReader() {
             })}
           </div>
           {visible.filter(n=>n.target.page===page).map(n=><button key={n.id} className={css.noteJump} type="button"
-            onClick={()=>selectTarget(n.target)}>{targetKey(n.target)} · {n.text}</button>)}
+            onClick={()=>selectTarget(n.target)}>{targetKey(n.target)} · {n.text}</button>)}</>}
+          {selectedTarget&&<button type="button" className={css.smallButton} onClick={()=>setSelectedTarget(null)}>اختيار آية أخرى</button>}
         </>}
         <p className={css.info}>الملاحظات والرسم في هذه النسخة محليان ومؤقتان، وليسا متزامنين مع الشيخ أو حساب الطالب بعد.</p>
       </aside>}
