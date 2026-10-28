@@ -88,3 +88,8 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - Preview Deployments temporarily disabled for `nour-elquran`, `nour-elquran-422`, `nour-elquran-422o` to prevent exhausting Hobby builds. Production auto deployment unchanged.
 - Quran assets prefer isolated Cloudflare worker; pinned GitHub source fallback. Real Cloudflare upload state requires Santo #215 verification.
 - Teacher notes publication, cross-device personal notes, classroom real-time annotations, tafsir and voice playback are not live; no teacher account/auth/RLS backend. This PR implements frontend interactions and typed note authorization boundary only.
+
+## 2026-10-28 — Quran P0 #88 physical touch regression hardening (PR #89, unmerged)
+- The existing browser smoke simulated `Element.click()` on a printed ayah path, which could pass even if the polygon was clipped, covered or pointer-disabled. Replaced it with viewport hit-testing via `document.elementFromPoint` and actual Chrome DevTools `Input.dispatchMouseEvent` press/release; the test then requires the note editor to open. This is a stronger browser interaction gate, not yet proof of human touch-device usability.
+- Changed `scripts/browser-smoke.mjs` on `fix/88-quran-reader-mobile-interaction`, commit `6fe1890782c493850c10b664a32e93cae4df7e6b`. Existing P0 unit/Chrome and responsive tests remain. Check the exact latest PR head GitHub Actions after subsequent documentation commits; do not merge until green and required review.
+- No changes to scripture, secrets, production, R2, payments or student records. Notes remain session-local. Next: inspect real pointer-test CI and 390px screenshots, correct any clipping/hit failures, then request human mobile visual review.
