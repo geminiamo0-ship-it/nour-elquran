@@ -38,6 +38,7 @@ export function QuranRecitationPlayer({ request, pageVerses, surahs, onVerseChan
   const [queueLength, setQueueLength] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     // An explicit verse click changes the requested starting point but does not autoplay.
@@ -137,7 +138,7 @@ export function QuranRecitationPlayer({ request, pageVerses, surahs, onVerseChan
     audio.current?.pause(); onVerseChange(null); onClose();
   }
 
-  return <section className={css.dock} aria-label="مشغل التلاوة" dir="rtl">
+  return <section className={css.dock} aria-label="مشغل التلاوة" dir="rtl" data-compact-player={!expanded}>
     <audio ref={audio} preload="none"
       onEnded={ended}
       onTimeUpdate={event => setElapsed(event.currentTarget.currentTime)}
@@ -161,15 +162,26 @@ export function QuranRecitationPlayer({ request, pageVerses, surahs, onVerseChan
         <span>{current ? 'الآية '+quranAudioKey(current)+' · '+(index+1)+'/'+queueLength :
           status==='complete'?'اكتملت التلاوة':'اختر النطاق واضغط تشغيل'}</span>
       </div>
+
+      <button type="button" className={css.detailsButton} aria-label="إعدادات التلاوة المتقدمة"
+        title="اختيار القارئ والتكرار والسرعة" aria-expanded={expanded}
+        aria-controls="quran-audio-advanced" onClick={() => setExpanded(v=>!v)}>
+        <ReaderIcon name="settings" />
+      </button>
+      <button type="button" className={css.closeButton} aria-label="إغلاق مشغل التلاوة" onClick={close}>×</button>
+    </div>
+    <div className={css.miniProgress} aria-hidden="true">
+      <span style={{width:duration>0?Math.max(0,Math.min(100,elapsed/duration*100))+'%':'0%'}} />
+    </div>
+    <div id="quran-audio-advanced" className={css.advanced} hidden={!expanded}>
+      <h3>خيارات التلاوة</h3>
       <label className={css.selectLabel}>القارئ
         <select aria-label="اختيار القارئ" value={reciter}
           onChange={e => chooseReciter(e.target.value as QuranReciterId)}>
           {QURAN_RECITERS.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
       </label>
-      <button type="button" className={css.closeButton} aria-label="إغلاق مشغل التلاوة" onClick={close}>×</button>
-    </div>
-    <div className={css.secondaryRow}>
+      <div className={css.secondaryRow}>
       <label>النطاق
         <select aria-label="نطاق التلاوة" value={scope}
           onChange={e => {audio.current?.pause();queue.current=[];setQueueLength(0);setStatus('idle');setScope(e.target.value as QuranAudioScope);}}>
@@ -198,8 +210,9 @@ export function QuranRecitationPlayer({ request, pageVerses, surahs, onVerseChan
         <span>{formatAudioClock(duration)}</span>
       </div>
     </div>
+      <span className={css.attribution}>بث صوتي مباشر من EveryAyah، بدون نسخ التسجيلات أو رفعها إلى R2.</span>
+    </div>
     {error && <p className={css.error} role="alert">{error}</p>}
     {status==='loading'&&!error && <span className={css.loading} role="status">جار تحميل التلاوة…</span>}
-    <span className={css.attribution}>بث صوتي مباشر من EveryAyah، بدون نسخ التسجيلات أو رفعها إلى R2.</span>
   </section>;
 }

@@ -102,3 +102,9 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - New `quranReciters.ts` metadata-only source and pure verse queue builder; `components/QuranRecitationPlayer.tsx` + CSS compact media dock. `MadinahReader` toolbar includes a Tilaawa icon and printed/ayah notes have 'Listen to this verse' action. Reader highlights the current verse while listening (not a fabricated word sync).
 - Audio streams third-party EveryAyah directly; source metadata MIT does not license original media. Do not mirror 6,236 files to R2 or enable offline storage until licensed. For future official audio use King Fahd Complex five Hafs reciters listed at https://qurancomplex.gov.sa/quran-audios/ with explicit site/app permission and pinned archive checksums.
 - No DB/backend per owner; all profile notes and playback state in local React only. Test and merge one PR, no repeated Vercel previews.
+
+## Quran compact UX handoff (#94)
+- Branch `fix/94-quran-page-first-compact-toolbar-audio`. Main parent `6cc73b242cf3552ee78d41f0411c3fc0cecc44a5`; PR only after exact-head green CI.
+- `QuranRecitationPlayer.tsx` settings live in optional accessible `aria-expanded` controls; reciter/scope/repeat/speed/scrub DOM retained and a tiny time-progress track remains on compact bar. No layout jumping on expand/collapse.
+- `MadinahReader.module.css` removes prior forced audio-open `100dvh - 270px` leaf width clamp, minimizes vertical bars while preserving targets. `MadinahReader.tsx` collapses toolbar meaningfully, starts mobile with compact one-row icons visible.
+- No PostgreSQL or persistent notes; owner explicitly requires one backend phase at end. Verify 375x667 screenshot, 360/390/1440 existing smoke, 53+ unit tests, no manual Vercel preview/build.

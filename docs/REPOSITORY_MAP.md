@@ -139,3 +139,8 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `components/QuranRecitationPlayer.tsx`: accessible HTMLAudioElement, active ayah callback, error/buffering/seek/progress, prev/next, speed and repeat count, single audio dock without backend.
 - `components/QuranRecitationPlayer.module.css`: mobile horizontal compact controls and stable page-first layout.
 - `quranReciters.test.ts` and `scripts/browser-smoke.mjs`: source IDs, no invented missing ayah, player six reciter selector and no autoplay.
+
+## Quran mobile page-first controls (#94)
+- `components/QuranRecitationPlayer.tsx` + CSS: compact audio dock, separate advanced listening options controlled by `aria-expanded` and floating panel, all existing six qaris, page/surah/ayah sequences, repeat, speed and seek preserved.
+- `components/MadinahReader.tsx` + CSS: actual collapsible one-row icon toolbelt, smaller header/footer, correct dynamic Quran canvas sizing with audio open; no additional media calls or backend.
+- `scripts/browser-smoke.mjs`: 375×667 compact player visual/geometry and all-feature options checks with screenshot.

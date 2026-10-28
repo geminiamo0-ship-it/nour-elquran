@@ -81,7 +81,7 @@ export function MadinahReader() {
   useEffect(()=>{
     const update=()=>setCompactDevice(window.innerWidth<900);
     update();window.addEventListener('resize',update);
-    if(window.matchMedia('(max-width:700px)').matches){setImmersive(true);setHideChrome(true);setShowAside(false);}
+    if(window.matchMedia('(max-width:700px)').matches){setImmersive(true);setHideChrome(false);setShowAside(false);}
     return ()=>window.removeEventListener('resize',update);
   },[]);
   useEffect(()=>{
@@ -236,7 +236,7 @@ export function MadinahReader() {
         </button>
       </div>
     </header>
-    <nav className={css.toolbar} aria-label="أدوات المصحف">
+    <nav className={[css.toolbar,hideChrome?css.toolbarCollapsed:''].join(' ')} aria-label="أدوات المصحف">
       <button type="button" className={inkMode==='marker'?css.activeTool:css.tool}
         aria-pressed={inkMode==='marker'} title="ماركر"
         onClick={()=>chooseTool(inkMode==='marker'?'off':'marker')}><ReaderIcon name="marker" /><span>ماركر</span></button>
@@ -252,8 +252,11 @@ export function MadinahReader() {
       <button type="button" className={css.tool} onClick={()=>openRecitation('page',selectedTarget)}
         title="التلاوة" aria-label="فتح مشغل التلاوة">
         <ReaderIcon name="play" /><span>تلاوة</span></button>
-      <button type="button" className={css.iconButton} onClick={()=>setHideChrome(v=>!v)}>
-        {hideChrome?'إظهار الأدوات':'إخفاء الأدوات'}
+      <button type="button" className={css.iconButton} onClick={()=>setHideChrome(v=>!v)}
+        aria-label={hideChrome?'إظهار الأدوات':'إخفاء الأدوات'}
+        aria-expanded={!hideChrome} title={hideChrome?'إظهار الأدوات':'إخفاء الأدوات'}>
+        <span className={css.toolsToggleLabel}>{hideChrome?'إظهار الأدوات':'إخفاء الأدوات'}</span>
+        <span className={css.toolsToggleGlyph} aria-hidden="true">{hideChrome?'⌄':'⌃'}</span>
       </button>
     </nav>
     {!hideChrome && inkMode!=='off' && <div className={css.contextTools} role="group" aria-label="أدوات القلم والماركر">
