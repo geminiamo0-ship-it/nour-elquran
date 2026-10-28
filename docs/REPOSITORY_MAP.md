@@ -13,7 +13,7 @@ This is a **foundation-only repository**. The following existing paths are real:
 - docs/SECURITY_PRIVACY.md: minors / privacy constraints.
 - docs/AI_HANDOFF.md: transfer instructions.
 - docs/CI_BRANCH_PROTECTION.md: GitHub checks & settings procedure.
-- docs/adr/: architecture decision templates and records.
+- docs/adr/: architecture decision templates and records, including ADR 0001 governance and ADR 0002 managed LiveKit Cloud + interactive mushaf.
 - .github/workflows/verify.yml: initial real governance-only checks, conditional code quality once workspace exists.
 - .github/scripts/verify_repo.py: repository policy gate.
 - tests/governance/: tests for the gate.
