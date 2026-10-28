@@ -41,7 +41,7 @@ pnpm install --no-frozen-lockfile
 pnpm run build:vinext
 
 # Local production server is NOT proof of real Cloudflare Workers runtime.
-PORT=3137 HOST=127.0.0.1 pnpm run start:vinext > "$report_dir/server.log" 2>&1 &
+pnpm exec vite preview --host 127.0.0.1 --port 3137 --strictPort > "$report_dir/server.log" 2>&1 &
 server_pid=$!
 cleanup() {
   kill "$server_pid" 2>/dev/null || true
