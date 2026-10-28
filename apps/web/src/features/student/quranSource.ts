@@ -12,7 +12,7 @@ const PREFERRED_ORIGIN = process.env.NEXT_PUBLIC_NOOR_QURAN_ASSETS_ORIGIN || WOR
 export const QURAN_ASSETS_ORIGIN = /^https:\/\/[a-z\d.-]+(?::443)?$/i.test(PREFERRED_ORIGIN)
   ? PREFERRED_ORIGIN.replace(/\/$/, '') : WORKER_DEFAULT;
 const EDITION_ROOT = `${QURAN_ASSETS_ORIGIN}/quran/hafs/${QURAN_VERSION}`;
-const PUBLIC_FALLBACK = `https://cdn.quran.ws/svg/pages/${QURAN_VERSION}/hafs-kfqc`;
+const PUBLIC_FALLBACK = 'https://raw.githubusercontent.com/quran-ws/quran-svg/9fc0c87/mushafs/hafs/kfqc';
 
 export function clampQuranPage(value: number): number {
   return Number.isFinite(value) ? Math.min(QURAN_PAGE_COUNT, Math.max(1, Math.floor(value))) : 1;
@@ -28,11 +28,11 @@ export function pageName(page: number): string {
 }
 export function quranPageUrl(page: number, fallback = false): string {
   const p = pageName(page);
-  return fallback ? `${PUBLIC_FALLBACK}/${p}.svg` : `${EDITION_ROOT}/pages/${p}.svg`;
+  return fallback ? `${PUBLIC_FALLBACK}/svg/${p}.svg` : `${EDITION_ROOT}/pages/${p}.svg`;
 }
 export function quranPageMetadataUrl(page: number, fallback = false): string {
   const p = pageName(page);
-  return fallback ? `${PUBLIC_FALLBACK}/${p}.json` : `${EDITION_ROOT}/pages/${p}.json`;
+  return fallback ? `${PUBLIC_FALLBACK}/json/${p}.json` : `${EDITION_ROOT}/pages/${p}.json`;
 }
 export function quranChapterUrl(chapter: number, fallback = false): string {
   if (!Number.isInteger(chapter) || chapter < 1 || chapter > QURAN_CHAPTER_COUNT)
