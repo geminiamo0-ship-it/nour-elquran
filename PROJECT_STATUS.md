@@ -1,34 +1,38 @@
 # PROJECT_STATUS — verified handoff state
 
-Last prepared: 2026-10-28 (foundation branch).
+Last verified: 2026-10-28.
 
-## Current status
-- Repository geminiamo0-ship-it/nour-elquran initially empty.
-- Issue #1 opened for repository governance and CI setup.
-- Main received minimal bootstrap README only to enable branch/PR from an empty repository.
-- This branch proposes governance docs, templates and conditional CI; **not verified as merged until GitHub Actions and merge evidence is recorded**.
-- No application code, no Next.js workspace, no Supabase project bindings, no Durable Object migration, no LiveKit VPS configuration, no AI API configuration or deployment has been created here.
+## Implemented and verified (governance ONLY)
+- Repository geminiamo0-ship-it/nour-elquran started empty; minimal README bootstrap commit: 90f5195437f010f27ba5132e46a89d3504ba4199.
+- Foundation Issue #1 opened; governance PR #2 added 25 repo-policy, AI handoff, documentation, issue and CI files.
+- PR #2 exact head: 4626450278757adfc0ad5d33aaa05c989cb82f37.
+- [PR Verify run 40611500146](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40611500146): **success**; repository-policy and governance-tests passed.
+- **App tests skipped** because no package.json/application is present; do not claim build, visual UI or E2E coverage.
+- PR #2 merged (squash) as 24f57aa8c9024eb1cbd246a57ae5dff758a07e28.
+- [Post-merge main push Verify run 40611612261](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40611612261): **success**.
+- [Planning Issue #3](https://github.com/geminiamo0-ship-it/nour-elquran/issues/3) opened for owner review of the complete frontend-first roadmap; no frontend tasks approved yet.
 
-## Next exact decision
-Discuss with owner the **first product UI slice and complete issue breakdown**, then approve roadmap before implementation. Candidate starting sequence: design system + landing; family profiles/onboarding; learner home, lesson/classroom mock; teacher reports and practice; admin. This is a **proposal, not authorized feature execution**.
+## Still pending (do NOT claim complete)
+- **Issue #1 remains OPEN** until main branch ruleset, mandatory PR reviews and required status checks are enabled and verified in GitHub settings.
+- Repository is **PUBLIC**, which may be inappropriate for commercial proprietary development. Owner must decide whether to make private.
+- No app/Next.js workspace, no UI implementation, no actual backend, no Supabase database/auth configured, no Durable Objects, no LiveKit server, no AI model keys, no deployments.
+- Current master plan is a discussion draft, not an approved detailed implementation backlog.
 
-## Verified links / artifacts
-- [Foundation Issue #1](https://github.com/geminiamo0-ship-it/nour-elquran/issues/1)
-- [README](README.md)
-- [Current plan](NOOR_MASTER_PLAN.md)
+## Next exact step
+Discuss and approve scope, route map, design system and implementation sequence in Issue #3. Then create detailed per-page implementation Issues. Owner or authorized GitHub admin must configure main branch protections in docs/CI_BRANCH_PROTECTION.md, verify status and update Issue #1.
+
+## Start-here links
+- [AGENTS.md](AGENTS.md)
+- [NOOR_MASTER_PLAN.md](NOOR_MASTER_PLAN.md)
 - [Repository map](docs/REPOSITORY_MAP.md)
-- [Branch protection setup](docs/CI_BRANCH_PROTECTION.md)
+- [Foundation Issue #1](https://github.com/geminiamo0-ship-it/nour-elquran/issues/1)
+- [Foundation PR #2](https://github.com/geminiamo0-ship-it/nour-elquran/pull/2)
 
-## Status reporting format (mandatory after future PRs)
-- Date:
-- Issue / PR / branch / exact SHA:
-- Scope actually delivered:
-- CI workflow run URL and conclusion:
-- Local tests / browser / staging evidence:
-- Known omissions and failures:
-- Database migrations/deployments actually applied:
-- Files and contracts created or changed:
-- Decision / ADR changes:
-- Next exact Issue and action:
-
-No statement of a passed check or deployment without link to evidence. No project secrets in this document.
+## Status reporting format
+- Date / issue / PR / branch / exact SHA:
+- Real changes and paths:
+- Tests run, conclusion and CI run link:
+- Actual browser/staging/production evidence:
+- Migrations/deployments applied or explicitly none:
+- Known failures/risks:
+- Next exact issue/action:
