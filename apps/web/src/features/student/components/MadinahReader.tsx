@@ -63,7 +63,7 @@ export function MadinahReader() {
   const startTouch=useRef<{x:number;y:number}|null>(null);
 
   useEffect(()=>{
-    if(window.matchMedia('(max-width:700px)').matches)setImmersive(true);
+    if(window.matchMedia('(max-width:700px)').matches){setImmersive(true);setHideChrome(true);setShowAside(false);}
   },[]);
   useEffect(()=>{
     if(!immersive)return;
