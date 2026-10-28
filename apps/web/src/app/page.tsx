@@ -1,9 +1,8 @@
-import Script from 'next/script';
-import { Ornament, DemoStrip, Header, Hero, Benefits, Programs, Classroom, Verse, Audience, Journey, Enrollment, Faq, DashboardModal, Footer } from '@/features/landing';
+import { LandingDemoProvider, Ornament, DemoStrip, Header, Hero, Benefits, Programs, Classroom, Verse, Audience, Journey, Enrollment, Faq, DashboardModal, Footer } from '@/features/landing';
 
 /** Approved V3 is rendered as real React section components, not an HTML redirect. */
 export default function HomePage() {
-  return <>
+  return <LandingDemoProvider>
     <Ornament />
     <DemoStrip />
     <Header />
@@ -13,6 +12,5 @@ export default function HomePage() {
     </main>
     <DashboardModal />
     <Footer />
-    <Script src="/landing-v3-interactions.js" strategy="afterInteractive" />
-  </>;
+  </LandingDemoProvider>;
 }
