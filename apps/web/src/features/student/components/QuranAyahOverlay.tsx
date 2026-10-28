@@ -23,24 +23,26 @@ type Props={
   regions:readonly QuranAyahRegion[];
   selectedKey:string|null;
   noteKeys:ReadonlySet<string>;
+  focusKeys?: ReadonlySet<string>;
+  allowedKeys?: ReadonlySet<string>;
   onSelect:(target:QuranTarget)=>void;
   onOpenNote:(target:QuranTarget)=>void;
   enabled:boolean;
 };
 /** In contrast to a PNG + guessed boxes, this is the publisher's exact verse footprint. */
-export function QuranAyahOverlay({page,regions,selectedKey,noteKeys,onSelect,onOpenNote,enabled}:Props){
+export function QuranAyahOverlay({page,regions,selectedKey,noteKeys,focusKeys,allowedKeys,onSelect,onOpenNote,enabled}:Props){
   return <svg className={enabled?css.overlay:css.disabled} viewBox={pageViewBox(page)}
     preserveAspectRatio="xMidYMid meet" aria-label="اضغط مرة لتحديد الآية ومرتين لفتح ملاحظتها">
     {enabled&&regions.map(region=>{
       const key=region.surah+':'+region.ayah;
       const d=regionPath(region.polygon);
-      if(!d)return null;
+      if(!d || (allowedKeys && !allowedKeys.has(key))) return null;
       const selected=selectedKey===key,annotated=noteKeys.has(key);
       const target:QuranTarget={page,surah:region.surah,ayah:region.ayah,wordIndex:null};
       function enter(event:KeyboardEvent<SVGPathElement>){
         if(event.key==='Enter'||event.key===' '){event.preventDefault();onOpenNote(target);}
       }
-      return <path key={key} d={d} className={selected?css.selected:annotated?css.annotated:css.hotspot}
+      return <path key={key} d={d} className={selected?css.selected:annotated?css.annotated:focusKeys?.has(key)?css.studyFocus:css.hotspot}
         tabIndex={0} role="button" aria-label={'تحديد الآية '+key+' واضغط مرتين لفتح ملاحظتها'}
         onClick={()=>onSelect(target)} onKeyDown={enter}/>;
     })}

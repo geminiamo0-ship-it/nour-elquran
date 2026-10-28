@@ -4,3 +4,6 @@
 .annotated{fill:#edc851;fill-opacity:.14;stroke:#b48a34;stroke-width:1}
 .selected{fill:#f6d157;fill-opacity:.23;stroke:#956e24;stroke-width:1.4}
 .hotspot:focus-visible,.annotated:focus-visible,.selected:focus-visible{outline:none;stroke:#2f6a4f;stroke-width:3;fill-opacity:.16}
+
+.studyFocus{pointer-events:visibleFill;fill:#edc65e;fill-opacity:.20;stroke:#a37d37;stroke-width:.8;cursor:pointer}
+.studyFocus:focus-visible{stroke:#2f6a4f;stroke-width:2;fill-opacity:.27}

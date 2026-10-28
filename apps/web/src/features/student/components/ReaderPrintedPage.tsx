@@ -14,13 +14,15 @@ type Props = {
   strokes: readonly QuranInkStroke[];
   selectedKey: string | null;
   noteKeys: ReadonlySet<string>;
+  focusKeys?: ReadonlySet<string>;
+  allowedKeys?: ReadonlySet<string>;
   onSelect: (target: QuranTarget) => void;
   onOpenNote: (target: QuranTarget) => void;
   onInkChange: (page: number, strokes: QuranInkStroke[]) => void;
 };
 
 /** Every visible printed page owns its own verified polygons, including both sides of a spread. */
-export function ReaderPrintedPage({ page, inkMode, color, strokes, selectedKey, noteKeys, onSelect, onOpenNote, onInkChange }: Props) {
+export function ReaderPrintedPage({ page, inkMode, color, strokes, selectedKey, noteKeys, focusKeys, allowedKeys, onSelect, onOpenNote, onInkChange }: Props) {
   const [regions, setRegions] = useState<QuranAyahRegion[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,6 +52,6 @@ export function ReaderPrintedPage({ page, inkMode, color, strokes, selectedKey, 
     <QuranInk page={page} mode={inkMode} color={color} strokes={strokes}
       onChange={next => onInkChange(page, next)} />
     <QuranAyahOverlay page={page} regions={regions} selectedKey={selectedKey}
-      noteKeys={noteKeys} enabled={!loading && inkMode === 'off'} onSelect={onSelect} onOpenNote={onOpenNote} />
+      noteKeys={noteKeys} focusKeys={focusKeys} allowedKeys={allowedKeys} enabled={!loading && inkMode === 'off'} onSelect={onSelect} onOpenNote={onOpenNote} />
   </>} />;
 }
