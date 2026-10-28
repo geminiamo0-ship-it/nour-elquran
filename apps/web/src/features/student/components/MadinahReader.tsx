@@ -18,7 +18,7 @@ import {
   type QuranAnnotation, type QuranInkStroke,
 } from '../quranAnnotations';
 import { ReaderPrintedPage } from './ReaderPrintedPage';
-import { getVisibleSpread, type ReaderPageMode } from '../quranReaderLayout';
+import { getAdjacentReaderPage, getVisibleSpread, type ReaderPageMode, type ReaderTurnDirection } from '../quranReaderLayout';
 import type { InkMode } from './QuranInk';
 import { QuranSearchPanel } from './QuranSearchPanel';
 import css from './MadinahReader.module.css';
@@ -68,7 +68,7 @@ export function MadinahReader() {
   const [spreadMode,setSpreadMode]=useState<ReaderPageMode>('auto');
   const [compactDevice,setCompactDevice]=useState(false);
   const [turnMode,setTurnMode]=useState<'swipe'|'buttons'>('swipe');
-  const [immersive,setImmersive]=useState(false);
+  const [immersive,setImmersive]=useState(true);
   const [hideChrome,setHideChrome]=useState(false);
   const [fontSize,setFontSize]=useState(27);
   const [localSearch,setLocalSearch]=useState('');
@@ -78,15 +78,24 @@ export function MadinahReader() {
   const [audioRequest,setAudioRequest]=useState<QuranAudioRequest|null>(null);
   const [audioVerse,setAudioVerse]=useState<QuranAyahReference|null>(null);
   const startTouch=useRef<{x:number;y:number}|null>(null);
+  const drawerTrigger=useRef<HTMLElement|null>(null);
+  const drawerCloseButton=useRef<HTMLButtonElement|null>(null);
   const lastVerseTap=useRef<QuranTap|null>(null);
   const [inkPaletteOpen,setInkPaletteOpen]=useState(false);
 
   useEffect(()=>{
-    const update=()=>setCompactDevice(window.innerWidth<900);
+    const update=()=>{
+      const compact=window.innerWidth<900;
+      setCompactDevice(compact);
+      if(compact)setImmersive(true);
+    };
     update();window.addEventListener('resize',update);
-    if(window.matchMedia('(max-width:700px)').matches){setImmersive(true);setHideChrome(false);setShowAside(false);}
+    if(window.innerWidth<900){setHideChrome(false);setShowAside(false);}
     return ()=>window.removeEventListener('resize',update);
   },[]);
+  useEffect(()=>{
+    if(showAside)drawerCloseButton.current?.focus();
+  },[showAside]);
   useEffect(()=>{
     if(!immersive)return;
     const old=document.body.style.overflow;
@@ -162,6 +171,12 @@ export function MadinahReader() {
     setPage(next);setPageEntry(String(next));setLocalSearch('');lastVerseTap.current=null;
     setPendingKey(focus??null);
   }
+  function adjacent(direction: ReaderTurnDirection): number {
+    return getAdjacentReaderPage(page, spreadMode, compactDevice, direction, mode === 'ayah');
+  }
+  function turn(direction: ReaderTurnDirection) {
+    go(adjacent(direction));
+  }
   function handleVerseTap(target:QuranTarget) {
     if(!validTarget(target))return;
     const key=targetKey(target);
@@ -175,8 +190,19 @@ export function MadinahReader() {
     setSelectedTarget(target);
     setShowAside(false);
   }
+  function rememberDrawerTrigger() {
+    const active=document.activeElement;
+    drawerTrigger.current=active instanceof HTMLElement && active!==document.body?active:null;
+  }
+  function closeDrawer() {
+    setShowAside(false);setShowSearch(false);setShowNotes(false);setShowSettings(false);setShowIndex(false);
+    const trigger=drawerTrigger.current;
+    drawerTrigger.current=null;
+    if(trigger?.isConnected)trigger.focus();
+  }
   function selectTarget(target:QuranTarget) {
     if(!validTarget(target))return;
+    if(!showAside)rememberDrawerTrigger();
     setSelectedTarget(target);
     const old=visible.find(n=>n.type==='private'&&targetKey(n.target)===targetKey(target));
     lastVerseTap.current=null;
@@ -216,6 +242,7 @@ export function MadinahReader() {
   const activeSurah=surahs.filter(s=>s.pageNumber<=page).at(-1)?.number??'';
   const spreadPages=getVisibleSpread(page,spreadMode,compactDevice);
   function openDrawer(kind:'index'|'notes'|'search'|'settings'|'ayah') {
+    if(!showAside)rememberDrawerTrigger();
     setShowAside(true);setShowIndex(kind==='index');setShowNotes(kind==='notes');
     setShowSearch(kind==='search');setShowSettings(kind==='settings');setHideChrome(false);
   }
@@ -317,7 +344,7 @@ export function MadinahReader() {
                 const start=startTouch.current,end=e.changedTouches[0];startTouch.current=null;
                 if(!start||!end||inkMode!=='off'||turnMode!=='swipe')return;
                 const dx=end.clientX-start.x,dy=end.clientY-start.y;
-                if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.6)go(page+(dx>0?1:-1));
+                if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.6)turn(dx>0?1:-1);
               }}>
               <ReaderPrintedPage page={leaf} color={color} inkMode={inkMode}
                 strokes={inkByPage[leaf]??[]} onInkChange={changeInkFor}
@@ -349,11 +376,12 @@ export function MadinahReader() {
               })}
           </div>}
       </main>
-      {showAside && <aside className={css.sidebar} aria-label="قائمة المصحف" role="dialog" aria-modal={false}>
+      {showAside && <aside className={css.sidebar} aria-label="قائمة المصحف" role="dialog" aria-modal={false}
+        onKeyDown={e=>{if(e.key==='Escape'){e.stopPropagation();closeDrawer();}}}>
         <div className={css.sheetHeading}>
           <strong>{showSettings?'إعدادات القراءة':showSearch?'البحث في المصحف':showNotes?'جميع ملاحظاتي':showIndex?'فهرس المصحف':selectedTarget?'ملاحظة الآية':'آيات الصفحة'}</strong>
-          <button type="button" className={css.smallButton} aria-label="إغلاق لوحة الملاحظات"
-            onClick={()=>{setShowAside(false);setShowSearch(false);setShowNotes(false);setShowSettings(false);setShowIndex(false);}}>إغلاق ×</button>
+          <button ref={drawerCloseButton} type="button" className={css.smallButton} aria-label="إغلاق لوحة الملاحظات"
+            onClick={closeDrawer}>إغلاق ×</button>
         </div>
         {showSettings ? <div className={css.settingsPanel}>
           <fieldset><legend>عرض الصفحة</legend>
@@ -446,9 +474,9 @@ export function MadinahReader() {
     </div>
     <footer className={css.readerFoot} aria-label="شريط التنقل بين صفحات المصحف">
       <button type="button" className={css.navButton} aria-label="تقليب إلى الصفحة السابقة"
-        disabled={page===1} onClick={()=>go(page-1)}>السابق</button>
+        disabled={adjacent(-1)===page} onClick={()=>turn(-1)}>السابق</button>
       <button type="button" className={css.navButton} aria-label="الصفحة السابقة"
-        disabled={page===1} onClick={()=>go(page-1)} title="الصفحة السابقة">‹</button>
+        disabled={adjacent(-1)===page} onClick={()=>turn(-1)} title="الصفحة السابقة">‹</button>
       <form className={css.pageForm} onSubmit={e=>{
         e.preventDefault();const n=Number(pageEntry);
         if(Number.isInteger(n)&&n>=1&&n<=QURAN_PAGE_COUNT)go(n);
@@ -459,9 +487,9 @@ export function MadinahReader() {
         <span>من 604</span><button type="submit">انتقال</button>
       </form>
       <button type="button" className={css.navButton} aria-label="الصفحة التالية"
-        disabled={page===604} onClick={()=>go(page+1)} title="الصفحة التالية">›</button>
+        disabled={adjacent(1)===page} onClick={()=>turn(1)} title="الصفحة التالية">›</button>
       <button type="button" className={css.navButton} aria-label="تقليب إلى الصفحة التالية"
-        disabled={page===604} onClick={()=>go(page+1)}>التالي</button>
+        disabled={adjacent(1)===page} onClick={()=>turn(1)}>التالي</button>
       <button type="button" className={css.footerNotes} onClick={()=>openDrawer('notes')}>ملاحظاتي</button>
     </footer>
   </div>;

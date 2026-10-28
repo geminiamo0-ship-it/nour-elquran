@@ -245,3 +245,12 @@
 }
 
 .inkPalette .paletteIcon svg{width:19px;height:19px;display:block;flex:0 0 auto}
+
+/* Tablet: size the printed leaf against the actual remaining stage, not a guessed
+   viewport subtraction. Error notices, tool rows and the audio dock can all
+   change that space. Keep ayah mode scrollable inside the same stage. */
+@media (min-width:701px) and (max-width:899px) {
+  .bookStage { container-type:size; }
+  .singleBook { height:100%;align-items:center; }
+  .singleBook .leaf { width:min(100%,calc((100cqh - 72px)*345/550),510px); }
+}

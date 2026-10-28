@@ -114,3 +114,35 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - `QuranAyahOverlay`: first click selects (same polygon geometry); second rapid click of same key opens editor through `onOpenNote`. Keyboard remains direct editor access. `quranInteraction.ts` controls 450ms window by verse/word key. On-page reader adds vertical palette popover without shifting viewer. `SmoothMadinahPage` art keyed by shown.page adds short animation after decoded swap; reduced motion disables.
 - DO NOT build Postgres now. Contract `docs/QURAN_CANONICAL_MUSHAF_AND_LESSON_VIEWS.md`: one learner master Mushaf annotation graph, teacher published additive layered notes; lesson notebook filtered same viewer only, immutable versioned source. No backend storage is operational yet.
 - Exact-head CI should test 56+ Vitest unit cases, browser real pointer one tap/second tap and CDP finger stroke 390px, screenshots, page geometry and 360/390/1440 smoke. Branch preview deployments remain disabled.
+
+## Quran reader turn regression — Issue #90
+- Working branch `fix/90-quran-spread-turn-navigation` (do not push directly to main). Reader previously rendered [2,3] for page 2 **and** page 3, so Next could look broken on desktop. `quranReaderLayout.ts` now provides `getAdjacentReaderPage`; `MadinahReader.tsx` uses it for both swipe and four footer buttons. Page number, surah and ayah jumps remain direct, not spread-normalized.
+- Unit regression in `quranReaderLayout.test.ts`; Chrome desktop 1→[2,3]→[4,5]→[2,3]→1 plus tablet 768px single-leaf navigation and screenshot in `scripts/browser-smoke.mjs`.
+- **Next:** create linked Draft PR, inspect exact-head CI, fix failures, obtain mobile/tablet/desktop visual review and required human approval. Do not merge/close #90 until acceptance. No Vercel previews, backend/Postgres, R2, Quran asset edits or production deployment.
+
+## 2026-10-28 — next verification: tablet fullscreen Quran (#90 / draft PR #96)
+- Added a tablet (<900px) immersive reader mount/resize rule to `apps/web/src/features/student/components/MadinahReader.tsx`, using existing scroll-lock cleanup and compact exit action. Prior 701–899px reader stayed below student shell and could hide its footer.
+- Added real 768x900 Chrome viewport, visible page/footer, body scroll-lock and non-scrolling inner stage assertions to `scripts/browser-smoke.mjs`; do not confuse source edits with a passed run.
+- **Next exact step:** inspect PR #96 latest HEAD, verify all Verify jobs and browser screenshot at that SHA, correct failures; seek human tablet/keyboard review before merging. Do not change production, R2 or backend.
+
+## 2026-10-29 — #90 tablet CI failure / pending fix
+- Draft PR #96 branch `fix/90-quran-spread-turn-navigation`. Last checked head `55461520` failed [Verify 40762650066](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40762650066): code-quality browser tablet `noNestedScroll=false`, while other tablet geometry booleans passed. Governance, lint, TS, unit, build, HTTP and prior browser checks passed; **overall run FAILED**.
+- Commits `9fffefa0` (tablet stage-size CSS container and height-aware printed leaf) and `32b6c70b` (extra failure geometry metrics in real Chrome test) are on PR #96. No local browser run was possible in this tool environment. **Inspect exact latest SHA + CI before saying fix works**; do not merge on red, and keep #90 open for physical tablet/RTL visual review and reviewer approval.
+- Scope: only CSS and browser smoke in student Quran feature. No backend, Quran source, payments, secrets, Cloudflare/Vercel deployments or data migrations. Rollback: revert the two commits or PR #96; no state migration.
+
+### 2026-10-29 — #90 exact CI and remaining desktop gate
+- PR #96: tablet fix succeeded on `c28c17b4` / [Verify 40770633906](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40770633906). Screenshot artifact `12852681274` inspected at 768/390/1440; tablet footer fits, but desktop showed outer student chrome and scrolling.
+- New code `20078fd4`: desktop reader immersive on initial route render; `d98a0d24`: Chrome asserts desktop reader top/bottom, footer and body lock. **New head unverified** until its own CI. Keep PR Draft; no merge until checks and human review. Next: inspect newest run and 1440 screenshot, then record outcome in #90. No production deployment.
+
+### 2026-10-29 — latest #90 code verified; documentation recheck
+- [Verify 40770979097](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40770979097) SUCCESS at `9a35228c055d16ac0919778f183c5c8b3fd6a808`. Both 768 tablet stage scroll regression and 1440 desktop reader outer chrome fixed. Screenshot artifact `12853175403` inspected for 390/768/1440 reader/footer. PR #96 remains Draft; Issue #90 OPEN pending physical-device UX, keyboard/RTL and required reviewer approval.
+- After this documentation-only commit, recheck latest branch SHA/CI. No production deploy, R2 changes, data migrations, backend or paid services.
+
+### 2026-10-29 — intermittent SVG overlay black flash found in real CI
+- [Verify 40771300030](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40771300030) FAILED at documentation head `b5a01a92` on physical polygon hit test. Screenshot artifact `12852741690` visually showed opaque black verse regions (CSS race), while earlier `9a35228c` run was green.
+- Fix on PR #96: `QuranAyahOverlay.tsx` explicit transparent SVG presentation fallback `a567cedb`; `scripts/browser-smoke.mjs` waits for styled overlay CSS `79cfeec1` before real pointer test. New exact-head CI pending. Never merge until passing and screenshot reviewed; no backend, Quran content or production deployment.
+
+### 2026-10-29 — #90 reader keyboard handoff (PR #96)
+- Follow-up on `fix/90-quran-spread-turn-navigation`: reader index/settings/notes/search panel is a nonmodal dialog; opening it now moves keyboard focus to close, and Escape/close restores focus to the prior trigger when still attached.
+- `MadinahReader.tsx` owns focus state, `scripts/browser-smoke.mjs` asserts actual Chrome keyboard Enter/Escape and restoration. Source Quran artwork/metadata and other business state unchanged.
+- Next exact action: inspect newest PR #96 head, Verify job results and screenshot artifact; fix any failures, then await human physical touch/S Pen/keyboard/RTL review before merge. No deployment or external provisioning.

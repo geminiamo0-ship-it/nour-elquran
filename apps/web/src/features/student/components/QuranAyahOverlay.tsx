@@ -40,7 +40,7 @@ export function QuranAyahOverlay({page,regions,selectedKey,noteKeys,onSelect,onO
       function enter(event:KeyboardEvent<SVGPathElement>){
         if(event.key==='Enter'||event.key===' '){event.preventDefault();onOpenNote(target);}
       }
-      return <path key={key} d={d} className={selected?css.selected:annotated?css.annotated:css.hotspot}
+      return <path key={key} d={d} fill="transparent" stroke="transparent" strokeWidth={0} className={selected?css.selected:annotated?css.annotated:css.hotspot}
         tabIndex={0} role="button" aria-label={'تحديد الآية '+key+' واضغط مرتين لفتح ملاحظتها'}
         onClick={()=>onSelect(target)} onKeyDown={enter}/>;
     })}

@@ -152,3 +152,9 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `components/SmoothMadinahPage.tsx` and CSS: fixed-ratio decoded image swap with short optional turn-sheen animation, reduced-motion preference, no image text manipulation.
 - `components/MadinahReader.tsx` and CSS: vertical floating pen palette under icons, 5 colors, eraser, undo/redo, browsing, no extra horizontal tools or page reflow.
 - `docs/QURAN_CANONICAL_MUSHAF_AND_LESSON_VIEWS.md`: future immutable lesson snapshot filtered through same renderer; one original student Mushaf accumulates approved teacher marks, separated from sibling profiles. Backend deferred.
+
+## Quran physical spread turn semantics (#90)
+- `apps/web/src/features/student/quranReaderLayout.ts`: pure visible-spread pairing and previous/next destination; desktop turns physical spreads, tablet/mobile/single/ayah turns one leaf.
+- `apps/web/src/features/student/quranReaderLayout.test.ts`: odd/even spread and first/last page boundary regression.
+- `apps/web/src/features/student/components/MadinahReader.tsx`: reader footer and touch-swipe consume one shared pure turn contract, without modifying direct page/ayah navigation.
+- `scripts/browser-smoke.mjs`: real Chrome desktop turn sequence and 768px single-leaf, full-viewport, footer visibility, scroll-lock and nested-scroll regression with screenshot, alongside existing 360/375/390/1440 gates.
