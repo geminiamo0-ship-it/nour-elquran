@@ -1,0 +1,21 @@
+.counts { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:15px 0; }
+.count { border:1px solid #e7ddc6; border-radius:7px; background:#f8f5eb; padding:14px; }
+.count span,.count small { display:block; font-size:12px; color:#627565; }
+.count strong { display:block; font:700 27px/1.5 'Amiri',serif; color:#2e503c; }
+.count small { font-size:10px; }
+.scroll { width:100%; overflow-x:auto; border:1px solid #e5dcca; border-radius:7px; }
+.table { border-collapse:collapse; width:100%; min-width:720px; text-align:right; font-size:12px; }
+.table th,.table td { padding:12px 13px; vertical-align:middle; border-bottom:1px solid #eee4d2; color:#395443; }
+.table thead th { background:#f3ecdd; font-weight:800; }
+.table tbody th { min-width:165px; }
+.table tbody th strong,.table tbody th small { display:block; }
+.table tbody th small { margin-top:5px; font-weight:400; color:#788676; }
+.outcome { display:inline-block; border-radius:99px; background:#e8eee4; color:#345842; padding:6px 10px; white-space:nowrap; }
+.muted { color:#788676; line-height:1.7; }
+.appealButton { background:#f8f1df; border:1px solid #b18d4c; padding:8px 12px; min-height:39px; border-radius:5px; color:#38513c; font:inherit; cursor:pointer; }
+.appealButton:hover { background:#f2e3c6; }
+.appealPanel { padding:18px; background:#faf8f1; border:1px solid #d9c9a9; border-radius:8px; margin-top:16px; font-size:13px; }
+.appealPanel h3 { font:700 24px/1.4 'Amiri',serif; margin:0; }
+.appealPanel p { line-height:1.8; }
+.fileInput { font:inherit; width:100%; padding:9px; background:#fffdf8; border:1px solid #ded4c2; border-radius:7px; }
+@media(max-width:650px) { .counts { grid-template-columns:repeat(2,minmax(0,1fr)); } .appealPanel { padding:12px; } }
