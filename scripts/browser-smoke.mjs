@@ -287,6 +287,25 @@ try {
     'S02 attendance appeal Chrome smoke failed: ' + JSON.stringify(attendanceChecks ?? attendanceResult));
   console.log('S02 attendance ledger, appeal preview and learner isolation Chrome smoke passed');
 
+
+  // S03: trial booking preference is only a preview, not a confirmed server reservation.
+  await socket.send('Page.navigate', { url: url + 'student/lessons' });
+  await waitFor(async () => {
+    const result = await socket.send('Runtime.evaluate', {
+      expression: "document.querySelector('#learner-switch')?.options.length >= 5",
+      returnByValue: true,
+    });
+    return Boolean(result.result?.value);
+  }, 'hydrated learner lesson booking screen');
+  const bookingResult = await socket.send('Runtime.evaluate', {
+    expression: "(async()=>{ const pause=()=>new Promise(r=>setTimeout(r,180)); const switcher=document.querySelector('#learner-switch'); switcher.value='demo-new'; switcher.dispatchEvent(new Event('change',{bubbles:true})); await pause(); const form=!!document.querySelector('#trial-weekday')&&!!document.querySelector('#trial-window'); const btn=[...document.querySelectorAll('button')].find(x=>x.textContent.includes('راجع طلب التجربة')); btn?.click(); await pause(); const preview=document.querySelector('#student-main')?.textContent.includes('معاينة طلب حصة تجريبية'); const unsent=document.querySelector('#student-main')?.textContent.includes('تأكيد الحجز غير متاح'); const free=document.querySelector('#student-main')?.textContent.includes('0 جنيه'); switcher.value='demo-active'; switcher.dispatchEvent(new Event('change',{bubbles:true})); await pause(); const isolated=!document.querySelector('#trial-weekday')&&!document.querySelector('#student-main')?.textContent.includes('معاينة طلب حصة تجريبية'); return {form,preview,unsent,free,isolated}; })()",
+    awaitPromise:true, returnByValue:true,
+  });
+  const bookingChecks=bookingResult.result?.value;
+  assert(bookingChecks && Object.values(bookingChecks).every(Boolean),
+    'S03 trial booking preview smoke failed: '+JSON.stringify(bookingChecks??bookingResult));
+  console.log('S03 trial booking preview (free, no-send), weekly section and sibling isolation passed');
+
 } finally {
   socket?.close();
   for (const child of children.reverse()) child.kill('SIGTERM');

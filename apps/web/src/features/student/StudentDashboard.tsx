@@ -1,6 +1,5 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
 import { useStudent } from './StudentContext';
 import { SchedulePanel } from './components/SchedulePanel';
 import { WirdPanel } from './components/WirdPanel';
@@ -20,7 +19,6 @@ function Metric({ label, value, detail }: { label: string; value: string; detail
 
 export function StudentDashboard() {
   const { selected, finished } = useStudent();
-  const [notice, setNotice] = useState(false);
   const { profile, lessons, tasks, latestReport } = selected;
   const status = stages[profile.stage];
   return <>
@@ -33,10 +31,9 @@ export function StudentDashboard() {
     <section className={styles.contextStrip} aria-label="الخطوة التالية">
       <div><span className={styles.smallOverline}>خطوتك التالية</span><h2>{status.heading}</h2><p>{status.message}</p></div>
       {profile.stage === 'new' ?
-        <button type="button" className={styles.goldButton} onClick={() => setNotice((v) => !v)}>استكشف الحجز التجريبي</button> :
+        <Link href="/student/lessons#trial-booking" className={styles.goldButton}>استكشف الحجز التجريبي</Link> :
         <Link href="/student/lessons" className={styles.goldButton}>عرض جدول الحصص</Link>}
     </section>
-    {notice && <div role="status" className={styles.infoNote}>الحجز الحقيقي سيتاح هنا بعد ربط مواعيد الشيوخ والتحقق من الحساب. لا توجد مواعيد متاحة للحجز الآن في هذه المعاينة.</div>}
     <section className={styles.metricGrid} aria-label="الملخص الأكاديمي">
       <Metric label="الحصص القادمة" value={lessons.filter((item) => item.status === 'booked' && item.dayOffset >= 0).length ? String(lessons.filter((item) => item.status === 'booked' && item.dayOffset >= 0).length) : '—'} detail="أمثلة عند وجود حصص" />
       <Metric label="الورد المعتمد" value={tasks.length ? String(tasks.length) : '—'} detail="مهام اعتمدها الشيخ" />
