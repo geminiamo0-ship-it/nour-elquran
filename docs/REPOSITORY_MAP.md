@@ -101,3 +101,12 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `apps/web/src/features/student/components/AttendanceWorkspace.module.css`: mobile/desktop table and appeal form styles.
 - `apps/web/src/features/student/components/ProgressWorkspace.tsx`: mounts attendance after independent academic history.
 - `scripts/browser-smoke.mjs`: verify demo learner attendance, opening appeal UI, and new sibling's no-record state.
+
+## STU-AZ S03 trial preview (#76; branch only)
+- `apps/web/src/features/student/trialScheduling.ts`: pure UTC scheduling hints, 30-minute slot shape, exact six-hour boundary and illustrative slot generator; no booking authority.
+- `apps/web/src/features/student/trialScheduling.test.ts`: runtime validation, cross-learner, stale-slot and UTC cutoff tests.
+- `apps/web/src/features/student/components/TrialBookingPreview.tsx`: isolated React slot selection/review; deliberately disabled booking and unassigned teacher.
+- `apps/web/src/features/student/components/TrialBookingPreview.module.css`: scoped RTL/responsive slot controls.
+- `apps/web/src/features/student/components/LessonHub.tsx` and `StudentDashboard.tsx`: composition and CTA routing, not direct infrastructure calls.
+- `scripts/browser-smoke.mjs`: three-width real Chrome preview, no-confirmation and sibling isolation regression.
+- This is branch-only mock UI, **not** an available trial scheduling service. Backend contract, RLS and transactional reservations remain under #46/#47.
