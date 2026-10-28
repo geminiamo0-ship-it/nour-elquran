@@ -133,3 +133,9 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `quranReaderLayout.ts` and test: desktop physical spread `[2,3]`, `[4,5]` etc with opening page alone and single-page responsive override.
 - `components/ReaderPrintedPage.tsx`: fetch verified publisher sidecar for EACH visible printed leaf; compose `SmoothMadinahPage`, `QuranInk` and `QuranAyahOverlay` to keep click targets accurate on both spread pages.
 - `components/MadinahReader.tsx` and CSS: own Noor visual design, compact toolbar, large page canvas, index drawer for surahs/bookmarks/notes, preferences for single/double/auto and swipe mode; original source text unchanged.
+
+## Quran reciters playback modules (#92)
+- `quranReciters.ts`: six Hafs Murattal reciters with verified EveryAyah public audio path, validated `001001.mp3` format, per-page/per-surah/per-ayah queues and audio time formatter.
+- `components/QuranRecitationPlayer.tsx`: accessible HTMLAudioElement, active ayah callback, error/buffering/seek/progress, prev/next, speed and repeat count, single audio dock without backend.
+- `components/QuranRecitationPlayer.module.css`: mobile horizontal compact controls and stable page-first layout.
+- `quranReciters.test.ts` and `scripts/browser-smoke.mjs`: source IDs, no invented missing ayah, player six reciter selector and no autoplay.

@@ -356,6 +356,27 @@ try {
   fs.writeFileSync(path.join(screenshots,'quran-desktop-spread-index-1440.png'),Buffer.from(desktopSpreadImage.data,'base64'));
   console.log('Desktop Noor Quran 2-page spread and index drawer regression passed');
 
+  // S08: reciter selector / current-page scope / speed / repeat, no audio fetch until playback.
+  await socket.send('Runtime.evaluate',{
+    expression:`document.querySelector('[aria-label="إغلاق لوحة الملاحظات"]')?.click();document.querySelector('[aria-label="فتح مشغل التلاوة"]')?.click();`,
+    returnByValue:true,
+  });
+  await waitFor(async()=>{
+    const r=await socket.send('Runtime.evaluate',{
+      expression:`Boolean(document.querySelector('[aria-label="اختيار القارئ"]'))`,returnByValue:true,
+    });return Boolean(r.result?.value);
+  },'Quran reciters player mount');
+  const quranReciterControls=await socket.send('Runtime.evaluate',{
+    expression:`(async()=>{const sleep=t=>new Promise(r=>setTimeout(r,t));const reciter=document.querySelector('[aria-label="اختيار القارئ"]');const scope=document.querySelector('[aria-label="نطاق التلاوة"]');const repeat=document.querySelector('[aria-label="عدد مرات التكرار"]');const speed=document.querySelector('[aria-label="سرعة التلاوة"]'); const player=!!document.querySelector('[aria-label="مشغل التلاوة"]'); const hasSix=reciter?.options.length===6;let names=[...reciter.options].map(o=>o.textContent); const goodNames=names.includes('مشاري راشد العفاسي')&&names.includes('ماهر المعيقلي');const noAutoplay=!document.querySelector('[aria-label="مشغل التلاوة"] audio')?.currentSrc;const setter=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set;setter.call(reciter,'muaiqly');reciter.dispatchEvent(new Event('change',{bubbles:true}));setter.call(scope,'surah');scope.dispatchEvent(new Event('change',{bubbles:true}));setter.call(repeat,'3');repeat.dispatchEvent(new Event('change',{bubbles:true}));setter.call(speed,'1.25');speed.dispatchEvent(new Event('change',{bubbles:true}));await sleep();return {player,hasSix,goodNames,noAutoplay,changed:reciter.value==='muaiqly'&&scope.value==='surah'&&repeat.value==='3'&&speed.value==='1.25'};})()`,
+    awaitPromise:true,returnByValue:true,
+  });
+  const reciterValues=quranReciterControls.result?.value;
+  assert(reciterValues&&Object.values(reciterValues).every(Boolean),
+    'Quran Hafs reciter player controls failed: '+JSON.stringify(reciterValues??quranReciterControls));
+  console.log('Quran S08 six Hafs reciters, no autoplay, scope, 3x repeat and 1.25x speed smoke passed');
+  const reciterImage=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+  fs.writeFileSync(path.join(screenshots,'quran-reciter-player-1440.png'),Buffer.from(reciterImage.data,'base64'));
+
   // S01: semantic progress table, in-row report details, no approved report filters.
   await socket.send('Page.navigate', { url: url + 'student/progress' });
   await waitFor(async () => {

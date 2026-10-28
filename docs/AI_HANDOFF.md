@@ -97,3 +97,8 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 ## Reader shell approved, issue #90
 - Branch `feat/90-quran-reader-shell-reference-ux` based on `ad691b59`: modular `ReaderPrintedPage` and pure `quranReaderLayout` layout tests, new responsive app shell at `/student/mushaf`, no dashboard card chrome, desktop two-page spread and mobile one-page. Source polygons per printed page preserved. Index, bookmarks, settings, source search and temporary notes; no user/backend or audio/tafsir transport.
 - Verify exact-head CI, Chrome and screenshots before merge; do not claim deployed until Vercel production commit confirmed. Preserve low Vercel deployment quota by keeping Preview Deployments off.
+
+## Current handoff — Quran reciters #92
+- New `quranReciters.ts` metadata-only source and pure verse queue builder; `components/QuranRecitationPlayer.tsx` + CSS compact media dock. `MadinahReader` toolbar includes a Tilaawa icon and printed/ayah notes have 'Listen to this verse' action. Reader highlights the current verse while listening (not a fabricated word sync).
+- Audio streams third-party EveryAyah directly; source metadata MIT does not license original media. Do not mirror 6,236 files to R2 or enable offline storage until licensed. For future official audio use King Fahd Complex five Hafs reciters listed at https://qurancomplex.gov.sa/quran-audios/ with explicit site/app permission and pinned archive checksums.
+- No DB/backend per owner; all profile notes and playback state in local React only. Test and merge one PR, no repeated Vercel previews.

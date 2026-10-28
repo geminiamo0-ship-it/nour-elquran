@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ReaderIcon } from './ReaderIcon';
+import { QuranRecitationPlayer } from './QuranRecitationPlayer';
+import { quranAudioKey, type QuranAudioRequest, type QuranAudioScope } from '../quranReciters';
+import type { QuranAyahReference } from '../quranSource';
 import { useStudent } from '../StudentContext';
 import {
   clampQuranPage, parseQuranAyahRegions, parseQuranChapter,
@@ -70,6 +73,9 @@ export function MadinahReader() {
   const [localSearch,setLocalSearch]=useState('');
   const [refresh,setRefresh]=useState(0);
   const [savedNotice,setSavedNotice]=useState('');
+  const [audioOpen,setAudioOpen]=useState(false);
+  const [audioRequest,setAudioRequest]=useState<QuranAudioRequest|null>(null);
+  const [audioVerse,setAudioVerse]=useState<QuranAyahReference|null>(null);
   const startTouch=useRef<{x:number;y:number}|null>(null);
 
   useEffect(()=>{
@@ -196,6 +202,11 @@ export function MadinahReader() {
     setShowAside(true);setShowIndex(kind==='index');setShowNotes(kind==='notes');
     setShowSearch(kind==='search');setShowSettings(kind==='settings');setHideChrome(false);
   }
+  function openRecitation(scope: QuranAudioScope, ayah: QuranAyahReference|null = null) {
+    setAudioOpen(true);
+    setAudioRequest(prev => ({token:(prev?.token??0)+1,scope,page,ayah}));
+    setShowAside(false);
+  }
   function chooseTool(tool:InkMode) {
     setInkMode(tool);setHideChrome(false);setShowAside(false);
   }
@@ -238,8 +249,9 @@ export function MadinahReader() {
         <ReaderIcon name="notes" /><span>جميع ملاحظاتي ({visible.length})</span></button>
       <button type="button" className={css.tool} onClick={()=>{setMode(mode==='madinah'?'ayah':'madinah');setInkMode('off');}}
         title="آية بآية" aria-pressed={mode==='ayah'}><ReaderIcon name="ayah" /><span>آية بآية</span></button>
-      <button type="button" className={css.tool} onClick={()=>openDrawer('settings')} title="التفسير والتلاوة">
-        <ReaderIcon name="settings" /><span>الإعدادات</span></button>
+      <button type="button" className={css.tool} onClick={()=>openRecitation('page',selectedTarget)}
+        title="التلاوة" aria-label="فتح مشغل التلاوة">
+        <ReaderIcon name="play" /><span>تلاوة</span></button>
       <button type="button" className={css.iconButton} onClick={()=>setHideChrome(v=>!v)}>
         {hideChrome?'إظهار الأدوات':'إخفاء الأدوات'}
       </button>
@@ -260,6 +272,9 @@ export function MadinahReader() {
     {error && <div role="alert" className={css.warning}>{error}
       <button type="button" onClick={()=>setRefresh(x=>x+1)}>إعادة المحاولة</button>
     </div>}
+    {audioOpen && audioRequest && <QuranRecitationPlayer
+      request={audioRequest} pageVerses={regions} surahs={surahs}
+      onVerseChange={setAudioVerse} onClose={()=>{setAudioOpen(false);setAudioVerse(null);}} />}
     <div className={css.grid}>
       <main className={css.bookStage} aria-label="صفحات مصحف المدينة">
         {mode==='madinah' ?
@@ -274,7 +289,7 @@ export function MadinahReader() {
               }}>
               <ReaderPrintedPage page={leaf} color={color} inkMode={inkMode}
                 strokes={inkByPage[leaf]??[]} onInkChange={changeInkFor}
-                selectedKey={selectedKey} noteKeys={noteByKey}
+                selectedKey={audioVerse ? quranAudioKey(audioVerse) : selectedKey} noteKeys={noteByKey}
                 onSelect={selectTarget}/>
               </div>)}
           </div>:
@@ -323,7 +338,7 @@ export function MadinahReader() {
           <label htmlFor="quran-font-size">حجم خط وضع «آية بآية»</label>
           <input id="quran-font-size" type="range" min="22" max="42" step="2" value={fontSize}
             onChange={e=>setFontSize(Number(e.target.value))}/>
-          <div className={css.info}><strong>التفسير والتلاوة:</strong> سيُتاحان بعد إضافة مصادر موثقة وحقوق استخدامها. لا نعرض خدمات وهمية.</div>
+          <div className={css.info}><strong>التلاوة:</strong> اختر «تلاوة» من شريط المصحف للاستماع المباشر للقراء. التفسير يحتاج مصدرًا مرخّصًا مستقلًا.</div>
           {indexError&&<p role="status">فهرس السور غير متاح مؤقتًا؛ استخدم رقم الصفحة.</p>}
         </div> : showSearch ? <QuranSearchPanel onNavigate={(target,key)=>{
           go(target,key);setShowSearch(false);setMode('ayah');
@@ -361,6 +376,9 @@ export function MadinahReader() {
             <h3>آية {selectedTarget.surah}:{selectedTarget.ayah}
               {selectedTarget.wordIndex!==null?' · الكلمة '+selectedTarget.wordIndex:''}</h3>
             <div className={css.contextTools}>
+              <button type="button" className={css.smallButton} onClick={()=>openRecitation('ayah',selectedTarget)}>
+                <ReaderIcon name="play" /> استمع لهذه الآية
+              </button>
               <button type="button" className={css.smallButton} onClick={()=>setMarked(prev=>({
                 ...prev,[targetKey(selectedTarget)]:color
               }))}>تظليل هذا الموضع</button>
