@@ -15,8 +15,8 @@ const lessons: readonly Lesson[] = [
   { id: 'l-trial-1', learnerId: 'demo-trial', dayOffset: 1, time: '16:30', durationMinutes: 30, teacher: 'لم يُعيَّن شيخ حقيقي', topic: 'حصة تعريفية توضيحية', status: 'booked', kind: 'trial' },
 ];
 const tasks: readonly PracticeTask[] = [
-  { id: 't-1', learnerId: 'demo-active', title: 'مراجعة المحفوظ', scope: 'سورة الإخلاص · الآيات ١–٤', repetitions: 3, approvedByTeacher: true },
-  { id: 't-2', learnerId: 'demo-active', title: 'تدريب على التلاوة', scope: 'سورة الفلق · الآيات ١–٥', repetitions: 2, approvedByTeacher: true },
+  { id: 't-1', learnerId: 'demo-active', title: 'مراجعة المحفوظ', scope: 'سورة الإخلاص · الآيات ١–٤', repetitions: 3, approvedByTeacher: true, kind: 'revision', quranRange: { surah: 112, fromAyah: 1, toAyah: 4, page: 604 } },
+  { id: 't-2', learnerId: 'demo-active', title: 'تدريب على التلاوة', scope: 'سورة الفلق · الآيات ١–٥', repetitions: 2, approvedByTeacher: true, kind: 'recitation', quranRange: { surah: 113, fromAyah: 1, toAyah: 5, page: 604 } },
   // Never expose a draft/non-teacher-approved task in the learner UI.
   { id: 't-draft', learnerId: 'demo-active', title: 'مسودة غير معتمدة', scope: 'غير منشورة', repetitions: null, approvedByTeacher: false },
 ];
