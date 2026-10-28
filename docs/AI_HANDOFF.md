@@ -109,6 +109,12 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - `MadinahReader.module.css` removes prior forced audio-open `100dvh - 270px` leaf width clamp, minimizes vertical bars while preserving targets. `MadinahReader.tsx` collapses toolbar meaningfully, starts mobile with compact one-row icons visible.
 - No PostgreSQL or persistent notes; owner explicitly requires one backend phase at end. Verify 375x667 screenshot, 360/390/1440 existing smoke, 53+ unit tests, no manual Vercel preview/build.
 
+## Quran interaction handoff, 2026-10-29 (#97)
+- Root cause on Android: `QuranInk.begin` rejected `pointerType==='touch'`, active overlay had `touch-action:pan-y` and no transparent capture rect; so finger did not paint and page scrolling captured gestures. New behavior in draw mode: touch-action none, SVG backdrop captures pointer and pointer capture follows movement; passive mode allows swipe. Pointer cancel drops draft.
+- `QuranAyahOverlay`: first click selects (same polygon geometry); second rapid click of same key opens editor through `onOpenNote`. Keyboard remains direct editor access. `quranInteraction.ts` controls 450ms window by verse/word key. On-page reader adds vertical palette popover without shifting viewer. `SmoothMadinahPage` art keyed by shown.page adds short animation after decoded swap; reduced motion disables.
+- DO NOT build Postgres now. Contract `docs/QURAN_CANONICAL_MUSHAF_AND_LESSON_VIEWS.md`: one learner master Mushaf annotation graph, teacher published additive layered notes; lesson notebook filtered same viewer only, immutable versioned source. No backend storage is operational yet.
+- Exact-head CI should test 56+ Vitest unit cases, browser real pointer one tap/second tap and CDP finger stroke 390px, screenshots, page geometry and 360/390/1440 smoke. Branch preview deployments remain disabled.
+
 ## Quran reader turn regression — Issue #90
 - Working branch `fix/90-quran-spread-turn-navigation` (do not push directly to main). Reader previously rendered [2,3] for page 2 **and** page 3, so Next could look broken on desktop. `quranReaderLayout.ts` now provides `getAdjacentReaderPage`; `MadinahReader.tsx` uses it for both swipe and four footer buttons. Page number, surah and ayah jumps remain direct, not spread-normalized.
 - Unit regression in `quranReaderLayout.test.ts`; Chrome desktop 1→[2,3]→[4,5]→[2,3]→1 plus tablet 768px single-leaf navigation and screenshot in `scripts/browser-smoke.mjs`.

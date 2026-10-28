@@ -24,12 +24,13 @@ export function QuranInk({ page, mode, color, strokes, onChange }: Props) {
       y:Math.max(0,Math.min(1594,(e.clientY-box.top)*1594/box.height)) };
   }
   function begin(e:PointerEvent<SVGSVGElement>) {
-    // Finger always scrolls on mobile; the S Pen or desktop mouse draws.
-    if (!enabled || e.pointerType === 'touch' || (e.pointerType==='mouse' && e.button!==0)) return;
+    // In drawing mode, a finger or S Pen must draw; browsing/swiping works when mode=off.
+    if (!enabled || !e.isPrimary || (e.pointerType==='mouse' && e.button!==0)) return;
     const p=pos(e);
     if (mode==='eraser') {
       const found=[...strokes].reverse().find(s=>s.points.some(q=>Math.hypot(q.x-p.x,q.y-p.y)<22));
       if (found) onChange(strokes.filter(s=>s.id!==found.id));
+      e.preventDefault();
       return;
     }
     active.current={pointerId:e.pointerId,points:[p]};
@@ -50,14 +51,19 @@ export function QuranInk({ page, mode, color, strokes, onChange }: Props) {
     const a=active.current;
     if (!a || a.pointerId!==e.pointerId) return;
     active.current=null;setDraft([]);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
     if (a.points.length>1) onChange([...strokes,{
       id:'ink-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),
       page,color,width:mode==='marker'?16:3,kind:mode==='marker'?'marker':'pen',points:a.points
     }]);
   }
+  function cancel(e:PointerEvent<SVGSVGElement>) {
+    if(active.current?.pointerId===e.pointerId){active.current=null;setDraft([]);}
+  }
   return <svg className={enabled?css.active:css.passive} viewBox="0 0 1000 1594"
       preserveAspectRatio="none" aria-label="طبقة الرسم على المصحف"
-      onPointerDown={begin} onPointerMove={move} onPointerUp={end} onPointerCancel={end}>
+      data-ink-mode={mode} onPointerDown={begin} onPointerMove={move} onPointerUp={end} onPointerCancel={cancel}>
+    {enabled && <rect width="1000" height="1594" fill="transparent" pointerEvents="all" aria-hidden="true" /> }
     {strokes.map(s=><path key={s.id} d={pointToPath(s.points)}
       stroke={s.color} strokeWidth={s.width} opacity={s.kind==='marker'?0.36:0.9}
       fill="none" strokeLinecap="round" strokeLinejoin="round"/> )}

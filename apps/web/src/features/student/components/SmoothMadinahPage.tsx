@@ -96,11 +96,12 @@ export function SmoothMadinahPage({ page, overlay }: { page: number; overlay?: R
 
   return <div className={css.frame} aria-busy={pending}>
     <div className={css.sheet} role="group" aria-label={'مصحف المدينة، الصفحة ' + page}>
-      {shown && <div className={[css.artwork,shown.page<=2?css.opening:''].join(' ')}>
+      {shown && <div key={shown.page} data-rendered-quran-page={shown.page} className={[css.artwork,shown.page<=2?css.opening:''].join(' ')}>
         <img className={css.image} src={shown.url}
           alt={'صفحة ' + shown.page + ' من مصحف المدينة'}
           width={345} height={550} draggable={false} />
         {shown.page === page && overlay}
+        <span className={css.turnSheen} aria-hidden="true" />
       </div>}
       {!shown && <div className={css.placeholder} role="status">جار تجهيز صفحة المصحف…</div>}
       {pending && shown && <div className={css.pending} role="status">جار تجهيز الصفحة {page}…</div>}

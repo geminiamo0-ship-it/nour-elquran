@@ -1,7 +1,12 @@
 import type { ReactNode } from 'react';
 
-type Name = 'marker' | 'pen' | 'search' | 'notes' | 'ayah' | 'settings' | 'index' | 'book' | 'play' | 'pause';
+type Name = 'marker' | 'pen' | 'search' | 'notes' | 'ayah' | 'settings' | 'index' | 'book' | 'play' | 'pause' | 'eraser' | 'undo' | 'redo' | 'hand' | 'close';
 const drawings: Record<Name, ReactNode> = {
+  eraser: <><path d="m20 20-7.5-7.5a2 2 0 0 0-2.8 0L4 18.2A2 2 0 0 0 5.4 21H20z"/><path d="m13 13 5-5a2 2 0 0 0 0-2.8L15.8 3a2 2 0 0 0-2.8 0L6 10"/></>,
+  undo: <><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-2"/></>,
+  redo: <><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h2"/></>,
+  hand: <><path d="M8 13V6a1.5 1.5 0 0 1 3 0v5-7a1.5 1.5 0 0 1 3 0v7-5a1.5 1.5 0 0 1 3 0v6-3a1.5 1.5 0 0 1 3 0v6c0 4-3 7-7 7h-1a7 7 0 0 1-6-3l-3-4a1.8 1.8 0 0 1 2.7-2.3L8 15"/></>,
+  close: <><path d="M5 5 19 19M19 5 5 19"/></>,
   play: <path d="m8 5 11 7-11 7z"/>,
   pause: <><path d="M8 5v14M16 5v14"/></>,
   marker: <><path d="m4 17 7-7 7 7-5 4H6z"/><path d="m10 10 2-2 7 7-2 2"/><path d="M4 22h16"/></>,

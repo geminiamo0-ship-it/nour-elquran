@@ -12,3 +12,21 @@
 .caption { text-align:center; color:#6e796d; font-size:12px; line-height:1.8; margin-top:9px; }
 @media(max-width:680px) {.sheet { width:min(100%,calc((100dvh - 140px)*345/550)); max-width:100%;box-shadow:none;} .opening{transform:scale(1.48)} }
 @media(prefers-reduced-motion:reduce) {.sheet,.image {transition:none;}}
+
+/* Respectful, very short page-turn cue after the next sheet has already decoded.
+   Animation never changes the fixed page container or the verified Quran text. */
+.artwork { animation: quranReveal 190ms cubic-bezier(.18,.7,.2,1) both; }
+.turnSheen { position:absolute;inset:0;z-index:5;pointer-events:none;
+  background:linear-gradient(110deg,transparent 25%,rgba(255,248,216,.20) 43%,transparent 62%);
+  animation:quranSheen 220ms ease-out both; }
+@keyframes quranReveal {
+  from {opacity:.92;filter:brightness(1.035)}
+  to {opacity:1;filter:brightness(1)}
+}
+@keyframes quranSheen {
+  from {opacity:.64;transform:translateX(16%)}
+  to {opacity:0;transform:translateX(-18%)}
+}
+@media(prefers-reduced-motion:reduce){
+  .artwork,.turnSheen{animation:none!important}
+}
