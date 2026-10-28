@@ -291,11 +291,11 @@ try {
   await socket.send('Page.navigate', { url: url + 'student/mushaf' });
   await waitFor(async () => {
     const read=await socket.send('Runtime.evaluate', {
-      expression:"Boolean(document.querySelector('[aria-label^=\"افتح ملاحظة الآية\"]'))",
+      expression:"(()=>{const p=document.querySelector('path[aria-label^=\"افتح ملاحظة الآية\"]');const svg=p?.ownerSVGElement;if(!p||!svg)return false;const style=getComputedStyle(p),overlay=getComputedStyle(svg);return p.getAttribute('fill')==='transparent'&&style.pointerEvents.toLowerCase()==='visiblefill'&&overlay.position==='absolute';})()",
       returnByValue:true,
     });
     return Boolean(read.result?.value);
-  }, 'publisher ayah polygon click regions ready');
+  }, 'publisher ayah polygons and interactive overlay CSS ready');
   const quranReadingScreen=await socket.send('Page.captureScreenshot', {format:'png',captureBeyondViewport:false});
   fs.writeFileSync(path.join(screenshots,'quran-mobile-reading-390.png'),Buffer.from(quranReadingScreen.data,'base64'));
   // Use a REAL pointer hit test, not Element.click(): the SVG may exist but be
