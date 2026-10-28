@@ -353,7 +353,7 @@ export function MadinahReader() {
               <span>{n.text}</span></button>)}
         </div>}
         </>}
-        {!showSearch&&!showNotes&&<p className={css.info}>ستظهر ملاحظات الشيخ المعتمدة من سجل الفصل بعد ربط خدمة التقارير الآمنة. لا تعرض هذه المعاينة بيانات شيخ وهمية.</p>
+        {!showSearch&&!showNotes&&<p className={css.info}>ستظهر ملاحظات الشيخ المعتمدة من سجل الفصل بعد ربط خدمة التقارير الآمنة. لا تعرض هذه المعاينة بيانات شيخ وهمية.</p>}
       </aside>}
     </div>
     <div className={css.readerFoot}>
