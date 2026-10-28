@@ -30,7 +30,7 @@ try {
     await sleep(500);
   }
   assert(html, 'Next server did not become ready: ' + logs);
-  for (const required of ['lang="ar"', 'dir="rtl"', 'نور القرآن', 'نسخة تجريبية']) {
+  for (const required of ['lang="ar"', 'dir="rtl"', 'نور القرآن', 'صفحة تجريبية']) {
     assert(html.includes(required), 'Missing rendered value: ' + required);
   }
   console.log('Production HTTP smoke OK (Arabic/RTL, real Next server)');
