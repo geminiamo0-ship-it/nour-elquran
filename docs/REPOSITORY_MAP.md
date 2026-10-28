@@ -152,3 +152,10 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `components/SmoothMadinahPage.tsx` and CSS: fixed-ratio decoded image swap with short optional turn-sheen animation, reduced-motion preference, no image text manipulation.
 - `components/MadinahReader.tsx` and CSS: vertical floating pen palette under icons, 5 colors, eraser, undo/redo, browsing, no extra horizontal tools or page reflow.
 - `docs/QURAN_CANONICAL_MUSHAF_AND_LESSON_VIEWS.md`: future immutable lesson snapshot filtered through same renderer; one original student Mushaf accumulates approved teacher marks, separated from sibling profiles. Backend deferred.
+
+## Training frontend (#99)
+- `components/TrainingWorkspace.tsx` + `.module.css`: three accessible panels, local learner-scoped homework drafts/prepared toggles, free practice samples, booked lesson preparation.
+- `components/TrainingQuranSession.tsx`: focused same `ReaderPrintedPage` Quran source viewer and publisher-verified ayah text hide/reveal, existing Quran reciter for selected verse.
+- `components/TrainingVoicePractice.tsx`: explicit browser-only mic opt-in and private blob playback, no backend storage.
+- `quranAssignment.ts` + tests: structured surah/from/to/page and demo references; reject scope string guessing, nearest booked lesson.
+- `components/QuranAyahOverlay.tsx` and `components/ReaderPrintedPage.tsx`: optional allowed/focus verse keys for task-specific view; default full Mushaf behaviour unchanged.

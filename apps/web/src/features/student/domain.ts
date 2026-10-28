@@ -1,3 +1,4 @@
+import type { QuranAssignmentRange } from './quranAssignment';
 export type LearnerStage = 'new' | 'trial_booked' | 'assessed' | 'active' | 'lapsed';
 export type LessonStatus = 'booked' | 'completed' | 'cancelled';
 export type Grade = number | null;
@@ -9,6 +10,8 @@ export type Lesson = Readonly<{
 export type PracticeTask = Readonly<{
   id: string; learnerId: string; title: string; scope: string; repetitions: number | null;
   approvedByTeacher: boolean;
+  kind?: 'memorization' | 'revision' | 'recitation';
+  quranRange?: QuranAssignmentRange;
 }>;
 export type PublishedReport = Readonly<{
   id: string; learnerId: string; lessonId: string; teacher: string; dateLabel: string;
