@@ -72,7 +72,7 @@
   .section, .classroom, .steps, .faq, .enroll { padding: 3rem 0; }
   .form { padding: 1rem; }
 }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
+@media (prefers-reduced-motion: reduce) { .container, .hero, .section, .classroom, .steps, .faq, .enroll { scroll-behavior: auto !important; } }
 
 .miniBook { display: inline-block; font-size: 1rem; transform: rotate(-10deg); margin-inline-start: -.5rem; }
 
