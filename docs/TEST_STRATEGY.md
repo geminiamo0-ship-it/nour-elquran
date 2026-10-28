@@ -33,4 +33,4 @@ No app runtime, browser tests, DO stress tests or LiveKit load tests have been e
 
 ## CORE-01 / #57 route module boundary regression (unmerged)
 - `tests/architecture.test.mjs` exercises route-to-feature **public index only** imports. Negative fixtures include alias, relative path and dynamic `import()` deep-import bypasses; a positive fixture uses the feature's public index.
-- The AST architecture scanner runs in `pnpm lint`, and these tests run in `pnpm test` on the #39 branch. CI success must be established at the final exact commit; earlier green workflow runs do not certify new tests.
+- The AST architecture scanner runs in `pnpm lint`, and these tests run in `pnpm test` on the #39 branch. **Verified** on `51fbde724dac1f9a424f210d953986d47e2f983e` / [Verify 40698369854](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40698369854) (all three jobs success, including architecture tests, production build and Chrome smoke). Recheck later documentation commits separately.
