@@ -222,7 +222,7 @@ try {
 
   // Additional learner routes must be actual Next.js pages, not inert dashboard placeholders.
   for (const [section, expected] of [
-    ['lessons', 'سجل الحصص'], ['training', 'التحضير قبل التسميع'],
+    ['lessons', 'سجل الحصص'], ['training', 'كل تدريب له هدف واضح'],
     ['progress', 'السجل الأكاديمي'], ['notebook', 'دفتر الطالب الخاص'],
     ['subscription', 'ملخص الاشتراك'], ['account', 'ملفات الطلاب'],
     ['mushaf', 'مصحف نور القرآن'],
@@ -430,6 +430,32 @@ try {
   const audioCompactScreenshot=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
   fs.writeFileSync(path.join(screenshots,'quran-compact-player-375.png'),Buffer.from(audioCompactScreenshot.data,'base64'));
   console.log('Quran P1 page-first 375x667: dock <58px, full controls accessible, no page shift passed');
+  await socket.send('Emulation.setDeviceMetricsOverride',{
+    width:1440,height:900,deviceScaleFactor:1,mobile:false,
+  });
+
+
+  // S09 Training IA — homework, independent self-study and next lesson readiness.
+  await socket.send('Emulation.setDeviceMetricsOverride',{
+    width:390,height:844,deviceScaleFactor:1,mobile:false,
+  });
+  await socket.send('Page.navigate',{url:url+'student/training'});
+  await waitFor(async()=>{
+    const q=await socket.send('Runtime.evaluate',{
+      expression:`(()=>{const sw=document.querySelector('#learner-switch');return !!sw&&Object.keys(sw).some(k=>k.includes('reactProps'));})()`,
+      returnByValue:true,
+    });return Boolean(q.result?.value);
+  },'hydrated student training workspace');
+  const trainingCase=await socket.send('Runtime.evaluate',{
+    expression:`(async()=>{const wait=()=>new Promise(r=>setTimeout(r,180));const sw=document.querySelector('#learner-switch');const tabs=[...document.querySelectorAll('[role="tab"]')];const three=tabs.length===3;const blank=document.body.textContent.includes('لا توجد تكليفات معتمدة من شيخ');sw.value='demo-active';sw.dispatchEvent(new Event('change',{bubbles:true}));await wait();const cards=[...document.querySelectorAll('button')].filter(b=>b.textContent.includes('ابدأ الواجب في المصحف'));const two=cards.length===2;cards[0]?.click();await wait();const viewer=!!document.querySelector('[aria-label^="عارض تدريب القرآن"]');const sameQuran=!!document.querySelector('[aria-label^="مصحف المدينة، الصفحة"]');const practice=document.getElementById('training-tab-practice');practice?.click();await wait();const threeSamples=document.querySelectorAll('[aria-pressed][class*="sample"]').length===3;const preparation=document.getElementById('training-tab-prepare');preparation?.click();await wait();const next=document.body.textContent.includes('الاستعداد للحصة')&&document.body.textContent.includes('تثبيت المحفوظ');return {three,blank,two,viewer,sameQuran,threeSamples,next};})()`,
+    awaitPromise:true,returnByValue:true,
+  });
+  const training=trainingCase.result?.value;
+  assert(training&&Object.values(training).every(Boolean),
+    'Student Training 3 tabs, learner isolation, shared Quran viewer or next lesson failed: '+JSON.stringify(training??trainingCase));
+  const trainingShot=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+  fs.writeFileSync(path.join(screenshots,'student-training-390.png'),Buffer.from(trainingShot.data,'base64'));
+  console.log('Student Training 3 tabs, two approved demo homework ranges, same Quran renderer and upcoming lesson smoke passed');
   await socket.send('Emulation.setDeviceMetricsOverride',{
     width:1440,height:900,deviceScaleFactor:1,mobile:false,
   });
