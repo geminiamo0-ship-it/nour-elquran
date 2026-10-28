@@ -1,53 +1,99 @@
 'use client';
-import { useState } from 'react';
-import { useStudent } from '../StudentContext';
-import type { Grade } from '../domain';
-import styles from '../StudentPortal.module.css';
 
-type Criterion = 'all' | 'memorization' | 'recitation' | 'tajweed';
-const criteria = [
-  { id: 'all', label: 'الكل' }, { id: 'memorization', label: 'الحفظ' },
-  { id: 'recitation', label: 'التلاوة' }, { id: 'tajweed', label: 'التجويد' },
-] as const;
-const grades = [
-  { key: 'memorization', label: 'الحفظ' }, { key: 'recitation', label: 'التلاوة' },
-  { key: 'tajweed', label: 'التجويد' },
-] as const;
-function GradeValue({ grade }: { grade: Grade }) {
-  return <strong>{grade === null ? 'لم يُقيّم' : grade + ' / 10'}</strong>;
+import { Fragment, useId, useMemo, useState } from 'react';
+import { useStudent } from '../StudentContext';
+import type { Grade, PublishedReport } from '../domain';
+import { latestPublishedReports, REPORTS_PAGE_SIZE, nextReportCount } from '../reportHistory';
+import styles from '../StudentPortal.module.css';
+import table from './ProgressTable.module.css';
+
+function GradeCell({ value }: { value: Grade }) {
+  return <>{value === null ? 'لم يُقيّم' : value + ' / 10'}</>;
 }
+
+function Details({ report }: { report: PublishedReport }) {
+  return <div className={table.details}>
+    <p><strong>تقرير الحصة:</strong> {report.dateLabel} · {report.teacher}</p>
+    <div className={table.gradeList}>
+      <span>الحفظ: <GradeCell value={report.memorization} /></span>
+      <span>التلاوة: <GradeCell value={report.recitation} /></span>
+      <span>التجويد: <GradeCell value={report.tajweed} /></span>
+    </div>
+    <p>آيات الحفظ المثبتة: <strong>{report.memorizedAyat ?? 'غير مذكور'}</strong></p>
+    <p>آيات المراجعة: <strong>{report.reviewedAyat ?? 'غير مذكور'}</strong></p>
+    <p className={table.feedback}>{report.summary}</p>
+    <p className={table.unavailable}>المصحف المشروح للحصة غير متوفر في المعاينة؛ لن نعرض رابط أرشيف غير موجود.</p>
+  </div>;
+}
+
 export function ProgressWorkspace() {
   const { selected } = useStudent();
-  const [criterion, setCriterion] = useState<Criterion>('all');
-  const reports = selected.reports.filter((report) => criterion === 'all' || report[criterion] !== null);
+  const reports = useMemo(
+    () => latestPublishedReports(selected.reports, selected.profile.id),
+    [selected.reports, selected.profile.id],
+  );
+  // The StudentSection keys the component by learnerId: pagination/expansion reset on sibling change.
+  const [count, setCount] = useState(REPORTS_PAGE_SIZE);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const idPrefix = useId().replaceAll(':', '');
+  const visible = reports.slice(0, count);
+
   return <div className={styles.workspace}>
-    <section className={styles.panel}>
-      <div className={styles.panelHead}><div><p className={styles.eyebrow}>تقارير معتمدة فقط</p><h2>السجل الأكاديمي</h2></div>
-        <span className={styles.statusNeutral}>{selected.reports.length ? selected.reports.length + ' تقرير مثال' : 'لا تقارير'}</span></div>
-      <p className={styles.panelIntro}>كل درجة من 10 مستقلة، ولا نعرض متوسطًا إجماليًا مصطنعًا أو نُحوّل «لم يُقيّم» إلى صفر.</p>
-      <div className={styles.filterRow} role="group" aria-label="تصفية التقارير بحسب التقييم">
-        {criteria.map((item) => <button type="button" key={item.id}
-          className={criterion === item.id ? styles.filterActive : styles.filterButton}
-          aria-pressed={criterion === item.id} onClick={() => setCriterion(item.id)}>{item.label}</button>)}
+    <section className={styles.panel} aria-labelledby="academic-history-heading">
+      <div className={styles.panelHead}>
+        <div><p className={styles.eyebrow}>التقارير المنشورة فقط</p><h2 id="academic-history-heading">السجل الأكاديمي</h2></div>
+        <span className={styles.statusNeutral}>{reports.length ? reports.length + ' تقرير توضيحي' : 'لا توجد تقارير'}</span>
       </div>
-      {reports.length ? <div className={styles.stack}>{reports.map((report) =>
-        <article className={styles.formCard} key={report.id}>
-          <div className={styles.reportTop}><div><strong>{report.dateLabel}</strong>
-            <small>{report.teacher} · تقرير منشور في المعاينة</small></div>
-            <span className={styles.statusSoft}>منشور · مثال</span></div>
-          <div className={styles.reportGrades}>{grades.map(({ key, label }) => <div key={key}>
-            <span>{label}</span><GradeValue grade={report[key]} />
-          </div>)}</div>
-          <div className={styles.reportValues}>
-            <span>آيات حفظ أقرها المعلم: <strong>{report.memorizedAyat ?? '—'}</strong></span>
-            <span>آيات تمت مراجعتها: <strong>{report.reviewedAyat ?? '—'}</strong></span></div>
-          <details className={styles.detailItem}><summary>افتح تفاصيل تقرير الحصة</summary>
-            <div className={styles.detailBody}>{report.summary}
-              <p className={styles.muted}>ملاحظات مخارج الحروف والأخطاء والصور المؤرشفة تُضاف مع نظام تقارير الشيخ الحقيقي.</p>
-            </div></details>
-        </article>)}</div> :
-        <div className={styles.emptyBox}>{selected.reports.length ? 'لا يوجد تقييم منشور لهذا المعيار بعد.' :
-          'لا توجد تقارير منشورة أو معتمدة لهذا الطالب. ستظهر بعد أول حصة وتقييم من الشيخ.'}</div>}
+      <p className={styles.panelIntro}>
+        ثلاث درجات مستقلة من 10، دون متوسط كلي أو رسوم بيانية. «لم يُقيّم» ليست صفرًا.
+        هذه أمثلة وليست درجات حقيقية.
+      </p>
+      {reports.length === 0 ? <div className={styles.emptyBox}>
+        لا توجد تقارير منشورة أو معتمدة لهذا الطالب. ستظهر بعد أول حصة وتقييم من الشيخ.
+      </div> : <>
+        <div className={table.scroll} tabIndex={0} role="region" aria-label="جدول التقارير الأكاديمية">
+          <table className={table.table}>
+            <thead><tr>
+              <th scope="col">الحصة / التاريخ</th>
+              <th scope="col">الحفظ / 10</th>
+              <th scope="col">التلاوة / 10</th>
+              <th scope="col">التجويد / 10</th>
+              <th scope="col">التقرير</th>
+            </tr></thead>
+            <tbody>
+              {visible.map((report) => {
+                const expanded = expandedId === report.id;
+                const detailId = idPrefix + '-report-' + report.id;
+                return <Fragment key={report.id}>
+                  <tr>
+                    <th scope="row" className={table.lessonColumn}>
+                      <strong>{report.dateLabel}</strong>
+                      <small>{report.teacher}</small>
+                    </th>
+                    <td><GradeCell value={report.memorization} /></td>
+                    <td><GradeCell value={report.recitation} /></td>
+                    <td><GradeCell value={report.tajweed} /></td>
+                    <td>
+                      <button type="button" className={table.expand} aria-expanded={expanded} aria-controls={detailId}
+                        onClick={() => setExpandedId(expanded ? null : report.id)}>
+                        {expanded ? 'إخفاء التفاصيل' : 'عرض التقرير'}
+                      </button>
+                    </td>
+                  </tr>
+                  <tr className={table.detailsRow} hidden={!expanded}>
+                    <td colSpan={5} id={detailId}><Details report={report} /></td>
+                  </tr>
+                </Fragment>;
+              })}
+            </tbody>
+          </table>
+        </div>
+        {count < reports.length && <div className={table.more}>
+          <button type="button" className={styles.actionButton}
+            onClick={() => setCount((current) => nextReportCount(current, reports.length))}>عرض المزيد</button>
+        </div>}
+        <p className={styles.panelFoot}>كل حصة تظهر بإصدارها المنشور الأحدث فقط، ولا تُعرض مسودات الشيخ.</p>
+      </>}
     </section>
   </div>;
 }
