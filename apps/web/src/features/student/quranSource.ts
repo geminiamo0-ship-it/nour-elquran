@@ -76,7 +76,7 @@ export function parseQuranChapter(data: unknown, surah: number): Map<number, str
     if (typeof verse.id === 'number' && Number.isInteger(verse.id)) {
       ayah = verse.id;
     } else if (typeof verse.id === 'string') {
-      const match = /^(\\d+):(\\d+)$/.exec(verse.id);
+      const match = /^(\d+):(\d+)$/.exec(verse.id);
       if (match && Number(match[1]) === surah) ayah = Number(match[2]);
     }
     if (ayah !== null && Number.isSafeInteger(ayah) && ayah > 0 && !result.has(ayah)) {
