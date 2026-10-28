@@ -339,11 +339,12 @@ try {
     });return Boolean(out.result?.value);
   },'desktop Quran reader shell');
   const spread=await socket.send('Runtime.evaluate',{
-    expression:`(async()=>{const pause=()=>new Promise(r=>setTimeout(r,210));const next=document.querySelector('[aria-label="تقليب إلى الصفحة التالية"]');next?.click();await pause();next?.click();await pause();const actual=document.querySelector('[data-spread-pages]')?.getAttribute('data-spread-pages');const pages=document.querySelectorAll('[aria-label^="مصحف المدينة، الصفحة"]').length;return {actual,pages};})()`,
+    expression:`(async()=>{const pause=()=>new Promise(r=>setTimeout(r,180));const next=document.querySelector('[aria-label="تقليب إلى الصفحة التالية"]');const prev=document.querySelector('[aria-label="تقليب إلى الصفحة السابقة"]');const state=()=>({spread:document.querySelector('[data-spread-pages]')?.getAttribute('data-spread-pages'),page:document.querySelector('#quran-page-input')?.value});next?.click();await pause();const first=state();next?.click();await pause();const second=state();prev?.click();await pause();const back=state();prev?.click();await pause();const opening=state();next?.click();await pause();const final=state();const leaves=document.querySelectorAll('[aria-label^="مصحف المدينة، الصفحة"]').length;return {first:first.spread==='2,3'&&first.page==='2',second:second.spread==='4,5'&&second.page==='4',back:back.spread==='2,3'&&back.page==='2',opening:opening.spread==='1'&&opening.page==='1',final:final.spread==='2,3'&&leaves===2};})()`,
     awaitPromise:true,returnByValue:true,
   });
-  assert(spread.result?.value?.actual==='2,3'&&spread.result?.value?.pages===2,
-    'Desktop Quran spread must have two physical interactive leaves: '+JSON.stringify(spread.result?.value));
+  const spreadValues=spread.result?.value;
+  assert(spreadValues&&Object.values(spreadValues).every(Boolean),
+    'Desktop Quran next/previous must turn physical spreads without repeated leaves: '+JSON.stringify(spreadValues??spread));
   await socket.send('Runtime.evaluate',{
     expression:`document.querySelector('[aria-label="فتح فهرس المصحف"]')?.click()`,
     returnByValue:true,
@@ -400,6 +401,32 @@ try {
   const audioCompactScreenshot=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
   fs.writeFileSync(path.join(screenshots,'quran-compact-player-375.png'),Buffer.from(audioCompactScreenshot.data,'base64'));
   console.log('Quran P1 page-first 375x667: dock <58px, full controls accessible, no page shift passed');
+  await socket.send('Emulation.setDeviceMetricsOverride',{
+    width:1440,height:900,deviceScaleFactor:1,mobile:false,
+  });
+
+  // At 768px the reader must show a single physical page and turn one leaf per click.
+  await socket.send('Emulation.setDeviceMetricsOverride',{
+    width:768,height:900,deviceScaleFactor:1,mobile:false,
+  });
+  await socket.send('Page.navigate',{url:url+'student/mushaf'});
+  await waitFor(async()=>{
+    const r=await socket.send('Runtime.evaluate',{
+      expression:"(()=>{const b=document.querySelector('[aria-label=\\"تقليب إلى الصفحة التالية\\"]');return !!b&&Object.keys(b).some(k=>k.includes('reactProps'));})()",
+      returnByValue:true,
+    });
+    return Boolean(r.result?.value);
+  },'tablet Quran reader hydration');
+  const tablet=await socket.send('Runtime.evaluate',{
+    expression:`(async()=>{const pause=()=>new Promise(r=>setTimeout(r,180));const next=document.querySelector('[aria-label="تقليب إلى الصفحة التالية"]');const prev=document.querySelector('[aria-label="تقليب إلى الصفحة السابقة"]');next?.click();await pause();next?.click();await pause();const spread=document.querySelector('[data-spread-pages]')?.getAttribute('data-spread-pages');const count=document.querySelectorAll('[aria-label^="مصحف المدينة، الصفحة"]').length;prev?.click();await pause();return {single:spread==='3'&&count===1,previous:document.querySelector('#quran-page-input')?.value==='2',noOverflow:document.documentElement.scrollWidth<=768};})()`,
+    awaitPromise:true,returnByValue:true,
+  });
+  const tabletValues=tablet.result?.value;
+  assert(tabletValues&&Object.values(tabletValues).every(Boolean),
+    'Tablet Quran must turn one page without horizontal overflow: '+JSON.stringify(tabletValues??tablet));
+  const tabletScreen=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+  fs.writeFileSync(path.join(screenshots,'quran-tablet-768.png'),Buffer.from(tabletScreen.data,'base64'));
+  console.log('Quran 768px single-leaf navigation, responsive geometry and screenshot passed');
   await socket.send('Emulation.setDeviceMetricsOverride',{
     width:1440,height:900,deviceScaleFactor:1,mobile:false,
   });
