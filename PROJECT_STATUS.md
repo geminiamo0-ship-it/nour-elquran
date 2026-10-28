@@ -11,6 +11,7 @@ Last verified: 2026-10-28.
 - PR #2 merged (squash) as 24f57aa8c9024eb1cbd246a57ae5dff758a07e28.
 - [Post-merge main push Verify run 40611612261](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40611612261): **success**.
 - [Planning Issue #3](https://github.com/geminiamo0-ship-it/nour-elquran/issues/3) opened for owner review of the complete frontend-first roadmap; no frontend tasks approved yet.
+- [Classroom spec Issue #7](https://github.com/geminiamo0-ship-it/nour-elquran/issues/7) records owner-approved LiveKit Cloud and the two-way annotated mushaf with writing/notes, structured archive and page PDF/image. This is a **spec decision only**, not built or tested.
 
 ## Still pending (do NOT claim complete)
 - **Issue #1 remains OPEN** until main branch ruleset, mandatory PR reviews and required status checks are enabled and verified in GitHub settings.
@@ -19,7 +20,7 @@ Last verified: 2026-10-28.
 - Current master plan is a discussion draft, not an approved detailed implementation backlog.
 
 ## Next exact step
-Discuss and approve scope, route map, design system and implementation sequence in Issue #3. Then create detailed per-page implementation Issues. Owner or authorized GitHub admin must configure main branch protections in docs/CI_BRANCH_PROTECTION.md, verify status and update Issue #1.
+Return to frontend planning in Issue #3: agree design system/landing page and complete mock flow sequence, incorporating approved Classroom spec #7. Discuss and approve scope, route map, design system and implementation sequence in Issue #3. Then create detailed per-page implementation Issues. Owner or authorized GitHub admin must configure main branch protections in docs/CI_BRANCH_PROTECTION.md, verify status and update Issue #1.
 
 ## Start-here links
 - [AGENTS.md](AGENTS.md)
