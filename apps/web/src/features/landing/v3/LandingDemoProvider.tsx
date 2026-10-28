@@ -29,7 +29,7 @@ export function LandingDemoProvider({ children }: { children: ReactNode }) {
     if (!unique.length) return;
     setAccountName(account);
     setStudents(unique);
-    setActiveStudent(unique[0]);
+    setActiveStudent(unique[0] ?? '');
     setBookings({});
     selectTab('home');
     setOpen(true);
