@@ -68,3 +68,57 @@
   .immersive .navigation,.immersive .toolbar{justify-content:center}
   .immersive .sidebar{padding:12px}
 }
+
+/* P0 layout repair: page is primary; tools are compact, optional and never push it away. */
+.reader{gap:8px;min-height:0}
+.readerHeader{gap:6px;min-height:38px}
+.readerHeader .button{min-height:36px;padding:6px 10px}
+.chrome{gap:6px}
+.chrome .toolbar,.chrome .navigation{padding:7px 9px;gap:5px}
+.chrome .button,.chrome .active{min-height:36px;padding:6px 10px}
+.grid{min-height:0;grid-template-columns:minmax(0,1fr) minmax(240px,320px);align-items:start;gap:10px}
+.pageShell{min-width:0;padding:8px}
+.sidebar{min-width:0;max-height:calc(100dvh - 130px);overflow-y:auto;overscroll-behavior:contain;align-content:start;gap:10px}
+.sheetHeading{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #e7dac3;padding:0 0 9px;position:sticky;top:0;background:#fffdf8;z-index:2}
+.sheetHeading strong{font-size:15px;color:#244b36}
+.sheetHeading .button{min-height:32px}
+.note{order:0;display:grid;gap:9px;background:#faf3de;border:1px solid #ead7aa;border-radius:9px;padding:12px}
+.note textarea{min-height:85px;resize:vertical}
+.saveNotice{color:#236c44;font-size:12px;font-weight:700;margin:0}
+.pageCaption{max-width:570px;text-align:center;line-height:1.6}
+.readerFoot{gap:6px;justify-content:center}
+.readerFoot .button{min-height:36px}
+.immersive{padding:calc(5px + env(safe-area-inset-top)) 8px calc(3px + env(safe-area-inset-bottom));height:100dvh;min-height:0;max-height:100dvh;overflow:hidden;gap:5px}
+.immersive .readerHeader{min-height:38px;flex-shrink:0;position:relative;padding:0 2px}
+.immersive .readerHeader strong{font-size:12px}
+.immersive .headerActions .button{min-height:33px;font-size:11px;padding:5px 8px}
+.immersive .chrome{flex:0 0 auto;max-height:30dvh;overflow-y:auto}
+.immersive .grid{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:stretch;overflow:hidden}
+.immersive .pageShell{width:100%;height:100%;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:2px}
+.immersive .pageShell>div:first-child{min-height:0;max-height:100%;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.immersive .pageShell .pageCaption{font-size:10px;line-height:1.4;margin-top:1px}
+.immersive .sidebar{position:fixed;top:55px;right:10px;left:auto;bottom:auto;z-index:50;width:min(380px,calc(100vw - 20px));max-height:calc(100dvh - 120px);padding:12px;box-shadow:0 16px 45px #1a302e45;border-radius:12px}
+.immersive .readerFoot{position:relative;flex-shrink:0;min-height:45px;bottom:auto;gap:5px;flex-wrap:nowrap;padding:4px 0}
+.immersive .readerFoot .button{min-height:37px;padding:4px 9px;font-size:11px;flex-shrink:0}
+.immersive .readerFoot strong{font-size:12px;white-space:nowrap}
+.immersive .readerFoot span{display:none}
+.readingOnly .readerFoot{display:flex}
+@media(max-width:700px){
+ .immersive .grid{display:flex;flex-direction:column}
+ .immersive .pageShell{width:100%;padding:0}
+ .immersive .sidebar{top:auto;right:7px;left:7px;bottom:calc(53px + env(safe-area-inset-bottom));width:auto;max-height:min(53dvh,440px);overflow-y:auto;border-radius:15px}
+ .immersive .readerFoot{justify-content:space-between;width:100%;gap:4px}
+ .immersive .readerFoot .button{padding:4px 7px}
+ .immersive .readerHeader{flex-wrap:nowrap}
+ .immersive .readerHeader strong{max-width:43vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .immersive .headerActions{flex-wrap:nowrap}
+ .immersive .chrome{max-height:26dvh}
+ .immersive .toolbar,.immersive .navigation{padding:5px;gap:5px}
+ .immersive .button,.immersive .active{min-height:34px}
+ .immersive .pageShell>div:first-child{min-height:0}
+ .pageCaption{font-size:10px}
+}
+@media(max-width:370px){
+ .immersive .readerFoot .button{font-size:10px;padding:4px 5px}
+ .immersive .readerHeader strong{font-size:11px}
+}
