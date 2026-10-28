@@ -291,7 +291,7 @@ try {
   await socket.send('Page.navigate', { url: url + 'student/mushaf' });
   await waitFor(async () => {
     const read=await socket.send('Runtime.evaluate', {
-      expression:"Boolean(document.querySelector('[aria-label^=\"افتح ملاحظة الآية\"]'))",
+      expression:"Boolean(document.querySelector('[aria-label^=\"تحديد الآية\"]'))",
       returnByValue:true,
     });
     return Boolean(read.result?.value);
@@ -301,7 +301,7 @@ try {
   // Use a REAL pointer hit test, not Element.click(): the SVG may exist but be
   // visually covered, clipped, or have pointer-events disabled.
   const tapPoint = await socket.send('Runtime.evaluate', {
-    expression: `(()=>{const paths=[...document.querySelectorAll('path[aria-label^="افتح ملاحظة الآية"]')];for(const path of paths){const r=path.getBoundingClientRect();if(r.width<3||r.height<3)continue;for(let yi=1;yi<=9;yi++){for(let xi=1;xi<=9;xi++){const x=r.left+r.width*xi/10,y=r.top+r.height*yi/10;if(x<0||y<0||x>=innerWidth||y>=innerHeight)continue;if(document.elementFromPoint(x,y)===path)return {x,y,label:path.getAttribute('aria-label')};}}}return null;})()`,
+    expression: `(()=>{const paths=[...document.querySelectorAll('path[aria-label^="تحديد الآية"]')];for(const path of paths){const r=path.getBoundingClientRect();if(r.width<3||r.height<3)continue;for(let yi=1;yi<=9;yi++){for(let xi=1;xi<=9;xi++){const x=r.left+r.width*xi/10,y=r.top+r.height*yi/10;if(x<0||y<0||x>=innerWidth||y>=innerHeight)continue;if(document.elementFromPoint(x,y)===path)return {x,y,label:path.getAttribute('aria-label')};}}}return null;})()`,
     returnByValue:true,
   });
   const point=tapPoint.result?.value;
@@ -309,6 +309,14 @@ try {
     'Quran polygon is rendered but cannot receive a physical tap in the viewport');
   await socket.send('Input.dispatchMouseEvent',{type:'mousePressed',x:point.x,y:point.y,button:'left',clickCount:1});
   await socket.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:point.x,y:point.y,button:'left',clickCount:1});
+  const firstTapState=await socket.send('Runtime.evaluate',{
+    expression:`(async()=>{await new Promise(r=>setTimeout(r,100));const highlighted=[...document.querySelectorAll('path[aria-label^="تحديد الآية"]')].some(x=>x.getAttribute('class')?.includes('selected'));return {highlighted,noEditor:!document.querySelector('#quran-note')};})()`,
+    awaitPromise:true,returnByValue:true,
+  });
+  assert(firstTapState.result?.value?.highlighted&&firstTapState.result?.value?.noEditor,
+    'First Quran tap must highlight only, without opening note: '+JSON.stringify(firstTapState.result?.value));
+  await socket.send('Input.dispatchMouseEvent',{type:'mousePressed',x:point.x,y:point.y,button:'left',clickCount:2});
+  await socket.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:point.x,y:point.y,button:'left',clickCount:2});
   await waitFor(async()=>{
     const result=await socket.send('Runtime.evaluate',{
       expression:"Boolean(document.querySelector('#quran-note'))",returnByValue:true,
