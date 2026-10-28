@@ -26,7 +26,7 @@
 - Frontend-first using realistic non-sensitive mock data; **working flows, not decorative UI**.
 - Shared contract schemas for future backend/AI interactions.
 - Validate browser/mobile classroom shape early; implement LiveKit proper in later issue.
-- Later: Supabase Auth/Postgres, Cloudflare API & Durable Objects, Queues/outbox where warranted, LiveKit VPS on Hetzner, AI plan orchestration.
+- Later: Supabase Auth/Postgres, Cloudflare API & Durable Objects, Queues/outbox where warranted, **LiveKit Cloud** real-time audio/video integration (approved provider), AI plan orchestration.
 - Data ownership needs explicit ADR: per-student interactive DO vs teacher scheduling/lesson consistency and Postgres monetary transactions.
 - Priorities and boundaries must be recorded in individual feature issues, not simply inferred from this document.
 
@@ -36,7 +36,7 @@
 - Lesson scheduling and teacher assignment rules, purchase flow and policy.
 - Quran text/audio rights and selected recitation vendors.
 - Frontend Cloudflare adapter compatibility and deployment configuration.
-- LiveKit infrastructure and recording policy.
+- LiveKit Cloud account, pricing/limits, token creation, traffic monitoring and recording policy. **Cloud provider is approved; no instance/account deployment is claimed.**
 - AI planner model, report schema, teacher approval UX, safety verification.
 - Branch protection and required check settings in GitHub.
 
@@ -50,3 +50,16 @@ M5: AI-assisted training and hardening.
 M6: Production readiness, security, performance, acceptance.
 
 Do not auto-create a backlog and start shipping these milestones until owner approval.
+
+## Approved classroom behavior — decision captured 2026-10-28 (Issue #7)
+- **LiveKit Cloud** chosen for video and audio, replacing earlier proposed self-hosted Hetzner/LiveKit option as the default. Choice does not mean integration has been implemented or paid subscription activated.
+- Classroom is a **shared interactive mushaf**, with smaller teacher/student video panes. Audio matters most; video can adapt to weaker networks.
+- Teacher **and learner** may both mark/write on the Quran page: freehand pen, highlight, annotate with typed side notes and handwriting, erase and undo/redo. Keep author attribution; define exact permissions, moderation and drawing conflict policy in UI specification.
+- Shared navigation and synchronized annotation rendering, independent of video screen sharing. Render marks on an overlay; canonical Arabic Quran text is never altered.
+- Upon lesson completion, associate both **structured, recoverable annotation JSON** and **rendered annotated PNG/PDF** with the lesson and selected student profile, so users can revisit marked mushaf pages and related notes.
+- Teacher quick tags for recitation errors and assigned practice, and after-class reports, are expected workflows. AI practice generation remains later-phase and teacher-verified.
+- Quran layout/page edition, coordinates, fonts, canonical content rights and commercial usage of recitations are prerequisite decisions.
+- React Konva is a proposed annotation UI implementation for verification in first classroom spike; LiveKit Cloud and two-way drawing are accepted product choices.
+- No default video/voice recording: saving marked mushaf pages/notes is **not** recording the live audiovisual session.
+
+**Scope:** recording approved product decisions only; **frontend route designs, acceptance sequence and first implementation issue still require owner discussion in #3**.
