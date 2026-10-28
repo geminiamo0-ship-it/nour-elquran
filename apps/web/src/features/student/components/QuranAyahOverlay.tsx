@@ -39,7 +39,10 @@ export function QuranAyahOverlay({page,regions,selectedKey,noteKeys,onSelect,ena
       function enter(event:KeyboardEvent<SVGPathElement>){
         if(event.key==='Enter'||event.key===' '){event.preventDefault();onSelect(target);}
       }
-      return <path key={key} d={d} className={selected?css.selected:annotated?css.annotated:css.hotspot}
+      // Presentation-attribute fallback prevents an opaque black SVG path flash if the
+      // route's CSS chunk arrives after the verified polygon metadata.
+      return <path key={key} d={d} fill="transparent" stroke="transparent" strokeWidth={0}
+        className={selected?css.selected:annotated?css.annotated:css.hotspot}
         tabIndex={0} role="button" aria-label={'افتح ملاحظة الآية '+key}
         onClick={()=>onSelect(target)} onKeyDown={enter}/>;
     })}
