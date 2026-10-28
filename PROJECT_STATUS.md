@@ -42,3 +42,13 @@ Date / Issue / PR / exact head SHA; changed paths; tests and exact Actions URL; 
 - Replaces injected V3 HTML fragments with JSX in all 14 section components. Classroom tool state, canvas drawing, notes, form/profile flow, mock slots and modal state now use React components/hooks; no standalone runtime interactions script in the route.
 - Preserves approved CSS and Arabic RTL visual design. Adds reduced-motion handling and source integrity tests. Demo remains entirely browser-local, not authenticated or booked in a backend.
 - Verify code-quality, TypeScript/Next build and 360/390/1440 browser screenshots on this PR's exact head before merge. Further acceptance needed for real auth and accessibility.
+
+## 2026-10-28 — native JSX landed via #66; #43 accessibility follow-up
+- [PR #66](https://github.com/geminiamo0-ship-it/nour-elquran/pull/66) merged as `1212d86564cd749fdc7ce3b9e844174f6002b7a3`: native JSX and React interactions replace the previous HTML injection. [Verify 40713479868](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40713479868) passed on its exact PR head; no production deployment.
+- Parallel duplicate draft #67 was closed unmerged after discovering #66 had landed; do not merge conflicting duplicate implementations.
+- Branch `fix/43-landing-modal-a11y` adds modal keyboard focus trap/restoration, semantic tabs/selection status, native JSX regression test and real Chrome keyboard assertions. **Branch CI and review are pending**; keep #43 open until acceptance.
+
+### #43 modal accessibility CI evidence (PR #68)
+- Exact tested head `8848d89f3ec18eb9952e42dbb6e3ccfe20f2f279`: [Verify 40714766060](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40714766060) **SUCCESS** (all 3 jobs; frozen install, lint, strict typecheck, tests, production build, HTTP smoke, real Chrome 360/390/1440 and focus-trap/restoration assertions).
+- Screenshot artifact `12828076110` downloaded; 390px and 1440px initial viewport manually inspected for legibility, brand and obvious clipping. Not full-page/assistive-tech acceptance.
+- This is a draft PR awaiting review; no deployment or merge. Any later documentation commit requires its own CI confirmation.

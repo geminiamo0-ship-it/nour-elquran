@@ -53,3 +53,9 @@ The real `pnpm-lock.yaml` is committed on this feature branch; frozen install, l
 - supabase/migrations/: schema changes.
 
 Update this map IN THE SAME PR that creates, removes or moves directories; identify exact responsibilities and entry points, not merely list names.
+
+## #43 native React accessibility hardening (branch-only)
+- `apps/web/src/features/landing/v3/DashboardModal.tsx`: dialog focus trap and restoration, semantic tab and selection ARIA state, announced booking status.
+- `tests/landing-native.test.mjs`: rejects `dangerouslySetInnerHTML` and legacy script regression across all 14 landing sections.
+- `scripts/browser-smoke.mjs`: Chrome keyboard focus-trap/restoration assertions in the existing registration-first mock journey.
+- Changes are on `fix/43-landing-modal-a11y` until PR review and CI; native JSX baseline already merged via #66.
