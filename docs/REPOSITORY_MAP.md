@@ -53,3 +53,21 @@ The real `pnpm-lock.yaml` is committed on this feature branch; frozen install, l
 - supabase/migrations/: schema changes.
 
 Update this map IN THE SAME PR that creates, removes or moves directories; identify exact responsibilities and entry points, not merely list names.
+
+## CORE-06 #44 — Student portal (M2 preview)
+- apps/web/src/app/student/layout.tsx: route-level student shell, persistent across learner subpages.
+- apps/web/src/app/student/page.tsx: academic learner overview.
+- apps/web/src/app/student/[section]/page.tsx: lessons, mushaf, training, progress, notebook, subscription and account.
+- apps/web/src/features/student/index.ts: sole public feature import API for routes.
+- apps/web/src/features/student/domain.ts: typed learner, lesson, task and teacher-published report contracts, runtime checks, learner-scope filters.
+- apps/web/src/features/student/mock-adapter.ts: isolated invented student fixtures and validated browser-session signup names, not live records or API.
+- apps/web/src/features/student/StudentContext.tsx: active learner scoped state; per-learner checkbox state and no cross-learner reports.
+- apps/web/src/features/student/StudentShell.tsx: account profile switching, responsive RTL sidebar/mobile navigation, explicit mock warning.
+- apps/web/src/features/student/StudentDashboard.tsx: 50/50 academic home, no fake scores on new accounts.
+- apps/web/src/features/student/StudentSection.tsx: route-specific detail pages and empty states.
+- apps/web/src/features/student/components/{SchedulePanel,WirdPanel}.tsx: 7-day Cairo strip and local practice, respectively.
+- apps/web/src/features/student/StudentPortal.module.css: scoped olive/gold/ivory responsive visual system.
+- apps/web/src/features/student/student.test.tsx: fixture isolation, grade invariants, empty state tests.
+- scripts/browser-smoke.mjs: original landing checks + student portal 360/390/1440 screenshot/interaction checks.
+- apps/web/src/features/landing/v3/{LandingDemoProvider,DashboardModal}.tsx: transient same-tab learner profile handoff and portal link; landing stays authentic V3.
+All functions are browser-local mock only; no sensitive backend credentials, no real enrollment/booking/teacher/media/payment.
