@@ -210,9 +210,9 @@ export function QuranRecitationPlayer({ request, pageVerses, surahs, onVerseChan
         <span>{formatAudioClock(duration)}</span>
       </div>
     </div>
+      <span className={css.attribution}>بث صوتي مباشر من EveryAyah، بدون نسخ التسجيلات أو رفعها إلى R2.</span>
     </div>
     {error && <p className={css.error} role="alert">{error}</p>}
     {status==='loading'&&!error && <span className={css.loading} role="status">جار تحميل التلاوة…</span>}
-    <span className={css.attribution}>بث صوتي مباشر من EveryAyah، بدون نسخ التسجيلات أو رفعها إلى R2.</span>
   </section>;
 }
