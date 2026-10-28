@@ -85,3 +85,11 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `apps/web/src/features/student/StudentSection.tsx`: route-to-component composition with profile key preventing transient cross-sibling text leaks.
 - `apps/web/src/features/student/StudentPortal.module.css`: scoped responsive styles and controls.
 - `apps/web/src/features/student/student.test.tsx`, `scripts/browser-smoke.mjs`: seven-route and interaction checks.
+
+## STU-AZ S01 (student report table)
+- `docs/STUDENT_PORTAL_A_TO_Z.md`: authoritative step-by-step implementation and delivery gates.
+- `apps/web/src/features/student/reportHistory.ts`: approved-only newest-per-lesson stable sorting and five-row increment.
+- `apps/web/src/features/student/reportHistory.test.ts`: revision/tie/order/null-grade/table SSR unit assertions.
+- `apps/web/src/features/student/components/ProgressWorkspace.tsx`: accessible academic table + one in-row detail; no category filters/charts.
+- `apps/web/src/features/student/components/ProgressTable.module.css`: scoped horizontally scrollable mobile academic table.
+- `scripts/browser-smoke.mjs`: progress table keyboard-ready elements, expand and sibling isolation Chrome smoke.

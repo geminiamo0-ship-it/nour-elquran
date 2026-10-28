@@ -1,0 +1,21 @@
+.scroll { overflow-x:auto; max-width:100%; background:#fffdf7; border:1px solid var(--border,#e4d9c0); border-radius:8px; }
+.table { width:100%; min-width:635px; border-collapse:collapse; text-align:right; font-size:13px; color:#30493c; }
+.table th,.table td { padding:12px 13px; border-bottom:1px solid #e9e0cd; vertical-align:middle; }
+.table thead th { background:#f1eadb; font-weight:800; white-space:nowrap; }
+.table tbody tr:hover { background:#f9f6ef; }
+.table tbody tr:last-child > * { border-bottom:0; }
+.lessonColumn { min-width:170px; }
+.lessonColumn strong,.lessonColumn small { display:block; }
+.lessonColumn small { color:#65766a; font-weight:400; font-size:11px; }
+.expand { min-height:40px; cursor:pointer; border:1px solid #bda979; border-radius:6px; padding:8px 11px; color:#30493c; background:#f7f1e4; white-space:nowrap; font:inherit; }
+.expand:hover { background:#ece1c7; }
+.expand:focus-visible,.scroll:focus-visible { outline:3px solid #8f6619; outline-offset:2px; }
+.detailsRow > td { background:#faf7ee; }
+.details { padding:8px 4px 12px; line-height:1.85; font-size:13px; color:#3c5743; }
+.details p { margin:6px 0; }
+.gradeList { display:flex; flex-wrap:wrap; gap:8px 22px; }
+.feedback { border-right:3px solid #ad8028; padding:8px 12px; background:#fffdf7; white-space:pre-wrap; }
+.unavailable { color:#6a7569; font-size:12px; }
+.more { display:flex; justify-content:center; padding-top:16px; }
+@media (max-width:650px) { .table { min-width:600px; } .table th,.table td { padding:11px 10px; } }
+@media (prefers-reduced-motion:reduce) { .scroll { scroll-behavior:auto; } }
