@@ -298,14 +298,26 @@ try {
   }, 'publisher ayah polygon click regions ready');
   const quranReadingScreen=await socket.send('Page.captureScreenshot', {format:'png',captureBeyondViewport:false});
   fs.writeFileSync(path.join(screenshots,'quran-mobile-reading-390.png'),Buffer.from(quranReadingScreen.data,'base64'));
-  await socket.send('Runtime.evaluate', {
-    expression: "(async()=>{document.querySelector('[aria-label^=\\\"افتح ملاحظة الآية\\\"]')?.click();await new Promise(r=>setTimeout(r,220));})()",
-    awaitPromise:true,returnByValue:true,
+  // Use a REAL pointer hit test, not Element.click(): the SVG may exist but be
+  // visually covered, clipped, or have pointer-events disabled.
+  const tapPoint = await socket.send('Runtime.evaluate', {
+    expression: `(()=>{const paths=[...document.querySelectorAll('path[aria-label^="افتح ملاحظة الآية"]')];for(const path of paths){const r=path.getBoundingClientRect();if(r.width<3||r.height<3)continue;for(let yi=1;yi<=9;yi++){for(let xi=1;xi<=9;xi++){const x=r.left+r.width*xi/10,y=r.top+r.height*yi/10;if(x<0||y<0||x>=innerWidth||y>=innerHeight)continue;if(document.elementFromPoint(x,y)===path)return {x,y,label:path.getAttribute('aria-label')};}}}return null;})()`,
+    returnByValue:true,
   });
+  const point=tapPoint.result?.value;
+  assert(point && Number.isFinite(point.x) && Number.isFinite(point.y),
+    'Quran polygon is rendered but cannot receive a physical tap in the viewport');
+  await socket.send('Input.dispatchMouseEvent',{type:'mousePressed',x:point.x,y:point.y,button:'left',clickCount:1});
+  await socket.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:point.x,y:point.y,button:'left',clickCount:1});
+  await waitFor(async()=>{
+    const result=await socket.send('Runtime.evaluate',{
+      expression:"Boolean(document.querySelector('#quran-note'))",returnByValue:true,
+    });return Boolean(result.result?.value);
+  },'actual pointer tap opens Quran note editor');
   const quranNoteScreen=await socket.send('Page.captureScreenshot', {format:'png',captureBeyondViewport:false});
   fs.writeFileSync(path.join(screenshots,'quran-mobile-note-390.png'),Buffer.from(quranNoteScreen.data,'base64'));
   const quranClickInteraction=await socket.send('Runtime.evaluate', {
-    expression:"(async()=>{const pause=()=>new Promise(r=>setTimeout(r,200)); const sheet=document.querySelector('[aria-label^=\"مصحف المدينة، الصفحة\"]'); const before=sheet?.getBoundingClientRect(); const first=document.querySelector('[aria-label^=\"افتح ملاحظة الآية\"]');first?.click();await pause(); const editor=!!document.querySelector('#quran-note'); const close=!!document.querySelector('[aria-label=\"إغلاق لوحة الملاحظات\"]'); const note=document.querySelector('#quran-note');if(note){const setter=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;setter.call(note,'مراجعة تطبيقية');note.dispatchEvent(new Event('input',{bubbles:true}));}await pause();[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='حفظ الملاحظة')?.click();await pause();const saved=document.body.textContent.includes('اتحفظت الملاحظة مؤقتًا')||document.body.textContent.includes('ملاحظات الصفحة');document.querySelector('[aria-label=\"إغلاق لوحة الملاحظات\"]')?.click();await pause();const dismissed=!document.querySelector('#quran-note');const after=sheet?.getBoundingClientRect();return {editor,close,saved,dismissed,stable:!!before&&!!after&&Math.abs(before.height-after.height)<3,large:!!before&&before.height>420};})()",
+    expression:"(async()=>{const pause=()=>new Promise(r=>setTimeout(r,200)); const sheet=document.querySelector('[aria-label^=\"مصحف المدينة، الصفحة\"]'); const before=sheet?.getBoundingClientRect(); await pause(); const editor=!!document.querySelector('#quran-note'); const close=!!document.querySelector('[aria-label=\"إغلاق لوحة الملاحظات\"]'); const note=document.querySelector('#quran-note');if(note){const setter=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;setter.call(note,'مراجعة تطبيقية');note.dispatchEvent(new Event('input',{bubbles:true}));}await pause();[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='حفظ الملاحظة')?.click();await pause();const saved=document.body.textContent.includes('اتحفظت الملاحظة مؤقتًا')||document.body.textContent.includes('ملاحظات الصفحة');document.querySelector('[aria-label=\"إغلاق لوحة الملاحظات\"]')?.click();await pause();const dismissed=!document.querySelector('#quran-note');const after=sheet?.getBoundingClientRect();return {editor,close,saved,dismissed,stable:!!before&&!!after&&Math.abs(before.height-after.height)<3,large:!!before&&before.height>420};})()",
     awaitPromise:true,returnByValue:true,
   });
   const interactionValues=quranClickInteraction.result?.value;
