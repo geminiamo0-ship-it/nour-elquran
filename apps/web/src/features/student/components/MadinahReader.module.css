@@ -176,7 +176,38 @@
   .exitGlyph{display:inline;font-size:20px;line-height:1}
 }
 
-/* Keep the Quran canvas readable when the audio dock is open. */
+/* The listening dock is permanently compact and does NOT trigger a 270px artwork shrink. */
 .contextTools .smallButton svg {width:15px;height:15px;vertical-align:middle;margin-inline-end:4px}
-@media(max-width:700px){.reader:has([aria-label="مشغل التلاوة"]) .bookStage{padding:0 3px}
-.reader:has([aria-label="مشغل التلاوة"]) .singleBook .leaf{width:min(calc(100vw - 12px),calc((100dvh - 270px)*345/550),510px)}}
+
+/* P1 reader-first: one calm toolbar, tiny playback, and the full artwork. */
+.toolbarCollapsed{justify-content:flex-end;min-height:30px;padding:2px 7px}
+.toolbarCollapsed>.tool,.toolbarCollapsed>.activeTool{display:none}
+.toolsToggleGlyph{display:none}
+@media(max-width:700px){
+  .readerHeader{min-height:39px!important;max-height:42px;padding:3px 7px!important}
+  .identity strong{font-size:12px}
+  .headerActions .iconButton{min-height:31px;height:31px;width:31px;min-width:31px}
+  .headerActions .surahSelect{min-height:31px;height:31px}
+  .headerActions .exitButton{min-height:31px;height:31px;max-height:31px}
+  .toolbar{min-height:35px;padding:2px 5px;gap:2px}
+  .toolbar .tool,.toolbar .activeTool{min-height:31px;min-width:32px;padding:3px 4px;border-radius:7px}
+  .toolbar .tool svg,.toolbar .activeTool svg{width:19px;height:19px}
+  .toolbar>.iconButton{min-height:31px;width:32px;min-width:32px;max-width:32px;padding:2px}
+  .toolbarCollapsed{min-height:30px;justify-content:flex-end}
+  .toolsToggleLabel{position:absolute;width:1px;height:1px;overflow:hidden;white-space:nowrap;
+    clip:rect(0,0,0,0)}
+  .toolsToggleGlyph{display:block;font-size:21px;line-height:1;min-width:20px;text-align:center}
+  .bookStage{padding:1px 4px}
+  .singleBook .leaf{width:min(calc(100vw - 10px),calc((100dvh - 156px)*345/550),510px)}
+  .readerFoot{min-height:40px;padding:2px 5px;gap:3px}
+  .readerFoot .navButton{min-height:32px;padding:4px 6px}
+  .readerFoot .pageForm input{min-height:31px;height:31px}
+  .readerFoot .pageForm button{min-height:31px}
+  .readerFoot .footerNotes{min-height:32px;padding:3px 6px}
+}
+@media(max-width:370px) {
+  .toolbar{gap:1px}
+  .toolbar .tool,.toolbar .activeTool{min-width:30px;padding:3px}
+  .readerFoot .navButton{padding:3px 5px}
+  .readerFoot .footerNotes{padding:3px 4px}
+}
