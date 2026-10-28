@@ -70,3 +70,9 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - Issue #73/branch `feat/73-student-attendance-appeals-s02`: attendance outcomes + counters + detailed register and 7-day appeal UI, required written reason, optional local evidence selection. No actual upload, no admin submission or attendance verdict; all example fixtures labeled.
 - Inspect latest branch exact SHA; lint/TS/units/build/HTTP/Chrome gates including learner separation and appeal. Then PR and merge if passing.
 - Next S03 trial booking frontend; do not create fictional successful bookings. True billing/auth/attendance backend not yet operational.
+
+## 2026-10-28 — S03 trial scheduling handoff (unmerged)
+- Main observed after S02: `782f02a1` (PR #74 merged). Current Issue #76, branch `feat/76-student-trial-scheduling-s03`, linked to #44/#47.
+- React slot preview on /student/lessons; dashboard new-learner CTA links there. Slots are invented and labelled, review-only, no assigned sheikh or real booking. Typed pure UTC T−6h policy, 30-minute shape, learner identity validation. No server, payments, child records or deployment.
+- Exact-head GitHub CI is **not yet verified**. Next: open draft PR, inspect Verify and Chrome screenshot artifacts, fix red checks, document SHA/run and obtain visual review. Do not close #76 until backend #46/#47 and human acceptance. Do not merge merely for activity.
+- #40 vinext draft PR #71 remains independent, and #1 main protection cannot be claimed enforced without GitHub settings evidence.
