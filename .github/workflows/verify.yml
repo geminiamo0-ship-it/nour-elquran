@@ -74,3 +74,15 @@ jobs:
       - name: Smoke
         if: steps.app.outputs.exists == 'true'
         run: pnpm smoke
+      - name: Browser RTL and responsive smoke
+        if: steps.app.outputs.exists == 'true'
+        run: |
+          command -v google-chrome
+          pnpm browser:smoke
+      - name: Upload browser screenshots for human review
+        if: always() && steps.app.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: noor-bootstrap-browser-screenshots
+          path: artifacts/browser-smoke/*.png
+          if-no-files-found: warn
