@@ -365,7 +365,7 @@ export function MadinahReader() {
               }))}>تظليل هذا الموضع</button>
               <button type="button" className={css.smallButton} onClick={()=>setMarked(prev=>{
                 const next={...prev};delete next[targetKey(selectedTarget)];return next;
-              }}>إزالة التظليل</button>
+              })}>إزالة التظليل</button>
             </div>
             <label htmlFor="quran-note">ملاحظة على الموضع المحدد (حتى 500 حرف)</label>
             <textarea id="quran-note" maxLength={500} rows={4} value={draft}
