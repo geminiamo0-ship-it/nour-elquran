@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
 
-type Name = 'marker' | 'pen' | 'search' | 'notes' | 'ayah' | 'settings' | 'index' | 'book';
+type Name = 'marker' | 'pen' | 'search' | 'notes' | 'ayah' | 'settings' | 'index' | 'book' | 'play' | 'pause';
 const drawings: Record<Name, ReactNode> = {
+  play: <path d="m8 5 11 7-11 7z"/>,
+  pause: <><path d="M8 5v14M16 5v14"/></>,
   marker: <><path d="m4 17 7-7 7 7-5 4H6z"/><path d="m10 10 2-2 7 7-2 2"/><path d="M4 22h16"/></>,
   pen: <><path d="m15 5 4 4"/><path d="M4 20l4.5-1 11-11a2 2 0 0 0-3-3L5.5 16z"/><path d="M4 22h16"/></>,
   search: <><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></>,
