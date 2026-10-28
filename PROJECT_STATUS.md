@@ -63,3 +63,8 @@ Date / Issue / PR / exact head SHA; changed paths; tests and exact Actions URL; 
 - Files: `scripts/vinext-spike.sh`, `.github/workflows/vinext-spike.yml`, `docs/adr/0003-vinext-compatibility-spike.md`. The workflow runs on the focused PR and can be dispatched manually.
 - **Evidence pending:** check exact PR HEAD and both Verify and Vinext compatibility workflow results; inspect scanner logs and any build/runtime errors. A successful local Node server is **not** Workers runtime validation. Keep #40 OPEN until actual Workers/staging and ADR acceptance.
 - Main ruleset enforcement #1 still requires GitHub owner verification; repo stays PUBLIC. No changes to sensitive data or secrets.
+
+### CORE-02 #40 CI findings — 2026-10-28
+- [Verify 40723261830](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40723261830) and [Verify 40724349024](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40724349024): SUCCESS for existing Next.js code-quality/governance.
+- Vinext 1.3.1 scanner: 93% reported compatibility (3/3 imports supported; App Router `reactStrictMode` partial). Cloudflare-targeted Vite build completed, with source-map/dynamic import warnings. Local preview returned HTTP 200 on landing and student routes; cookie test fixture initially 404 because an underscore-prefixed private App Router folder was used. See [run 40724348902](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40724348902) and proposed ADR 0003.
+- Latest fixture rename commit `1d8305a5` needs fresh exact-head CI; no full probe PASS yet. Vinext init upgraded React only in ephemeral CI, not main. No Workers staging, real auth or production deployment. PR #71 stays DRAFT; Issue #40 stays OPEN.
