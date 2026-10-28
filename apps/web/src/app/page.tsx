@@ -1,5 +1,6 @@
-import { LandingPage } from '@/features/landing';
+import { redirect } from 'next/navigation';
 
+/** Preserve the approved standalone V3 design and all native interactions exactly. */
 export default function HomePage() {
-  return <LandingPage />;
+  redirect('/landing-approved-v3.html');
 }
