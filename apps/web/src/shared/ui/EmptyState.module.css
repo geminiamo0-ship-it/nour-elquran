@@ -1,0 +1,4 @@
+.root { padding: clamp(1.5rem, 4vw, 3rem); text-align: center; border: 1px dashed var(--border); border-radius: 8px; background: var(--paper-2); }
+.title { margin: 0; color: var(--olive-2); font-size: 1.3rem; }
+.description { margin: 0.5rem auto 0; max-width: 42rem; color: var(--ink-2); }
+.action { display: flex; justify-content: center; margin-top: 1rem; }
