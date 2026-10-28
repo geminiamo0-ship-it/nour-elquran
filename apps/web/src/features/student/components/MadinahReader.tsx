@@ -17,7 +17,7 @@ import {
   type QuranAnnotation, type QuranInkStroke,
 } from '../quranAnnotations';
 import { ReaderPrintedPage } from './ReaderPrintedPage';
-import { getVisibleSpread, type ReaderPageMode } from '../quranReaderLayout';
+import { getAdjacentReaderPage, getVisibleSpread, type ReaderPageMode, type ReaderTurnDirection } from '../quranReaderLayout';
 import type { InkMode } from './QuranInk';
 import { QuranSearchPanel } from './QuranSearchPanel';
 import css from './MadinahReader.module.css';
@@ -159,6 +159,12 @@ export function MadinahReader() {
     setPage(next);setPageEntry(String(next));setLocalSearch('');
     setPendingKey(focus??null);
   }
+  function adjacent(direction: ReaderTurnDirection): number {
+    return getAdjacentReaderPage(page, spreadMode, compactDevice, direction, mode === 'ayah');
+  }
+  function turn(direction: ReaderTurnDirection) {
+    go(adjacent(direction));
+  }
   function selectTarget(target:QuranTarget) {
     if(!validTarget(target))return;
     setSelectedTarget(target);
@@ -288,7 +294,7 @@ export function MadinahReader() {
                 const start=startTouch.current,end=e.changedTouches[0];startTouch.current=null;
                 if(!start||!end||inkMode!=='off'||turnMode!=='swipe')return;
                 const dx=end.clientX-start.x,dy=end.clientY-start.y;
-                if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.6)go(page+(dx>0?1:-1));
+                if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.6)turn(dx>0?1:-1);
               }}>
               <ReaderPrintedPage page={leaf} color={color} inkMode={inkMode}
                 strokes={inkByPage[leaf]??[]} onInkChange={changeInkFor}
@@ -417,9 +423,9 @@ export function MadinahReader() {
     </div>
     <footer className={css.readerFoot} aria-label="شريط التنقل بين صفحات المصحف">
       <button type="button" className={css.navButton} aria-label="تقليب إلى الصفحة السابقة"
-        disabled={page===1} onClick={()=>go(page-1)}>السابق</button>
+        disabled={adjacent(-1)===page} onClick={()=>turn(-1)}>السابق</button>
       <button type="button" className={css.navButton} aria-label="الصفحة السابقة"
-        disabled={page===1} onClick={()=>go(page-1)} title="الصفحة السابقة">‹</button>
+        disabled={adjacent(-1)===page} onClick={()=>turn(-1)} title="الصفحة السابقة">‹</button>
       <form className={css.pageForm} onSubmit={e=>{
         e.preventDefault();const n=Number(pageEntry);
         if(Number.isInteger(n)&&n>=1&&n<=QURAN_PAGE_COUNT)go(n);
@@ -430,9 +436,9 @@ export function MadinahReader() {
         <span>من 604</span><button type="submit">انتقال</button>
       </form>
       <button type="button" className={css.navButton} aria-label="الصفحة التالية"
-        disabled={page===604} onClick={()=>go(page+1)} title="الصفحة التالية">›</button>
+        disabled={adjacent(1)===page} onClick={()=>turn(1)} title="الصفحة التالية">›</button>
       <button type="button" className={css.navButton} aria-label="تقليب إلى الصفحة التالية"
-        disabled={page===604} onClick={()=>go(page+1)}>التالي</button>
+        disabled={adjacent(1)===page} onClick={()=>turn(1)}>التالي</button>
       <button type="button" className={css.footerNotes} onClick={()=>openDrawer('notes')}>ملاحظاتي</button>
     </footer>
   </div>;
