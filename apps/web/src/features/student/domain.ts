@@ -55,3 +55,12 @@ export function scopedSnapshot(
     latestReport: visibleReports[0] ?? null,
   };
 }
+
+/** Browser-memory-only study notes, not teacher-published material. */
+export type LocalStudyNote = Readonly<{
+  id: string; learnerId: string; lessonId: string; text: string; createdAt: string;
+}>;
+export function sanitizeStudyNote(value: string): string | null {
+  const text = value.trim();
+  return text.length > 0 && text.length <= 500 ? text : null;
+}
