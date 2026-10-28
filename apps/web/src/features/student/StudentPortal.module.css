@@ -183,3 +183,68 @@
   .grade strong, .reportGrades strong { font-size:12px; }
 }
 @media (prefers-reduced-motion: reduce) { .root *, .root *::before, .root *::after { scroll-behavior:auto !important; transition:none !important; } }
+
+/* M2 learner subpages: real mock UI controls, scoped to the student feature. */
+.workspace { display:grid; gap:16px; max-width:1080px; }
+.stack { display:grid; gap:11px; margin-top:12px; }
+.filterRow { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 17px; }
+.filterButton, .filterActive { min-height:38px; padding:8px 15px; border:1px solid #d9d1bd; border-radius:6px; cursor:pointer; font-size:12px; font-weight:800; }
+.filterButton { background:#f8f5eb; color:#3b5c46; }
+.filterButton:hover { border-color:#ac7c2c; }
+.filterActive { background:#294c3a; border-color:#294c3a; color:#fff9e8; }
+.detailItem { border:1px solid #e5dccb; border-radius:7px; background:#faf8f2; padding:12px 14px; }
+.detailItem summary { display:flex; justify-content:space-between; gap:12px; align-items:center; cursor:pointer; font-size:13px; color:#344e3c; }
+.detailItem summary::marker { color:#aa833d; }
+.detailItem summary>span:first-child { display:grid; gap:5px; }
+.detailItem summary small { color:#728071; font-size:11px; line-height:1.6; }
+.detailBody { margin-top:12px; border-top:1px solid #e9dfcc; padding-top:11px; font-size:13px; color:#5a6a5d; line-height:1.9; }
+.detailBody p { margin:5px 0; }
+.actionRow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:space-between; margin-top:12px; }
+.actionButton { border:1px solid #305743; background:#305743; color:#fff9ec; font-size:12px; font-weight:800; border-radius:6px; min-height:40px; padding:9px 16px; cursor:pointer; }
+.actionButton:hover { background:#40684f; }
+.actionButton:disabled { opacity:.55; cursor:not-allowed; }
+.textButton { color:#9c583a; border:0; background:transparent; cursor:pointer; padding:8px; font-size:12px; font-weight:800; text-decoration:underline; }
+.formCard { border:1px solid #e6ddc9; border-radius:8px; padding:16px; background:#faf8f2; min-width:0; }
+.formCard strong { color:#35513d; }
+.formLabel { display:block; font-weight:800; font-size:12px; margin:13px 0 7px; color:#45604c; }
+.textArea, .selectField { font:inherit; display:block; width:100%; min-width:0; border:1px solid #d8cbb4; border-radius:6px; background:#fffdf9; color:#293f32; padding:12px; font-size:13px; resize:vertical; outline-offset:3px; }
+.textArea { line-height:1.9; min-height:92px; }
+.selectField { min-height:43px; }
+.formError { color:#9b3930; font-size:12px; margin:8px 0; }
+.personalNote { border:1px solid #e6dcc5; border-right:3px solid #ab853d; border-radius:6px; padding:12px 16px; background:#faf8f2; }
+.personalNote strong { color:#3f5c44; font-size:12px; }
+.personalNote p { white-space:pre-wrap; overflow-wrap:anywhere; margin:6px 0; line-height:1.9; font-size:13px; }
+.profileItem { display:flex; align-items:center; justify-content:space-between; gap:14px; border:1px solid #e7dece; border-radius:8px; background:#fbfaf5; padding:12px 14px; }
+.profileItem>div:first-child { display:grid; gap:4px; min-width:0; }
+.profileItem strong { font-size:13px; color:#3e5846; }
+.profileItem small { font-size:11px; color:#879085; }
+.profileItem .actionRow { margin:0; justify-content:flex-end; flex-shrink:0; }
+.subscriptionStatus { display:grid; gap:8px; border-right:3px solid #b18b48; padding:14px; background:#f6f1e6; border-radius:6px; margin:10px 0 18px; }
+.subscriptionStatus span { justify-self:start; }
+.subscriptionStatus p { font-size:13px; color:#657363; margin:0; line-height:1.9; }
+.mushafTools { display:flex; align-items:center; flex-wrap:wrap; gap:12px; padding:10px 0 18px; font-size:12px; color:#526957; }
+.mushafTools label { font-weight:800; }
+.mushafTools input { accent-color:#305743; width:180px; max-width:100%; }
+.mushafTools button { margin-inline-start:auto; }
+.mushafPaper { background:#fffcf2; border:4px double #c6af7e; box-shadow:0 5px 25px #54492a12; padding:clamp(18px,4vw,38px); border-radius:3px; text-align:center; }
+.mushafHeading { margin:0 0 15px; font:700 28px/1.8 'Amiri',serif; color:#42563e; }
+.basmala { margin:0 0 24px; font:700 24px/1.9 'Amiri',serif; color:#334d39; }
+.ayahList { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; column-gap:9px; row-gap:8px; font-family:'Amiri',serif; line-height:2.3; }
+.ayahButton, .ayahMarked { font:inherit; line-height:inherit; border:1px solid transparent; color:#2e4534; background:transparent; padding:2px 8px; cursor:pointer; border-radius:5px; }
+.ayahButton:hover { background:#f4ecd3; }
+.ayahMarked { background:#f6e8b5; border-color:#c7ab60; }
+@media(max-width:650px) {
+ .profileItem { display:grid; gap:10px; }
+ .profileItem .actionRow { justify-content:flex-start; }
+ .mushafPaper { padding:18px 10px; }
+ .mushafHeading { font-size:23px; }
+ .basmala { font-size:21px; }
+ .detailItem summary { align-items:flex-start; }
+ .workspace { gap:12px; }
+ .subscriptionStatus { padding:12px; }
+}
+@media print {
+ .sidebar, .topBar, .bottomNav, .demoBanner, .mobileMenu, .mushafTools { display:none !important; }
+ .layout { display:block; }
+ .main { padding:0; }
+}
