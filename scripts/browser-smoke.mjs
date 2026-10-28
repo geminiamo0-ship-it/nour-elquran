@@ -186,6 +186,39 @@ try {
     'Native React interaction smoke failed: ' + JSON.stringify(checks ?? interaction));
   console.log('Native React interaction smoke passed: nav, ayah, sibling profiles, booking and modal');
 
+
+  // M2 student portal smoke: persisted in-tab mock onboarding + sibling isolation.
+  for (const width of [360, 390, 1440]) {
+    await socket.send('Emulation.setDeviceMetricsOverride', {
+      width, height: 900, deviceScaleFactor: 1, mobile: false,
+    });
+    await socket.send('Page.navigate', { url: url + 'student' });
+    await waitFor(async () => {
+      const result = await socket.send('Runtime.evaluate', {
+        expression: "document.getElementById('learner-switch')?.options.length >= 5",
+        returnByValue: true,
+      });
+      return result.result?.value === true;
+    }, 'student portal hydrated with onboarding profiles');
+    const result = await socket.send('Runtime.evaluate', {
+      expression: "(async () => {\n  const pause = () => new Promise(r => setTimeout(r, 120));\n  const switcher = document.getElementById('learner-switch');\n  const handoff = switcher && Array.from(switcher.options).some(o => o.textContent.includes('طالب أول'));\n  switcher.value = 'demo-active';\n  switcher.dispatchEvent(new Event('change', { bubbles: true }));\n  await pause();\n  const active = document.querySelector('#student-main')?.textContent.includes('مراجعة سورة الإخلاص');\n  const report = document.querySelector('#student-main')?.textContent.includes('8 / 10');\n  switcher.value = 'demo-new';\n  switcher.dispatchEvent(new Event('change', { bubbles: true }));\n  await pause();\n  const isolated = !document.querySelector('#student-main')?.textContent.includes('8 / 10');\n  const noFakeGrades = document.querySelector('#student-main')?.textContent.includes('لم يُنشَر أي تقرير');\n  return { handoff, active, report, isolated, noFakeGrades };\n})()",
+      awaitPromise: true,
+      returnByValue: true,
+    });
+    const actual = result.result?.value;
+    assert(actual && Object.values(actual).every(Boolean),
+      'Student portal profile switching: ' + JSON.stringify(actual ?? result));
+    const layout = await socket.send('Runtime.evaluate', {
+      expression: "({width: innerWidth, scrollWidth: document.documentElement.scrollWidth, dir: document.documentElement.dir})",
+      returnByValue: true,
+    });
+    assert.equal(layout.result?.value?.dir, 'rtl');
+    assert(layout.result?.value?.scrollWidth <= width, 'Student horizontal overflow at ' + width);
+    const screen = await socket.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+    fs.writeFileSync(path.join(screenshots, 'student-' + width + '.png'), Buffer.from(screen.data, 'base64'));
+    console.log('Student portal Chrome smoke passed: ' + width + 'px, profile isolation and account handoff');
+  }
+
 } finally {
   socket?.close();
   for (const child of children.reverse()) child.kill('SIGTERM');

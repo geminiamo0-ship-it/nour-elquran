@@ -27,6 +27,7 @@ export function DashboardModal() {
       <div className={tab === "quran" ? "active" : ""} data-panel="quran"><div className="modal-card"><h3>مصحفك</h3><p>من هنا يقرأ الطالب أو يستمع للمصحف. في التنفيذ الحقيقي نربطه بنص قرآني وتلاوات موثوقة. ويمكنك تجربة السبورة أعلاه من صفحة الهبوط.</p><a className="btn btn-outline" href="#interactive-classroom" id="openClassDemoFromModal" onClick={closeDashboard}>شاهد نموذج المصحف التفاعلي</a></div></div>
       <div className={tab === "training" ? "active" : ""} data-panel="training"><div className="modal-card"><h3>تدريباتي</h3><p>قبل تقييم الشيخ يمكنك تجربة واجهة التدريب. بعد الحصة يظهر الورد الذي اعتمده الشيخ، والتكرار والمراجعة المناسبة لك.</p><div className="note-entry"><b>مثال</b><span>استمع إلى سورة الإخلاص وكرر تلاوتها مرتين.</span></div></div></div>
       <div className={tab === "progress" ? "active" : ""} data-panel="progress"><div className="modal-card"><h3>تقدمي</h3><p>لم تبدأ حصصك بعد، ولذلك لا نظهر إنجازات وهمية. بعد أول حصة سيظهر تقييم المعلم وتقرير الحفظ.</p></div></div></div>
+      <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}><a className="btn btn-gold" href="/student" onClick={closeDashboard}>افتح لوحة الطالب الكاملة ←</a></div>
       <p className="form-note" style={{"paddingTop":"12px","borderTop":"1px solid #e6dac6"}}>هذه معاينة UI تعمل في المتصفح فقط؛ لا تنشئ حسابًا أو حجزًا أو ملف طالب فعليًا.</p>
     </div>
   
