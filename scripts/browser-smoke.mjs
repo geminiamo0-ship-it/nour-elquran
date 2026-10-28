@@ -332,6 +332,28 @@ try {
   assert(interactionValues && Object.values(interactionValues).every(Boolean),
     'Quran printed verse click, note save and compact mobile sheet failed: '+JSON.stringify(interactionValues??quranClickInteraction));
   console.log('Quran P0 printed-page polygon tap, note editor, save, dismissal and viewport geometry passed');
+  // S06 regression: one finger must paint when marker is selected (previous code rejected touch).
+  await socket.send('Runtime.evaluate',{expression:`document.querySelector('button[title="ماركر"]')?.click()`,returnByValue:true});
+  const inkInfo=await socket.send('Runtime.evaluate',{
+    expression:`(()=>{const svg=document.querySelector('svg[data-ink-mode="marker"]');const panel=document.querySelector('[aria-label="ألوان وأدوات الرسم"]');const r=svg?.getBoundingClientRect();const dots=panel?.querySelectorAll('[aria-label^="لون "]');const a=dots?.[0]?.getBoundingClientRect(),b=dots?.[1]?.getBoundingClientRect();return {x:r?.left+r.width*.5,y:r?.top+r.height*.5,active:!!svg,palette:!!panel,vertical:!!a&&!!b&&b.top>a.bottom-3};})()`,returnByValue:true,
+  });
+  const info=inkInfo.result?.value;
+  assert(info&&info.active&&info.palette&&info.vertical&&Number.isFinite(info.x)&&Number.isFinite(info.y),
+    'Ink mode must expose vertical palette and full-page pointer area: '+JSON.stringify(info));
+  await socket.send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
+  await socket.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:1,x:info.x,y:info.y}]});
+  await socket.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{id:1,x:info.x+10,y:info.y+14}]});
+  await socket.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{id:1,x:info.x+25,y:info.y+29}]});
+  await socket.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await socket.send('Emulation.setTouchEmulationEnabled',{enabled:false});
+  const inkDrawn=await socket.send('Runtime.evaluate',{
+    expression:`(()=>{const paths=document.querySelectorAll('svg[data-ink-mode="marker"] path');const canvas=document.querySelector('[aria-label^="مصحف المدينة، الصفحة"]');return {strokes:paths.length,sheetHeight:canvas?.getBoundingClientRect().height,animation:getComputedStyle(document.querySelector('[data-rendered-quran-page]')).animationName};})()`,returnByValue:true,
+  });
+  assert(inkDrawn.result?.value?.strokes>0&&inkDrawn.result?.value?.sheetHeight>420,
+    'Finger marker must draw on the Quran without resizing sheet: '+JSON.stringify(inkDrawn.result?.value));
+  const quranInkScreen=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+  fs.writeFileSync(path.join(screenshots,'quran-touch-marker-vertical-palette-390.png'),Buffer.from(quranInkScreen.data,'base64'));
+  console.log('Quran S06 real finger touch drawing, vertical animated palette and unchanged Quran sheet passed');
   await socket.send('Emulation.setDeviceMetricsOverride', {
     width:1440,height:900,deviceScaleFactor:1,mobile:false,
   });
