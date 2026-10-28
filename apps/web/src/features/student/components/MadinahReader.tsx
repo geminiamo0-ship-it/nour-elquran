@@ -67,7 +67,9 @@ export function MadinahReader() {
   const [spreadMode,setSpreadMode]=useState<ReaderPageMode>('auto');
   const [compactDevice,setCompactDevice]=useState(false);
   const [turnMode,setTurnMode]=useState<'swipe'|'buttons'>('swipe');
-  const [immersive,setImmersive]=useState(false);
+  // Enter the Quran route as a dedicated reading app at every viewport; the desktop
+  // exit control can still return to the embedded student shell when requested.
+  const [immersive,setImmersive]=useState(true);
   const [hideChrome,setHideChrome]=useState(false);
   const [fontSize,setFontSize]=useState(27);
   const [localSearch,setLocalSearch]=useState('');
