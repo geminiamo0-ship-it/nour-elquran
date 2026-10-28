@@ -1,0 +1,10 @@
+{
+  "name": "nour-elquran",
+  "compatibility_date": "2026-10-28",
+  "assets": {
+    "directory": "./apps/web/out",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  },
+  "previews": {}
+}
