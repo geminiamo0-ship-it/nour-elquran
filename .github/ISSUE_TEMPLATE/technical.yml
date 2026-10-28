@@ -1,0 +1,24 @@
+name: Infrastructure / documentation / technical
+description: Verifiable engineering change or architectural discussion
+title: "[TECH] "
+labels: []
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context / problem / alternatives
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: Detailed plan and affected paths
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance / verification / rollback
+      value: "- [ ] "
+    validations:
+      required: true
