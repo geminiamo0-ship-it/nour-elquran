@@ -24,6 +24,22 @@ This is a **foundation-only repository**. The following existing paths are real:
 - .github/CODEOWNERS: owner review hints (not enforcement without ruleset).
 - .gitignore: prevents common local secrets and build artifacts.
 
+## #39 bootstrap feature branch (pending PR review)
+The following paths **exist on `feat/39-bootstrap-workspace` only**, and must not be represented as merged before CI and PR review:
+- `package.json`, `pnpm-workspace.yaml`, `.npmrc`: pinned pnpm workspace and top-level test/build scripts.
+- `apps/web/`: minimal Next.js App Router Arabic RTL application, not the final landing page.
+- `apps/web/src/app/`: thin route composition, HTML language/layout and global brand tokens.
+- `apps/web/src/features/bootstrap/`: one page-specific component and a render unit test.
+- `apps/web/src/shared/ui/`: reusable stateless panel primitive.
+- `scripts/check-architecture.mjs`: feature boundaries and cycles; `tests/architecture.test.mjs`: rules rejecting illegal imports.
+- `scripts/smoke.mjs`: production Next server HTTP smoke (requires successful install and build).
+- `scripts/browser-smoke.mjs`: Chrome DevTools Protocol browser gate at 360/390/1440, Arabic RTL and overflow checks, screenshot artifacts for human review.
+- `artifacts/browser-smoke/`: generated screenshots in CI only; not source-controlled.
+- `eslint.config.mjs`, `.prettierrc.json`, `apps/web/vitest.config.ts`: lint, formatting and unit test configs.
+- `.env.example`: example with **no secrets**.
+
+The real `pnpm-lock.yaml` is committed on this feature branch; frozen install, lint, typecheck, tests, build and HTTP smoke passed at SHA `392bff47` ([Verify 40680982177](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40680982177)). The Chrome browser smoke also passed on exact head `1f312a54` ([Verify 40694813876](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40694813876)); recheck CI on newer commits.
+
 **Future directory proposal — NOT YET CREATED**
 - apps/web/: Next.js frontend with mock contracts.
 - workers/api/: Cloudflare Worker API gateway.
