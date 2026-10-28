@@ -167,16 +167,24 @@ try {
       document.querySelector('#learnerLevel').value = 'يبدأ من الصفر';
       const form = document.querySelector('#registrationForm');
       const formValid = form.checkValidity();
+      const submitButton = form.querySelector('button[type="submit"]');
+      submitButton.focus();
       form.requestSubmit(); await pause();
       const modalOpened = document.querySelector('#dashboardModal').classList.contains('open');
+      const focusedClose = document.activeElement?.id === 'closeModal';
       const twoLearners = document.querySelectorAll('#createdProfiles button').length === 2;
       document.querySelector('#modalTabs [data-tab="classes"]').click(); await pause();
       document.querySelector('#mockSlots [data-slot]').click(); await pause();
       const booked = document.querySelector('#bookingStatus').textContent.includes('موعد محفوظ للعرض فقط');
+      const visibleControls = [...document.querySelectorAll('#dashboardModal .modal-dialog button, #dashboardModal .modal-dialog a[href]')].filter(el => el.getClientRects().length > 0);
+      visibleControls.at(-1).focus();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+      const focusTrapped = document.activeElement?.id === 'closeModal';
       document.querySelector('#closeModal').click(); await pause();
+      const focusRestored = document.activeElement === submitButton;
       const modalClosed = !document.querySelector('#dashboardModal').classList.contains('open');
       return { menuOpened, menuClosed, highlighted, cleared, siblingAdded, formValid,
-        modalOpened, twoLearners, booked, modalClosed };
+        modalOpened, focusedClose, focusTrapped, focusRestored, twoLearners, booked, modalClosed };
     })()`,
     awaitPromise: true,
     returnByValue: true,
