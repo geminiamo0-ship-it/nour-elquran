@@ -3,7 +3,7 @@ export function Header() {
   return <header className={styles.header}>
     <div className={styles.container}>
       <a href="#top" className={styles.brand} aria-label="نور القرآن - الصفحة الرئيسية">
-        <span className={styles.mark} aria-hidden="true">☪</span>
+        <span className={styles.mark} aria-hidden="true">☾<span className={styles.miniBook}>▱</span></span>
         <span><strong>نور القرآن</strong><small>للحفظ والإتقان</small></span>
       </a>
       <nav aria-label="التنقل الرئيسي">
