@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { clampQuranPage, quranPageUrl } from '../quranSource';
 import css from './SmoothMadinahPage.module.css';
 
@@ -71,7 +71,7 @@ export function preloadNeighborPages(page: number, radius: number): void {
   advance();
 }
 
-export function SmoothMadinahPage({ page }: { page: number }) {
+export function SmoothMadinahPage({ page, overlay }: { page: number; overlay?: ReactNode }) {
   const [shown, setShown] = useState<{ page: number; url: string } | null>(null);
   const [pending, setPending] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -99,6 +99,7 @@ export function SmoothMadinahPage({ page }: { page: number }) {
       {shown && <img className={css.image} src={shown.url}
         alt={'صفحة ' + shown.page + ' من مصحف المدينة'}
         width={345} height={550} draggable={false} />}
+      {shown?.page === page && overlay}
       {!shown && <div className={css.placeholder} role="status">جار تجهيز صفحة المصحف…</div>}
       {pending && shown && <div className={css.pending} role="status">جار تجهيز الصفحة {page}…</div>}
       {failed && <div className={css.failed} role="alert">تعذر فتح الصفحة {page}. الصفحة السابقة محفوظة للقراءة؛ حاول مرة أخرى.</div>}
