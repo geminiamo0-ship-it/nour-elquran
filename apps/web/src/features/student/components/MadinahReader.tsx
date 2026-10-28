@@ -79,9 +79,14 @@ export function MadinahReader() {
   const startTouch=useRef<{x:number;y:number}|null>(null);
 
   useEffect(()=>{
-    const update=()=>setCompactDevice(window.innerWidth<900);
+    const update=()=>{
+      const compact=window.innerWidth<900;
+      setCompactDevice(compact);
+      // The tablet must not inherit the taller student dashboard shell or nested page scrolling.
+      if(compact)setImmersive(true);
+    };
     update();window.addEventListener('resize',update);
-    if(window.matchMedia('(max-width:700px)').matches){setImmersive(true);setHideChrome(false);setShowAside(false);}
+    if(window.innerWidth<900){setHideChrome(false);setShowAside(false);}
     return ()=>window.removeEventListener('resize',update);
   },[]);
   useEffect(()=>{
