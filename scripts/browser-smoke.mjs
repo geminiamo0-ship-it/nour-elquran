@@ -296,6 +296,14 @@ try {
     });
     return Boolean(read.result?.value);
   }, 'publisher ayah polygon click regions ready');
+  const quranReadingScreen=await socket.send('Page.captureScreenshot', {format:'png',captureBeyondViewport:false});
+  fs.writeFileSync(path.join(screenshots,'quran-mobile-reading-390.png'),Buffer.from(quranReadingScreen.data,'base64'));
+  await socket.send('Runtime.evaluate', {
+    expression: "(async()=>{document.querySelector('[aria-label^=\\\"افتح ملاحظة الآية\\\"]')?.click();await new Promise(r=>setTimeout(r,220));})()",
+    awaitPromise:true,returnByValue:true,
+  });
+  const quranNoteScreen=await socket.send('Page.captureScreenshot', {format:'png',captureBeyondViewport:false});
+  fs.writeFileSync(path.join(screenshots,'quran-mobile-note-390.png'),Buffer.from(quranNoteScreen.data,'base64'));
   const quranClickInteraction=await socket.send('Runtime.evaluate', {
     expression:"(async()=>{const pause=()=>new Promise(r=>setTimeout(r,200)); const sheet=document.querySelector('[aria-label^=\"مصحف المدينة، الصفحة\"]'); const before=sheet?.getBoundingClientRect(); const first=document.querySelector('[aria-label^=\"افتح ملاحظة الآية\"]');first?.click();await pause(); const editor=!!document.querySelector('#quran-note'); const close=!!document.querySelector('[aria-label=\"إغلاق لوحة الملاحظات\"]'); const note=document.querySelector('#quran-note');if(note){const setter=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;setter.call(note,'مراجعة تطبيقية');note.dispatchEvent(new Event('input',{bubbles:true}));}await pause();[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='حفظ الملاحظة')?.click();await pause();const saved=document.body.textContent.includes('اتحفظت الملاحظة مؤقتًا')||document.body.textContent.includes('ملاحظات الصفحة');document.querySelector('[aria-label=\"إغلاق لوحة الملاحظات\"]')?.click();await pause();const dismissed=!document.querySelector('#quran-note');const after=sheet?.getBoundingClientRect();return {editor,close,saved,dismissed,stable:!!before&&!!after&&Math.abs(before.height-after.height)<3,large:!!before&&before.height>420};})()",
     awaitPromise:true,returnByValue:true,
