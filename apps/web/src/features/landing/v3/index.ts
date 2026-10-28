@@ -1,0 +1,15 @@
+import './approved.css';
+export { Ornament } from './Ornament';
+export { DemoStrip } from './DemoStrip';
+export { Header } from './Header';
+export { Hero } from './Hero';
+export { Benefits } from './Benefits';
+export { Programs } from './Programs';
+export { Classroom } from './Classroom';
+export { Verse } from './Verse';
+export { Audience } from './Audience';
+export { Journey } from './Journey';
+export { Enrollment } from './Enrollment';
+export { Faq } from './Faq';
+export { DashboardModal } from './DashboardModal';
+export { Footer } from './Footer';
