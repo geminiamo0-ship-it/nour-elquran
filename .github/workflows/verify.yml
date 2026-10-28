@@ -2,9 +2,9 @@ name: Verify
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'feat/41-ui-primitives']
   pull_request:
-    branches: [main]
+    branches: [main, 'feat/39-bootstrap-workspace']
   workflow_dispatch:
 
 permissions:
