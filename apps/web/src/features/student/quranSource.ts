@@ -60,21 +60,35 @@ export function parseQuranAyahRegions(data: unknown): QuranAyahRegion[] {
   walk(data);
   return [...result.values()];
 }
+/** Quran JSON verse ids are explicit; the pinned source uses numeric ids. */
+function explicitAyahId(id: unknown, surah: number): number | null {
+  if (typeof id === 'number') return Number.isSafeInteger(id) && id > 0 ? id : null;
+  if (typeof id !== 'string') return null;
+  const match = /^(\d+):(\d+)$/.exec(id);
+  if (!match || Number(match[1]) !== surah) return null;
+  const ayah = Number(match[2]);
+  return Number.isSafeInteger(ayah) && ayah > 0 ? ayah : null;
+}
+
+function sourceVerse(raw: unknown, surah: number): { ayah: number; text: string } | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const verse = raw as Record<string, unknown>;
+  const ayah = explicitAyahId(verse.id, surah);
+  if (ayah === null || typeof verse.text !== 'string' || !verse.text.trim()) return null;
+  return { ayah, text: verse.text };
+}
+
+/** Never infer an ayah from its array position or alter canonical text. */
 export function parseQuranChapter(data: unknown, surah: number): Map<number, string> {
   const result = new Map<number, string>();
-  if (!data || typeof data !== 'object') return result;
-  const verses = (data as { verses?: unknown }).verses;
-  if (!Array.isArray(verses)) return result;
-  verses.forEach((raw, index) => {
-    if (!raw || typeof raw !== 'object') return;
-    const item = raw as Record<string, unknown>;
-    if (typeof item.text !== 'string' || !item.text.trim()) return;
-    const id = typeof item.id === 'string' ? item.id : '';
-    const parts = id.split(':').map(Number);
-    const n = parts.length === 2 && parts[0] === surah && Number.isInteger(parts[1])
-      ? Number(parts[1]) : index + 1;
-    if (n > 0) result.set(n, item.text);
-  });
+  if (!Number.isInteger(surah) || surah < 1 || surah > QURAN_CHAPTER_COUNT
+    || !data || typeof data !== 'object' || Array.isArray(data)) return result;
+  const chapter = data as Record<string, unknown>;
+  if (chapter.id !== surah || !Array.isArray(chapter.verses)) return result;
+  for (const raw of chapter.verses) {
+    const verse = sourceVerse(raw, surah);
+    if (verse && !result.has(verse.ayah)) result.set(verse.ayah, verse.text);
+  }
   return result;
 }
 /** Respects surah:ayah uniqueness and keeps page order from the publisher sidecar. */

@@ -82,3 +82,12 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - Source: official King Fahd Complex page artwork, via Quran.ws versioned `hafs-kfqc/v1.1.1` 604 SVG pages and per-page ayah polygons; per-ayah Uthmani Hafs text via Quran JSON static chapters. Never generate or edit original Arabic text.
 - In `santoreno`, PR #216 adds automation to create bucket `noor-quran-hafs-v1`, fetch 1323 files, publish manifest last and deploy isolated read-only Worker. Wait for its actual GitHub Actions pass; may block on missing Cloudflare secrets/access/asset mirror.
 - S04 acceptance: CI Verify, manual compare sample pages (including 1 and 604) to authoritative source, confirm 6236 verse identifiers before claiming global ayah mapping. Word highlights, pens, private persisted notes and licensed audio remain later phases.
+
+
+## 2026-10-28 — S04 Quran source parser hardening (branch; CI pending)
+- Read mandatory governance/engineering/privacy docs and issue #79; main includes merged S04 PR #81 (exact PR head `395bd301f98526b626b2e71b395cff76aa9ff3ff`, Verify run 40737978762 success).
+- Branch `fix/79-quran-source-verse-id-attribution` addresses Quran JSON `id` contract: real `chapters/1.json` contains numeric chapter/verse IDs and Tanzil licensing notice. Previously array-index fallback could silently mislabel malformed or missing verses. New strict parser preserves source text, skips bad IDs, rejects wrong chapter and keeps first duplicate; tests include gaps, numeric IDs, missing and mismatched IDs. Reader credits Quran.ws and Tanzil; browser smoke checks links.
+- Await exact-head GitHub Verify, inspect failures and correct; PR review and screenshots required. No source assets, student records, R2 provisioning, deployment, payment or API secrets changed.
+- Next: review this PR; then finish #79 surah/ayah/juz navigation, text search, canonical 6,236 reference audit and publisher rights/source visual review. Main protection #1 remains pending.
+
+- **CI evidence:** S04 parser/source attribution code head `22c4d97609028e1c6dfbc7b6e7cb9d36ad921dea` passed [Verify 40739144797](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40739144797) all jobs including browser smoke. PR #82 remains Draft, not merged. Recheck exact head after this documentation update before any merge.

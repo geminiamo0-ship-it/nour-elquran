@@ -1,6 +1,8 @@
 .reader { display:grid;gap:16px;direction:rtl;color:#2b4836; }
 .intro {background:#f7f1df;border-inline-start:4px solid #b58d41;padding:14px 18px;border-radius:8px;}
 .intro strong {font-size:17px;font-weight:800;}.intro p {margin:7px 0 0;line-height:1.8;color:#647363;font-size:13px;}
+.intro a {color:#765515;text-decoration:underline;text-underline-offset:3px;}
+.intro a:focus-visible {outline:3px solid #aa8739;outline-offset:3px;}
 .toolbar,.navigation {display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 14px;background:#fffdf8;border:1px solid #e3d8bd;border-radius:8px;}
 .button,.active {border:1px solid #c8b48a;padding:8px 13px;min-height:42px;border-radius:7px;cursor:pointer;background:#fffdf7;color:#355442;font:inherit;font-size:13px;}
 .active {background:#30533e;border-color:#30533e;color:#fffdf1;}

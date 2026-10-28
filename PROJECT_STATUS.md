@@ -81,3 +81,12 @@ Date / Issue / PR / exact head SHA; changed paths; tests and exact Actions URL; 
 - Source: Quran.ws version-locked Hafs-KFGQPC SVG v1.1.1 (publisher KFGQPC artwork) and Quran JSON Uthmani Hafs chapters. Frontend prefers dedicated R2 Worker `noor-quran-assets`, falling back to named versioned public sources until upload/Worker is operational. Source attribution and publisher usage rights retained.
 - `santoreno` PR #216 (Issue #215) provisions **new isolated bucket** `noor-quran-hafs-v1` and read-only `noor-quran-assets` Worker via its existing Cloudflare Actions secrets; **merge and remote workflow validation pending**. Do not claim bucket exists, that 604 assets were uploaded, or production is deployed until verified.
 - No canonical word-level interaction, persistent per-learner annotations, styled mini-player, signed media, or classroom recordings: these belong to S05–S09. Screenshot/production and exact-head CI still required.
+
+
+## 2026-10-28 — S04 Quran source integrity follow-up (unmerged)
+- Issue #79 remains open despite merged S04 PR #81 (merge `aba9727feb35b62d5bab96638fee6cda50991d27`); source crosswalk, navigation/search and live R2/license review are not fully accepted.
+- New branch `fix/79-quran-source-verse-id-attribution`: correct `quranSource.ts` to parse the actual Quran JSON numeric chapter/verse IDs, never silently assign verse numbers by array position; reject malformed/mismatched IDs. Add Vitest negative cases, explicit Tanzil and Quran.ws attribution in reader, Chrome attribution assertion, and source licensing notes.
+- Upstream `https://quran-json.risanb.com/text/uthmani/chapters/1.json` confirms numeric IDs and Tanzil CC BY 3.0 no-alteration/source-credit terms. No copyrighted source files copied into Git, no R2 changes, no deployment.
+- **CI pending for this new branch**; do not claim tested/merged before exact-head Actions success. S04 remains open for full navigation/search, source visual verification, rights and live asset audit.
+
+- **Verification update:** exact code head `22c4d97609028e1c6dfbc7b6e7cb9d36ad921dea` passed [Verify 40739144797](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40739144797): repository-policy, governance-tests, lint, strict TypeScript, unit, Next build, HTTP and Chrome smoke. PR #82 is still Draft, awaiting review. Any subsequent docs-only commit needs its own exact-head CI.

@@ -34,6 +34,7 @@ export function MadinahReader() {
   const [error, setError] = useState('');
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [texts, setTexts] = useState<Record<string,string>>({});
+  const [textLoadState, setTextLoadState] = useState<'idle'|'loading'|'ready'|'error'>('idle');
   const [notes, setNotes] = useState<Record<string,string>>({});
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
@@ -58,15 +59,23 @@ export function MadinahReader() {
   useEffect(() => {
     if (mode !== 'ayah' || !regions.length) return;
     const controller = new AbortController();
+    setTextLoadState('loading');
     const surahs = [...new Set(regions.map(x=>x.surah))];
     void Promise.all(surahs.map(async (surah) => {
       const data = await readJson(quranChapterUrl(surah),quranChapterUrl(surah,true),controller.signal);
       const result = parseQuranChapter(data,surah);
+      if (!result.size) throw new Error('Invalid or empty canonical chapter data');
       return [...result].map(([ayah,text]) => [`${surah}:${ayah}`,text] as const);
     })).then((groups) => {
-      if (!controller.signal.aborted) setTexts((old) => Object.assign({},old,...groups.map(Object.fromEntries)));
+      if (!controller.signal.aborted) {
+        setTexts((old) => Object.assign({},old,...groups.map(Object.fromEntries)));
+        setTextLoadState('ready');
+      }
     }).catch(() => {
-      if (!controller.signal.aborted) setError('تعذّر تحميل النص المصاحب لهذه الصفحة. يمكن متابعة عرض المصحف الأصلي.');
+      if (!controller.signal.aborted) {
+        setTextLoadState('error');
+        setError('تعذّر تحميل النص المصاحب لهذه الصفحة. يمكن متابعة عرض المصحف الأصلي.');
+      }
     });
     return () => controller.abort();
   },[mode,regions]);
@@ -95,7 +104,8 @@ export function MadinahReader() {
   return <div className={css.reader}>
     <div className={css.intro}>
       <strong>مصحف المدينة النبوية — حفص عن عاصم</strong>
-      <p>صفحات رسمية مطابقة للأصل بصيغة SVG، مع خريطة مواضع الآيات من المصدر الموثق. لا نولّد أي كلمة من القرآن بالذكاء الاصطناعي.</p>
+      <p>صفحات مصحف المدينة بصيغة SVG من إصدار مجمع الملك فهد عبر quran.ws، مع خريطة مواضع الآيات. لا نولّد أي كلمة من القرآن بالذكاء الاصطناعي.</p>
+      <p>مصدر الرسم: <a href="https://quran.ws/docs/reference/quran-svg/" target="_blank" rel="noopener noreferrer">Quran.ws</a> · النص العثماني من <a href="https://tanzil.net/" target="_blank" rel="noopener noreferrer">مشروع تنزيل (Tanzil)</a>، منقول دون تعديل وبشروط نسبة المصدر.</p>
     </div>
     <div className={css.toolbar} role="group" aria-label="أوضاع المصحف">
       <button type="button" className={mode==='madinah'?css.active:css.button}
@@ -138,12 +148,12 @@ export function MadinahReader() {
             return <button key={key} type="button" className={selectedKey===key?css.ayahSelected:css.ayah}
               aria-pressed={selectedKey===key} onClick={()=>selectAyah(key)}
               style={{fontSize}}>
-              {texts[key] ? <span>{texts[key]}</span> : <span>جاري تحميل نص الآية…</span>}
+              {texts[key] ? <span>{texts[key]}</span> : <span>{textLoadState==='error' ? 'تعذّر تحميل نص الآية من المصدر' : textLoadState==='ready' ? 'نص الآية غير متاح في المصدر' : 'جاري تحميل نص الآية…'}</span>}
               <small>﴿{region.surah}:{region.ayah}﴾</small>
             </button>;
           }) : <p>لا توجد بيانات آيات متاحة.</p>}
         </div>}
-        <div className={css.pageCaption}>صفحة {pageName(page)} من 604 · {sourceFallback?'العرض المباشر من المصدر الرسمي الموثّق':'خادم أصول نور القرآن'}</div>
+        <div className={css.pageCaption}>صفحة {pageName(page)} من 604 · {sourceFallback?'العرض المباشر من Quran.ws':'خادم أصول نور القرآن'}</div>
       </div>
       <aside className={css.sidebar} aria-label="آيات الصفحة والملاحظات">
         <h3>آيات هذه الصفحة</h3>

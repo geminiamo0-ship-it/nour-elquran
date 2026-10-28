@@ -119,3 +119,10 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `apps/web/src/features/student/components/MushafWorkspace.tsx`: thin student route composition; replaces earlier illustrative four verses.
 - `scripts/browser-smoke.mjs`: S04 Chrome tests for 604-page controls, alternate mode and sibling reset.
 - `docs/QURAN_ASSETS_DEPLOYMENT.md`: pinned source provenance, Santo cross-repo workflow, live verification and security boundary.
+
+
+## S04 source integrity follow-up (#79)
+- `apps/web/src/features/student/quranSource.ts`: strict chapter and verse ID parsing for Quran JSON Uthmani numeric IDs, no index-based verse-number fallback; no canonical text rewriting.
+- `apps/web/src/features/student/quranSource.test.ts`: numeric source fixture, duplicate/missing/mismatched IDs and gap assertions.
+- `apps/web/src/features/student/components/MadinahReader.tsx`: visible Quran.ws and Tanzil source attribution.
+- `scripts/browser-smoke.mjs`: Chrome source-attribution assertion.
