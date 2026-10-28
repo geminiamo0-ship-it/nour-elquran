@@ -147,7 +147,7 @@ try {
   }, 'React hydration');
 
   const interaction = await socket.send('Runtime.evaluate', {
-    expression: \`(async () => {
+    expression: `(async () => {
       const pause = () => new Promise(resolve => setTimeout(resolve, 80));
       const menu = document.querySelector('#menuBtn');
       menu.click(); await pause();
@@ -182,7 +182,7 @@ try {
       const modalClosed = !document.querySelector('#dashboardModal').classList.contains('open');
       return { menuOpened, menuClosed, highlighted, cleared, siblingAdded, formValid,
         modalOpened, twoLearners, booked, modalClosed };
-    })()\`,
+    })()`,
     awaitPromise: true,
     returnByValue: true,
   });
