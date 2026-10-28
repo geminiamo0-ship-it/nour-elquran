@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useStudent } from '../StudentContext';
 import { SchedulePanel } from './SchedulePanel';
+import { BookingWorkspace } from './BookingWorkspace';
 import styles from '../StudentPortal.module.css';
 
 type Filter = 'upcoming' | 'completed' | 'all';
@@ -16,6 +17,7 @@ export function LessonHub() {
   }).slice().sort((a, b) => a.dayOffset - b.dayOffset || a.time.localeCompare(b.time));
   return <div className={styles.workspace}>
     <SchedulePanel detailed />
+    <BookingWorkspace />
     <section className={styles.panel}>
       <div className={styles.panelHead}>
         <div><p className={styles.eyebrow}>سجل الحصص</p><h2>تفاصيل المواعيد</h2></div>

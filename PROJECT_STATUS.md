@@ -70,3 +70,8 @@ Date / Issue / PR / exact head SHA; changed paths; tests and exact Actions URL; 
 - `AttendanceWorkspace` is within Student Progress below academic report table: separate four-category counts and detailed RTL register, opened eligible appeal with required written reason and optional file *selection only*.
 - There is NO transport/API submission; preview says explicitly not sent, disabled send; expiry shows contact-admin exception text. Never infer a no-show from video attendance.
 - Validation requires #73 exact-head CI/Chrome/fixtures. UI review and authorized backend audit pending.
+
+## 2026-10-28 — STU-AZ S03 trial and recurring lesson preference preview (PR pending)
+- Branch `feat/75-student-trial-scheduling-s03`, Issue #75. Dashboard CTA now leads to trial booking section inside student Lessons. Does not promise any confirmed slots.
+- S03 UI shows 0 EGP, 30-min once/learner demo trial rules, time-of-week/day preference and explicit review step with automatic Sheikh assignment pending server verification. Mock cannot send/confirm booking. Existing trial state clearly marked example; paid weekly selection is preference only, cannot charge or reserve.
+- `booking.ts` typed eligibility and six-hour confirmed-lesson reschedule policy; unit+Chrome checks. No booking/teacher assignment/renewal ledger backend created. Review exact-head CI before merge.

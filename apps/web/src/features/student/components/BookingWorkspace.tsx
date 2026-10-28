@@ -38,7 +38,7 @@ export function BookingWorkspace() {
       <p>بعد تفعيل الحجز الحقيقي، تختار من المواعيد المتاحة فعلًا ويُسند لك شيخ مؤهل تلقائيًا. لا توجد مواعيد مؤكدة أو شيخ معيّن من هذه الواجهة.</p>
     </div>
     {canPreview ? <>
-      <p className={styles.panelIntro}>اختر **تفضيلًا** لليوم والفترة؛ الاختيار ليس موعدًا متاحًا أو حجزًا فعليًا. أهلية التجربة لا تُؤكد إلا على الخادم.</p>
+      <p className={styles.panelIntro}>اختر تفضيلًا لليوم والفترة؛ الاختيار ليس موعدًا متاحًا أو حجزًا فعليًا. أهلية التجربة لا تُؤكد إلا على الخادم.</p>
       <div className={sheet.fields}>
         <label htmlFor="trial-weekday">اليوم المفضل</label>
         <select id="trial-weekday" className={styles.selectField} value={weekday}
@@ -59,7 +59,7 @@ export function BookingWorkspace() {
         <p><strong>الموعد المفضل:</strong> {weekdays[trialPreview.weekday]} — {windows[trialPreview.window]}</p>
         <p><strong>المدة والتكلفة:</strong> 30 دقيقة، مجانًا تمامًا.</p>
         <p><strong>الشيخ:</strong> يُعيَّن تلقائيًا بعد تحقق الأهلية والتوافر الحقيقي.</p>
-        <p>لا يوجد موعد تم حجزة أو إرسال الطلب للأكاديمية؛ دي معاينة فقط.</p>
+        <p>لا يوجد موعد تم حجزه أو إرسال الطلب للأكاديمية؛ دي معاينة فقط.</p>
         <button className={styles.actionButton} type="button" disabled>تأكيد الحجز غير متاح قبل ربط الخدمة</button>
       </div>}
     </> : <div className={styles.emptyBox}>

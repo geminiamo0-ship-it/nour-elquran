@@ -70,3 +70,9 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - Issue #73/branch `feat/73-student-attendance-appeals-s02`: attendance outcomes + counters + detailed register and 7-day appeal UI, required written reason, optional local evidence selection. No actual upload, no admin submission or attendance verdict; all example fixtures labeled.
 - Inspect latest branch exact SHA; lint/TS/units/build/HTTP/Chrome gates including learner separation and appeal. Then PR and merge if passing.
 - Next S03 trial booking frontend; do not create fictional successful bookings. True billing/auth/attendance backend not yet operational.
+
+## 2026-10-28 — S03 trial preference work (frontend only)
+- S02 merged PR #74 at `782f02a1f375a37bf7239b241f1dc6d4524b422c`; verify run 40725212828 success (31 tests + Chrome).
+- Current Issue #75 S03 branch `feat/75-student-trial-scheduling-s03`: scoped mock preference selector for free 30-minute trial and weekly recurring patterns; no actual availability, teacher identity, payment, bookings or API.
+- Before merge inspect latest commit SHA and CI for lint, TS, tests, Next build, HTTP/Chrome. S01 and S02 regression tests must stay green.
+- After S03, S04 Quran reader source/edition rights decision and verified canonical mapping; do not generate Quran source content without rights verification.

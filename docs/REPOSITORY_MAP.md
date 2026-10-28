@@ -101,3 +101,12 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `apps/web/src/features/student/components/AttendanceWorkspace.module.css`: mobile/desktop table and appeal form styles.
 - `apps/web/src/features/student/components/ProgressWorkspace.tsx`: mounts attendance after independent academic history.
 - `scripts/browser-smoke.mjs`: verify demo learner attendance, opening appeal UI, and new sibling's no-record state.
+
+## STU-AZ S03 trial scheduling preference
+- `apps/web/src/features/student/booking.ts`: trial length/price constants and validated preference + six-hour self-reschedule cutoff for real confirmed lessons.
+- `apps/web/src/features/student/booking.test.ts`: one-trial eligibility, date preference validation and six-hour boundary tests.
+- `apps/web/src/features/student/components/BookingWorkspace.tsx`: student Lessons wizard for local-only trial preferred weekday/window, zero cost, teacher auto-assignment pending server, optional weekly paid preference preview, no fake booking submission.
+- `apps/web/src/features/student/components/BookingWorkspace.module.css`: RTL/responsive booking/review interface.
+- `apps/web/src/features/student/components/LessonHub.tsx`: compose existing schedule and booking preview.
+- `apps/web/src/features/student/StudentDashboard.tsx`: link new learner CTA into the booking workflow rather than dead-end notice.
+- `scripts/browser-smoke.mjs`: S03 trial review, no-send and sibling isolation.
