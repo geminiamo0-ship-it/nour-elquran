@@ -79,6 +79,8 @@ export function MadinahReader() {
   const [audioRequest,setAudioRequest]=useState<QuranAudioRequest|null>(null);
   const [audioVerse,setAudioVerse]=useState<QuranAyahReference|null>(null);
   const startTouch=useRef<{x:number;y:number}|null>(null);
+  const drawerTrigger=useRef<HTMLElement|null>(null);
+  const drawerCloseButton=useRef<HTMLButtonElement|null>(null);
 
   useEffect(()=>{
     const update=()=>{
@@ -91,6 +93,9 @@ export function MadinahReader() {
     if(window.innerWidth<900){setHideChrome(false);setShowAside(false);}
     return ()=>window.removeEventListener('resize',update);
   },[]);
+  useEffect(()=>{
+    if(showAside)drawerCloseButton.current?.focus();
+  },[showAside]);
   useEffect(()=>{
     if(!immersive)return;
     const old=document.body.style.overflow;
@@ -172,8 +177,19 @@ export function MadinahReader() {
   function turn(direction: ReaderTurnDirection) {
     go(adjacent(direction));
   }
+  function rememberDrawerTrigger() {
+    const active=document.activeElement;
+    drawerTrigger.current=active instanceof HTMLElement && active!==document.body?active:null;
+  }
+  function closeDrawer() {
+    setShowAside(false);setShowSearch(false);setShowNotes(false);setShowSettings(false);setShowIndex(false);
+    const trigger=drawerTrigger.current;
+    drawerTrigger.current=null;
+    if(trigger?.isConnected)trigger.focus();
+  }
   function selectTarget(target:QuranTarget) {
     if(!validTarget(target))return;
+    if(!showAside)rememberDrawerTrigger();
     setSelectedTarget(target);
     const old=visible.find(n=>n.type==='private'&&targetKey(n.target)===targetKey(target));
     setDraft(old?.text??'');setShowAside(true);setShowSearch(false);setShowNotes(false);setShowIndex(false);setShowSettings(false);setSavedNotice('');
@@ -212,6 +228,7 @@ export function MadinahReader() {
   const activeSurah=surahs.filter(s=>s.pageNumber<=page).at(-1)?.number??'';
   const spreadPages=getVisibleSpread(page,spreadMode,compactDevice);
   function openDrawer(kind:'index'|'notes'|'search'|'settings'|'ayah') {
+    if(!showAside)rememberDrawerTrigger();
     setShowAside(true);setShowIndex(kind==='index');setShowNotes(kind==='notes');
     setShowSearch(kind==='search');setShowSettings(kind==='settings');setHideChrome(false);
   }
@@ -333,11 +350,12 @@ export function MadinahReader() {
               })}
           </div>}
       </main>
-      {showAside && <aside className={css.sidebar} aria-label="قائمة المصحف" role="dialog" aria-modal={false}>
+      {showAside && <aside className={css.sidebar} aria-label="قائمة المصحف" role="dialog" aria-modal={false}
+        onKeyDown={e=>{if(e.key==='Escape'){e.stopPropagation();closeDrawer();}}}>
         <div className={css.sheetHeading}>
           <strong>{showSettings?'إعدادات القراءة':showSearch?'البحث في المصحف':showNotes?'جميع ملاحظاتي':showIndex?'فهرس المصحف':selectedTarget?'ملاحظة الآية':'آيات الصفحة'}</strong>
-          <button type="button" className={css.smallButton} aria-label="إغلاق لوحة الملاحظات"
-            onClick={()=>{setShowAside(false);setShowSearch(false);setShowNotes(false);setShowSettings(false);setShowIndex(false);}}>إغلاق ×</button>
+          <button ref={drawerCloseButton} type="button" className={css.smallButton} aria-label="إغلاق لوحة الملاحظات"
+            onClick={closeDrawer}>إغلاق ×</button>
         </div>
         {showSettings ? <div className={css.settingsPanel}>
           <fieldset><legend>عرض الصفحة</legend>
