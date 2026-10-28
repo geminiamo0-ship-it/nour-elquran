@@ -135,3 +135,8 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 ### 2026-10-29 — intermittent SVG overlay black flash found in real CI
 - [Verify 40771300030](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40771300030) FAILED at documentation head `b5a01a92` on physical polygon hit test. Screenshot artifact `12852741690` visually showed opaque black verse regions (CSS race), while earlier `9a35228c` run was green.
 - Fix on PR #96: `QuranAyahOverlay.tsx` explicit transparent SVG presentation fallback `a567cedb`; `scripts/browser-smoke.mjs` waits for styled overlay CSS `79cfeec1` before real pointer test. New exact-head CI pending. Never merge until passing and screenshot reviewed; no backend, Quran content or production deployment.
+
+### 2026-10-29 — #90 reader keyboard handoff (PR #96)
+- Follow-up on `fix/90-quran-spread-turn-navigation`: reader index/settings/notes/search panel is a nonmodal dialog; opening it now moves keyboard focus to close, and Escape/close restores focus to the prior trigger when still attached.
+- `MadinahReader.tsx` owns focus state, `scripts/browser-smoke.mjs` asserts actual Chrome keyboard Enter/Escape and restoration. Source Quran artwork/metadata and other business state unchanged.
+- Next exact action: inspect newest PR #96 head, Verify job results and screenshot artifact; fix any failures, then await human physical touch/S Pen/keyboard/RTL review before merge. No deployment or external provisioning.
