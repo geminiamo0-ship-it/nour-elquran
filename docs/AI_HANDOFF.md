@@ -131,3 +131,7 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 ### 2026-10-29 — latest #90 code verified; documentation recheck
 - [Verify 40770979097](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40770979097) SUCCESS at `9a35228c055d16ac0919778f183c5c8b3fd6a808`. Both 768 tablet stage scroll regression and 1440 desktop reader outer chrome fixed. Screenshot artifact `12853175403` inspected for 390/768/1440 reader/footer. PR #96 remains Draft; Issue #90 OPEN pending physical-device UX, keyboard/RTL and required reviewer approval.
 - After this documentation-only commit, recheck latest branch SHA/CI. No production deploy, R2 changes, data migrations, backend or paid services.
+
+### 2026-10-29 — intermittent SVG overlay black flash found in real CI
+- [Verify 40771300030](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40771300030) FAILED at documentation head `b5a01a92` on physical polygon hit test. Screenshot artifact `12852741690` visually showed opaque black verse regions (CSS race), while earlier `9a35228c` run was green.
+- Fix on PR #96: `QuranAyahOverlay.tsx` explicit transparent SVG presentation fallback `a567cedb`; `scripts/browser-smoke.mjs` waits for styled overlay CSS `79cfeec1` before real pointer test. New exact-head CI pending. Never merge until passing and screenshot reviewed; no backend, Quran content or production deployment.
