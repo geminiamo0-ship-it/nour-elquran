@@ -2,6 +2,7 @@
 
 import { Fragment, useId, useMemo, useState } from 'react';
 import { useStudent } from '../StudentContext';
+import { AttendanceWorkspace } from './AttendanceWorkspace';
 import type { Grade, PublishedReport } from '../domain';
 import { latestPublishedReports, REPORTS_PAGE_SIZE, nextReportCount } from '../reportHistory';
 import styles from '../StudentPortal.module.css';
@@ -95,5 +96,6 @@ export function ProgressWorkspace() {
         <p className={styles.panelFoot}>كل حصة تظهر بإصدارها المنشور الأحدث فقط، ولا تُعرض مسودات الشيخ.</p>
       </>}
     </section>
+    <AttendanceWorkspace />
   </div>;
 }

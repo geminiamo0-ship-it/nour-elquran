@@ -93,3 +93,11 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `apps/web/src/features/student/components/ProgressWorkspace.tsx`: accessible academic table + one in-row detail; no category filters/charts.
 - `apps/web/src/features/student/components/ProgressTable.module.css`: scoped horizontally scrollable mobile academic table.
 - `scripts/browser-smoke.mjs`: progress table keyboard-ready elements, expand and sibling isolation Chrome smoke.
+
+## STU-AZ S02 attendance
+- `apps/web/src/features/student/attendance.ts`: scoped attendance fixture, current record dedup, count categories, seven-day appeal cutoff, client-side attachment validation.
+- `apps/web/src/features/student/attendance.test.ts`: expiry boundary, absence-only policy, updated record isolation and allowed evidence regression tests.
+- `apps/web/src/features/student/components/AttendanceWorkspace.tsx`: count cards, RTL attendance table and local-only appeal preview; not a student-to-admin submission.
+- `apps/web/src/features/student/components/AttendanceWorkspace.module.css`: mobile/desktop table and appeal form styles.
+- `apps/web/src/features/student/components/ProgressWorkspace.tsx`: mounts attendance after independent academic history.
+- `scripts/browser-smoke.mjs`: verify demo learner attendance, opening appeal UI, and new sibling's no-record state.

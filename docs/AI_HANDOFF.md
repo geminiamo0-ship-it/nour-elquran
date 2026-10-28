@@ -64,3 +64,9 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - Current S01 branch: `feat/44-student-az-reports-s01` refs #44; table uses latest published report per lesson and five-row pagination with inline details, null scores distinct from zero, no report filters/charts.
 - Before merge inspect EXACT branch head Actions: repository policy, governance, lint/typecheck, unit, Next build, HTTP and Chrome at 360/390/1440 incl. academic report interaction. Fix failures and rerun; record run in status. Screenshots still need manual visual acceptance.
 - Next strictly S02 attendance register+7day appeals, but only after S01 CI/merge. Real identity, media, booking and payments remain unavailable.
+
+## 2026-10-28 — Student step S02 in progress
+- S01 merged PR #72, main `6ff52349885a1ee0c914aa9b420ff8ba640dc968`. A–Z roadmap is `docs/STUDENT_PORTAL_A_TO_Z.md`.
+- Issue #73/branch `feat/73-student-attendance-appeals-s02`: attendance outcomes + counters + detailed register and 7-day appeal UI, required written reason, optional local evidence selection. No actual upload, no admin submission or attendance verdict; all example fixtures labeled.
+- Inspect latest branch exact SHA; lint/TS/units/build/HTTP/Chrome gates including learner separation and appeal. Then PR and merge if passing.
+- Next S03 trial booking frontend; do not create fictional successful bookings. True billing/auth/attendance backend not yet operational.
