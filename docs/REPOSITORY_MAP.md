@@ -149,4 +149,4 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `apps/web/src/features/student/quranReaderLayout.ts`: pure visible-spread pairing and previous/next destination; desktop turns physical spreads, tablet/mobile/single/ayah turns one leaf.
 - `apps/web/src/features/student/quranReaderLayout.test.ts`: odd/even spread and first/last page boundary regression.
 - `apps/web/src/features/student/components/MadinahReader.tsx`: reader footer and touch-swipe consume one shared pure turn contract, without modifying direct page/ayah navigation.
-- `scripts/browser-smoke.mjs`: real Chrome desktop turn sequence and 768px single-leaf screenshot/overflow check, in addition to existing 360/375/390/1440 gates.
+- `scripts/browser-smoke.mjs`: real Chrome desktop turn sequence and 768px single-leaf, full-viewport, footer visibility, scroll-lock and nested-scroll regression with screenshot, alongside existing 360/375/390/1440 gates.
