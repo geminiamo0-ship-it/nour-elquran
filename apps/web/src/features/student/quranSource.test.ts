@@ -16,7 +16,7 @@ describe('verified Quran source adapter (no generated ayah text)', () => {
     expect(pageName(604)).toBe('604');
     expect(quranPageUrl(1)).toContain('/quran/hafs/v1.1.1/pages/001.svg');
     expect(quranPageMetadataUrl(604)).toContain('/quran/hafs/v1.1.1/pages/604.json');
-    expect(quranPageUrl(2,true)).toContain('cdn.quran.ws/svg/pages/v1.1.1/hafs-kfqc/002.svg');
+    expect(quranPageUrl(2,true)).toContain('raw.githubusercontent.com/quran-ws/quran-svg/9fc0c87/mushafs/hafs/kfqc/svg/002.svg');
     expect(quranChapterUrl(114)).toContain('/text/chapters/114.json');
     expect(() => quranChapterUrl(115)).toThrow(RangeError);
   });
