@@ -12,6 +12,10 @@ export function boundaryError(importer, specifier) {
   const insideShared = source.startsWith('shared/');
   const featureMatch = source.match(/^features\/([^/]+)\//);
   const targetFeature = requested.match(/^@\/features\/([^/]+)(?:\/(.+))?$/);
+  if (source.startsWith('app/') && targetFeature && targetFeature[2]
+    && !/^index(?:\.tsx?)?$/.test(targetFeature[2])) {
+    return 'Route modules must import features through the public index';
+  }
   if (insideShared && (requested.startsWith('@/features/') || requested.startsWith('@/app/'))) {
     return 'Shared modules cannot depend on features or route modules';
   }
@@ -32,6 +36,10 @@ export function resolvedBoundaryError(importer, target) {
   }
   if (from.startsWith('features/') && to.startsWith('app/')) {
     return 'Features cannot depend on route modules';
+  }
+  if (from.startsWith('app/') && to.startsWith('features/')
+    && !/^features\/[^/]+\/index\.tsx?$/.test(to)) {
+    return 'Route modules must import features through the public index';
   }
   const fromFeature = from.match(/^features\/([^/]+)\//);
   const toFeature = to.match(/^features\/([^/]+)\//);
