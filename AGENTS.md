@@ -35,8 +35,9 @@ If any of these cannot be read, STOP writing code until the missing context is r
 - For all ages, with emphasis on children; **no separate parent dashboard**.
 - One Supabase Auth account may manage several independently scoped student profiles (siblings). The selected student profile drives UI, lessons, tutors and training; switching cannot leak cross-profile data.
 - Teacher-led one-to-one lessons; reports after class lead to structured, interactive practice before the next class.
-- Frontend-first mock workflows; backend and LiveKit integration later, with early technical spike permitted when agreed.
-- Proposed technology: Next.js/Cloudflare UI; Cloudflare Worker/DO/Queues; Supabase Auth/PostgreSQL; LiveKit self-hosted on Hetzner; optional LLM planner. Hosting adapter and detailed topology still require verification.
+- Frontend-first mock workflows; backend and LiveKit Cloud integration later, with early technical spike permitted when agreed.
+- **Approved classroom spec #7:** teacher AND learner interact with shared Quran mushaf using pen/handwriting, highlight, eraser and typed notes; persisted annotated lesson JSON plus PNG/PDF archive accessible from student profile. No actual audiovisual session recording authorized by this decision.
+- Proposed technology: Next.js/Cloudflare UI; Cloudflare Worker/DO/Queues; Supabase Auth/PostgreSQL; **LiveKit Cloud (approved managed A/V provider)**; optional LLM planner. Frontend deployment adapter and detailed topology still require verification.
 
 ## Agent quick checklist
 1. Read status and current Issue.
