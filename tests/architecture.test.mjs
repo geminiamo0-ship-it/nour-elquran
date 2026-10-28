@@ -49,3 +49,35 @@ test('AST scanner rejects lazy imports and require() across module boundaries', 
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('route entrypoints can only consume a feature public API', () => {
+  assert.match(boundaryError('app/page.tsx', '@/features/teacher/components/Private'), /public index/);
+  assert.equal(boundaryError('app/page.tsx', '@/features/teacher'), null);
+  assert.equal(boundaryError('app/page.tsx', '@/features/teacher/index'), null);
+  assert.match(resolvedBoundaryError('app/page.tsx', 'features/teacher/components/Private.tsx'), /public index/);
+  assert.equal(resolvedBoundaryError('app/page.tsx', 'features/teacher/index.ts'), null);
+
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'noor-route-boundary-'));
+  try {
+    const write = (relative, content) => {
+      const file = path.join(root, relative);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, content);
+    };
+    write('features/teacher/components/Private.tsx', 'export const privateValue = 1;');
+    write('features/teacher/index.ts', "export { privateValue } from './components/Private';");
+    write('app/alias.tsx', "export { privateValue } from '@/features/teacher/components/Private';");
+    write('app/relative.tsx', "export { privateValue } from '../features/teacher/components/Private';");
+    write('app/lazy.tsx', "export async function load() { return import('@/features/teacher/components/Private'); }");
+    write('app/valid.tsx', "export { privateValue } from '@/features/teacher';");
+
+    const errors = inspectArchitecture(root);
+    assert.equal(errors.length, 3, errors.join('\n'));
+    for (const route of ['alias.tsx', 'relative.tsx', 'lazy.tsx']) {
+      assert.ok(errors.some(error => error.includes(route) && error.includes('public index')), route);
+    }
+    assert.ok(errors.every(error => !error.includes('valid.tsx')));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
