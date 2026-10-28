@@ -24,8 +24,8 @@ function launch(command, args, options = {}) {
   return child;
 }
 
-async function waitFor(check, description) {
-  for (let attempt = 0; attempt < 80; attempt += 1) {
+async function waitFor(check, description, attempts = 80) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
     let value;
     try { value = await check(); } catch { /* still loading */ }
     if (value) return value;
@@ -70,17 +70,28 @@ try {
     return (await fetch(url, { signal: AbortSignal.timeout(1000) })).ok;
   }, 'Next production server');
 
+  const debugPort = 40000 + Math.floor(Math.random() * 10000);
   const browser = launch(process.env.CHROME_BIN || 'google-chrome', [
     '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
     '--no-proxy-server', '--no-first-run', '--no-default-browser-check',
-    '--remote-debugging-address=127.0.0.1', '--remote-debugging-port=0',
+    '--disable-extensions', '--disable-background-networking',
+    '--remote-debugging-address=127.0.0.1', '--remote-debugging-port=' + debugPort,
     '--remote-allow-origins=*', '--user-data-dir=' + profile,
-  ]);
-  const debugPort = await waitFor(() => {
-    if (browser.exitCode !== null) throw new Error('Chrome exited: ' + browser.exitCode);
-    const file = path.join(profile, 'DevToolsActivePort');
-    return fs.existsSync(file) ? fs.readFileSync(file, 'utf8').split('\n')[0] : null;
-  }, 'Chrome DevTools port');
+  ], { stdio: ['ignore', 'ignore', 'pipe'] });
+  let browserErrors = '';
+  browser.stderr.on('data', chunk => { browserErrors += chunk.toString().slice(-2000); });
+  try {
+    await waitFor(async () => {
+      if (browser.exitCode !== null) throw new Error('Chrome exited: ' + browser.exitCode);
+      const response = await fetch('http://127.0.0.1:' + debugPort + '/json/version', {
+        signal: AbortSignal.timeout(1000),
+      });
+      return response.ok;
+    }, 'Chrome DevTools HTTP endpoint', 240);
+  } catch (error) {
+    throw new Error(error.message + '; Chrome exit=' + browser.exitCode +
+      '; stderr=' + browserErrors.slice(-3000));
+  }
   const targetResponse = await fetch(
     'http://127.0.0.1:' + debugPort + '/json/new?' + encodeURIComponent(url),
     { method: 'PUT' },
