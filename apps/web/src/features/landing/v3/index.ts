@@ -1,3 +1,4 @@
+import './approved.css';
 export { Ornament } from './Ornament';
 export { DemoStrip } from './DemoStrip';
 export { Header } from './Header';
