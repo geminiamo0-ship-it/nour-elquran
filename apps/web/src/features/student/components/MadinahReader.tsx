@@ -5,6 +5,7 @@ import { useStudent } from '../StudentContext';
 import {
   clampQuranPage, parseQuranAyahRegions, parseQuranChapter, pageName,
   quranChapterUrl, quranPageMetadataUrl, quranPageUrl, quranReferenceKey,
+  quranSurahIndexUrl, parseSurahIndex, type QuranSurahInfo,
   QURAN_PAGE_COUNT, type QuranAyahRegion, type QuranViewMode,
 } from '../quranSource';
 import css from './MadinahReader.module.css';
@@ -39,6 +40,21 @@ export function MadinahReader() {
   const [search, setSearch] = useState('');
   const [fontSize, setFontSize] = useState(27);
   const [refresh, setRefresh] = useState(0);
+  const [surahs, setSurahs] = useState<QuranSurahInfo[]>([]);
+  const [indexError, setIndexError] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void readJson(quranSurahIndexUrl(), quranSurahIndexUrl(true), controller.signal)
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        const validated = parseSurahIndex(data);
+        if (validated.length !== 114) throw new Error('Invalid surah index');
+        setSurahs(validated);
+        setIndexError(false);
+      }).catch(() => { if (!controller.signal.aborted) setIndexError(true); });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -121,6 +137,22 @@ export function MadinahReader() {
       <button type="button" className={css.button} disabled={page===QURAN_PAGE_COUNT}
         onClick={()=>go(page+1)} aria-label="الصفحة التالية">التالي</button>
     </form>
+    <div className={css.navigation} role="group" aria-label="الانتقال إلى سورة">
+      <label htmlFor="quran-surah-select">الانتقال للسورة</label>
+      <select id="quran-surah-select" className={css.surahSelect}
+        value={surahs.filter((surah) => surah.pageNumber <= page).at(-1)?.number ?? ''}
+        disabled={surahs.length === 0}
+        onChange={(event) => {
+          const selectedSurah = surahs.find((surah) => surah.number === Number(event.target.value));
+          if (selectedSurah) go(selectedSurah.pageNumber);
+        }}>
+        {surahs.length === 0 ? <option value="">جار تحميل فهرس السور…</option> :
+          surahs.map((surah) => <option key={surah.number} value={surah.number}>
+            {surah.number} — {surah.nameArabic} (ص {surah.pageNumber})
+          </option>)}
+      </select>
+      {indexError && <span role="status">الفهرس غير متاح؛ يمكنك استخدام رقم الصفحة مباشرة.</span>}
+    </div>
     {error && <div className={css.warning} role="alert">{error}
       <button type="button" onClick={()=>setRefresh((n)=>n+1)}>إعادة المحاولة</button>
     </div>}

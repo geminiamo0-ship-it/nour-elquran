@@ -81,3 +81,32 @@ export function parseQuranChapter(data: unknown, surah: number): Map<number, str
 export function quranReferenceKey(ref: QuranAyahReference): string {
   return `${ref.surah}:${ref.ayah}`;
 }
+
+/** Versioned official Madinah printed-page surah index; never infer from verse counts. */
+export type QuranSurahInfo = Readonly<{
+  number: number; nameArabic: string; pageNumber: number; ayahCount: number; juzNumber: number;
+}>;
+export function quranSurahIndexUrl(fallback = false): string {
+  return fallback ? `${PUBLIC_FALLBACK}/json/surah.json` : `${EDITION_ROOT}/indexes/surah.json`;
+}
+export function parseSurahIndex(value: unknown): QuranSurahInfo[] {
+  if (!Array.isArray(value) || value.length !== 114) return [];
+  const seen = new Set<number>();
+  const result: QuranSurahInfo[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== 'object') return [];
+    const record = item as Record<string, unknown>;
+    const number = record.number, pageNumber = record.pageNumber;
+    const ayahCount = record.ayahCount, juzNumber = record.juzNumber;
+    if (typeof number !== 'number' || !Number.isInteger(number) || number < 1 || number > 114 ||
+        seen.has(number) || typeof pageNumber !== 'number' || !Number.isInteger(pageNumber) ||
+        pageNumber < 1 || pageNumber > 604 || typeof ayahCount !== 'number' ||
+        !Number.isInteger(ayahCount) || ayahCount < 1 ||
+        typeof juzNumber !== 'number' || !Number.isInteger(juzNumber) ||
+        juzNumber < 1 || juzNumber > 30 ||
+        typeof record.nameArabic !== 'string' || !record.nameArabic.trim()) return [];
+    seen.add(number);
+    result.push({ number, pageNumber, ayahCount, juzNumber, nameArabic: record.nameArabic });
+  }
+  return result.sort((a,b) => a.number - b.number);
+}
