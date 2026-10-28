@@ -257,6 +257,31 @@ try {
   assert(surahNavigation.result?.value === true, 'Surah navigation selector is absent');
   console.log('S04 Quran 604-page reader controls, alternate ayah mode and sibling reset smoke passed');
 
+  // S05/S06: mobile reader acts like an in-app Quran app; image sheet must never collapse.
+  await socket.send('Emulation.setDeviceMetricsOverride', {
+    width: 390, height: 840, deviceScaleFactor: 1, mobile: false,
+  });
+  await socket.send('Page.navigate', { url: url + 'student/mushaf' });
+  await waitFor(async () => {
+    const check = await socket.send('Runtime.evaluate', {
+      expression: "document.querySelector('#quran-page-input') && [...document.querySelectorAll('button')].some(x=>x.textContent.includes('الخروج من وضع القراءة'))",
+      returnByValue:true,
+    });
+    return Boolean(check.result?.value);
+  }, 'immersive Quran mobile layout');
+  const readingResult = await socket.send('Runtime.evaluate', {
+    expression: "(async()=>{const sleep=t=>new Promise(r=>setTimeout(r,t)); const img=document.querySelector('[aria-label^=\"مصحف المدينة، الصفحة\"]'); const initial=img?.getBoundingClientRect(); const next=document.querySelector('button[aria-label=\"تقليب إلى الصفحة التالية\"]'); next?.click(); await sleep(120);const after=document.querySelector('[aria-label^=\"مصحف المدينة، الصفحة\"]')?.getBoundingClientRect(); const fixed=!!initial&&!!after&&initial.height>100&&Math.abs(initial.height-after.height)<2; const immersive=[...document.querySelectorAll('button')].some(x=>x.textContent.includes('الخروج من وضع القراءة')); const show=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='إظهار الأدوات');show?.click();await sleep(100);const search=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='بحث شامل');search?.click();await sleep(100);const query=!!document.querySelector('#whole-quran-query');const tools=[...document.querySelectorAll('button')].some(x=>x.textContent.trim()==='ماركر');const notes=[...document.querySelectorAll('button')].some(x=>x.textContent.includes('جميع ملاحظاتي'));return {fixed,immersive,query,tools,notes};})()",
+    awaitPromise:true, returnByValue:true,
+  });
+  const readingChecks=readingResult.result?.value;
+  assert(readingChecks && Object.values(readingChecks).every(Boolean),
+    'Immersive Quran, stable image frame and tools failed: '+JSON.stringify(readingChecks??readingResult));
+  console.log('Quran immersive mobile, fixed image geometry, fulltext search and ink controls passed');
+  await socket.send('Emulation.setDeviceMetricsOverride', {
+    width: 1440, height: 900, deviceScaleFactor: 1, mobile: false,
+  });
+
+
 
   // S01: semantic progress table, in-row report details, no approved report filters.
   await socket.send('Page.navigate', { url: url + 'student/progress' });
