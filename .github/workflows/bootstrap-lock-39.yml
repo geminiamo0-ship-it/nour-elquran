@@ -1,0 +1,32 @@
+name: Generate bootstrap lockfile (temporary #39)
+
+on:
+  push:
+    branches: [feat/39-bootstrap-workspace]
+
+permissions:
+  contents: write
+
+jobs:
+  generate-lock:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned package manager
+        run: |
+          corepack enable
+          corepack prepare "$(node -p 'require("./package.json").packageManager')" --activate
+      - name: Generate dependency lockfile from exact manifests
+        run: pnpm install --lockfile-only --no-frozen-lockfile
+      - name: Commit lockfile to feature branch
+        run: |
+          git add pnpm-lock.yaml
+          if ! git diff --cached --quiet; then
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'chore(bootstrap): lock resolved dependencies (#39)'
+            git push origin HEAD:feat/39-bootstrap-workspace
+          fi
