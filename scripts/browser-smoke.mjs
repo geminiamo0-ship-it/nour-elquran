@@ -353,21 +353,35 @@ try {
   const desktopGeometryValues=desktopGeometry.result?.value;
   assert(desktopGeometryValues&&Object.values(desktopGeometryValues).every(Boolean),
     'Desktop Quran should own the viewport with visible navigation: '+JSON.stringify(desktopGeometryValues??desktopGeometry));
+  // A real keyboard Enter opens the drawer, focuses its close action, and Escape
+  // returns focus to the original trigger. The drawer must not strand keyboard users.
   await socket.send('Runtime.evaluate',{
-    expression:`document.querySelector('[aria-label="فتح فهرس المصحف"]')?.click()`,
+    expression:`document.querySelector('[aria-label="فتح فهرس المصحف"]')?.focus()`,
     returnByValue:true,
   });
-  const drawerVisible=await socket.send('Runtime.evaluate',{
-    expression:`Boolean(document.querySelector('[aria-label="أقسام فهرس المصحف"]'))`,returnByValue:true,
-  });
-  assert(drawerVisible.result?.value===true,'Quran index should open in a separate responsive drawer');
+  await socket.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+  await socket.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+  await waitFor(async()=>{
+    const r=await socket.send('Runtime.evaluate',{
+      expression:`Boolean(document.querySelector('[aria-label="أقسام فهرس المصحف"]'))&&document.activeElement?.getAttribute('aria-label')==='إغلاق لوحة الملاحظات'`,
+      returnByValue:true,
+    });return Boolean(r.result?.value);
+  },'Quran keyboard index open and close-button focus');
   const desktopSpreadImage=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
   fs.writeFileSync(path.join(screenshots,'quran-desktop-spread-index-1440.png'),Buffer.from(desktopSpreadImage.data,'base64'));
-  console.log('Desktop Noor Quran 2-page spread and index drawer regression passed');
+  await socket.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  await socket.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  await waitFor(async()=>{
+    const r=await socket.send('Runtime.evaluate',{
+      expression:`!document.querySelector('[aria-label="أقسام فهرس المصحف"]')&&document.activeElement?.getAttribute('aria-label')==='فتح فهرس المصحف'`,
+      returnByValue:true,
+    });return Boolean(r.result?.value);
+  },'Quran Escape closes drawer and restores trigger focus');
+  console.log('Desktop Quran spread, keyboard index Enter/Escape and focus restoration passed');
 
   // S08: reciter selector / current-page scope / speed / repeat, no audio fetch until playback.
   await socket.send('Runtime.evaluate',{
-    expression:`document.querySelector('[aria-label="إغلاق لوحة الملاحظات"]')?.click();document.querySelector('[aria-label="فتح مشغل التلاوة"]')?.click();`,
+    expression:`document.querySelector('[aria-label="فتح مشغل التلاوة"]')?.click();`,
     returnByValue:true,
   });
   await waitFor(async()=>{
