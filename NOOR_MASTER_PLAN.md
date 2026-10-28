@@ -14,7 +14,7 @@
 - Visual direction: Arabic RTL, mobile-first, restrained traditional Azhar-inspired identity, dark gold/ochre with deep green/ivory, no generic AI aesthetic.
 
 ## Proposed pages (pending review)
-1. Landing (programs/pricing/contact sections), sign-in/register.
+1. **Approved landing design/structure** with same-page signup, programs, mushaf showcase and FAQ last; sign-in/register details after owner review. See [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md).
 2. Profile setup and multiple sibling profiles within a single account.
 3. Student home, schedule, interactive Quran, training, progress/reports.
 4. Teacher home, students, timetable, classroom, evaluations.
@@ -31,7 +31,7 @@
 - Priorities and boundaries must be recorded in individual feature issues, not simply inferred from this document.
 
 ## Pending decisions — discuss, do not assume
-- Exact page designs and agreed development order.
+- **Landing page is approved; other page designs and development order remain pending.**
 - Onboarding/account owner responsibilities and child profile safe access.
 - Lesson scheduling and teacher assignment rules, purchase flow and policy.
 - Quran text/audio rights and selected recitation vendors.
