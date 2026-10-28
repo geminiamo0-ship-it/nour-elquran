@@ -44,6 +44,11 @@ pnpm run build:vinext
 pnpm exec vite preview --host 127.0.0.1 --port 3137 --strictPort > "$report_dir/server.log" 2>&1 &
 server_pid=$!
 cleanup() {
+  result=$?
+  if [[ "$result" -ne 0 ]]; then
+    echo "vinext preview diagnostics:"
+    tail -100 "$report_dir/server.log" || true
+  fi
   kill "$server_pid" 2>/dev/null || true
   wait "$server_pid" 2>/dev/null || true
 }
@@ -66,15 +71,19 @@ if [[ "$ready" -ne 1 ]]; then
   exit 1
 fi
 
+echo "Local preview: landing SSR RTL checks"
 grep -q 'dir="rtl"' "$report_dir/home.html"
 grep -q 'lang="ar"' "$report_dir/home.html"
+echo "Local preview: student SSR route"
 curl --fail --silent --show-error http://127.0.0.1:3137/student > "$report_dir/student.html"
 grep -q 'dir="rtl"' "$report_dir/student.html"
 
+echo "Local preview: synthetic cookie route (present)"
 curl --fail --silent --show-error \
   -H 'Cookie: noor_spike=synthetic' \
   http://127.0.0.1:3137/api/__vinext_probe > "$report_dir/cookie.json"
 node -e 'const fs=require("node:fs");const data=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));if(data.cookieSeen!==true)process.exit(1)' "$report_dir/cookie.json"
+echo "Local preview: synthetic cookie route (absent)"
 curl --fail --silent --show-error \
   http://127.0.0.1:3137/api/__vinext_probe > "$report_dir/no-cookie.json"
 node -e 'const fs=require("node:fs");const data=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));if(data.cookieSeen!==false)process.exit(1)' "$report_dir/no-cookie.json"
