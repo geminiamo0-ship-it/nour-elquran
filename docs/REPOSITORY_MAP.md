@@ -7,6 +7,7 @@ This is a **foundation-only repository**. The following existing paths are real:
 - NOOR_MASTER_PLAN.md: agreed direction and unresolved decisions.
 - CONTRIBUTING.md: Issue→PR→tests→merge policy.
 - docs/ARCHITECTURE.md: proposed layer boundaries.
+- docs/DESIGN_SYSTEM.md: owner-approved landing visual identity, tokens, components, section order, CTA and signup behavior.
 - docs/ENGINEERING_GUARDRAILS.md: security/architecture invariants.
 - docs/REPOSITORY_MAP.md: this authoritative map.
 - docs/TEST_STRATEGY.md: verification matrix.
