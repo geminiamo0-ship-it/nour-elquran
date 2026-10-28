@@ -225,6 +225,7 @@ export function MadinahReader() {
     setShowAside(false);
   }
   function chooseTool(tool:InkMode) {
+    lastVerseTap.current=null;
     setInkMode(tool);setHideChrome(false);setShowAside(false);
     setInkPaletteOpen(tool!=='off');
   }
@@ -255,12 +256,34 @@ export function MadinahReader() {
       </div>
     </header>
     <nav className={[css.toolbar,hideChrome?css.toolbarCollapsed:''].join(' ')} aria-label="أدوات المصحف">
-      <button type="button" className={inkMode==='marker'?css.activeTool:css.tool}
-        aria-pressed={inkMode==='marker'} title="ماركر"
-        onClick={()=>chooseTool(inkMode==='marker'?'off':'marker')}><ReaderIcon name="marker" /><span>ماركر</span></button>
-      <button type="button" className={inkMode==='pen'?css.activeTool:css.tool}
-        aria-pressed={inkMode==='pen'} title="قلم"
-        onClick={()=>chooseTool(inkMode==='pen'?'off':'pen')}><ReaderIcon name="pen" /><span>قلم</span></button>
+      <div className={css.inkAnchor}>
+        <button type="button" className={inkMode==='marker'?css.activeTool:css.tool}
+          aria-pressed={inkMode==='marker'} aria-expanded={inkPaletteOpen}
+          aria-controls="quran-ink-palette" title="ماركر"
+          onClick={()=>chooseTool(inkMode==='marker'?'off':'marker')}><ReaderIcon name="marker" /><span>ماركر</span></button>
+        <button type="button" className={inkMode==='pen'?css.activeTool:css.tool}
+          aria-pressed={inkMode==='pen'} aria-expanded={inkPaletteOpen}
+          aria-controls="quran-ink-palette" title="قلم"
+          onClick={()=>chooseTool(inkMode==='pen'?'off':'pen')}><ReaderIcon name="pen" /><span>قلم</span></button>
+        {inkPaletteOpen && !hideChrome && <div className={css.inkPalette} id="quran-ink-palette"
+          role="group" aria-label="ألوان وأدوات الرسم">
+          <button type="button" className={css.paletteIcon} aria-label="إغلاق لوحة القلم"
+            title="إخفاء لوحة القلم" onClick={()=>setInkPaletteOpen(false)}>×</button>
+          <div className={css.paletteDivider} />
+          {palette.map(c=><button key={c} type="button" className={css.colorDot}
+            style={{background:c}} aria-label={'لون '+c} aria-pressed={color===c}
+            title={'لون '+c} onClick={()=>setColor(c)}/>)}
+          <div className={css.paletteDivider} />
+          <button type="button" className={css.paletteIcon} title="ممحاة" aria-label="ممحاة"
+            aria-pressed={inkMode==='eraser'} onClick={()=>chooseTool('eraser')}>⌫</button>
+          <button type="button" className={css.paletteIcon} title="تراجع" aria-label="تراجع"
+            disabled={!(inkByPage[page]?.length)} onClick={undoInk}>↶</button>
+          <button type="button" className={css.paletteIcon} title="إعادة" aria-label="إعادة"
+            disabled={!(redoByPage[page]?.length)} onClick={redoInk}>↷</button>
+          <button type="button" className={css.paletteIcon} title="العودة للتصفح" aria-label="العودة للتصفح"
+            onClick={()=>chooseTool('off')}>☝</button>
+        </div>}
+      </div>
       <button type="button" className={css.tool} onClick={()=>openDrawer('search')}
         aria-label="بحث شامل في المصحف" title="بحث شامل"><ReaderIcon name="search" /><span>بحث شامل</span></button>
       <button type="button" className={css.tool} onClick={()=>openDrawer('notes')} title="الملاحظات">
@@ -277,19 +300,7 @@ export function MadinahReader() {
         <span className={css.toolsToggleGlyph} aria-hidden="true">{hideChrome?'⌄':'⌃'}</span>
       </button>
     </nav>
-    {!hideChrome && inkMode!=='off' && <div className={css.contextTools} role="group" aria-label="أدوات القلم والماركر">
-      <button type="button" className={css.smallButton} onClick={()=>chooseTool('off')}>تصفح</button>
-      <button type="button" className={css.smallButton} onClick={()=>chooseTool('eraser')}>ممحاة</button>
-      <div className={css.colors} aria-label="ألوان التحديد">
-        {palette.map(c=><button key={c} type="button" className={css.colorDot}
-          style={{background:c}} aria-label={'لون '+c} aria-pressed={color===c}
-          onClick={()=>setColor(c)}/>)}
-      </div>
-      <button type="button" className={css.smallButton} onClick={undoInk}
-        disabled={!(inkByPage[page]?.length)}>تراجع</button>
-      <button type="button" className={css.smallButton} onClick={redoInk}
-        disabled={!(redoByPage[page]?.length)}>إعادة</button>
-    </div>}
+
     {error && <div role="alert" className={css.warning}>{error}
       <button type="button" onClick={()=>setRefresh(x=>x+1)}>إعادة المحاولة</button>
     </div>}
