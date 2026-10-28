@@ -13,6 +13,7 @@ import {
   type QuranAnnotation, type QuranInkStroke,
 } from '../quranAnnotations';
 import { SmoothMadinahPage } from './SmoothMadinahPage';
+import { QuranAyahOverlay } from './QuranAyahOverlay';
 import { QuranInk, type InkMode } from './QuranInk';
 import { QuranSearchPanel } from './QuranSearchPanel';
 import css from './MadinahReader.module.css';
@@ -60,6 +61,7 @@ export function MadinahReader() {
   const [fontSize,setFontSize]=useState(27);
   const [localSearch,setLocalSearch]=useState('');
   const [refresh,setRefresh]=useState(0);
+  const [savedNotice,setSavedNotice]=useState('');
   const startTouch=useRef<{x:number;y:number}|null>(null);
 
   useEffect(()=>{
@@ -144,7 +146,7 @@ export function MadinahReader() {
     if(!validTarget(target))return;
     setSelectedTarget(target);
     const old=visible.find(n=>n.type==='private'&&targetKey(n.target)===targetKey(target));
-    setDraft(old?.text??'');setShowAside(true);
+    setDraft(old?.text??'');setShowAside(true);setShowSearch(false);setShowNotes(false);setSavedNotice('');
   }
   function saveNote() {
     if(!selectedTarget||!validTarget(selectedTarget))return;
@@ -157,6 +159,7 @@ export function MadinahReader() {
         authorLabel:'ملاحظتي الشخصية',target:selectedTarget,text,color,createdAt:new Date().toISOString()
       }];
     });
+    setSavedNotice(text?'اتحفظت الملاحظة مؤقتًا في جلسة القراءة.':'اتمسحت الملاحظة المؤقتة.');
   }
   function changeInk(strokes:QuranInkStroke[]) {
     setInkByPage(prev=>({...prev,[page]:strokes}));setRedoByPage(prev=>({...prev,[page]:[]}));
@@ -194,9 +197,9 @@ export function MadinahReader() {
         <button type="button" className={mode==='ayah'?css.active:css.button}
           aria-pressed={mode==='ayah'} onClick={()=>{setMode('ayah');setInkMode('off');}}>آية بآية</button>
         <button type="button" className={showSearch?css.active:css.button}
-          onClick={()=>{setShowSearch(v=>!v);setShowAside(true);}}>بحث شامل</button>
+          onClick={()=>{setShowSearch(true);setShowNotes(false);setShowAside(true);}}>بحث شامل</button>
         <button type="button" className={showNotes?css.active:css.button}
-          onClick={()=>{setShowNotes(v=>!v);setShowAside(true);}}>جميع ملاحظاتي ({visible.length})</button>
+          onClick={()=>{setShowNotes(true);setShowSearch(false);setShowAside(true);}}>جميع ملاحظاتي ({visible.length})</button>
         <button type="button" className={css.button}
           onClick={()=>setShowAside(v=>!v)}>{showAside?'إخفاء القائمة':'الآيات والملاحظات'}</button>
         {mode==='ayah'&&<><label htmlFor="quran-font-size">حجم النص</label>
@@ -257,9 +260,13 @@ export function MadinahReader() {
           if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.6)go(page+(dx>0?1:-1));
         }}>
         {mode==='madinah'?
-          <SmoothMadinahPage page={page} overlay={
+          <SmoothMadinahPage page={page} overlay={<>
             <QuranInk page={page} mode={inkMode} color={color}
-              strokes={inkByPage[page]??[]} onChange={changeInk}/>}/>:
+              strokes={inkByPage[page]??[]} onChange={changeInk}/>
+            <QuranAyahOverlay page={page} regions={regions}
+              selectedKey={selectedKey} noteKeys={noteByKey}
+              enabled={inkMode==='off' && !loading} onSelect={selectTarget}/>
+          </>}/>:
           <div className={css.ayahDisplay} aria-label="عرض القرآن آية بآية">
             {loading?<p>جار تحميل آيات الصفحة…</p>:regions.length===0?<p>لا توجد بيانات آيات متاحة.</p>:
               regions.map(region=>{
@@ -284,13 +291,18 @@ export function MadinahReader() {
                 </div>;
               })}
           </div>}
-        <div className={css.pageCaption}>صفحة {pageName(page)} من 604 — التقليب يحتفظ بأبعاد الصفحة حتى اكتمال التحميل</div>
+        <div className={css.pageCaption}>صفحة {pageName(page)} من 604 · اضغط على آية في المصحف لإضافة ملاحظة، أو اختر «آية بآية» لتحديد كلمة.</div>
       </div>
       {showAside&&<aside className={css.sidebar} aria-label="آيات الصفحة والملاحظات">
+        <div className={css.sheetHeading}>
+          <strong>{showSearch?'البحث في القرآن':showNotes?'جميع ملاحظاتي':selectedTarget?'ملاحظة الآية':'آيات الصفحة'}</strong>
+          <button type="button" className={css.button} aria-label="إغلاق لوحة الملاحظات"
+            onClick={()=>{setShowAside(false);setShowSearch(false);setShowNotes(false);}}>إغلاق ×</button>
+        </div>
         {showSearch&&<QuranSearchPanel onNavigate={(target,key)=>{
           go(target,key);setShowSearch(false);setMode('ayah');
         }}/>}
-        {showNotes&&<section className={css.noteList} aria-label="جميع ملاحظاتي">
+        {showNotes&&!showSearch&&<section className={css.noteList} aria-label="جميع ملاحظاتي">
           <h3>جميع ملاحظاتي</h3>
           {visible.length===0?<p>لم تحفظ ملاحظات بعد في هذه المعاينة.</p>:
             visible.map(n=><button key={n.id} type="button" className={css.noteJump}
@@ -298,21 +310,7 @@ export function MadinahReader() {
               <strong>{n.type==='teacher'?'ملاحظة الشيخ':'ملاحظتي'} · {targetKey(n.target)} · ص {n.target.page}</strong>
               <span>{n.text}</span></button>)}
         </section>}
-        <h3>آيات هذه الصفحة</h3>
-        <label htmlFor="quran-page-search">بحث في الصفحة الحالية</label>
-        <input id="quran-page-search" placeholder="نص الآية أو 2:255" value={localSearch}
-          onChange={e=>setLocalSearch(e.target.value)}/>
-        {loading&&<p role="status">تحميل مواضع الآيات…</p>}
-        <div className={css.ayahLinks} aria-label="اختيار آية من الصفحة">
-          {filtered.map(region=>{
-            const key=refOf(region);
-            return <button type="button" key={key} aria-pressed={selectedKey===key}
-              className={selectedKey===key?css.active:css.button}
-              style={{borderColor:marked[key]??undefined}}
-              onClick={()=>selectTarget({page,surah:region.surah,ayah:region.ayah,wordIndex:null})}>
-              {key}{noteByKey.has(key)?' ●':''}</button>;
-          })}
-        </div>
+        {!showSearch&&!showNotes&&<>
         {selectedTarget&&<div className={css.note}>
           <h3>آية {selectedTarget.surah}:{selectedTarget.ayah}
             {selectedTarget.wordIndex!==null?' · الكلمة '+selectedTarget.wordIndex:''}</h3>
@@ -328,7 +326,24 @@ export function MadinahReader() {
           <textarea id="quran-note" maxLength={500} rows={4} value={draft}
             onChange={e=>setDraft(e.target.value)}/>
           <button type="button" className={css.active} onClick={saveNote}>حفظ الملاحظة</button>
+          {savedNotice&&<p role="status" className={css.saveNotice}>{savedNotice}</p>}
         </div>}
+
+        <h3>آيات هذه الصفحة</h3>
+        <label htmlFor="quran-page-search">بحث في الصفحة الحالية</label>
+        <input id="quran-page-search" placeholder="نص الآية أو 2:255" value={localSearch}
+          onChange={e=>setLocalSearch(e.target.value)}/>
+        {loading&&<p role="status">تحميل مواضع الآيات…</p>}
+        <div className={css.ayahLinks} aria-label="اختيار آية من الصفحة">
+          {filtered.map(region=>{
+            const key=refOf(region);
+            return <button type="button" key={key} aria-pressed={selectedKey===key}
+              className={selectedKey===key?css.active:css.button}
+              style={{borderColor:marked[key]??undefined}}
+              onClick={()=>selectTarget({page,surah:region.surah,ayah:region.ayah,wordIndex:null})}>
+              {key}{noteByKey.has(key)?' ●':''}</button>;
+          })}
+        </div>
         {visible.filter(n=>n.target.page===page).length>0&&<div className={css.noteList}>
           <h3>ملاحظات الصفحة</h3>
           {visible.filter(n=>n.target.page===page).map(n=>
@@ -337,7 +352,8 @@ export function MadinahReader() {
               <strong>{targetKey(n.target)} · {n.type==='teacher'?'ملاحظة الشيخ':'ملاحظتي'}</strong>
               <span>{n.text}</span></button>)}
         </div>}
-        <p className={css.info}>ستظهر ملاحظات الشيخ المعتمدة من سجل الفصل بعد ربط خدمة التقارير الآمنة. لا تعرض هذه المعاينة بيانات شيخ وهمية.</p>
+        </>}
+        {!showSearch&&!showNotes&&<p className={css.info}>ستظهر ملاحظات الشيخ المعتمدة من سجل الفصل بعد ربط خدمة التقارير الآمنة. لا تعرض هذه المعاينة بيانات شيخ وهمية.</p>
       </aside>}
     </div>
     <div className={css.readerFoot}>
@@ -347,7 +363,8 @@ export function MadinahReader() {
       <strong aria-live="polite">{page} / 604</strong>
       <button type="button" className={css.button} aria-label="تقليب إلى الصفحة التالية"
         disabled={page===604} onClick={()=>go(page+1)}>التالي</button>
-      <button type="button" className={css.button} onClick={()=>{setShowAside(v=>!v);setHideChrome(false);}}>الآيات والملاحظات</button>
+      <button type="button" className={css.button} onClick={()=>{setShowAside(v=>!v);setShowNotes(false);setShowSearch(false);}}>الآيات</button>
+      <button type="button" className={css.button} onClick={()=>{setShowAside(true);setShowNotes(true);setShowSearch(false);}}>ملاحظاتي</button>
     </div>
   </div>;
 }
