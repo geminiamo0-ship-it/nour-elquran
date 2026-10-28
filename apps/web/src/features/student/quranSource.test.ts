@@ -33,7 +33,7 @@ describe('verified Quran source adapter (no generated ayah text)', () => {
     expect(parseQuranAyahRegions({ irrelevant: 'text' })).toEqual([]);
   });
   it('maps Uthmani verse text by canonical surah:ayah and never invents missing verses', () => {
-    const verses = parseQuranChapter({ verses: [
+    const verses = parseQuranChapter({ id: 2, verses: [
       { id:'2:1', text:'الم' }, { id:'2:2',text:'ذَٰلِكَ ٱلْكِتَٰبُ' },
       { id:'2:3',text:'' },
     ] }, 2);
@@ -41,5 +41,24 @@ describe('verified Quran source adapter (no generated ayah text)', () => {
     expect(verses.get(2)).toBe('ذَٰلِكَ ٱلْكِتَٰبُ');
     expect(verses.has(3)).toBe(false);
     expect(parseQuranChapter([], 1).size).toBe(0);
+  });
+  it('parses the actual Quran JSON numeric ids without shifting or fabricating verses', () => {
+    const data = { id: 1, verses: [
+      { id: 1, text: 'بِسْمِ ٱللَّهِ' },
+      { id: 3, text: 'مَٰلِكِ' },
+      { id: 3, text: 'duplicate must not overwrite' },
+      { text: 'no identifier' },
+      { id: '2:5', text: 'wrong surah' },
+      { id: '1:6', text: 'valid explicit reference' },
+      { id: 0, text: 'invalid zero' },
+      { id: 'not-an-ayah', text: 'invalid identifier' },
+    ] };
+    const verses = parseQuranChapter(data, 1);
+    expect([...verses.entries()]).toEqual([[1, 'بِسْمِ ٱللَّهِ'], [3, 'مَٰلِكِ'], [6, 'valid explicit reference']]);
+    expect(verses.has(2)).toBe(false);
+    expect(verses.has(4)).toBe(false);
+    expect(parseQuranChapter(data, 2).size).toBe(0);
+    expect(parseQuranChapter({ verses: data.verses }, 1).size).toBe(0);
+    expect(parseQuranChapter({ id: 1, verses: [{ id: 2, text: 'preserved' }] }, 1).get(2)).toBe('preserved');
   });
 });
