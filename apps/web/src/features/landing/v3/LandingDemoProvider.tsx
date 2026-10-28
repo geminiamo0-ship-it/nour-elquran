@@ -27,6 +27,8 @@ export function LandingDemoProvider({ children }: { children: ReactNode }) {
   const openDashboard = useCallback((account: string, learners: string[]) => {
     const unique = [...new Set(learners.map((x) => x.trim()).filter(Boolean))];
     if (!unique.length) return;
+    // Same-session, browser-only handoff; only demo learner names, never contacts.
+    try { window.sessionStorage.setItem('noor:demo-profiles:v1', JSON.stringify(unique.slice(0, 8))); } catch { /* storage may be unavailable */ }
     setAccountName(account);
     setStudents(unique);
     setActiveStudent(unique[0] ?? '');
