@@ -75,3 +75,8 @@ Date / Issue / PR / exact head SHA; changed paths; tests and exact Actions URL; 
 - Branch `feat/75-student-trial-scheduling-s03`, Issue #75. Dashboard CTA now leads to trial booking section inside student Lessons. Does not promise any confirmed slots.
 - S03 UI shows 0 EGP, 30-min once/learner demo trial rules, time-of-week/day preference and explicit review step with automatic Sheikh assignment pending server verification. Mock cannot send/confirm booking. Existing trial state clearly marked example; paid weekly selection is preference only, cannot charge or reserve.
 - `booking.ts` typed eligibility and six-hour confirmed-lesson reschedule policy; unit+Chrome checks. No booking/teacher assignment/renewal ledger backend created. Review exact-head CI before merge.
+
+## 2026-10-28 — S03 UTC validation follow-up (#75; unmerged)
+- Concurrent S03 PR #77 was verified and merged into main at `29065fdb860abc7eb254c584fe7591d791559c48` ([Verify 40725881050](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40725881050), success). Duplicate issue #76 and draft PR #78 were closed without merging.
+- Branch `fix/75-booking-utc-validation` hardens existing `booking.ts` to reject malformed runtime preference payloads, ambiguous local/offset timestamps and normalized impossible dates. Exact UTC T−6h is inclusive; tests cover 1ms boundary and Cairo clock transition. No UI duplication, new dependency or real booking.
+- Exact-head CI for this follow-up pending. Do not merge until green CI and reviewer acceptance; no production deployment. S03 backend and visual gates remain open in #75/#44/#46/#47.

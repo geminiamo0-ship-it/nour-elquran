@@ -76,3 +76,8 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - Current Issue #75 S03 branch `feat/75-student-trial-scheduling-s03`: scoped mock preference selector for free 30-minute trial and weekly recurring patterns; no actual availability, teacher identity, payment, bookings or API.
 - Before merge inspect latest commit SHA and CI for lint, TS, tests, Next build, HTTP/Chrome. S01 and S02 regression tests must stay green.
 - After S03, S04 Quran reader source/edition rights decision and verified canonical mapping; do not generate Quran source content without rights verification.
+
+## 2026-10-28 — S03 strict UTC follow-up
+- S03 PR #77 merged main `29065fdb`; Issue #75 remains open for operational integration and visual acceptance. A concurrent duplicate #76/PR #78 was closed without merging to avoid conflicting frontend UI.
+- Active follow-up branch `fix/75-booking-utc-validation` changes only `booking.ts`, `booking.test.ts` and status/handoff: runtime preference validation plus explicit canonical UTC timestamp handling. No new routes or mocks.
+- Next: open draft PR linked to #75, verify exact HEAD policy/TS/Vitest/build/Chrome, review any failures, and request human review before merge. Do not infer real booking or RLS from frontend tests. #1 branch protection remains unverified.
