@@ -15,7 +15,6 @@ export function TrainingWorkspace(){
   const [openPractice,setOpenPractice]=useState(-1);
   const [notice,setNotice]=useState('');
   const upcoming=nextBookedLesson(selected.lessons);
-  const selectedTask=selected.tasks.find(t=>t.id===openTask);
   const total=selected.tasks.length;
   const done=selected.tasks.filter(t=>finished.includes(t.id)).length;
   const counts={homework:total,practice:VOLUNTARY_SAMPLES.length,prepare:upcoming?1:0};
