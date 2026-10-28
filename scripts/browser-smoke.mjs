@@ -377,6 +377,33 @@ try {
   const reciterImage=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
   fs.writeFileSync(path.join(screenshots,'quran-reciter-player-1440.png'),Buffer.from(reciterImage.data,'base64'));
 
+
+  // P1: short 375x667 phone; audio controls must NOT steal 100+px or shrink the Quran.
+  await socket.send('Emulation.setDeviceMetricsOverride',{
+    width:375,height:667,deviceScaleFactor:1,mobile:false,
+  });
+  await socket.send('Page.navigate',{url:url+'student/mushaf'});
+  await waitFor(async()=>{
+    const ready=await socket.send('Runtime.evaluate',{
+      expression:"(()=>{const play=document.querySelector('[aria-label=\"فتح مشغل التلاوة\"]');return !!play&&Object.keys(play).some(k=>k.includes('reactProps'));})()",
+      returnByValue:true,
+    });
+    return Boolean(ready.result?.value);
+  },'mobile Quran toolbelt hydration');
+  const compact=await socket.send('Runtime.evaluate',{
+    expression:\`(async()=>{const nap=t=>new Promise(r=>setTimeout(r,t));const next=document.querySelector('[aria-label="تقليب إلى الصفحة التالية"]');next?.click();next?.click();await nap(180);document.querySelector('[aria-label="فتح مشغل التلاوة"]')?.click();await nap(140);const sheet=document.querySelector('[aria-label^="مصحف المدينة، الصفحة"]');const dock=document.querySelector('[aria-label="مشغل التلاوة"]');const opts=document.querySelector('#quran-audio-advanced');const settings=document.querySelector('[aria-label="إعدادات التلاوة المتقدمة"]');const first=sheet?.getBoundingClientRect();const dockSize=dock?.getBoundingClientRect().height??999;const initiallyHidden=!!opts&&getComputedStyle(opts).display==='none'&&settings?.getAttribute('aria-expanded')==='false';settings?.click();await nap(130);const second=sheet?.getBoundingClientRect();const nowVisible=!!opts&&getComputedStyle(opts).display!=='none'&&settings?.getAttribute('aria-expanded')==='true';const hasFeatures=!!opts?.querySelector('[aria-label="اختيار القارئ"]')&&!!opts?.querySelector('[aria-label="نطاق التلاوة"]')&&!!opts?.querySelector('[aria-label="عدد مرات التكرار"]')&&!!opts?.querySelector('[aria-label="سرعة التلاوة"]')&&!!opts?.querySelector('[aria-label="موضع التلاوة"]');return {pageHeight:Math.round(first?.height??0),dockHeight:Math.round(dockSize),initiallyHidden,nowVisible,hasFeatures,unchanged:!!first&&!!second&&Math.abs(first.height-second.height)<2};})()\`,
+    awaitPromise:true,returnByValue:true,
+  });
+  const c=compact.result?.value;
+  assert(c&&c.pageHeight>430&&c.dockHeight<58&&c.initiallyHidden&&c.nowVisible&&c.hasFeatures&&c.unchanged,
+    'Compact Quran must keep sheet tall while all recitation options expand: '+JSON.stringify(c??compact));
+  const audioCompactScreenshot=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+  fs.writeFileSync(path.join(screenshots,'quran-compact-player-375.png'),Buffer.from(audioCompactScreenshot.data,'base64'));
+  console.log('Quran P1 page-first 375x667: dock <58px, full controls accessible, no page shift passed');
+  await socket.send('Emulation.setDeviceMetricsOverride',{
+    width:1440,height:900,deviceScaleFactor:1,mobile:false,
+  });
+
   // S01: semantic progress table, in-row report details, no approved report filters.
   await socket.send('Page.navigate', { url: url + 'student/progress' });
   await waitFor(async () => {
