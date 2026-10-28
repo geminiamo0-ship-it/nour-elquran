@@ -60,3 +60,7 @@ Update this map IN THE SAME PR that creates, removes or moves directories; ident
 - `apps/web/src/shared/ui/Field.tsx` and `Field.module.css`: labeled native input with hints, required and error semantics.
 - `apps/web/src/shared/ui/index.ts`: public exports; `Button.test.tsx` and `Field.test.tsx`: server-rendered markup unit checks.
 - This section describes **unmerged draft PR work** based on #39; no claim that `main` contains these paths.
+
+- `apps/web/src/shared/ui/Alert.tsx` and `Alert.module.css`: status/error messaging with accessible live-region roles.
+- `apps/web/src/shared/ui/EmptyState.tsx` and `EmptyState.module.css`: semantic empty-state with optional action.
+- `apps/web/src/shared/ui/Alert.test.tsx`: feedback and empty-state SSR tests.
