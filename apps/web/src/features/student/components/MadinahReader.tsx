@@ -95,7 +95,8 @@ export function MadinahReader() {
   return <div className={css.reader}>
     <div className={css.intro}>
       <strong>مصحف المدينة النبوية — حفص عن عاصم</strong>
-      <p>صفحات رسمية مطابقة للأصل بصيغة SVG، مع خريطة مواضع الآيات من المصدر الموثق. لا نولّد أي كلمة من القرآن بالذكاء الاصطناعي.</p>
+      <p>صفحات مصحف المدينة بصيغة SVG من إصدار مجمع الملك فهد عبر quran.ws، مع خريطة مواضع الآيات. لا نولّد أي كلمة من القرآن بالذكاء الاصطناعي.</p>
+      <p>مصدر الرسم: <a href="https://quran.ws/docs/reference/quran-svg/" target="_blank" rel="noopener noreferrer">Quran.ws</a> · النص العثماني من <a href="https://tanzil.net/" target="_blank" rel="noopener noreferrer">مشروع تنزيل (Tanzil)</a>، منقول دون تعديل وبشروط نسبة المصدر.</p>
     </div>
     <div className={css.toolbar} role="group" aria-label="أوضاع المصحف">
       <button type="button" className={mode==='madinah'?css.active:css.button}
@@ -143,7 +144,7 @@ export function MadinahReader() {
             </button>;
           }) : <p>لا توجد بيانات آيات متاحة.</p>}
         </div>}
-        <div className={css.pageCaption}>صفحة {pageName(page)} من 604 · {sourceFallback?'العرض المباشر من المصدر الرسمي الموثّق':'خادم أصول نور القرآن'}</div>
+        <div className={css.pageCaption}>صفحة {pageName(page)} من 604 · {sourceFallback?'العرض المباشر من Quran.ws':'خادم أصول نور القرآن'}</div>
       </div>
       <aside className={css.sidebar} aria-label="آيات الصفحة والملاحظات">
         <h3>آيات هذه الصفحة</h3>
