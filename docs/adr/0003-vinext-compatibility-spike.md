@@ -48,3 +48,10 @@ proof that the same app works on the actual Workers runtime.
 
 The probe changes no application runtime or production config on `main`.
 To remove it, revert the linked PR. CI job uses only synthetic test input.
+
+## Observations from first CI attempts (2026-10-28)
+
+- [Verify 40723261830](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40723261830): **success** (policy, governance, Next.js code-quality).
+- [Probe 40723261961](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40723261961): `vinext check` exit 0; **93% compatibility** (3/3 imports supported; one partial `reactStrictMode` App Router semantic). Cloudflare-targeted Vite build **succeeded**, with source-map and dynamic-import warnings. Harness failed because `vite preview` defaulted to port 4173 instead of expected 3137.
+- [Probe 40724348902](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40724348902): explicit preview port worked; **GET /** and **GET /student** both returned HTTP 200 with RTL HTML. The synthetic cookie route 404 was caused by our test fixture using an underscore-prefixed **private App Router folder**, not proof of a vinext limitation. Renamed the fixture to a public route segment in follow-up commit `1d8305a5`.
+- **Still pending:** full cookie test on corrected exact HEAD, Workers bindings/real staging, React strict mode parity, fonts and streaming. The vinext initializer upgraded React dependency versions **in the disposable checkout**; therefore this build is not a like-for-like production dependency lockfile validation. No deploy occurred.
