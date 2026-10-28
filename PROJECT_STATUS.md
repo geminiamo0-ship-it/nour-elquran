@@ -43,8 +43,8 @@ Return to frontend planning in Issue #3: landing design system is approved in #9
 
 ## 2026-10-28 — Modular architecture gate work in review (NOT MERGED)
 - The owner approved the full frontend-first engineering roadmap [#38](https://github.com/geminiamo0-ship-it/nour-elquran/issues/38), implementation backlog #39–#56, and mandatory module standard [#57](https://github.com/geminiamo0-ship-it/nour-elquran/issues/57). Earlier planning notes in this file saying no page roadmap exists are now historical.
-- [Draft PR #58](https://github.com/geminiamo0-ship-it/nour-elquran/pull/58) proposes a standard-library import/cycle checker, six synthetic fixture tests, workflow gate and module ownership documentation. Branch: `chore/57-module-boundary-gate-20261028`.
-- The proposed checker was tested in an isolated local fixture: **6/6 tests passed** and empty app scan reported 0 files; **this is not an actual application test**. GitHub PR CI, review and merge status are pending and must be inspected on exact HEAD.
+- [Draft PR #58](https://github.com/geminiamo0-ship-it/nour-elquran/pull/58) proposes a standard-library import/cycle checker, eight synthetic fixture tests, workflow gate and module ownership documentation. Branch: `chore/57-module-boundary-gate-20261028`.
+- The proposed checker was tested in an isolated local fixture: **8/8 tests passed** and empty app scan reported 0 files; **this is not an actual application test**. GitHub PR CI, review and merge status are pending and must be inspected on exact HEAD.
 - No Next.js workspace, backend, real user data, migrations, service provisioning, staging or production deployment was created.
 - **Hard blocker #1:** owner/admin must enable GitHub main branch ruleset with PR review + required status checks + no direct/force push, and choose whether to keep the repository PUBLIC or make it PRIVATE before commercial development.
 - **Next exact step:** inspect PR #58 workflow, fix if needed, request review; once #1 is verified, implement #39 app bootstrap and run its real application CI. The #40 Cloudflare vinext compatibility decision remains unverified.
