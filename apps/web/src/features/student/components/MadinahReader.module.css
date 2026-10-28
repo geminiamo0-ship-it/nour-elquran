@@ -30,3 +30,7 @@
 .disclaimer {font-size:12px;color:#657365;line-height:1.8;margin:0;padding:6px;}
 @media(max-width:820px){.grid {grid-template-columns:minmax(0,1fr);}.sidebar {position:static;}.pageShell {padding:10px;}.pageImage {width:min(100%,490px);}}
 @media(max-width:390px){.toolbar,.navigation {gap:5px;padding:9px;}.button,.active {padding:7px 10px;font-size:12px;}.sidebar {padding:12px;}}
+
+.surahSelect {flex:1;min-width:175px;max-width:440px;min-height:42px;border:1px solid #c9bc9f;border-radius:7px;
+  font:inherit;font-size:13px;color:#30533e;background:#fffdf7;padding:7px 10px;}
+.surahSelect:focus-visible {outline:3px solid #aa8739;outline-offset:2px;}
