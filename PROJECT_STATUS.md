@@ -11,16 +11,17 @@ Last verified: 2026-10-28.
 - PR #2 merged (squash) as 24f57aa8c9024eb1cbd246a57ae5dff758a07e28.
 - [Post-merge main push Verify run 40611612261](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40611612261): **success**.
 - [Planning Issue #3](https://github.com/geminiamo0-ship-it/nour-elquran/issues/3) opened for owner review of the complete frontend-first roadmap; no frontend tasks approved yet.
+- [Design approval Issue #9](https://github.com/geminiamo0-ship-it/nour-elquran/issues/9) records the owner's approved landing layout/colors/logo, requested smooth scroll to enrollment and mandatory guardian phone. [DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) is the **normative UI visual reference** for future feature Issues; standalone HTML demo exists outside repo only. Approval is **not evidence the application exists**.
 - [Classroom spec Issue #7](https://github.com/geminiamo0-ship-it/nour-elquran/issues/7) records owner-approved LiveKit Cloud and the two-way annotated mushaf with writing/notes, structured archive and page PDF/image. This is a **spec decision only**, not built or tested.
 
 ## Still pending (do NOT claim complete)
 - **Issue #1 remains OPEN** until main branch ruleset, mandatory PR reviews and required status checks are enabled and verified in GitHub settings.
 - Repository is **PUBLIC**, which may be inappropriate for commercial proprietary development. Owner must decide whether to make private.
 - No app/Next.js workspace, no UI implementation, no actual backend, no Supabase database/auth configured, no Durable Objects, no LiveKit server, no AI model keys, no deployments.
-- Current master plan is a discussion draft, not an approved detailed implementation backlog.
+- Landing design is approved in Issue #9, but the rest of the master plan and feature priorities are still under discussion; no frontend implementation backlog is yet authorized.
 
 ## Next exact step
-Return to frontend planning in Issue #3: agree design system/landing page and complete mock flow sequence, incorporating approved Classroom spec #7. Discuss and approve scope, route map, design system and implementation sequence in Issue #3. Then create detailed per-page implementation Issues. Owner or authorized GitHub admin must configure main branch protections in docs/CI_BRANCH_PROTECTION.md, verify status and update Issue #1.
+Return to frontend planning in Issue #3: landing design system is approved in #9, and classroom spec #7 is approved. Next define Student Dashboard UI and subsequent mock flow, then agree route map, implementation sequence and testing issues in Issue #3. Then create detailed per-page implementation Issues. Owner or authorized GitHub admin must configure main branch protections in docs/CI_BRANCH_PROTECTION.md, verify status and update Issue #1.
 
 ## Start-here links
 - [AGENTS.md](AGENTS.md)
