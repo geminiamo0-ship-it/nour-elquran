@@ -65,6 +65,6 @@ export function MushafWorkspace() {
       <div className={styles.stack}>{Object.entries(notes).filter(([, text]) => text).map(([index, text]) =>
         <div key={index} className={styles.personalNote}><strong>الآية {Number(index) + 1}</strong><p>{text}</p></div>)}</div>
     </section>
-    <div className={styles.infoNote}>تفعيل المصحف الكامل والتلاوات والأرشيف يحتاج مصدرًا قرآنيًا موثّقًا وحقوق استخدام واضحة، ثم ربط الملاحظات بالحصة/الطالب عبر صلاحيات موثّقة.</div>
+    <div className={styles.infoNote}>تفعيل المصحف الكامل والتلاوات والأرشيف يحتاج نص قرآني موثّقًا وحقوق استخدام واضحة، ثم ربط الملاحظات بالحصة/الطالب عبر صلاحيات موثّقة.</div>
   </div>;
 }

@@ -47,7 +47,7 @@ export function ProgressWorkspace() {
             </div></details>
         </article>)}</div> :
         <div className={styles.emptyBox}>{selected.reports.length ? 'لا يوجد تقييم منشور لهذا المعيار بعد.' :
-          'لا توجد تقارير معتمدة لهذا الطالب. ستظهر بعد أول حصة وتقييم من الشيخ.'}</div>}
+          'لا توجد تقارير منشورة أو معتمدة لهذا الطالب. ستظهر بعد أول حصة وتقييم من الشيخ.'}</div>}
     </section>
   </div>;
 }
