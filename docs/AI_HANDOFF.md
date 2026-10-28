@@ -82,3 +82,9 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - Source: official King Fahd Complex page artwork, via Quran.ws versioned `hafs-kfqc/v1.1.1` 604 SVG pages and per-page ayah polygons; per-ayah Uthmani Hafs text via Quran JSON static chapters. Never generate or edit original Arabic text.
 - In `santoreno`, PR #216 adds automation to create bucket `noor-quran-hafs-v1`, fetch 1323 files, publish manifest last and deploy isolated read-only Worker. Wait for its actual GitHub Actions pass; may block on missing Cloudflare secrets/access/asset mirror.
 - S04 acceptance: CI Verify, manual compare sample pages (including 1 and 604) to authoritative source, confirm 6236 verse identifiers before claiming global ayah mapping. Word highlights, pens, private persisted notes and licensed audio remain later phases.
+
+## Handoff — Quran UX #85
+- Branch `feat/85-quran-smooth-reader-notes-search` from `e413cf9d34532cdae847b4c1bebc34665f50eddc`, issue #85. Verify PR CI and mobile visuals before merging.
+- Preview Deployments temporarily disabled for `nour-elquran`, `nour-elquran-422`, `nour-elquran-422o` to prevent exhausting Hobby builds. Production auto deployment unchanged.
+- Quran assets prefer isolated Cloudflare worker; pinned GitHub source fallback. Real Cloudflare upload state requires Santo #215 verification.
+- Teacher notes publication, cross-device personal notes, classroom real-time annotations, tafsir and voice playback are not live; no teacher account/auth/RLS backend. This PR implements frontend interactions and typed note authorization boundary only.

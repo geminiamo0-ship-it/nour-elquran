@@ -119,3 +119,11 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `apps/web/src/features/student/components/MushafWorkspace.tsx`: thin student route composition; replaces earlier illustrative four verses.
 - `scripts/browser-smoke.mjs`: S04 Chrome tests for 604-page controls, alternate mode and sibling reset.
 - `docs/QURAN_ASSETS_DEPLOYMENT.md`: pinned source provenance, Santo cross-repo workflow, live verification and security boundary.
+
+## Quran UX (#85)
+- `components/SmoothMadinahPage.tsx` and CSS: decoded SVG swap, fixed sheet geometry, memory-bounded page preload and pinned fallback.
+- `components/QuranInk.tsx` and CSS: separate normalized page ink, pen/marker/eraser, S Pen vs touch pointer mode.
+- `quranAnnotations.ts`: typed learner-scoped note/word/ayah model and published teacher note gate.
+- `quranSearch.ts`, `components/QuranSearchPanel.tsx` and CSS: search full 6236 Hafs ayat with authoritatively verified page markers.
+- `components/MadinahReader.tsx` and CSS: immersive controls, anchored highlights, all notes jump, search integration and mobile next/previous.
+- `quranReading.test.ts` and browser smoke: bounded preload, Arabic normalization, note isolation, stable layout and visible controls.
