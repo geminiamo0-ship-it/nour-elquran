@@ -234,20 +234,23 @@ try {
   }
   console.log('Student portal subroute HTTP smoke passed: 7 feature pages');
 
+  // S04: real 604-page Quran reader controls and sibling-local route state.
   await socket.send('Page.navigate', { url: url + 'student/mushaf' });
   await waitFor(async () => {
     const result = await socket.send('Runtime.evaluate', {
-      expression: "document.querySelector('[aria-label=\"نص قرآني توضيحي من معاينة التصميم\"] button') && Object.keys(document.querySelector('[aria-label=\"نص قرآني توضيحي من معاينة التصميم\"] button')).some(k => k.includes('reactProps'))",
+      expression: "document.querySelector('#quran-page-input') && Object.keys(document.querySelector('#quran-page-input')).some(k => k.includes('reactProps'))",
       returnByValue: true,
     });
     return Boolean(result.result?.value);
-  }, 'hydrated learner Mushaf');
+  }, 'hydrated real Madinah Mushaf reader');
   const mushafResult = await socket.send('Runtime.evaluate', {
-    expression: "(async () => {\n  await new Promise(resolve => setTimeout(resolve, 250));\n  const ayah = document.querySelector('[aria-label=\"نص قرآني توضيحي من معاينة التصميم\"] button');\n  if (!ayah) return { ayahFound: false };\n  ayah.click();\n  await new Promise(resolve => setTimeout(resolve, 120));\n  const highlighted = ayah.getAttribute('aria-pressed') === 'true';\n  const note = document.querySelector('#mushaf-note');\n  const editable = Boolean(note);\n  const reset = [...document.querySelectorAll('button')].find(button => button.textContent.includes('مسح العلامات'));\n  reset?.click();\n  await new Promise(resolve => setTimeout(resolve, 120));\n  const cleared = ayah.getAttribute('aria-pressed') === 'false';\n  return { ayahFound: true, highlighted, editable, cleared };\n})()", awaitPromise: true, returnByValue: true,
+    expression: "(async () => { const sleep=t=>new Promise(r=>setTimeout(r,t)); const input=document.querySelector('#quran-page-input');const initiallyFirst=input?.value==='1';const next=document.querySelector('button[aria-label=\"الصفحة التالية\"]');next?.click();await sleep(180);const second=document.querySelector('#quran-page-input')?.value==='2'; const ayah=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='آية بآية'); ayah?.click();await sleep(100);const toggled=ayah?.getAttribute('aria-pressed')==='true';const switcher=document.querySelector('#learner-switch');switcher.value='demo-active';switcher.dispatchEvent(new Event('change',{bubbles:true}));await sleep(180);const isolated=document.querySelector('#quran-page-input')?.value==='1';return {initiallyFirst,second,toggled,isolated};})()",
+    awaitPromise: true, returnByValue: true,
   });
-  const values = mushafResult.result?.value;
-  assert(values && Object.values(values).every(Boolean), 'Mushaf interactions failed: ' + JSON.stringify(values ?? mushafResult));
-  console.log('Student Mushaf interactive highlight, notes and clear smoke passed');
+  const mushafValues = mushafResult.result?.value;
+  assert(mushafValues && Object.values(mushafValues).every(Boolean),
+    'S04 real Quran reader controls failed: ' + JSON.stringify(mushafValues ?? mushafResult));
+  console.log('S04 Quran 604-page reader controls, alternate ayah mode and sibling reset smoke passed');
 
 
   // S01: semantic progress table, in-row report details, no approved report filters.
