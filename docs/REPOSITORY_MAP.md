@@ -53,3 +53,13 @@ The real `pnpm-lock.yaml` is committed on this feature branch; frozen install, l
 - supabase/migrations/: schema changes.
 
 Update this map IN THE SAME PR that creates, removes or moves directories; identify exact responsibilities and entry points, not merely list names.
+
+## #43 native React landing branch (pending CI and review)
+- `apps/web/src/features/landing/v3/*.tsx`: fourteen native JSX sections; interactive client islands are `Header`, `Classroom`, `Enrollment`, `DashboardModal`; other sections render server-side.
+- `apps/web/src/features/landing/v3/LandingDemoProvider.tsx`: typed, ephemeral account/learner demo state context (no persistence or API).
+- `apps/web/src/features/landing/v3/useMushafDrawing.ts`: normalized pointer strokes on responsive canvas; browser-only, no media upload.
+- `apps/web/src/features/landing/v3/ClassroomNotes.tsx`: controlled lesson notes and mock participants.
+- `apps/web/src/app/page.tsx`: thin composition wrapped in feature provider; no `next/script` legacy loader.
+- `tests/landing-native.test.mjs` and `scripts/browser-smoke.mjs`: source regression and real Chrome interaction assertions.
+- `apps/web/public/landing-v3-interactions.js`: removed on #43 branch; old HTML reference remains a design reference, not a runtime dependency.
+- All paths above are **branch-only** until a reviewed PR is merged; do not claim deployment.
