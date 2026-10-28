@@ -50,7 +50,6 @@ export function QuranRecitationPlayer({ request, pageVerses, surahs, onVerseChan
     setElapsed(0); setDuration(0); setCurrent(null); setQueueLength(0);
     onVerseChange(null);
   // Deliberately reset only for a new explicit request, not on a page/image redraw.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [request.token]);
 
   useEffect(() => {
