@@ -1,3 +1,5 @@
+> **2026-10-29 update (#104):** Supabase JWT/RLS assumptions below are superseded. The Cloudflare Worker must verify an approved signed session, enforce account/learner ownership and staff grants on every D1 query; D1 has no PostgreSQL RLS. Authentication is not implemented in the first Worker scaffold. See [ADR 0004](adr/0004-cloudflare-only-backend.md).
+
 # Security, child safety and privacy baseline
 
 - Target children and adults; child profile belongs to verified adult account where relevant. No exposed full names/voice recordings in test fixtures or public Git history.

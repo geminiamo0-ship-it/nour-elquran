@@ -1,3 +1,5 @@
+> **2026-10-29 architecture supersession:** D1 is the approved relational target, not PostgreSQL; no database-native RLS is assumed. Authorization must be enforced in Workers and tested per learner, and shared booking/ledger atomicity must be redesigned/tested for D1. Supabase/Postgres/LiveKit text below is historical. See [ADR 0004](adr/0004-cloudflare-only-backend.md).
+
 # Engineering guardrails
 
 ## Boundaries

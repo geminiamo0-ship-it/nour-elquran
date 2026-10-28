@@ -1,5 +1,7 @@
 # نور القرآن — Product plan and decision register
 
+> **2026-10-29 approved backend decision (#104):** Cloudflare Workers + D1 is now the target; old Supabase/PostgreSQL/RLS and LiveKit references in this plan are historical and superseded for implementation. Cloudflare RealtimeKit is to be evaluated, not assumed available. See [ADR 0004](docs/adr/0004-cloudflare-only-backend.md). Existing product, child-safety, finance and Frontend-first acceptance gates remain unchanged. No backend is deployed by this decision.
+
 **Status: DRAFT FOR OWNER DISCUSSION. NOT AN AUTHORIZED IMPLEMENTATION BACKLOG.**
 
 ## Product vision (agreed conversational direction)

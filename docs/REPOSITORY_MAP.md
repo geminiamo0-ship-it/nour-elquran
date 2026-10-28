@@ -159,3 +159,12 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `components/TrainingVoicePractice.tsx`: explicit browser-only mic opt-in and private blob playback, no backend storage.
 - `quranAssignment.ts` + tests: structured surah/from/to/page and demo references; reject scope string guessing, nearest booked lesson.
 - `components/QuranAyahOverlay.tsx` and `components/ReaderPrintedPage.tsx`: optional allowed/focus verse keys for task-specific view; default full Mushaf behaviour unchanged.
+
+## CF-01 #104 — Cloudflare-only backend foundation (feature branch, not merged)
+- `workers/api/src/index.ts`: strict TS Worker fetch handler with liveness, D1 readiness and fail-closed private API namespace. No auth verifier or real data routes.
+- `workers/api/tsconfig.json`: standalone strict backend TS compile gate.
+- `workers/api/migrations/0001_core_identity_lessons.sql`: D1 replayable empty-schema tables and composite ownership FKs for accounts, learners, teachers, lessons and annotation events.
+- `workers/api/tests/foundation.test.mjs`: Node 22 in-memory SQLite FK/constraints and Worker request tests; no network or Cloudflare provisioning.
+- `workers/api/README.md`: scope, local commands, no-deployment boundary.
+- `docs/adr/0004-cloudflare-only-backend.md`: approved architecture, Time Travel caveats and staged security/restore gates.
+- Root `package.json`: integrates backend lint, strict typecheck and tests into existing Verify job; existing frontend remains unchanged.

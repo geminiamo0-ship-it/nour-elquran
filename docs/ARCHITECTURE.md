@@ -1,3 +1,5 @@
+> **Current decision (2026-10-29):** The following original proposal is retained as history. Cloudflare Workers + D1 replaces Supabase Auth/PostgreSQL/RLS; Cloudflare RealtimeKit is the A/V evaluation target instead of assuming LiveKit Cloud. See [ADR 0004](adr/0004-cloudflare-only-backend.md) and [#104](https://github.com/geminiamo0-ship-it/nour-elquran/issues/104). No deployed backend exists yet.
+
 # Architecture — proposed, not yet implemented
 
 ## Intended components

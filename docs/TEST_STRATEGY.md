@@ -34,3 +34,8 @@ No app runtime, browser tests, DO stress tests or LiveKit load tests have been e
 ## CORE-01 / #57 route module boundary regression (unmerged)
 - `tests/architecture.test.mjs` exercises route-to-feature **public index only** imports. Negative fixtures include alias, relative path and dynamic `import()` deep-import bypasses; a positive fixture uses the feature's public index.
 - The AST architecture scanner runs in `pnpm lint`, and these tests run in `pnpm test` on the #39 branch. **Verified** on `51fbde724dac1f9a424f210d953986d47e2f983e` / [Verify 40698369854](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40698369854) (all three jobs success, including architecture tests, production build and Chrome smoke). Recheck later documentation commits separately.
+
+## CF-01 backend foundation checks (#104; PR branch only)
+- Root lint covers `workers/api/src` and tests. `pnpm typecheck` includes standalone strict backend TS; `pnpm test` includes Node 22 Worker request and actual in-memory SQLite migration tests with foreign keys enabled.
+- Negative tests must reject forged identity, unavailable D1, cross-learner annotation references, unassigned teacher lessons, duplicate operation IDs and invalid JSON. Positive tests cover health/readiness and replayable migration.
+- These checks do **not** verify Cloudflare production runtime, D1 Time Travel, account authentication, query authorization or real R2/DO backup. Those remain acceptance gates in #104/#46/#56.

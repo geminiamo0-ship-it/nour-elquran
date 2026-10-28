@@ -119,3 +119,10 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - Issue #99, branch `feat/99-student-training-workspace`. `TrainingWorkspace.tsx` new three-tab accessible nav: Homework, Self practice, Next lesson readiness. `TrainingQuranSession.tsx` shares printed Madinah viewer with only verified assignment surah/ayah scope, uses source text to hide/reveal and includes reciter for selected ayah; `TrainingVoicePractice.tsx` optional local microphone recording with no upload. `quranAssignment.ts` typed structured references, validated and tests.
 - Home dashboard `WirdPanel` remains summary. Notebook remains its own archive UI. Preserve text `لا توجد تكليفات معتمدة` for new learner and no fake deadlines. Mock tasks clearly identified as demo; no production submission. Auth/RLS and sync deferred.
 - Verify lint, TS, Vitest, Next production build, Chrome 390px + 1440px via GitHub CI before merge. No Vercel Preview Deployments due daily limit.
+
+## 2026-10-29 — Cloudflare D1/Worker foundation (#104)
+- Approved decision: replace Supabase/PostgreSQL/RLS target with Cloudflare Workers + D1, optional per-lesson SQLite DO, R2, Queues/Cron; RealtimeKit requires its own evaluation. ADR: `docs/adr/0004-cloudflare-only-backend.md`.
+- Branch `feat/104-cloudflare-d1-api-foundation` adds an intentionally closed `/v1` boundary, D1 readiness probe, migration and SQLite FK/ownership tests. No actual login, sessions, real account records, deployed Worker, D1 DB or private media.
+- Run exact-head GitHub Verify; validate Node 22 experimental SQLite/type-stripping tests and TS compile. If CI fails, fix in branch and recheck before review. Update #104 and PR with SHA/run evidence.
+- PR #103 notebook/backend planning predates approved Cloudflare-only decision; do not merge its old provider/RLS plan as current architecture. Coordinate correction separately. #102 notebook frontend remains independently actionable.
+- Preserve public repo with zero secrets/child data. No production, paid provisioning or automatic migration. Main protection #1 still requires verified admin settings.

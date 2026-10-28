@@ -1,6 +1,7 @@
 # AGENTS.md — Mandatory first read for every AI / developer
 
 You are working on **نور القرآن (Noor Al-Quran)**, repository geminiamo0-ship-it/nour-elquran.
+> **Architecture update (2026-10-29, #104):** The owner approved a Cloudflare-only backend: Workers + D1 + optional SQLite DO + private R2 + Queues/Cron. Supabase Auth/PostgreSQL/RLS and LiveKit Cloud in older text below are **historical/superseded targets**, not the current implementation plan. See [ADR 0004](docs/adr/0004-cloudflare-only-backend.md). RealtimeKit is an evaluation target, not a deployed service. Never treat D1 as providing RLS; enforce authorization in the Worker.
 
 **READ THIS FILE FIRST**, before proposing an implementation, running commands or modifying any file.
 

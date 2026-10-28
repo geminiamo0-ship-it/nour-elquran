@@ -1,3 +1,5 @@
+> **Superseded for future backend/A/V provider selection on 2026-10-29:** Owner approved Cloudflare-only architecture in [ADR 0004](0004-cloudflare-only-backend.md) / [#104](https://github.com/geminiamo0-ship-it/nour-elquran/issues/104). This ADR remains as historical context; RealtimeKit is an evaluation target and no A/V service is provisioned. The two-way Quran annotation product requirements remain valid.
+
 # ADR 0002: LiveKit Cloud + interactive two-way Quran classroom
 
 Date: 2026-10-28
