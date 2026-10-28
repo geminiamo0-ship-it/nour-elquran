@@ -131,6 +131,66 @@ try {
     fs.writeFileSync(path.join(screenshots, 'foundation-' + width + '.png'), png);
     console.log('Chrome browser smoke passed: ' + width + 'px, RTL, no overflow');
   }
+
+  // Verify real hydrated React behavior, not merely static HTML/screenshots.
+  await waitFor(async () => {
+    const response = await socket.send('Runtime.evaluate', {
+      expression: "Object.keys(document.querySelector('#menuBtn') || {}).some(key => key.startsWith('__reactProps
+  for (const child of children.reverse()) child.kill('SIGTERM');
+  await sleep(500);
+  fs.rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+}
+))",
+      returnByValue: true,
+    });
+    return response.result?.value === true;
+  }, 'React hydration');
+
+  const interaction = await socket.send('Runtime.evaluate', {
+    expression: \`(async () => {
+      const pause = () => new Promise(resolve => setTimeout(resolve, 80));
+      const menu = document.querySelector('#menuBtn');
+      menu.click(); await pause();
+      const menuOpened = document.querySelector('#siteNav').classList.contains('open');
+      document.querySelector('#siteNav a[href="#about"]').click(); await pause();
+      const menuClosed = !document.querySelector('#siteNav').classList.contains('open');
+
+      document.querySelector('[data-tool="highlight"]').click();
+      const ayah = document.querySelector('.ayah');
+      ayah.click(); await pause();
+      const highlighted = ayah.classList.contains('marked');
+      document.querySelector('[data-tool="clear"]').click(); await pause();
+      const cleared = !ayah.classList.contains('marked');
+
+      document.querySelector('#addSiblingBtn').click(); await pause();
+      const sibling = document.querySelector('#siblingList input[name="siblings"]');
+      const siblingAdded = Boolean(sibling);
+      sibling.value = 'طالب ثان';
+      document.querySelector('#accountName').value = 'حساب تجريبي';
+      document.querySelector('#parentPhone').value = '01012345678';
+      document.querySelector('#learnerName').value = 'طالب أول';
+      document.querySelector('#learnerLevel').value = 'يبدأ من الصفر';
+      const form = document.querySelector('#registrationForm');
+      const formValid = form.checkValidity();
+      form.requestSubmit(); await pause();
+      const modalOpened = document.querySelector('#dashboardModal').classList.contains('open');
+      const twoLearners = document.querySelectorAll('#createdProfiles button').length === 2;
+      document.querySelector('#modalTabs [data-tab="classes"]').click(); await pause();
+      document.querySelector('#mockSlots [data-slot]').click(); await pause();
+      const booked = document.querySelector('#bookingStatus').textContent.includes('موعد محفوظ للعرض فقط');
+      document.querySelector('#closeModal').click(); await pause();
+      const modalClosed = !document.querySelector('#dashboardModal').classList.contains('open');
+      return { menuOpened, menuClosed, highlighted, cleared, siblingAdded, formValid,
+        modalOpened, twoLearners, booked, modalClosed };
+    })()\`,
+    awaitPromise: true,
+    returnByValue: true,
+  });
+  const checks = interaction.result?.value;
+  assert(checks && Object.values(checks).every(Boolean),
+    'Native React interaction smoke failed: ' + JSON.stringify(checks ?? interaction));
+  console.log('Native React interaction smoke passed: nav, ayah highlight/clear, siblings, signup, demo booking and modal');
+
 } finally {
   socket?.close();
   for (const child of children.reverse()) child.kill('SIGTERM');
