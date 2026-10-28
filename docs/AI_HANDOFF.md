@@ -76,3 +76,9 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - Current Issue #75 S03 branch `feat/75-student-trial-scheduling-s03`: scoped mock preference selector for free 30-minute trial and weekly recurring patterns; no actual availability, teacher identity, payment, bookings or API.
 - Before merge inspect latest commit SHA and CI for lint, TS, tests, Next build, HTTP/Chrome. S01 and S02 regression tests must stay green.
 - After S03, S04 Quran reader source/edition rights decision and verified canonical mapping; do not generate Quran source content without rights verification.
+
+## S04 Quran reader handoff (2026-10-28)
+- Latest merged S03 main `29065fdb860abc7eb254c584fe7591d791559c48`; S04 work on `feat/79-real-quran-reader-r2` refs #79. No shipped/deployed Quran content claimed without exact-head CI and R2 live checks.
+- Source: official King Fahd Complex page artwork, via Quran.ws versioned `hafs-kfqc/v1.1.1` 604 SVG pages and per-page ayah polygons; per-ayah Uthmani Hafs text via Quran JSON static chapters. Never generate or edit original Arabic text.
+- In `santoreno`, PR #216 adds automation to create bucket `noor-quran-hafs-v1`, fetch 1323 files, publish manifest last and deploy isolated read-only Worker. Wait for its actual GitHub Actions pass; may block on missing Cloudflare secrets/access/asset mirror.
+- S04 acceptance: CI Verify, manual compare sample pages (including 1 and 604) to authoritative source, confirm 6236 verse identifiers before claiming global ayah mapping. Word highlights, pens, private persisted notes and licensed audio remain later phases.

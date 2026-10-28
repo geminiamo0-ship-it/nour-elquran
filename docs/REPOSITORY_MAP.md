@@ -110,3 +110,12 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `apps/web/src/features/student/components/LessonHub.tsx`: compose existing schedule and booking preview.
 - `apps/web/src/features/student/StudentDashboard.tsx`: link new learner CTA into the booking workflow rather than dead-end notice.
 - `scripts/browser-smoke.mjs`: S03 trial review, no-send and sibling isolation.
+
+## STU-AZ S04 Quran reader source structure
+- `apps/web/src/features/student/quranSource.ts`: typed Hafs source adapter for 604 SVG pages and sidecar / verse text metadata; safe page clamp and surah:ayah reference extraction.
+- `apps/web/src/features/student/quranSource.test.ts`: source URL, 604-page bounds, metadata validation, no invented ayah text.
+- `apps/web/src/features/student/components/MadinahReader.tsx`: full native React reading modes, page controls, source fallback, metadata-driven ayah selector and local notes.
+- `apps/web/src/features/student/components/MadinahReader.module.css`: responsive RTL page and ayah presentation.
+- `apps/web/src/features/student/components/MushafWorkspace.tsx`: thin student route composition; replaces earlier illustrative four verses.
+- `scripts/browser-smoke.mjs`: S04 Chrome tests for 604-page controls, alternate mode and sibling reset.
+- `docs/QURAN_ASSETS_DEPLOYMENT.md`: pinned source provenance, Santo cross-repo workflow, live verification and security boundary.
