@@ -17,6 +17,9 @@ This is a **foundation-only repository**. The following existing paths are real:
 - docs/adr/: architecture decision templates and records, including ADR 0001 governance and ADR 0002 managed LiveKit Cloud + interactive mushaf.
 - .github/workflows/verify.yml: initial real governance-only checks, conditional code quality once workspace exists.
 - .github/scripts/verify_repo.py: repository policy gate.
+- .github/scripts/check_boundaries.py: pre-application Python module import boundary and cycle gate; runs in repository-policy CI.
+- tests/governance/test_boundaries.py: synthetic valid/invalid TS import fixtures for the architecture gate.
+- docs/MODULE_BOUNDARIES.md: feature ownership, allowed imports and limits of baseline checker.
 - tests/governance/: tests for the gate.
 - .github/ISSUE_TEMPLATE/: feature/bug/tech issue templates.
 - .github/PULL_REQUEST_TEMPLATE.md: evidence checklist.
