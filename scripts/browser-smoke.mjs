@@ -115,7 +115,7 @@ try {
         returnByValue: true,
       });
       const value = evaluated.result?.value;
-      return value?.ready === 'complete' && value?.url === url + 'landing-approved-v3.html' && value?.title ? value : null;
+      return value?.ready === 'complete' && value?.url === url && value?.title ? value : null;
     }, 'Arabic page at ' + width + 'px');
     assert.equal(rendered.lang, 'ar');
     assert.equal(rendered.dir, 'rtl');
