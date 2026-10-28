@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { ReaderIcon } from './ReaderIcon';
 import { useStudent } from '../StudentContext';
 import {
@@ -37,7 +36,6 @@ const palette=['#f6cd46','#86c5a8','#ec99a4','#81b5e4','#d2a7df'];
 
 export function MadinahReader() {
   const {selected}=useStudent();
-  const router=useRouter();
   const [page,setPage]=useState(1);
   const [pageEntry,setPageEntry]=useState('1');
   const [mode,setMode]=useState<QuranViewMode>('madinah');
@@ -222,7 +220,7 @@ export function MadinahReader() {
           onClick={()=>openDrawer('index')}><ReaderIcon name="index" /></button>
         <button type="button" className={css.iconButton} aria-label="إعدادات القراءة" title="الإعدادات"
           onClick={()=>openDrawer('settings')}><ReaderIcon name="settings" /></button>
-        <button type="button" className={css.exitButton} onClick={()=>{if(compactDevice&&immersive)router.push('/student');else setImmersive(v=>!v);setShowAside(false);}}>
+        <button type="button" className={css.exitButton} onClick={()=>{if(compactDevice&&immersive){window.location.assign('/student');return;}else setImmersive(v=>!v);setShowAside(false);}}>
           {immersive?'الخروج من وضع القراءة':'وضع القراءة'}
         </button>
       </div>
