@@ -34,3 +34,37 @@
 .surahSelect {flex:1;min-width:175px;max-width:440px;min-height:42px;border:1px solid #c9bc9f;border-radius:7px;
   font:inherit;font-size:13px;color:#30533e;background:#fffdf7;padding:7px 10px;}
 .surahSelect:focus-visible {outline:3px solid #aa8739;outline-offset:2px;}
+
+.readerHeader {display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;flex-wrap:wrap;color:#31513c}
+.readerHeader strong{font-size:14px}.headerActions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.chrome{display:grid;gap:9px}.colors{display:flex;gap:5px;align-items:center}
+.colorDot{width:26px;height:26px;border:2px solid #fff;border-radius:50%;cursor:pointer;box-shadow:0 0 0 1px #8b826b}
+.colorDot[aria-pressed="true"]{box-shadow:0 0 0 3px #2f503c}
+.ayahRow{font-family:'Amiri',serif;font-size:26px;line-height:2.5;padding:16px;border:1px solid #e8ddc5;border-radius:8px;background:#fffdf6;text-align:right;scroll-margin:105px}
+.ayahRef{font:700 12px/1.6 'Tajawal',sans-serif;background:#f0ebdf;padding:5px;border:1px solid #c3b48d;border-radius:7px;cursor:pointer;color:#31513c;direction:ltr}
+.word{display:inline;border:0;background:transparent;border-radius:4px;color:#2e4837;cursor:pointer;font:inherit;line-height:inherit;padding:0 1px}
+.word[aria-pressed="true"],.ayahRef[aria-pressed="true"]{outline:2px solid #a67b2d;outline-offset:2px}
+.noteJump{display:grid;gap:5px;cursor:pointer;border:1px solid #e1d3b5;background:#fffef9;text-align:right;border-radius:7px;padding:10px;color:#314b3a;font:inherit}
+.noteJump:hover,.noteJump:focus-visible{background:#f8eed6;outline-color:#b0833c}
+.noteJump strong{font-size:12px}.noteJump span{font-size:12px;line-height:1.8;overflow-wrap:anywhere}
+.info{font-size:11px;color:#747b6c;line-height:1.7}
+.readerFoot{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;font-size:11px;color:#627265}
+.immersive{position:fixed;inset:0;z-index:1000;background:#f9f6ed;overflow-y:auto;overscroll-behavior:contain;padding:max(8px,env(safe-area-inset-top)) 12px max(8px,env(safe-area-inset-bottom));min-height:100dvh;max-height:100dvh;display:flex;flex-direction:column;gap:8px}
+.immersive .readerHeader{position:sticky;top:0;z-index:11;background:#f9f6ed;min-height:48px;padding-bottom:5px}
+.immersive .grid{display:grid;grid-template-columns:minmax(0,1fr);flex:1;min-height:0;align-items:center}
+.immersive .pageShell{border:0;box-shadow:none;min-height:0;align-content:center;padding:5px;overflow:hidden}
+.immersive .pageImage{width:100%;height:auto}
+.immersive .sidebar{position:fixed;top:auto;bottom:calc(55px + env(safe-area-inset-bottom));left:8px;right:8px;z-index:15;max-height:64dvh;overflow-y:auto;box-shadow:0 -8px 40px #22362230}
+.immersive .readerFoot{position:sticky;bottom:0;z-index:12;background:#f9f6ed;border-top:1px solid #e9dac0;padding:8px 0;font-size:10px}
+.immersive .readerFoot span{display:none}
+.immersive .pageCaption{font-size:10px}
+.readingOnly .chrome{display:none}
+.readingOnly .readerHeader strong{font-size:12px}
+.readingOnly .pageShell{flex:1}
+@media(max-width:700px){
+  .immersive .pageShell{width:100%}
+  .immersive .grid{padding-bottom:0}
+  .immersive .readerFoot{justify-content:center}
+  .immersive .navigation,.immersive .toolbar{justify-content:center}
+  .immersive .sidebar{padding:12px}
+}
