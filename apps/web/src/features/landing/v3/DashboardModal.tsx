@@ -58,17 +58,17 @@ export function DashboardModal() {
       <div className="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle" ref={dialog} onKeyDown={trapKeyboard}>
         <div className="modal-head">
           <div><span className="eyebrow">تَجْرِبَةُ الطَّالِب</span><h2 id="modalTitle">لوحة {active}</h2></div>
-          <button type="button" className="modal-close" ref={closeButton} onClick={dismiss} aria-label="إغلاق النافذة">×</button>
+          <button type="button" className="modal-close" id="closeModal" ref={closeButton} onClick={dismiss} aria-label="إغلاق النافذة">×</button>
         </div>
         <p className="modal-welcome">مرحبًا {session.accountName}! أنشأنا لك لوحة تجريبية محلية. يمكنك التبديل بين الطلاب واستكشاف الصفحات قبل الحجز.</p>
-        <div className="profiles" aria-label="اختر ملف الطالب">
+        <div className="profiles" id="createdProfiles" aria-label="اختر ملف الطالب">
           {session.learners.map((learner) => (
             <button key={learner} type="button" className={learner === active ? 'profile-btn active' : 'profile-btn'} aria-pressed={learner === active} onClick={() => { setSelectedLearner(learner); setTab('home'); }}>{learner}</button>
           ))}
         </div>
-        <div className="modal-tabs" role="tablist" aria-label="أقسام لوحة الطالب">
+        <div className="modal-tabs" id="modalTabs" role="tablist" aria-label="أقسام لوحة الطالب">
           {tabs.map((item) => (
-            <button key={item.id} type="button" role="tab" id={`tab-${item.id}`} aria-controls={`panel-${item.id}`} aria-selected={tab === item.id} className={tab === item.id ? 'active' : ''} onClick={() => setTab(item.id)}>{item.label}</button>
+            <button key={item.id} type="button" role="tab" data-tab={item.id} id={`tab-${item.id}`} aria-controls={`panel-${item.id}`} aria-selected={tab === item.id} className={tab === item.id ? 'active' : ''} onClick={() => setTab(item.id)}>{item.label}</button>
           ))}
         </div>
         <div className="modal-panels">
@@ -77,8 +77,8 @@ export function DashboardModal() {
           </div>
           <div data-panel="classes" id="panel-classes" role="tabpanel" aria-labelledby="tab-classes" className={tab === 'classes' ? 'active' : ''} hidden={tab !== 'classes'}>
             <div className="modal-card"><h3>حصصي القادمة</h3><p>{booked ? `لديك حصة تجريبية توضيحية في ${booked}` : 'ليس لديك موعد بعد. اختر موعدًا تجريبيًا داخل هذه المعاينة.'}</p>
-              <div className="mock-slots">{slots.map((slot) => <button type="button" key={slot} className={booked === slot ? 'selected' : ''} aria-pressed={booked === slot} onClick={() => setBookings((current) => ({ ...current, [active]: slot }))}>{slot.replace('مساءً', 'م')}</button>)}</div>
-              <div className="status-msg" aria-live="polite">{booked ? `موعد محفوظ للعرض فقط: ${booked}` : 'اختر موعدًا تجريبيًا — كل المواعيد افتراضية.'}</div>
+              <div className="mock-slots" id="mockSlots">{slots.map((slot) => <button type="button" key={slot} data-slot={slot} className={booked === slot ? 'selected' : ''} aria-pressed={booked === slot} onClick={() => setBookings((current) => ({ ...current, [active]: slot }))}>{slot.replace('مساءً', 'م')}</button>)}</div>
+              <div className="status-msg" id="bookingStatus" aria-live="polite">{booked ? `موعد محفوظ للعرض فقط: ${booked}` : 'اختر موعدًا تجريبيًا — كل المواعيد افتراضية.'}</div>
             </div>
           </div>
           <div data-panel="quran" id="panel-quran" role="tabpanel" aria-labelledby="tab-quran" className={tab === 'quran' ? 'active' : ''} hidden={tab !== 'quran'}>
