@@ -203,7 +203,7 @@ export function MadinahReader() {
     <header className={css.readerHeader}>
       <div className={css.identity}>
         <span className={css.brandMark} aria-hidden="true">۞</span>
-        <div><strong>مصحف نور القرآن</strong><small>مصحف المدينة · حفص عن عاصم</small></div>
+        <div><strong>مصحف نور القرآن</strong><small>مصحف المدينة · حفص عن عاصم · نص قرآني موثّق</small></div>
       </div>
       <div className={css.headerActions}>
         <label htmlFor="quran-surah-select" className={css.visuallyHidden}>الانتقال إلى سورة</label>
