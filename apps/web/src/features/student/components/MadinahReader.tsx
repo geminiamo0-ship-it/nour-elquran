@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ReaderIcon } from './ReaderIcon';
+import { isQuranDoubleTap, type QuranTap } from '../quranInteraction';
 import { QuranRecitationPlayer } from './QuranRecitationPlayer';
 import { quranAudioKey, type QuranAudioRequest, type QuranAudioScope } from '../quranReciters';
 import type { QuranAyahReference } from '../quranSource';
@@ -77,6 +78,8 @@ export function MadinahReader() {
   const [audioRequest,setAudioRequest]=useState<QuranAudioRequest|null>(null);
   const [audioVerse,setAudioVerse]=useState<QuranAyahReference|null>(null);
   const startTouch=useRef<{x:number;y:number}|null>(null);
+  const lastVerseTap=useRef<QuranTap|null>(null);
+  const [inkPaletteOpen,setInkPaletteOpen]=useState(false);
 
   useEffect(()=>{
     const update=()=>setCompactDevice(window.innerWidth<900);
@@ -156,13 +159,27 @@ export function MadinahReader() {
 
   function go(n:number,focus?:string) {
     const next=clampQuranPage(n);
-    setPage(next);setPageEntry(String(next));setLocalSearch('');
+    setPage(next);setPageEntry(String(next));setLocalSearch('');lastVerseTap.current=null;
     setPendingKey(focus??null);
+  }
+  function handleVerseTap(target:QuranTarget) {
+    if(!validTarget(target))return;
+    const key=targetKey(target);
+    const now=Date.now();
+    if(isQuranDoubleTap(lastVerseTap.current,key,now)) {
+      lastVerseTap.current=null;
+      selectTarget(target);
+      return;
+    }
+    lastVerseTap.current={key,at:now};
+    setSelectedTarget(target);
+    setShowAside(false);
   }
   function selectTarget(target:QuranTarget) {
     if(!validTarget(target))return;
     setSelectedTarget(target);
     const old=visible.find(n=>n.type==='private'&&targetKey(n.target)===targetKey(target));
+    lastVerseTap.current=null;
     setDraft(old?.text??'');setShowAside(true);setShowSearch(false);setShowNotes(false);setShowIndex(false);setShowSettings(false);setSavedNotice('');
   }
   function saveNote() {
@@ -209,6 +226,7 @@ export function MadinahReader() {
   }
   function chooseTool(tool:InkMode) {
     setInkMode(tool);setHideChrome(false);setShowAside(false);
+    setInkPaletteOpen(tool!=='off');
   }
 
   return <div className={[css.reader,immersive?css.immersive:''].join(' ')} dir="rtl">
@@ -293,7 +311,7 @@ export function MadinahReader() {
               <ReaderPrintedPage page={leaf} color={color} inkMode={inkMode}
                 strokes={inkByPage[leaf]??[]} onInkChange={changeInkFor}
                 selectedKey={audioVerse ? quranAudioKey(audioVerse) : selectedKey} noteKeys={noteByKey}
-                onSelect={selectTarget}/>
+                onSelect={handleVerseTap} onOpenNote={selectTarget}/>
               </div>)}
           </div>:
           <div className={css.ayahDisplay} aria-label="عرض القرآن آية بآية">
@@ -305,7 +323,7 @@ export function MadinahReader() {
                   className={css.ayahRow} style={{fontSize}}>
                   <button type="button" className={css.ayahRef} style={{background:marked[key]}}
                     aria-pressed={selectedKey===key}
-                    onClick={()=>selectTarget({page,surah:region.surah,ayah:region.ayah,wordIndex:null})}>
+                    onClick={()=>handleVerseTap({page,surah:region.surah,ayah:region.ayah,wordIndex:null})}>
                     ﴿{key}﴾{noteByKey.has(key)?' ●':''}
                   </button>{' '}
                   {text?text.split(/(\s+)/u).map((part,i)=>{
@@ -314,7 +332,7 @@ export function MadinahReader() {
                     const k=key+':w'+wordIndex,n=wordIndex;
                     return <button key={i} type="button" className={css.word}
                       style={{background:marked[k]}} aria-pressed={selectedKey===k}
-                      onClick={()=>selectTarget({page,surah:region.surah,ayah:region.ayah,wordIndex:n})}>{part}</button>;
+                      onClick={()=>handleVerseTap({page,surah:region.surah,ayah:region.ayah,wordIndex:n})}>{part}</button>;
                   }):<span>جار تحميل النص العثماني…</span>}
                 </div>;
               })}
