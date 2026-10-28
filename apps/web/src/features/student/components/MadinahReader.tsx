@@ -268,20 +268,20 @@ export function MadinahReader() {
         {inkPaletteOpen && !hideChrome && <div className={css.inkPalette} id="quran-ink-palette"
           role="group" aria-label="ألوان وأدوات الرسم">
           <button type="button" className={css.paletteIcon} aria-label="إغلاق لوحة القلم"
-            title="إخفاء لوحة القلم" onClick={()=>setInkPaletteOpen(false)}>×</button>
+            title="إخفاء لوحة القلم" onClick={()=>setInkPaletteOpen(false)}><ReaderIcon name="close" /></button>
           <div className={css.paletteDivider} />
           {palette.map(c=><button key={c} type="button" className={css.colorDot}
             style={{background:c}} aria-label={'لون '+c} aria-pressed={color===c}
             title={'لون '+c} onClick={()=>setColor(c)}/>)}
           <div className={css.paletteDivider} />
           <button type="button" className={css.paletteIcon} title="ممحاة" aria-label="ممحاة"
-            aria-pressed={inkMode==='eraser'} onClick={()=>chooseTool('eraser')}>⌫</button>
+            aria-pressed={inkMode==='eraser'} onClick={()=>chooseTool('eraser')}><ReaderIcon name="eraser" /></button>
           <button type="button" className={css.paletteIcon} title="تراجع" aria-label="تراجع"
-            disabled={!(inkByPage[page]?.length)} onClick={undoInk}>↶</button>
+            disabled={!(inkByPage[page]?.length)} onClick={undoInk}><ReaderIcon name="undo" /></button>
           <button type="button" className={css.paletteIcon} title="إعادة" aria-label="إعادة"
-            disabled={!(redoByPage[page]?.length)} onClick={redoInk}>↷</button>
+            disabled={!(redoByPage[page]?.length)} onClick={redoInk}><ReaderIcon name="redo" /></button>
           <button type="button" className={css.paletteIcon} title="العودة للتصفح" aria-label="العودة للتصفح"
-            onClick={()=>chooseTool('off')}>☝</button>
+            onClick={()=>chooseTool('off')}><ReaderIcon name="hand" /></button>
         </div>}
       </div>
       <button type="button" className={css.tool} onClick={()=>openDrawer('search')}

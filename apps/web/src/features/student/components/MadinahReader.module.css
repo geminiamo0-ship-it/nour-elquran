@@ -243,3 +243,5 @@
  .inkPalette{animation:none!important}
  .inkPalette .colorDot{transition:none!important}
 }
+
+.inkPalette .paletteIcon svg{width:19px;height:19px;display:block;flex:0 0 auto}
