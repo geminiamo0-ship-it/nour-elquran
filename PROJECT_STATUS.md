@@ -29,3 +29,9 @@ Last inspected: 2026-10-28. **Distinguish main from unmerged PR branches.**
 
 ## Status report template
 Date / Issue / PR / exact head SHA; changed paths; tests and exact Actions URL; browser/staging/production evidence; migrations/deployments (or none); risks; next action.
+
+## 2026-10-28 — route API boundary hardening (unmerged)
+- Previously verified PR #60 head `3dbe0cf562248331cfee89298dce6a36b6d5a3cb`: [Verify 40695487092](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40695487092) **success**, including Chrome responsive smoke.
+- Follow-up on #39/#57: `scripts/check-architecture.mjs` now rejects **route entrypoints importing private feature modules**, for alias and resolved relative paths; `tests/architecture.test.mjs` adds negative static, relative and lazy-import fixtures plus an allowed public-index fixture.
+- The new code was committed on `feat/39-bootstrap-workspace` after the above green run. **Do not call these new assertions CI-verified until a workflow succeeds at their final exact head.** No migration or deployment.
+- Next: inspect latest PR #60 head and all three Verify jobs, document result in #39 and PR; reconcile #58 overlap, obtain human review and enforce #1 main ruleset before merge.
