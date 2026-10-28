@@ -8,11 +8,12 @@ You are working on **نور القرآن (Noor Al-Quran)**, repository geminiamo
 1. AGENTS.md (this file)
 2. PROJECT_STATUS.md (source of truth for what is actually done)
 3. NOOR_MASTER_PLAN.md (approved vs pending decisions)
-4. docs/ENGINEERING_GUARDRAILS.md
-5. docs/REPOSITORY_MAP.md
-6. docs/TEST_STRATEGY.md and docs/SECURITY_PRIVACY.md
-7. CONTRIBUTING.md
-8. The active GitHub Issue, relevant PRs / Actions results / ADRs
+4. docs/DESIGN_SYSTEM.md (approved brand/landing design reference)
+5. docs/ENGINEERING_GUARDRAILS.md
+6. docs/REPOSITORY_MAP.md
+7. docs/TEST_STRATEGY.md and docs/SECURITY_PRIVACY.md
+8. CONTRIBUTING.md
+9. The active GitHub Issue, relevant PRs / Actions results / ADRs
 
 If any of these cannot be read, STOP writing code until the missing context is reconciled. Do not invent project progress from conversation summaries.
 
@@ -35,6 +36,7 @@ If any of these cannot be read, STOP writing code until the missing context is r
 - For all ages, with emphasis on children; **no separate parent dashboard**.
 - One Supabase Auth account may manage several independently scoped student profiles (siblings). The selected student profile drives UI, lessons, tutors and training; switching cannot leak cross-profile data.
 - Teacher-led one-to-one lessons; reports after class lead to structured, interactive practice before the next class.
+- **Approved Landing Page design:** docs/DESIGN_SYSTEM.md is normative for colors, fonts, logo, CTA scroll and guardian-phone signup. CTA to trial goes to signup, then full Student Dashboard, then trial booking inside dashboard; no anonymous pre-signup booking funnel.
 - Frontend-first mock workflows; backend and LiveKit Cloud integration later, with early technical spike permitted when agreed.
 - **Approved classroom spec #7:** teacher AND learner interact with shared Quran mushaf using pen/handwriting, highlight, eraser and typed notes; persisted annotated lesson JSON plus PNG/PDF archive accessible from student profile. No actual audiovisual session recording authorized by this decision.
 - Proposed technology: Next.js/Cloudflare UI; Cloudflare Worker/DO/Queues; Supabase Auth/PostgreSQL; **LiveKit Cloud (approved managed A/V provider)**; optional LLM planner. Frontend deployment adapter and detailed topology still require verification.
