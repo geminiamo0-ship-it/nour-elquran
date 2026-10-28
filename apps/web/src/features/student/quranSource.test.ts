@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   QURAN_PAGE_COUNT, QURAN_CHAPTER_COUNT, clampQuranPage, pageName, quranPageUrl,
   quranPageMetadataUrl, quranChapterUrl, parseQuranAyahRegions,
-  parseQuranChapter, quranReferenceKey,
+  parseQuranChapter, quranReferenceKey, quranSurahIndexUrl, parseSurahIndex,
 } from './quranSource';
 
 describe('verified Quran source adapter (no generated ayah text)', () => {
@@ -31,6 +31,20 @@ describe('verified Quran source adapter (no generated ayah text)', () => {
     const refs = parseQuranAyahRegions(data);
     expect(refs.map(quranReferenceKey)).toEqual(['2:255','2:256']);
     expect(parseQuranAyahRegions({ irrelevant: 'text' })).toEqual([]);
+  });
+  it('navigates 114 surahs only by edition-published first-page metadata', () => {
+    const fixture = Array.from({length: 114}, (_, i) => ({
+      number: i + 1, nameArabic: 'سورة معروفة', pageNumber: Math.min(604, i * 5 + 1),
+      ayahCount: i === 0 ? 7 : 10, juzNumber: Math.min(30, Math.floor(i/4) + 1),
+    }));
+    const actual = parseSurahIndex(fixture);
+    expect(actual).toHaveLength(114);
+    expect(actual[0]?.pageNumber).toBe(1);
+    expect(actual[113]?.number).toBe(114);
+    expect(parseSurahIndex(fixture.slice(1))).toEqual([]);
+    expect(parseSurahIndex([...fixture.slice(0, 113), {...fixture[113]!, number: 1}])).toEqual([]);
+    expect(quranSurahIndexUrl()).toContain('/indexes/surah.json');
+    expect(quranSurahIndexUrl(true)).toContain('/mushafs/hafs/kfqc/json/surah.json');
   });
   it('maps Uthmani verse text by canonical surah:ayah and never invents missing verses', () => {
     const verses = parseQuranChapter({ verses: [
