@@ -53,3 +53,10 @@ The real `pnpm-lock.yaml` is committed on this feature branch; frozen install, l
 - supabase/migrations/: schema changes.
 
 Update this map IN THE SAME PR that creates, removes or moves directories; identify exact responsibilities and entry points, not merely list names.
+
+## In-progress stacked UI slice (#41, PR #61)
+- `apps/web/src/shared/ui/Button.tsx` and `Button.module.css`: native accessible button, approved gold/olive variants, reduced-motion behavior.
+- `apps/web/src/shared/ui/Card.tsx` and `Card.module.css`: semantic, responsive paper card primitive.
+- `apps/web/src/shared/ui/Field.tsx` and `Field.module.css`: labeled native input with hints, required and error semantics.
+- `apps/web/src/shared/ui/index.ts`: public exports; `Button.test.tsx` and `Field.test.tsx`: server-rendered markup unit checks.
+- This section describes **unmerged draft PR work** based on #39; no claim that `main` contains these paths.
