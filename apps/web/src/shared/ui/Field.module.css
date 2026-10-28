@@ -1,0 +1,15 @@
+.field { display: grid; gap: 0.35rem; }
+.label { font-weight: 700; color: var(--olive-2); }
+.hint { margin: 0; font-size: 0.9rem; color: var(--ink-2); }
+.input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--paper-2);
+  color: var(--ink);
+  padding: 0.55rem 0.75rem;
+}
+.input:focus-visible { outline: 3px solid var(--gold-dark); outline-offset: 2px; }
+.input[aria-invalid="true"] { border-color: #9b2929; }
+.error { color: #9b2929; margin: 0; font-size: 0.9rem; }
