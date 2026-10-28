@@ -14,8 +14,8 @@ cd "$repo_root/apps/web"
 
 # The probe route is created in the ephemeral CI checkout only, never committed
 # or deployed. It checks server-side request cookies without storing user data.
-mkdir -p src/app/api/__vinext_probe
-cat > src/app/api/__vinext_probe/route.ts <<'ROUTE'
+mkdir -p src/app/api/vinext-probe
+cat > src/app/api/vinext-probe/route.ts <<'ROUTE'
 import { cookies } from 'next/headers';
 
 export async function GET(): Promise<Response> {
@@ -81,11 +81,11 @@ grep -q 'dir="rtl"' "$report_dir/student.html"
 echo "Local preview: synthetic cookie route (present)"
 curl --fail --silent --show-error \
   -H 'Cookie: noor_spike=synthetic' \
-  http://127.0.0.1:3137/api/__vinext_probe > "$report_dir/cookie.json"
+  http://127.0.0.1:3137/api/vinext-probe > "$report_dir/cookie.json"
 node -e 'const fs=require("node:fs");const data=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));if(data.cookieSeen!==true)process.exit(1)' "$report_dir/cookie.json"
 echo "Local preview: synthetic cookie route (absent)"
 curl --fail --silent --show-error \
-  http://127.0.0.1:3137/api/__vinext_probe > "$report_dir/no-cookie.json"
+  http://127.0.0.1:3137/api/vinext-probe > "$report_dir/no-cookie.json"
 node -e 'const fs=require("node:fs");const data=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));if(data.cookieSeen!==false)process.exit(1)' "$report_dir/no-cookie.json"
 
 printf 'vinext build and local SSR/RTL/cookie probe: PASS\n' | tee -a "$report_dir/result.txt"
