@@ -38,3 +38,12 @@ Return to frontend planning in Issue #3: landing design system is approved in #9
 - Migrations/deployments applied or explicitly none:
 - Known failures/risks:
 - Next exact issue/action:
+
+
+## Active implementation candidate — #39 (2026-10-28)
+- The owner explicitly authorized starting [CORE-01 issue #39](https://github.com/geminiamo0-ship-it/nour-elquran/issues/39) with «نفذ».
+- Dedicated branch `feat/39-bootstrap-workspace` created. A minimal Next.js + React/TypeScript Arabic RTL scaffold and feature-first components, scripts, architecture rule test fixtures were written **on the branch only**.
+- `pnpm-lock.yaml` dependency generation and CI/build/HTTP smoke validation remain **pending**. The model's local container could not resolve npm registry DNS, so local install/build is **unverified**; GitHub Actions results must be collected and recorded before marking complete.
+- No auth, database, payment provider, LiveKit project, production deploy or real learner data has been added. No merge should occur without actual CI+review.
+- Owner confirmed GitHub repo remains **PUBLIC**; avoid all private customer/child data and tokens in source. Branch protection requirement [#1](https://github.com/geminiamo0-ship-it/nour-elquran/issues/1) remains open.
+- **Next:** generate/commit valid pnpm lockfile using a controlled GitHub Actions bootstrap job, then open PR for #39 and inspect verify workflow results. Fix issues; do not close #39 until proven green and reviewed.
