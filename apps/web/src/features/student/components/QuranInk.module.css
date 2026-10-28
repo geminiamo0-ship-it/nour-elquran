@@ -1,3 +1,4 @@
-.active,.passive { position:absolute;inset:0;width:100%;height:100%;z-index:2;touch-action:pan-y; }
-.active { cursor:crosshair; }
-.passive { pointer-events:none; }
+.active,.passive { position:absolute;inset:0;width:100%;height:100%;z-index:2; }
+.active { cursor:crosshair; pointer-events:auto; touch-action:none; }
+.passive { pointer-events:none; touch-action:auto; }
+.active path,.passive path { pointer-events:none; }
