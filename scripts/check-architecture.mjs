@@ -77,9 +77,9 @@ function walk(directory) {
   return discovered;
 }
 
-function resolveSource(importer, specifier) {
+function resolveSource(importer, specifier, sourceRoot = srcRoot) {
   const base = specifier.startsWith('@/')
-    ? path.join(srcRoot, specifier.slice(2))
+    ? path.join(sourceRoot, specifier.slice(2))
     : specifier.startsWith('.')
       ? path.resolve(path.dirname(importer), specifier)
       : null;
@@ -90,23 +90,40 @@ function resolveSource(importer, specifier) {
   return null;
 }
 
-export function inspectArchitecture() {
-  const files = walk(srcRoot);
+// Inspect the TypeScript AST so lazy imports cannot bypass the same rules as static imports.
+export function importSpecifiers(source) {
+  const requests = [];
+  function visit(node) {
+    if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node))
+      && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
+      requests.push(node.moduleSpecifier.text);
+    }
+    if (ts.isCallExpression(node) && node.arguments.length === 1
+      && ts.isStringLiteralLike(node.arguments[0])
+      && (node.expression.kind === ts.SyntaxKind.ImportKeyword
+        || (ts.isIdentifier(node.expression) && node.expression.text === 'require'))) {
+      requests.push(node.arguments[0].text);
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(source);
+  return requests;
+}
+
+export function inspectArchitecture(sourceRoot = srcRoot) {
+  const files = walk(sourceRoot);
   const graph = new Map();
   const errors = [];
   for (const file of files) {
-    const relativeFile = path.relative(srcRoot, file).replaceAll('\\', '/');
+    const relativeFile = path.relative(sourceRoot, file).replaceAll('\\', '/');
     const source = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
     const edges = new Set();
-    for (const statement of source.statements) {
-      if (!(ts.isImportDeclaration(statement) || ts.isExportDeclaration(statement))) continue;
-      if (!statement.moduleSpecifier || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
-      const request = statement.moduleSpecifier.text;
+    for (const request of importSpecifiers(source)) {
       const error = boundaryError(relativeFile, request);
       if (error) errors.push(relativeFile + ': ' + error + ' (' + request + ')');
-      const target = resolveSource(file, request);
+      const target = resolveSource(file, request, sourceRoot);
       if (target) {
-        const targetRelative = path.relative(srcRoot, target).replaceAll('\\', '/');
+        const targetRelative = path.relative(sourceRoot, target).replaceAll('\\', '/');
         const resolvedError = resolvedBoundaryError(relativeFile, targetRelative);
         if (resolvedError && resolvedError !== error) {
           errors.push(relativeFile + ': ' + resolvedError + ' (' + request + ')');
@@ -117,7 +134,7 @@ export function inspectArchitecture() {
     graph.set(file, [...edges]);
   }
   const cycle = findCycle(graph);
-  if (cycle) errors.push('Circular dependency: ' + cycle.map(file => path.relative(srcRoot, file)).join(' → '));
+  if (cycle) errors.push('Circular dependency: ' + cycle.map(file => path.relative(sourceRoot, file)).join(' → '));
   return errors;
 }
 
