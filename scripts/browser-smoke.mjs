@@ -225,7 +225,7 @@ try {
     ['lessons', 'سجل الحصص'], ['training', 'التحضير قبل التسميع'],
     ['progress', 'السجل الأكاديمي'], ['notebook', 'دفتر الطالب الخاص'],
     ['subscription', 'ملخص الاشتراك'], ['account', 'ملفات الطلاب'],
-    ['mushaf', 'معاينة المصحف'],
+    ['mushaf', 'المصحف الشريف التفاعلي'],
   ]) {
     const response = await fetch(url + 'student/' + section, { signal: AbortSignal.timeout(10000) });
     assert.equal(response.status, 200, 'Student route did not render: ' + section);
