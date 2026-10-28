@@ -144,3 +144,9 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `components/QuranRecitationPlayer.tsx` + CSS: compact audio dock, separate advanced listening options controlled by `aria-expanded` and floating panel, all existing six qaris, page/surah/ayah sequences, repeat, speed and seek preserved.
 - `components/MadinahReader.tsx` + CSS: actual collapsible one-row icon toolbelt, smaller header/footer, correct dynamic Quran canvas sizing with audio open; no additional media calls or backend.
 - `scripts/browser-smoke.mjs`: 375×667 compact player visual/geometry and all-feature options checks with screenshot.
+
+## Quran physical spread turn semantics (#90)
+- `apps/web/src/features/student/quranReaderLayout.ts`: pure visible-spread pairing and previous/next destination; desktop turns physical spreads, tablet/mobile/single/ayah turns one leaf.
+- `apps/web/src/features/student/quranReaderLayout.test.ts`: odd/even spread and first/last page boundary regression.
+- `apps/web/src/features/student/components/MadinahReader.tsx`: reader footer and touch-swipe consume one shared pure turn contract, without modifying direct page/ayah navigation.
+- `scripts/browser-smoke.mjs`: real Chrome desktop turn sequence and 768px single-leaf screenshot/overflow check, in addition to existing 360/375/390/1440 gates.
