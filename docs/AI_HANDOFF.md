@@ -127,3 +127,7 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 ### 2026-10-29 — #90 exact CI and remaining desktop gate
 - PR #96: tablet fix succeeded on `c28c17b4` / [Verify 40770633906](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40770633906). Screenshot artifact `12852681274` inspected at 768/390/1440; tablet footer fits, but desktop showed outer student chrome and scrolling.
 - New code `20078fd4`: desktop reader immersive on initial route render; `d98a0d24`: Chrome asserts desktop reader top/bottom, footer and body lock. **New head unverified** until its own CI. Keep PR Draft; no merge until checks and human review. Next: inspect newest run and 1440 screenshot, then record outcome in #90. No production deployment.
+
+### 2026-10-29 — latest #90 code verified; documentation recheck
+- [Verify 40770979097](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40770979097) SUCCESS at `9a35228c055d16ac0919778f183c5c8b3fd6a808`. Both 768 tablet stage scroll regression and 1440 desktop reader outer chrome fixed. Screenshot artifact `12853175403` inspected for 390/768/1440 reader/footer. PR #96 remains Draft; Issue #90 OPEN pending physical-device UX, keyboard/RTL and required reviewer approval.
+- After this documentation-only commit, recheck latest branch SHA/CI. No production deploy, R2 changes, data migrations, backend or paid services.
