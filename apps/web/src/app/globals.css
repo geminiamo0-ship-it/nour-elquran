@@ -1,0 +1,28 @@
+:root {
+  --paper: #f8f5eb;
+  --paper-2: #fffdf7;
+  --paper-3: #f0eadc;
+  --ink: #253c31;
+  --ink-2: #47544a;
+  --olive: #30493c;
+  --olive-2: #21382e;
+  --gold: #ad8028;
+  --gold-dark: #8f6619;
+  --gold-soft: #deca97;
+  --border: #e4d9c0;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Tajawal', 'Noto Kufi Arabic', Tahoma, sans-serif;
+  line-height: 1.75;
+}
+button, input, textarea, select { font: inherit; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--gold-dark); outline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
