@@ -1,5 +1,5 @@
-import { WelcomePanel } from '@/features/bootstrap';
+import { LandingPage } from '@/features/landing';
 
 export default function HomePage() {
-  return <WelcomePanel />;
+  return <LandingPage />;
 }
