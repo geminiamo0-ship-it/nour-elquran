@@ -1,4 +1,8 @@
-/** Exact approved HTML fragment; isolated as a React section for progressive migration. */
+/** Approved landing markup expressed as native, server-rendered React JSX. */
 export function Verse() {
-  return <section {...{"className":"verse-section","aria-labelledby":"verse-heading"}} dangerouslySetInnerHTML={{ __html: "\n      <div class=\"container verse-inner\"><div class=\"verse-mark\" aria-hidden=\"true\">۞</div><h2 id=\"verse-heading\" class=\"verse-text\">﴿ وَلَقَدْ يَسَّرْنَا الْقُرْآنَ لِلذِّكْرِ فَهَلْ مِن مُّدَّكِرٍ ﴾</h2><p class=\"verse-ref\">سورة القمر · الآية ١٧</p></div>\n    " }} />;
+  return (
+    <section className="verse-section" aria-labelledby="verse-heading">
+      <div className="container verse-inner"><div className="verse-mark" aria-hidden="true">۞</div><h2 id="verse-heading" className="verse-text">﴿ وَلَقَدْ يَسَّرْنَا الْقُرْآنَ لِلذِّكْرِ فَهَلْ مِن مُّدَّكِرٍ ﴾</h2><p className="verse-ref">سورة القمر · الآية ١٧</p></div>
+    </section>
+  );
 }
