@@ -60,29 +60,34 @@ export function parseQuranAyahRegions(data: unknown): QuranAyahRegion[] {
   walk(data);
   return [...result.values()];
 }
-/** Quran JSON chapter ids and verse ids are explicit. Never guess an ayah from array position. */
+/** Quran JSON verse ids are explicit; the pinned source uses numeric ids. */
+function explicitAyahId(id: unknown, surah: number): number | null {
+  if (typeof id === 'number') return Number.isSafeInteger(id) && id > 0 ? id : null;
+  if (typeof id !== 'string') return null;
+  const match = /^(\d+):(\d+)$/.exec(id);
+  if (!match || Number(match[1]) !== surah) return null;
+  const ayah = Number(match[2]);
+  return Number.isSafeInteger(ayah) && ayah > 0 ? ayah : null;
+}
+
+function sourceVerse(raw: unknown, surah: number): { ayah: number; text: string } | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const verse = raw as Record<string, unknown>;
+  const ayah = explicitAyahId(verse.id, surah);
+  if (ayah === null || typeof verse.text !== 'string' || !verse.text.trim()) return null;
+  return { ayah, text: verse.text };
+}
+
+/** Never infer an ayah from its array position or alter canonical text. */
 export function parseQuranChapter(data: unknown, surah: number): Map<number, string> {
   const result = new Map<number, string>();
   if (!Number.isInteger(surah) || surah < 1 || surah > QURAN_CHAPTER_COUNT
     || !data || typeof data !== 'object' || Array.isArray(data)) return result;
   const chapter = data as Record<string, unknown>;
-  // The pinned Quran JSON Uthmani files identify the chapter and verses with numeric ids.
   if (chapter.id !== surah || !Array.isArray(chapter.verses)) return result;
   for (const raw of chapter.verses) {
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
-    const verse = raw as Record<string, unknown>;
-    if (typeof verse.text !== 'string' || !verse.text.trim()) continue;
-    let ayah: number | null = null;
-    if (typeof verse.id === 'number' && Number.isInteger(verse.id)) {
-      ayah = verse.id;
-    } else if (typeof verse.id === 'string') {
-      const match = /^(\d+):(\d+)$/.exec(verse.id);
-      if (match && Number(match[1]) === surah) ayah = Number(match[2]);
-    }
-    if (ayah !== null && Number.isSafeInteger(ayah) && ayah > 0 && !result.has(ayah)) {
-      // Preserve the source's Quran text byte-for-byte, including diacritics and spacing.
-      result.set(ayah, verse.text);
-    }
+    const verse = sourceVerse(raw, surah);
+    if (verse && !result.has(verse.ayah)) result.set(verse.ayah, verse.text);
   }
   return result;
 }
