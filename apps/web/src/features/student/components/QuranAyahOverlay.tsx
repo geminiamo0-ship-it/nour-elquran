@@ -12,7 +12,7 @@ export function pageViewBox(page: number): string {
 /** Pages 1-2 use a bare polygon point list; 3-604 use M/L/Z SVG paths. */
 export function regionPath(polygon: string): string | null {
   if (typeof polygon !== 'string' || polygon.length < 8 || polygon.length > 20000) return null;
-  if (/^\s*[Mm]/.test(polygon)) return /^[\d\s,\.\-MLZmlz]+$/.test(polygon) ? polygon : null;
+  if (/^\s*[Mm]/.test(polygon)) return /^[\d\s,.MLZmlz-]+$/.test(polygon) ? polygon : null;
   if (!/^[\d.,\s-]+$/.test(polygon)) return null;
   const points=polygon.trim().split(/\s+/).filter(Boolean);
   if (points.length<3 || points.length>500 || !points.every(x=>/^-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?$/.test(x))) return null;
