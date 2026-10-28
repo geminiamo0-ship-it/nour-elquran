@@ -219,6 +219,36 @@ try {
     console.log('Student portal Chrome smoke passed: ' + width + 'px, profile isolation and account handoff');
   }
 
+
+  // Additional learner routes must be actual Next.js pages, not inert dashboard placeholders.
+  for (const [section, expected] of [
+    ['lessons', 'سجل الحصص'], ['training', 'التحضير قبل التسميع'],
+    ['progress', 'السجل الأكاديمي'], ['notebook', 'دفتر الطالب الخاص'],
+    ['subscription', 'ملخص الاشتراك'], ['account', 'ملفات الطلاب'],
+    ['mushaf', 'معاينة المصحف'],
+  ]) {
+    const response = await fetch(url + 'student/' + section, { signal: AbortSignal.timeout(10000) });
+    assert.equal(response.status, 200, 'Student route did not render: ' + section);
+    const markup = await response.text();
+    assert(markup.includes(expected), 'Student section missing: ' + section);
+  }
+  console.log('Student portal subroute HTTP smoke passed: 7 feature pages');
+
+  await socket.send('Page.navigate', { url: url + 'student/mushaf' });
+  await waitFor(async () => {
+    const result = await socket.send('Runtime.evaluate', {
+      expression: "document.querySelector('[aria-label=\"نص قرآني توضيحي من معاينة التصميم\"] button') && Object.keys(document.querySelector('[aria-label=\"نص قرآني توضيحي من معاينة التصميم\"] button')).some(k => k.includes('reactProps'))",
+      returnByValue: true,
+    });
+    return Boolean(result.result?.value);
+  }, 'hydrated learner Mushaf');
+  const mushafResult = await socket.send('Runtime.evaluate', {
+    expression: "(async () => {\n  await new Promise(resolve => setTimeout(resolve, 250));\n  const ayah = document.querySelector('[aria-label=\"نص قرآني توضيحي من معاينة التصميم\"] button');\n  if (!ayah) return { ayahFound: false };\n  ayah.click();\n  await new Promise(resolve => setTimeout(resolve, 120));\n  const highlighted = ayah.getAttribute('aria-pressed') === 'true';\n  const note = document.querySelector('#mushaf-note');\n  const editable = Boolean(note);\n  const reset = [...document.querySelectorAll('button')].find(button => button.textContent.includes('مسح العلامات'));\n  reset?.click();\n  await new Promise(resolve => setTimeout(resolve, 120));\n  const cleared = ayah.getAttribute('aria-pressed') === 'false';\n  return { ayahFound: true, highlighted, editable, cleared };\n})()", awaitPromise: true, returnByValue: true,
+  });
+  const values = mushafResult.result?.value;
+  assert(values && Object.values(values).every(Boolean), 'Mushaf interactions failed: ' + JSON.stringify(values ?? mushafResult));
+  console.log('Student Mushaf interactive highlight, notes and clear smoke passed');
+
 } finally {
   socket?.close();
   for (const child of children.reverse()) child.kill('SIGTERM');

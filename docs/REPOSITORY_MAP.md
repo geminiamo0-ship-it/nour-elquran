@@ -71,3 +71,17 @@ Update this map IN THE SAME PR that creates, removes or moves directories; ident
 - scripts/browser-smoke.mjs: original landing checks + student portal 360/390/1440 screenshot/interaction checks.
 - apps/web/src/features/landing/v3/{LandingDemoProvider,DashboardModal}.tsx: transient same-tab learner profile handoff and portal link; landing stays authentic V3.
 All functions are browser-local mock only; no sensitive backend credentials, no real enrollment/booking/teacher/media/payment.
+
+## Student portal M2 continuation — page workflow components
+- `apps/web/src/features/student/components/LessonHub.tsx`: scheduled/completed/all filters and expandable lesson detail actions (mock only).
+- `apps/web/src/features/student/components/TrainingWorkspace.tsx`: teacher-approved exercise list, note drafting and explicit prepare-for-review state, no actual submission.
+- `apps/web/src/features/student/components/ProgressWorkspace.tsx`: approved report timeline/criterion filter with independent memorization/recitation/tajweed grades and meaningful missing data.
+- `apps/web/src/features/student/components/NotebookWorkspace.tsx`: selected completed lesson, published teacher summary, local learner-owned notes, no alleged cloud PDF.
+- `apps/web/src/features/student/components/MushafWorkspace.tsx`: V3 fixture for verse marks, font-size and temporary notes; not a verified canonical Quran source.
+- `apps/web/src/features/student/components/SubscriptionWorkspace.tsx`: bounded state display without fabricated payments/balances/renewal.
+- `apps/web/src/features/student/components/AccountWorkspace.tsx`: same-account session demo profile creation, switching and confirmed removal.
+- `apps/web/src/features/student/StudentContext.tsx`: per-learner notes, draft task state, verse selection and session profile actions; no server persistence.
+- `apps/web/src/features/student/domain.ts`: sanitization and typed learner-local note contract.
+- `apps/web/src/features/student/StudentSection.tsx`: route-to-component composition with profile key preventing transient cross-sibling text leaks.
+- `apps/web/src/features/student/StudentPortal.module.css`: scoped responsive styles and controls.
+- `apps/web/src/features/student/student.test.tsx`, `scripts/browser-smoke.mjs`: seven-route and interaction checks.
