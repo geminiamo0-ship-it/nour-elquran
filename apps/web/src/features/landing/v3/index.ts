@@ -1,4 +1,5 @@
 import './approved.css';
+export { LandingDemoProvider } from './LandingDemoProvider';
 export { Ornament } from './Ornament';
 export { DemoStrip } from './DemoStrip';
 export { Header } from './Header';

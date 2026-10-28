@@ -416,3 +416,5 @@
     @media(max-width:370px){.brand-name{font-size:23px}.brand-logo{width:37px;height:37px;flex-basis:37px}.brand-caption{font-size:8px}}
 
   
+/* Honor system accessibility preference without changing the approved visual design. */
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
