@@ -70,3 +70,10 @@ Date / Issue / PR / exact head SHA; changed paths; tests and exact Actions URL; 
 - `AttendanceWorkspace` is within Student Progress below academic report table: separate four-category counts and detailed RTL register, opened eligible appeal with required written reason and optional file *selection only*.
 - There is NO transport/API submission; preview says explicitly not sent, disabled send; expiry shows contact-admin exception text. Never infer a no-show from video attendance.
 - Validation requires #73 exact-head CI/Chrome/fixtures. UI review and authorized backend audit pending.
+
+## 2026-10-28 — STU-AZ S03 trial scheduling preview (#76; unmerged)
+- Verified preceding S02 PR #74 merged into main at `782f02a1f375a37bf7239b241f1dc6d4524b422c`; S02 #73 remains open for backend integration and visual review.
+- Branch `feat/76-student-trial-scheduling-s03` based on post-S02 main. A learner-scoped React trial preview is added to `/student/lessons`; the new-learner dashboard CTA routes to it. Three invented 30-minute slots are **illustrative only** and cannot be booked. No assigned teacher, API, auth, availability, database, payments or real learner data.
+- Pure UTC trial policy helper validates slot identity, duration and date, and inclusive T−6h cutoff. Browser-only selected-slot review resets when the learner changes. Unit and real Chrome smoke added; **exact-head CI pending** until PR is opened and run reviewed.
+- Backend blockers #46/#47: one-trial entitlement, qualified teacher availability, concurrency/idempotency, real cancellation/reschedule and recurring timetable. Do not merge or close #76 without green exact-head CI, visual review and acceptance; do not deploy.
+- Next exact action: inspect PR #76 branch CI (governance, lint, TS, tests, build, HTTP, Chrome 360/390/1440), fix any failures and document exact SHA/run. Main branch ruleset #1 still unverified.
