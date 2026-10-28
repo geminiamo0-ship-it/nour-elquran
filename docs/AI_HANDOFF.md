@@ -33,3 +33,9 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - Local runner has Node 22 but no npm registry DNS resolution; cannot certify `pnpm install`, Next build, Vitest, browser render or Playwright locally.
 - **Do not consider code verified until GitHub Actions passes at exact branch SHA**; release no production deployment. Generate lockfile remotely, inspect real CI, then open review PR. If checks fail, leave #39 open and record actionable failures.
 - #1 PR review/required check branch protection still requires GitHub settings verification. Repo PUBLIC per owner.
+
+## 2026-10-28 — browser acceptance gate added to draft #60
+- Prior verified SHA: `392bff47f9449c1009d271ddbea188f235cdc255`, [Verify 40680982177](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40680982177) success (frozen install, lint, typecheck, tests, build, HTTP smoke).
+- New browser work on the same **unmerged** `feat/39-bootstrap-workspace` branch: `scripts/browser-smoke.mjs`, `package.json` `browser:smoke`, `.github/workflows/verify.yml` Chrome run + screenshots artifact. Tests real production Next in headless Chrome at 360/390/1440, RTL, heading, demo notice and horizontal overflow. No new dependency or paid service.
+- **Do not inherit earlier CI success for the new head.** Inspect latest PR SHA and its Actions run; verify Chrome availability and screenshot artifact. The local container's Chromium browser is subject to network restrictions; it is not evidence that the GitHub-hosted Chrome run passed.
+- After green CI, visually review screenshot artifact; record acceptance separately. Branch protection #1, PR review and #40 vinext spike remain pending. No production deployment.
