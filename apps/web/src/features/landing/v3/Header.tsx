@@ -1,5 +1,10 @@
-/** Approved landing markup expressed as native, server-rendered React JSX. */
+'use client';
+
+import { useState } from 'react';
+
+/** Keyboard-accessible responsive navigation; no global DOM event handlers. */
 export function Header() {
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
     <header className="site-header">
     <div className="container header-inner">
@@ -14,7 +19,7 @@ export function Header() {
         </span>
         <span><span className="brand-name">نور القرآن</span><span className="brand-caption">لِلحِفْظِ وَالْإِتْقَان</span></span>
       </a>
-      <nav className="nav" id="siteNav" aria-label="القائمة الرئيسية">
+      <nav className={menuOpen ? "nav open" : "nav"} id="siteNav" aria-label="القائمة الرئيسية" onClick={() => setMenuOpen(false)} onKeyDown={(event) => { if (event.key === "Escape") setMenuOpen(false); }}>
         <a href="#about">عن المنهج</a>
         <a href="#programs">البرامج</a>
         <a href="#interactive-classroom">الفصل التفاعلي</a>
@@ -23,7 +28,7 @@ export function Header() {
         <a className="primary-mobile" href="#enroll">إنشاء حساب تجريبي</a>
       </nav>
       <a className="btn btn-gold header-cta" href="#enroll">احجز حصة تجريبية <span aria-hidden="true">↖</span></a>
-      <button className="mobile-menu-btn" id="menuBtn" type="button" aria-controls="siteNav" aria-expanded="false" aria-label="فتح القائمة">
+      <button className="mobile-menu-btn" id="menuBtn" type="button" aria-controls="siteNav" aria-expanded={menuOpen} aria-label={menuOpen ? "إغلاق القائمة" : "فتح القائمة"} onClick={() => setMenuOpen((open) => !open)}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
       </button>
     </div>
