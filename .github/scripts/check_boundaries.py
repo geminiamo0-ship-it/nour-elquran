@@ -37,21 +37,23 @@ def imports(text: str) -> set[str]:
     return set(IMPORT_FROM.findall(text)) | set(IMPORT_SIDE_EFFECT.findall(text)) | set(IMPORT_CALL.findall(text))
 
 
-def resolve_import(root: Path, source: Path, spec: str) -> Path | None:
+def import_location(root: Path, source: Path, spec: str) -> Path | None:
+    """Return a local import path even when the target file is not created yet."""
     if spec.startswith("@/"):
-        base = root / "apps/web/src" / spec[2:]
-    elif spec.startswith("@noor/"):
+        return (root / "apps/web/src" / spec[2:]).resolve()
+    if spec.startswith("@noor/"):
         parts = spec.split("/")
-        if len(parts) < 2:
-            return None
-        base = root / "packages" / parts[1] / "src"
-        if len(parts) > 2:
-            base = base.joinpath(*parts[2:])
-    elif spec.startswith("."):
-        base = source.parent / spec
-    else:
+        if len(parts) >= 2:
+            return (root / "packages" / parts[1] / "src" / Path(*parts[2:])).resolve()
+    if spec.startswith("."):
+        return (source.parent / spec).resolve()
+    return None
+
+
+def resolve_import(root: Path, source: Path, spec: str) -> Path | None:
+    base = import_location(root, source, spec)
+    if base is None:
         return None
-    base = base.resolve()
     candidates = [base] + [Path(str(base) + ext) for ext in EXTENSIONS]
     candidates.extend(base / ("index" + ext) for ext in EXTENSIONS)
     return next((p for p in candidates if p.is_file()), None)
@@ -81,7 +83,8 @@ def check(root: Path) -> list[str]:
         source_role, source_feature = role(root, source)
         for spec in imports(source.read_text(encoding="utf-8")):
             target = resolve_import(root, source, spec)
-            target_role, target_feature = role(root, target) if target else ("external", None)
+            hint = target or import_location(root, source, spec)
+            target_role, target_feature = role(root, hint) if hint else ("external", None)
             label = source.relative_to(root).as_posix()
             if target in graph:
                 graph[source].add(target)
