@@ -106,7 +106,7 @@ export function inspectArchitecture() {
       if (error) errors.push(relativeFile + ': ' + error + ' (' + request + ')');
       const target = resolveSource(file, request);
       if (target) {
-        const targetRelative = path.relative(srcRoot, target).replaceAll('\\\\', '/');
+        const targetRelative = path.relative(srcRoot, target).replaceAll('\\', '/');
         const resolvedError = resolvedBoundaryError(relativeFile, targetRelative);
         if (resolvedError && resolvedError !== error) {
           errors.push(relativeFile + ': ' + resolvedError + ' (' + request + ')');
