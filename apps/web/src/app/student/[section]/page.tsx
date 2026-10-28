@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
-import { StudentSection, sections, type StudentSectionName } from '@/features/student';
+import { StudentSection, sections, STUDENT_SECTION_SLUGS, type StudentSectionName } from '@/features/student';
 export function generateStaticParams() {
-  return Object.keys(sections).map((section) => ({ section }));
+  return STUDENT_SECTION_SLUGS.map((section) => ({ section }));
 }
 export default async function StudentSubpage({ params }: { params: Promise<{ section: string }> }) {
   const { section } = await params;
