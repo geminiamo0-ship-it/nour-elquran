@@ -4,7 +4,7 @@ import { StudentProvider } from './StudentContext';
 import { StudentDashboard } from './StudentDashboard';
 import { StudentSection } from './StudentSection';
 import { DEMO_PROFILES, getMockLearnerSnapshot, readSessionDemoProfiles } from './mock-adapter';
-import { isLearnerProfile, scopedSnapshot, validateGrade, validatePublishedReport } from './domain';
+import { isLearnerProfile, sanitizeStudyNote, scopedSnapshot, validateGrade, validatePublishedReport } from './domain';
 
 describe('learner-scoped mock adapter', () => {
   it('keeps sibling lessons, reports and approved tasks isolated', () => {
@@ -41,6 +41,29 @@ describe('learner-scoped mock adapter', () => {
     expect(readSessionDemoProfiles({ getItem: () => JSON.stringify(['']) })).toEqual([]);
     expect(readSessionDemoProfiles({ getItem: () => JSON.stringify(Array(9).fill('x')) })).toEqual([]);
     expect(isLearnerProfile({ id: 'x', name: 'example', stage: 'paid', demo: true })).toBe(false);
+  });
+});
+
+describe('local student workflows and safe page components', () => {
+  it('accepts only bounded personal notes', () => {
+    expect(sanitizeStudyNote('  مراجعة سورة الإخلاص  ')).toBe('مراجعة سورة الإخلاص');
+    expect(sanitizeStudyNote('')).toBeNull();
+    expect(sanitizeStudyNote('a'.repeat(501))).toBeNull();
+  });
+  it('renders every standalone learner page without a connected backend', () => {
+    for (const page of ['lessons', 'mushaf', 'training', 'progress',
+      'notebook', 'subscription', 'account'] as const) {
+      const html = renderToStaticMarkup(<StudentProvider><StudentSection section={page} /></StudentProvider>);
+      expect(html.length).toBeGreaterThan(100);
+      expect(html).not.toContain('dangerouslySetInnerHTML');
+      expect(html).not.toContain('مبلغ مستحق');
+    }
+  });
+  it('shows genuine blank states on new learner and separates practice preparation from submission', () => {
+    const training = renderToStaticMarkup(<StudentProvider><StudentSection section="training" /></StudentProvider>);
+    const notebook = renderToStaticMarkup(<StudentProvider><StudentSection section="notebook" /></StudentProvider>);
+    expect(training).toContain('لا توجد تكليفات معتمدة');
+    expect(notebook).toContain('لا توجد حصص مكتملة');
   });
 });
 describe('student portal server rendering', () => {
