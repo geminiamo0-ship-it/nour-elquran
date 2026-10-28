@@ -1,5 +1,12 @@
 # نور القرآن — Product plan and decision register
 
+## Current planning continuation — 2026-10-29 Cairo
+Original foundation discussion below is historical. The owner requested a complete notebook/backend-readiness plan in [#101](https://github.com/geminiamo0-ship-it/nour-elquran/issues/101). Read [the consolidated Arabic plan](docs/LESSON_NOTEBOOK_AND_BACKEND_READINESS_PLAN.md) and current [status](PROJECT_STATUS.md) for scope, schema/API, authorization, publication, privacy, dependencies and measurable acceptance.
+
+The approved three sections and canonical learner Quran remain unchanged. Engineering proposals and unresolved provider/operational choices are explicitly classified; documentation is not evidence of their approval, implementation or deployment. Next execution: [#102](https://github.com/geminiamo0-ship-it/nour-elquran/issues/102) notebook UI/contracts, then #46 identity/RLS. Existing #38/#46–#56/#87 remain implementation backlog.
+
+## Original foundation decision register
+
 **Status: DRAFT FOR OWNER DISCUSSION. NOT AN AUTHORIZED IMPLEMENTATION BACKLOG.**
 
 ## Product vision (agreed conversational direction)

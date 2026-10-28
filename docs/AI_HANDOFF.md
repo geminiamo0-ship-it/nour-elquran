@@ -1,5 +1,16 @@
 # AI agent handoff contract
 
+
+## Latest handoff — 2026-10-29 Cairo, #101 planning
+- Baseline: main `906a993d0ea350591692045fa878da34995d7c1c`, merged Training PR #100. Notebook is still a local selector/summary/note form.
+- Read [the complete Arabic plan](LESSON_NOTEBOOK_AND_BACKEND_READINESS_PLAN.md). This branch consolidates approved product decisions and proposes contracts/RLS/publication/storage/recovery/delivery tests. No backend, migrations, uploads, messages or deployment.
+- Next exact action: [#102](https://github.com/geminiamo0-ship-it/nour-elquran/issues/102), notebook UI/contracts on shared reader with last published layer, separate private layer, honest share/export states and L1/L2 + learner-switch tests. Backend then starts B0/B1 under #46 before real records.
+- Preserve canonical Mushaf per learner, latest published report only, private notes by default, explicit sharing/submission and substitute brief expiry at lesson end; limited report correction must not restore summary access.
+- Resolve provider/login, child-session powers, retention/revocation and billing edge cases at their stated dependency stages; proposals are not shipped or previously approved facts.
+- Inspect this PR exact-head Verify and record SHA/run URL in #101/PR. Older evidence below belongs to its named commits. Keep Vercel previews disabled.
+
+## Historical handoffs
+
 Every session starts by reading AGENTS.md → PROJECT_STATUS.md → NOOR_MASTER_PLAN.md → guardrails → active issue → GitHub PRs and workflows. Never infer changes from chat alone.
 
 ## Before implementing

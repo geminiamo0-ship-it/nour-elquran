@@ -2,7 +2,9 @@
 
 An Arabic-first, mobile-first Quran memorization and online tutoring platform for learners of all ages, with particular care for children and families.
 
-**Status: foundation setup only. No application, deployed classroom, live AI, database, or production system exists yet.**
+**Current baseline (2026-10-29 Cairo): native Next.js frontend, student Quran reader and Training prototype exist on main at `906a993d` (PR #100 merged). Learner state is local/demo; no backend/auth database, operational classroom, payments or WhatsApp integration is claimed.**
+
+Next: [lesson-notebook and backend-readiness plan](docs/LESSON_NOTEBOOK_AND_BACKEND_READINESS_PLAN.md), planning [#101](https://github.com/geminiamo0-ship-it/nour-elquran/issues/101), notebook execution [#102](https://github.com/geminiamo0-ship-it/nour-elquran/issues/102), then identity/RLS #46. Read current PROJECT_STATUS before older foundation descriptions.
 
 ## Before any work
 Read in this order:
@@ -24,6 +26,6 @@ All planned work has a GitHub Issue **before coding**; make focused branches, de
 - [CI / branch protection](docs/CI_BRANCH_PROTECTION.md)
 - [ADR records](docs/adr/TEMPLATE.md)
 
-Project scope and feature order are deliberately **not finalized**. Owner discussion happens before creating implementation issues or writing product code.
+Original foundation discussion is retained in the master plan. Current owner decisions and execution order are in PROJECT_STATUS and the linked plan/Issues; proposed provider and operational choices remain explicitly marked.
 
 Foundation: [Issue #1](https://github.com/geminiamo0-ship-it/nour-elquran/issues/1).

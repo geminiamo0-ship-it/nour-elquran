@@ -1,5 +1,14 @@
 # PROJECT_STATUS — verified handoff state
 
+## Current checkpoint — 2026-10-29 Cairo, planning issue #101
+- Inspected main at `906a993d0ea350591692045fa878da34995d7c1c`; Training PR [#100](https://github.com/geminiamo0-ship-it/nour-elquran/pull/100) is merged. Native Next.js student frontend and Quran reader exist with explicitly temporary/demo learner state. This supersedes older foundation-only status descriptions below.
+- Owner requested a complete notebook/backend-readiness plan. [Detailed Arabic plan](docs/LESSON_NOTEBOOK_AND_BACKEND_READINESS_PLAN.md) covers notebook UX, schema/API, roles/RLS, immutable publication, Mushaf projection, private media, recovery, operational dependencies, phased delivery and future acceptance tests.
+- This documentation branch `docs/101-notebook-backend-readiness` implements no notebook renderer, backend, migrations, private upload, LiveKit, payment or WhatsApp. No deployment/provisioning or messages.
+- Next frontend task: [#102](https://github.com/geminiamo0-ship-it/nour-elquran/issues/102), filtered Notebook viewer/contracts on the existing renderer. Next backend start: B0/B1 under [#46](https://github.com/geminiamo0-ship-it/nour-elquran/issues/46), identity/account/learner ownership and RLS before real records.
+- Exact-head CI must be inspected and linked in #101; no test result is inferred from a prior PR. One backend integration milestone is delivered through ordered PRs.
+
+## Historical checkpoints — retained for provenance; read current checkpoint first
+
 Last inspected: 2026-10-28. **Distinguish main from unmerged PR branches.**
 
 ## Merged into main (governance, not a deployed application)

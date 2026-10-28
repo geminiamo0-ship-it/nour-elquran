@@ -1,5 +1,10 @@
 # Repository map and file ownership
 
+## Current planning entry — 2026-10-29 (#101)
+- `docs/LESSON_NOTEBOOK_AND_BACKEND_READINESS_PLAN.md`: consolidated Arabic notebook/backend-readiness plan; inspected baseline, shared reader UX, account/learner scope, proposed schema/API/versioning, atomic publication, media/privacy, classroom recovery, issue sequence and future test matrix.
+- Current main includes the native Next.js app and student reader/training described in later entries. Foundation/branch-only descriptions below are historical; read PROJECT_STATUS current checkpoint first.
+- Planning #101 creates no application module, migration, worker or deployment. Component/table/API names inside the plan are proposed responsibilities, not existing paths.
+
 This is a **foundation-only repository**. The following existing paths are real:
 - AGENTS.md: agent mandatory start.
 - README.md: navigation and actual high-level status.
