@@ -24,6 +24,23 @@ export function boundaryError(importer, specifier) {
   return null;
 }
 
+export function resolvedBoundaryError(importer, target) {
+  const from = importer.replaceAll('\\\\', '/');
+  const to = target.replaceAll('\\\\', '/');
+  if (from.startsWith('shared/') && (to.startsWith('features/') || to.startsWith('app/'))) {
+    return 'Shared modules cannot depend on features or route modules';
+  }
+  if (from.startsWith('features/') && to.startsWith('app/')) {
+    return 'Features cannot depend on route modules';
+  }
+  const fromFeature = from.match(/^features\\/([^/]+)\\//);
+  const toFeature = to.match(/^features\\/([^/]+)\\//);
+  if (fromFeature && toFeature && fromFeature[1] !== toFeature[1] && !/^features\\/[^/]+\\/index\\.tsx?$/.test(to)) {
+    return 'Cross-feature imports must go through the public index';
+  }
+  return null;
+}
+
 export function findCycle(graph) {
   const visiting = new Set();
   const visited = new Set();
@@ -88,7 +105,14 @@ export function inspectArchitecture() {
       const error = boundaryError(relativeFile, request);
       if (error) errors.push(relativeFile + ': ' + error + ' (' + request + ')');
       const target = resolveSource(file, request);
-      if (target) edges.add(target);
+      if (target) {
+        const targetRelative = path.relative(srcRoot, target).replaceAll('\\\\', '/');
+        const resolvedError = resolvedBoundaryError(relativeFile, targetRelative);
+        if (resolvedError && resolvedError !== error) {
+          errors.push(relativeFile + ': ' + resolvedError + ' (' + request + ')');
+        }
+        edges.add(target);
+      }
     }
     graph.set(file, [...edges]);
   }
