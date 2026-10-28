@@ -14,7 +14,7 @@
 .nowPlaying span{font-size:10px;white-space:nowrap;color:#7c8479;overflow:hidden;text-overflow:ellipsis;}
 .miniProgress{position:absolute;bottom:0;inset-inline:0;height:2px;overflow:hidden;pointer-events:none;background:#e7e3d6}
 .miniProgress span{display:block;height:100%;background:#3b654c;transition:width .16s linear}
-.advanced{position:absolute;inset-inline-end:8px;bottom:calc(100% + 7px);z-index:40;width:min(470px,calc(100vw - 16px));
+.advanced{position:absolute;inset-inline-end:8px;top:calc(100% + 7px);bottom:auto;z-index:40;width:min(470px,calc(100vw - 16px));
   max-height:min(65dvh,400px);overflow-y:auto;overscroll-behavior:contain;display:grid;gap:11px;
   padding:13px;background:#fffef9;border:1px solid #ddcfb3;box-shadow:0 14px 40px #203b2c2a;border-radius:13px;}
 .advanced[hidden]{display:none!important}
@@ -25,9 +25,9 @@
 .secondaryRow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .progress{display:flex;align-items:center;gap:8px;min-width:0;font-size:11px;color:#708071}
 .progress input{flex:1;min-width:0;accent-color:#31533e}
-.error{position:absolute;bottom:calc(100% + 5px);inset-inline:8px;z-index:42;background:#fff5f2;
+.error{position:absolute;top:calc(100% + 5px);bottom:auto;inset-inline:8px;z-index:42;background:#fff5f2;
   color:#963c34;padding:9px;border:1px solid #e0b6a8;border-radius:9px;font-size:11px}
-.loading{position:absolute;right:50%;bottom:calc(100% + 3px);transform:translateX(50%);
+.loading{position:absolute;right:50%;top:calc(100% + 3px);bottom:auto;transform:translateX(50%);
   color:#797047;background:#fffef7;padding:3px 7px;border-radius:6px;font-size:10px}
 .attribution{font-size:10px;color:#85877b;line-height:1.6}
 .dock button:focus-visible,.dock select:focus-visible,.dock input:focus-visible{outline:2px solid #ad8533;outline-offset:2px}
@@ -38,7 +38,7 @@
  .action,.closeButton,.detailsButton{width:29px;min-width:29px;height:29px}
  .nowPlaying{display:flex;flex:1;min-width:0;max-width:none;gap:5px}
  .nowPlaying strong{font-size:11px}.nowPlaying span{font-size:9px}
- .advanced{inset-inline:6px;bottom:calc(100% + 5px);width:auto;padding:11px;gap:10px;
+ .advanced{inset-inline:6px;top:calc(100% + 5px);bottom:auto;width:auto;padding:11px;gap:10px;
    max-height:min(68dvh,420px)}
  .secondaryRow{gap:6px}
  .selectLabel,.secondaryRow label{font-size:10px}
