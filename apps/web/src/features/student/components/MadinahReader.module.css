@@ -18,7 +18,7 @@
 .identity>div{display:grid;gap:2px}
 .identity strong{font-family:'Amiri',serif;font-size:19px;line-height:1.1;white-space:nowrap}
 .identity small{font-size:10px;color:#7d7768}
-.brandMark{background:var(--olive);color:#f9e5ac;width:34px;height:34px;display:grid;place-items:center;border-radius:10px;font-size:24px}
+.brandMark{background:var(--olive);color:#f9e5ac;width:34px;height:34px;display:grid;place-items:center;border-radius:10px;}
 .headerActions{display:flex;align-items:center;gap:8px;min-width:0}
 .surahSelect{max-width:200px;min-width:110px;background:#fffdf5;color:var(--olive);border:1px solid var(--border);
   padding:8px 10px;min-height:38px;border-radius:8px;text-overflow:ellipsis}
@@ -32,7 +32,7 @@
   min-height:49px;border-bottom:1px solid var(--border);padding:4px 12px}
 .tool,.activeTool{min-height:39px;border:0;border-radius:8px;background:transparent;color:var(--olive);
   display:flex;align-items:center;justify-content:center;gap:6px;padding:5px 12px;font-size:12px}
-.tool span:first-child,.activeTool span:first-child{font-size:18px;line-height:1}
+.tool svg,.activeTool svg{display:block;flex-shrink:0}
 .tool:hover{background:#f1ecdf}
 .activeTool,.tool[aria-pressed="true"]{background:var(--olive);color:white}
 .toolbar>.iconButton{font-size:11px;min-height:34px;margin-inline-start:auto;min-width:auto}
@@ -120,7 +120,7 @@
   .exitButton{max-width:77px;white-space:normal;font-size:10px;line-height:1.4;padding:4px}
   .toolbar{min-height:49px;padding:4px 5px;gap:2px;justify-content:space-between}
   .tool,.activeTool{padding:5px 4px;min-width:36px;min-height:37px}
-  .tool span:first-child,.activeTool span:first-child{font-size:20px}
+  .tool svg,.activeTool svg{width:21px;height:21px}
   .tool span:last-child,.activeTool span:last-child{position:absolute;width:1px;height:1px;overflow:hidden;
     clip:rect(0,0,0,0);white-space:nowrap}
   .toolbar>.iconButton{margin-inline-start:0;font-size:9px;padding:5px}
@@ -135,7 +135,7 @@
   .pageForm button{font-size:10px;padding:4px 6px;min-height:34px}
   .footerNotes{font-size:11px;padding:4px}
   .sidebar{position:absolute;left:6px;right:6px;top:auto;bottom:5px;width:auto;max-width:none;
-    height:min(73dvh,550px);max-height:calc(100dvh - 95px);border:1px solid #ddd0b5;
+    height:min(52dvh,440px);max-height:calc(100dvh - 95px);border:1px solid #ddd0b5;
     border-radius:15px;box-shadow:0 -14px 45px #1d322c48;padding:12px;overflow-y:auto}
   .sheetHeading{top:-12px}
   .contextTools{flex-wrap:nowrap;gap:4px;overflow-x:auto;justify-content:flex-start}
@@ -150,3 +150,20 @@
  .readerFoot .footerNotes{font-size:10px}
 }
 @media(prefers-reduced-motion:reduce){.reader *{scroll-behavior:auto!important;transition:none!important}}
+
+@media(max-width:700px) {
+  .readerHeader { padding:4px 7px;min-height:45px;gap:4px;flex-wrap:nowrap; }
+  .identity { min-width:0;max-width:142px;gap:4px; }
+  .identity strong { font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block; }
+  .brandMark { width:27px;height:27px;border-radius:7px;flex-shrink:0; }
+  .brandMark svg { width:19px;height:19px }
+  .headerActions { gap:3px;flex-shrink:1; }
+  .surahSelect { max-width:83px;min-width:66px;min-height:33px;padding:4px 3px;font-size:10px; }
+  .exitButton { max-width:33px;width:33px;min-width:33px;height:33px;min-height:33px;
+    padding:4px;font-size:0;line-height:0;border-radius:7px;white-space:normal; }
+  .exitButton::after { content:"↗";font-size:19px;line-height:1; }
+  .toolbar { min-height:44px; }
+  .readerFoot { min-height:44px; }
+  .sidebar .sheetHeading { padding-top:3px; }
+  .note textarea { min-height:100px; }
+}
