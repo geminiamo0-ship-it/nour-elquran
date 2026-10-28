@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f8f5eb">
+  <meta name="description" content="نور القرآن — حلقات تحفيظ القرآن الكريم عن بُعد، مع معلم يتابع حفظك وتلاوتك خطوة بخطوة.">
+  <title>نور القرآن | حفظٌ بإتقان، وصحبةٌ تُعين</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper:#f8f5eb; --paper-2:#fffdf7; --paper-3:#f0eadc;
+      --ink:#253c31; --ink-2:#47544a; --olive:#30493c; --olive-2:#21382e;
+      --gold:#ad8028; --gold-dark:#8f6619; --gold-soft:#deca97;
+      --border:#e4d9c0; --white:#ffffff; --serif:'Amiri', 'Noto Naskh Arabic', Georgia, serif;
+      --sans:'Tajawal', 'Noto Kufi Arabic', Tahoma, sans-serif;
+      --container:1170px;
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    html{scroll-behavior:smooth;scroll-padding-top:106px}
+    body{margin:0;color:var(--ink);background:var(--paper);font-family:var(--sans);font-size:16px;line-height:1.75;overflow-x:hidden}
+    a{color:inherit;text-decoration:none}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    img,svg{max-width:100%}
+    ::selection{background:#dfc785;color:#1d3027}
+    .container{width:min(var(--container),calc(100% - 64px));margin-inline:auto}
+    .top-ornament{height:7px;background:repeating-linear-gradient(90deg,var(--gold-dark) 0 19px,#d7b761 19px 22px,#344f3f 22px 25px,#d7b761 25px 28px)}
+    .site-header{position:sticky;top:0;z-index:20;background:rgba(248,245,235,.97);border-bottom:1px solid var(--border);backdrop-filter:blur(13px)}
+    .header-inner{min-height:83px;display:flex;align-items:center;gap:32px}
+    .brand{display:flex;align-items:center;gap:11px;white-space:nowrap;flex-shrink:0}
+    .brand-logo{width:44px;height:44px;display:grid;place-items:center;color:var(--gold-dark)}
+    .brand-name{font:700 31px/1 var(--serif);letter-spacing:-.5px;color:var(--olive-2)}
+    .brand-caption{font:500 10px/1 var(--sans);letter-spacing:1px;color:var(--gold-dark);margin-top:4px}
+    .nav{display:flex;align-items:center;gap:31px;margin-inline:auto}
+    .nav a{font-size:14px;font-weight:700;color:#536055;transition:color .2s}
+    .nav a:hover,.nav a:focus-visible{color:var(--gold-dark)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:49px;border:1px solid transparent;padding:10px 23px;font-weight:800;font-size:14px;border-radius:5px;transition:transform .2s,background .2s,border-color .2s;white-space:nowrap}
+    .btn:hover{transform:translateY(-2px)}
+    .btn svg{height:17px;width:17px}
+    .btn-gold{background:var(--gold);color:#fff;border-color:var(--gold)}
+    .btn-gold:hover{background:var(--gold-dark);border-color:var(--gold-dark)}
+    .btn-outline{border-color:var(--border);background:transparent;color:var(--olive)}
+    .btn-outline:hover{border-color:var(--gold)}
+    .btn-light{background:var(--paper-2);color:var(--olive);border-color:var(--paper-2)}
+    .mobile-menu-btn{display:none;background:none;border:1px solid var(--border);border-radius:5px;width:43px;height:43px;padding:10px;color:var(--ink)}
+    .mobile-menu-btn svg{width:100%;height:100%}
+
+    .hero{position:relative;isolation:isolate;padding:70px 0 86px;overflow:hidden}
+    .hero::before{content:"";position:absolute;z-index:-1;inset:0;background-image:radial-gradient(circle at center,rgba(153,117,46,.11) 1px,transparent 1.5px);background-size:31px 31px;mask-image:linear-gradient(90deg,transparent 30%,#000 100%);opacity:.65}
+    .hero-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(350px,.9fr);align-items:center;gap:64px}
+    .eyebrow{display:inline-flex;align-items:center;gap:12px;color:var(--gold-dark);font-weight:800;font-size:12px;letter-spacing:.6px}
+    .eyebrow::before{content:"";width:37px;height:1px;background:var(--gold)}
+    .hero h1{font:700 clamp(48px,5vw,78px)/1.35 var(--serif);letter-spacing:-1.5px;margin:23px 0 19px;color:var(--olive-2)}
+    .hero h1 .gold-word{color:var(--gold-dark);position:relative;white-space:nowrap}
+    .hero h1 .gold-word::after{content:"";position:absolute;bottom:9px;right:2px;left:1px;height:7px;background:#dfc889;opacity:.44;z-index:-1;transform:skew(-15deg)}
+    .hero-desc{max-width:514px;font-size:17px;font-weight:500;line-height:2.05;color:#5d6459;margin:0 0 30px}
+    .hero-actions{display:flex;gap:11px;flex-wrap:wrap}
+    .hero-meta{margin-top:37px;display:flex;align-items:center;gap:15px;color:var(--ink-2);font-size:13px;font-weight:700}
+    .hero-meta .sep{height:26px;width:1px;background:var(--border)}
+    .hero-meta-item{display:flex;align-items:center;gap:9px}
+    .checkmark{width:21px;height:21px;border:1px solid #b8c7b6;border-radius:50%;display:grid;place-items:center;color:var(--olive);font-size:13px}
+
+    .hero-art{position:relative;min-height:520px;display:grid;place-items:center}
+    .art-frame{width:min(100%,405px);height:492px;position:relative;border-radius:215px 215px 10px 10px;background:#c8a252;border:7px solid #f2e6c9;box-shadow:0 0 0 1px #c6ad74,inset 0 0 0 2px #eacb78;overflow:hidden}
+    .art-inner{position:absolute;inset:13px;border-radius:199px 199px 2px 2px;background:linear-gradient(157deg,#294738 5%,#1d362c 95%);border:1px solid #e3c579;overflow:hidden}
+    .art-inner::before{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,transparent 0 28px,rgba(239,212,146,.045) 28px 29px),repeating-linear-gradient(-45deg,transparent 0 28px,rgba(239,212,146,.045) 28px 29px);opacity:1}
+    .art-motif{position:absolute;width:260px;top:9px;left:50%;transform:translateX(-50%);opacity:.85}
+    .art-halo{position:absolute;top:140px;left:50%;transform:translateX(-50%);width:260px;height:260px;border-radius:50%;border:1px solid rgba(229,201,124,.44);display:grid;place-items:center}
+    .art-halo::before,.art-halo::after{content:"";position:absolute;border:1px solid rgba(229,201,124,.27);border-radius:50%;inset:16px}
+    .art-halo::after{inset:33px}
+    .art-saying{position:absolute;top:168px;inset-inline:10px;text-align:center;font:700 42px/1.65 var(--serif);color:#f6ecd3;text-shadow:0 2px 5px #1e3025;z-index:3}
+    .art-sub{position:absolute;top:271px;inset-inline:10px;text-align:center;font:500 13px/1.8 var(--sans);color:#d8c48e;letter-spacing:.7px;z-index:3}
+    .book-illustration{position:absolute;width:260px;bottom:22px;left:50%;transform:translateX(-50%);z-index:4;filter:drop-shadow(0 13px 10px rgba(0,0,0,.3))}
+    .art-plinth{position:absolute;bottom:0;left:-15px;right:-15px;height:45px;background:linear-gradient(#c5a45f,#ab8037);z-index:2;border-top:3px double #f3d88e}
+    .art-corner{position:absolute;left:-25px;bottom:27px;background:var(--paper-2);border:1px solid var(--border);box-shadow:0 12px 35px #20302a15;padding:12px 17px;display:flex;align-items:center;gap:11px;z-index:6}
+    .art-corner-icon{width:37px;height:37px;background:#f0e3c2;display:grid;place-items:center;color:var(--gold-dark)}
+    .art-corner p{margin:0;font:700 13px/1.4 var(--sans)}
+    .art-corner span{display:block;color:#7d8076;font:500 11px/1.5 var(--sans)}
+    .star-side{position:absolute;top:37px;left:15px;color:var(--gold);width:42px;height:42px}
+
+    .feature-bar{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:#f1ead9}
+    .feature-row{display:grid;grid-template-columns:repeat(3,1fr)}
+    .feature{display:flex;align-items:center;gap:14px;padding:25px 30px;border-inline-end:1px solid #dfd2b7}
+    .feature:last-child{border-inline-end:0}
+    .feature-ico{flex:0 0 38px;color:var(--gold-dark)}
+    .feature h3{font-size:16px;margin:0 0 3px;color:var(--ink);line-height:1.4}
+    .feature p{font-size:12px;color:#647064;margin:0;line-height:1.6}
+
+    .section{padding:100px 0}
+    .section-heading{max-width:665px;margin-bottom:42px}
+    .section-heading.center{text-align:center;margin-inline:auto}
+    .section-heading.center .eyebrow::before{display:none}
+    .section-heading h2{font:700 clamp(35px,4vw,52px)/1.48 var(--serif);margin:9px 0 8px;color:var(--olive-2)}
+    .section-heading p{margin:0;color:#677066;font-size:15px;font-weight:500;line-height:2}
+    .program-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+    .program-card{position:relative;overflow:hidden;min-height:305px;background:var(--paper-2);border:1px solid var(--border);padding:28px 28px 27px;transition:transform .2s,border-color .2s}
+    .program-card:hover{transform:translateY(-4px);border-color:#cdb676}
+    .program-card::before{content:"";position:absolute;top:0;right:0;width:100%;height:4px;background:var(--gold)}
+    .program-card:nth-child(2)::before{background:var(--olive)}
+    .program-card:nth-child(3)::before{background:#d4af64}
+    .program-card .num{font:700 39px/1 var(--serif);color:#d8c79f}
+    .program-icon{width:55px;height:55px;display:grid;place-items:center;color:var(--olive);border:1px solid #e5d6b4;margin:24px 0 15px;background:#f6f0e2}
+    .program-icon svg{width:28px;height:28px}
+    .program-card h3{font:700 27px/1.5 var(--serif);margin:0 0 4px}
+    .program-card p{font-size:14px;color:#697066;line-height:1.95;margin:0}
+    .program-link{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:12px;color:var(--gold-dark);margin-top:19px}
+
+    .approach{background:#f0eadc;border-block:1px solid var(--border)}
+    .approach-layout{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:85px}
+    .approach-copy .section-heading{margin-bottom:25px}
+    .step{display:flex;gap:18px;padding:22px 0;border-bottom:1px solid #d8ceb6}
+    .step:last-child{border:0}
+    .step-no{font:700 27px/1.4 var(--serif);color:var(--gold-dark);min-width:42px}
+    .step h3{margin:0 0 3px;font-size:17px}
+    .step p{margin:0;color:#677066;font-size:14px;line-height:1.85}
+    .schedule{background:var(--paper-2);border:1px solid #d5c6a7;box-shadow:15px 15px 0 #e0d3b6;max-width:490px;width:100%;margin-inline:auto;overflow:hidden}
+    .schedule-top{background:var(--olive);color:#fff;padding:22px 26px;display:flex;justify-content:space-between;align-items:center}
+    .schedule-top .tag{font-size:10px;display:block;color:#d9c994;letter-spacing:1px}
+    .schedule-top h3{margin:0;font:700 27px/1.5 var(--serif)}
+    .schedule-top svg{width:28px;height:28px;color:#e8c47a}
+    .schedule-body{padding:24px 26px 28px}
+    .schedule-info{display:flex;justify-content:space-between;gap:10px;align-items:center;color:#57635a;font-size:12px;border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:6px}
+    .schedule-status{color:#55724b;font-weight:700;background:#e8efdf;padding:3px 9px}
+    .schedule-row{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid #eee7d8}
+    .schedule-row:last-child{border:0}
+    .schedule-day{font-weight:800;font-size:14px}
+    .schedule-sub{color:#80877b;font-size:12px;display:block;margin-top:2px}
+    .schedule-time{font-weight:700;color:var(--gold-dark);font-size:13px;direction:rtl}
+    .schedule-foot{background:#f5f0e5;border-top:1px solid var(--border);padding:13px 26px;font-size:12px;color:#5b665d;text-align:center}
+
+    .verse-section{background:var(--olive-2);color:#f8efd8;position:relative;overflow:hidden;padding:83px 0 75px}
+    .verse-section::after,.verse-section::before{content:"";position:absolute;width:240px;height:240px;border:1px solid rgba(223,199,142,.18);transform:rotate(45deg);top:-155px;right:-45px}
+    .verse-section::after{right:auto;left:-45px;top:auto;bottom:-170px}
+    .verse-inner{text-align:center;position:relative;z-index:1}
+    .verse-mark{font:700 31px/1 var(--serif);color:#d4b16c;letter-spacing:9px}
+    .verse-text{font:700 clamp(28px,3.5vw,45px)/1.9 var(--serif);margin:13px auto 2px;max-width:1050px}
+    .verse-ref{font-size:13px;color:#ceb889;font-weight:600;margin:0}
+
+    .audience-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+    .audience{padding:40px;background:#f5f0e4;border:1px solid var(--border);position:relative;overflow:hidden}
+    .audience::after{content:"";position:absolute;left:-53px;bottom:-95px;width:220px;height:220px;border:1px solid #e5d7b9;border-radius:50%;box-shadow:0 0 0 25px #f5f0e4,0 0 0 26px #e5d7b9;pointer-events:none}
+    .audience .aud-ico{width:45px;height:45px;color:var(--gold-dark);margin-bottom:18px}
+    .audience h3{font:700 31px/1.5 var(--serif);margin:0 0 5px}
+    .audience p{color:#667064;font-size:14px;margin:0;line-height:2;max-width:420px}
+
+    .faq-section{padding-top:25px;padding-bottom:100px}
+    .faq-layout{display:grid;grid-template-columns:.75fr 1.25fr;gap:70px}
+    .faq-layout .section-heading{margin-bottom:20px}
+    .faq details{border-bottom:1px solid var(--border);padding:16px 0}
+    .faq details:first-child{border-top:1px solid var(--border)}
+    .faq summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:13px;font-size:15px;font-weight:800}
+    .faq summary::-webkit-details-marker{display:none}
+    .faq summary::after{content:"+";font-size:25px;font-weight:400;color:var(--gold-dark)}
+    .faq details[open] summary::after{content:"−"}
+    .faq p{color:#6a7266;margin:7px 0 2px;font-size:14px;line-height:2}
+
+    .enroll{background:#e8ddc7;padding:76px 0;border-top:1px solid #d8c49d}
+    .enroll-layout{display:grid;grid-template-columns:.92fr 1.08fr;gap:75px;align-items:center}
+    .enroll-copy h2{font:700 clamp(39px,4vw,56px)/1.45 var(--serif);margin:8px 0 14px}
+    .enroll-copy p{max-width:425px;font-size:15px;line-height:2;color:#596257}
+    .enroll-list{display:grid;gap:9px;margin-top:25px}
+    .enroll-list span{font-size:13px;font-weight:800;color:var(--olive);display:flex;align-items:center;gap:10px}
+    .enroll-list svg{width:17px;height:17px;color:var(--gold-dark)}
+    .enroll-card{background:var(--paper-2);border:1px solid #d4c19b;padding:32px 32px 25px;box-shadow:9px 9px 0 #d7c49d}
+    .enroll-card h3{font:700 30px/1.4 var(--serif);margin:0 0 3px}
+    .enroll-card .sub{font-size:12px;color:#788073;margin:0 0 21px}
+    .fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .field{display:grid;gap:5px}
+    .field.full{grid-column:1/-1}
+    .field label{font-size:12px;font-weight:800;color:#435347}
+    .field input,.field select{width:100%;height:46px;background:#faf8f1;border:1px solid #ded3bd;border-radius:3px;padding:0 12px;color:#314539;font-size:13px;outline:0;min-width:0}
+    .field input:focus,.field select:focus{border-color:var(--gold);box-shadow:0 0 0 2px #ad802820}
+    .enroll-card button{width:100%;margin-top:21px}
+    .form-note{font-size:11px;color:#888b80;margin:10px 0 0;line-height:1.8}
+    .request-result{display:none;margin-top:16px;padding:13px;background:#f0eddf;border:1px solid #d0bd95;color:#314539;font-size:12px;line-height:1.8;white-space:pre-line}
+    .request-result.show{display:block}
+    .copy-btn{display:none;width:auto!important;margin-top:9px!important;padding:7px 15px!important;min-height:35px!important;font-size:11px!important}
+    .copy-btn.show{display:inline-flex}
+
+    .footer{background:#20372c;color:#f4ecd6;padding:49px 0 22px}
+    .footer-top{display:flex;justify-content:space-between;gap:35px;align-items:start;padding-bottom:35px;border-bottom:1px solid #4b6253}
+    .footer .brand-name{color:#f6e8c4}
+    .footer .brand-caption{color:#d2b676}
+    .footer .brand-logo{color:#d8b46a}
+    .footer-desc{font-size:13px;line-height:2;color:#b7c1b5;max-width:360px;margin-top:18px}
+    .footer-links{display:flex;gap:27px;flex-wrap:wrap;font-weight:700;font-size:13px;color:#d7dacb;margin-top:15px}
+    .footer-links a:hover{color:#edc678}
+    .footer-bottom{display:flex;justify-content:space-between;gap:20px;color:#b2bdad;font-size:11px;align-items:center;padding-top:23px}
+    .footer-bottom span:last-child{color:#d1b778}
+    :focus-visible{outline:3px solid #b2873a;outline-offset:3px}
+    @media (max-width:980px){
+      .nav{gap:17px}.header-inner{gap:18px}.hero-grid{gap:25px;grid-template-columns:1fr 1fr}
+      .hero h1{font-size:54px}.hero-desc{font-size:15px}.art-frame{height:420px;max-width:340px}.hero-art{min-height:460px}
+      .art-saying{font-size:36px;top:145px}.art-sub{top:241px}.book-illustration{width:225px}
+      .art-halo{top:118px;width:235px;height:235px}.art-motif{width:228px}.feature{padding:20px 13px}
+      .approach-layout{gap:35px}.faq-layout{gap:32px}.enroll-layout{gap:40px}
+    }
+    @media (max-width:760px){
+      .container{width:min(var(--container),calc(100% - 34px))}
+      .top-ornament{height:5px}.site-header{position:sticky}.header-inner{min-height:66px;gap:10px;justify-content:space-between}
+      .brand-logo{width:37px;height:37px}.brand-name{font-size:26px}.brand-caption{font-size:8px}
+      .nav{display:none;position:absolute;top:66px;left:0;right:0;background:var(--paper-2);padding:13px 22px 20px;border-bottom:1px solid var(--border);box-shadow:0 15px 20px #11261b14;flex-direction:column;align-items:stretch;gap:0}
+      .nav.open{display:flex}.nav a{padding:12px 5px;border-bottom:1px solid #eee8db}
+      .header-cta{display:none}.mobile-menu-btn{display:block;margin-inline-start:auto}
+      .hero{padding:43px 0 55px}.hero-grid{grid-template-columns:1fr;gap:35px}
+      .hero h1{font-size:clamp(45px,11.3vw,62px);line-height:1.4;letter-spacing:-.7px;margin:15px 0 12px}
+      .eyebrow{font-size:11px}.eyebrow::before{width:24px}
+      .hero-desc{font-size:15px;line-height:1.95;margin-bottom:22px;max-width:550px}
+      .hero-actions{gap:9px}.hero-actions .btn{min-height:46px;padding:8px 17px;font-size:13px}
+      .hero-meta{margin-top:24px;gap:9px;flex-wrap:wrap;font-size:12px}
+      .hero-art{min-height:385px;margin-top:8px}.art-frame{height:375px;width:312px;max-width:calc(100% - 34px);border-width:6px}
+      .art-inner{inset:10px}.art-saying{top:130px;font-size:35px}.art-sub{top:224px;font-size:11px}.book-illustration{width:207px;bottom:14px}
+      .art-motif{width:202px}.art-halo{top:103px;width:211px;height:211px}.art-corner{left:0;bottom:18px;padding:9px 10px}
+      .art-corner-icon{width:32px;height:32px}.art-corner p{font-size:11px}.art-corner span{font-size:10px}.star-side{left:0;top:0;width:32px}
+      .feature-row{grid-template-columns:1fr}.feature{border-inline-end:0;border-bottom:1px solid #dfd2b7;padding:17px 5px}.feature:last-child{border:0}
+      .feature-ico{flex-basis:34px}.feature h3{font-size:15px}.feature p{font-size:12px}
+      .section{padding:68px 0}.section-heading{margin-bottom:25px}.section-heading h2{font-size:38px;line-height:1.48}.section-heading p{font-size:14px}
+      .program-grid{grid-template-columns:1fr;gap:12px}.program-card{min-height:0;padding:20px 22px 23px;display:grid;grid-template-columns:52px 1fr;column-gap:16px}
+      .program-card .num{grid-column:2;grid-row:1;text-align:left;font-size:30px;direction:ltr}.program-icon{grid-column:1;grid-row:1/4;margin:5px 0;width:49px;height:49px}
+      .program-card h3{grid-column:2;grid-row:2;font-size:24px}.program-card p{grid-column:2;grid-row:3;font-size:13px}.program-link{grid-column:2;grid-row:4;margin-top:10px}
+      .approach-layout{grid-template-columns:1fr;gap:31px}.approach-copy .section-heading{margin-bottom:15px}.step{padding:16px 0}
+      .schedule{box-shadow:7px 7px 0 #e0d3b6}.schedule-top{padding:18px 20px}.schedule-body{padding:18px 20px}.schedule-foot{padding:12px 20px}
+      .verse-section{padding:55px 0}.verse-text{font-size:clamp(26px,7vw,39px);line-height:1.8}.verse-mark{font-size:26px}
+      .audience-grid{grid-template-columns:1fr;gap:12px}.audience{padding:29px}.audience h3{font-size:28px}
+      .faq-section{padding-top:0;padding-bottom:70px}.faq-layout{grid-template-columns:1fr;gap:10px}
+      .enroll{padding:64px 0}.enroll-layout{grid-template-columns:1fr;gap:26px}.enroll-copy h2{font-size:42px}
+      .enroll-card{padding:23px 20px;box-shadow:6px 6px 0 #d7c49d}
+      .footer{padding-top:40px}.footer-top{flex-direction:column;gap:10px}.footer-links{gap:19px}.footer-bottom{flex-direction:column;align-items:start;gap:6px}
+    }
+    @media (max-width:360px){
+      .hero h1{font-size:42px}.hero-actions .btn{font-size:12px;padding:8px 12px}
+      .hero-meta{font-size:11px}.fields{grid-template-columns:1fr}.field.full{grid-column:auto}
+      .art-frame{max-width:calc(100% - 12px)}.art-corner{left:-3px}
+    }
+    @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
+
+/* Noor Al-Quran — frontend-first interactive landing concept */
+.demo-strip{background:#e8eadf;border-bottom:1px solid #d3dbc9;color:#3d5947;text-align:center;font-size:12px;font-weight:700;padding:7px 14px}
+.demo-strip span{color:#9a701d}
+.header-cta{white-space:nowrap}
+.program-card,.family-preview,.classroom-shell,.subscription-card{border-radius:7px}
+.section-heading .kicker-line{display:block;margin-top:10px}
+.soft-green{background:#ecf0e7}
+.classroom-section{padding:108px 0 96px;background:#f6f2e9;position:relative;overflow:hidden;border-block:1px solid var(--border)}
+.classroom-section::before{content:"";position:absolute;width:460px;height:460px;border:1px solid #dbcbaa;border-radius:50%;left:-270px;top:-280px;box-shadow:0 0 0 65px #f6f2e9,0 0 0 66px #e9e0ce;opacity:.8}
+.classroom-frame{background:#243d32;padding:15px;border:1px solid #c5a56c;border-radius:13px;box-shadow:0 24px 70px rgba(27,51,39,.13);position:relative;z-index:1}
+.classroom-toolbar{min-height:45px;color:#f1e6c9;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:3px 9px 14px}
+.classroom-brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:14px}
+.live-badge{background:#a65f4f;color:white;padding:4px 10px;font-size:11px;border-radius:22px;font-weight:800}
+.classroom-date{color:#c5cfbc;font-size:12px}
+.classroom-body{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:10px;direction:rtl}
+.board{background:#fffdf7;border-radius:6px;min-width:0;overflow:hidden;border:1px solid #d9c79f}
+.board-head{padding:12px 17px;background:#f1ead9;border-bottom:1px solid #dbcda9;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.board-head strong{font-family:var(--serif);font-size:22px;line-height:1.2}
+.board-head span{font-size:11px;color:#78816d}
+.board-content{position:relative;min-height:278px;margin:8px 13px 0;padding:19px 14px 25px;text-align:center;isolation:isolate;background:linear-gradient(#fffdf7,#f9f5eb)}
+.board-content::before{content:"";position:absolute;inset:5px;border:2px double #d3bf8c;pointer-events:none;z-index:0}
+.board-label{font:700 19px/1.6 var(--serif);color:#846327;position:relative;z-index:2}
+.board-ayat{position:relative;z-index:2;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:6px 8px;min-height:173px;padding:0 15px;font-family:var(--serif);font-size:clamp(21px,2.3vw,29px);line-height:2.5;color:#263e32;user-select:none}
+.ayah{border-radius:5px;padding:0 5px;cursor:crosshair;transition:background .15s,box-shadow .15s}
+.ayah:focus-visible{outline:2px solid #b18429}
+.ayah.marked{background:linear-gradient(transparent 27%,rgba(227,194,103,.57) 27%,rgba(227,194,103,.57) 86%,transparent 86%)}
+.ayah.selected{outline:1px dashed #aa833b;outline-offset:2px}
+.ayat-overlay{position:absolute;inset:0;width:100%;height:100%;z-index:3;touch-action:none;pointer-events:none}
+.ayat-overlay.ink-enabled{pointer-events:auto;cursor:crosshair}
+.board-controls{padding:10px 15px 13px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fffdf7;border-top:1px solid #eee6d6;flex-wrap:wrap}
+.tool-group{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.tool-btn{border:1px solid #dfd4bd;color:#496050;background:#fff;border-radius:5px;font-size:12px;font-weight:800;padding:7px 11px;min-height:36px;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.tool-btn.active{background:#2e4c3b;color:#fff;border-color:#2e4c3b}
+.tool-btn:hover{border-color:#b98c33}
+.tool-btn.text-only{border:none;background:transparent;text-decoration:underline;text-underline-offset:4px}
+.board-helper{font-size:10px;color:#899185;margin:0;padding:0 16px 10px}
+.class-sidebar{background:#fcfaf4;border-radius:6px;overflow:hidden;min-width:0;display:flex;flex-direction:column;gap:0}
+.video-tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}
+.video-tile{background:#2e5140;min-height:87px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;color:#f4ead3;position:relative}
+.video-tile.student{background:#ad8a50}
+.video-tile .avatar{width:38px;height:38px;border:1px solid #ffffff73;background:#ffffff25;border-radius:50%;display:grid;place-items:center;font-family:var(--serif);font-size:21px}
+.video-tile small{font-size:10px;font-weight:700}
+.class-notes{border-top:1px solid #e5ddcb;padding:13px 14px 12px;flex:1}
+.class-notes h4{font:700 20px var(--serif);margin:0 0 6px}
+.class-notes p{font-size:12px;line-height:1.7;color:#728076;margin:0 0 11px}
+.note-entry{display:flex;align-items:flex-start;gap:8px;border:1px solid #e4d7b9;background:#f9f4e8;border-radius:4px;padding:9px;margin-bottom:8px}
+.note-entry b{font-size:11px;color:#a07925;white-space:nowrap}
+.note-entry span{font-size:11px;color:#4d5d50;line-height:1.6;overflow-wrap:anywhere}
+.notes-add{border-top:1px solid #e5ddcb;padding:12px}
+.notes-add label{font-size:11px;font-weight:800;color:#43564a;display:block;margin-bottom:6px}
+.notes-add textarea{width:100%;resize:vertical;min-height:64px;border:1px solid #d9cdb4;background:white;border-radius:4px;padding:8px 9px;font:13px/1.6 var(--sans);color:#2e463a}
+.note-add-row{display:flex;align-items:center;justify-content:space-between;margin-top:7px;gap:8px}
+.note-add-row select{font-size:11px;color:#355343;padding:5px;background:#f8f4eb;border:1px solid #dfd3b8;border-radius:4px;max-width:110px}
+.demo-note{font-size:11px;line-height:1.9;color:#6d7b70;margin:15px 0 0}
+.demo-note strong{color:#41694e}
+.classroom-head-flex{display:flex;justify-content:space-between;align-items:end;gap:22px;margin-bottom:36px}
+.classroom-head-flex .section-heading{margin:0}
+.classroom-head-flex .label-demo{border:1px solid #d3c5aa;padding:7px 11px;font-size:11px;color:#876f41;border-radius:5px;white-space:nowrap}
+.after-class-bar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:25px}
+.after-feature{padding:17px 18px;border-inline-start:2px solid #bd974d;background:#fff9ed}
+.after-feature strong{display:block;font:700 19px var(--serif);margin-bottom:2px}
+.after-feature p{margin:0;font-size:12px;color:#667164;line-height:1.8}
+.family-section{padding-top:102px;padding-bottom:100px}
+.family-layout{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);align-items:center;gap:60px}
+.family-layout .section-heading{margin-bottom:18px}
+.family-points{margin:22px 0 0;list-style:none;padding:0;display:grid;gap:13px}
+.family-points li{position:relative;padding-right:31px;font-size:14px;color:#536354;font-weight:700}
+.family-points li::before{content:'✓';position:absolute;right:0;top:0;width:22px;height:22px;border-radius:50%;background:#e4ecdf;color:#486c4f;display:grid;place-items:center;font-size:13px}
+.family-preview{background:#fffcf3;border:1px solid #dcd0b7;box-shadow:12px 12px 0 #e6dbc4;padding:22px;min-width:0}
+.preview-top{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e8e0d0;padding-bottom:16px;gap:12px}
+.preview-top h3{margin:0;font:700 22px var(--serif)}
+.preview-top small{color:#8e9a89;font-size:11px}
+.profiles{display:flex;gap:7px;flex-wrap:wrap;margin:17px 0 17px}
+.profile-btn{background:#f7f3e8;border:1px solid #e0d6c2;color:#495b4b;border-radius:6px;padding:7px 10px;font-size:12px;font-weight:800;cursor:pointer}
+.profile-btn.active{background:#304e3d;color:white;border-color:#304e3d}
+.sample-dash{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sample-box{border-radius:5px;border:1px solid #e4dac7;background:#fbf8f0;padding:15px;min-height:117px}
+.sample-box.wide{grid-column:1/-1;min-height:0}
+.sample-box .mini-label{font-size:11px;color:#718074;font-weight:700}
+.sample-box h4{font:700 23px var(--serif);margin:5px 0 0;color:#2d4a38}
+.sample-box p{font-size:12px;color:#728071;line-height:1.7;margin:5px 0 0}
+.sample-box .demo-cta{font-size:12px;background:#ac8332;color:white;border:none;border-radius:4px;padding:8px 14px;margin-top:12px;font-weight:800}
+.package-section{background:#eae3d1;padding:88px 0}
+.package-layout{display:grid;grid-template-columns:1fr 1fr;gap:55px;align-items:center}
+.package-card{border:1px solid #c8b17f;background:#fcfaf4;box-shadow:9px 9px 0 #d8c69e;padding:31px;max-width:480px}
+.package-label{display:inline-flex;border:1px solid #c7aa6e;color:#956a20;font-size:12px;font-weight:800;padding:4px 11px}
+.package-card h3{font:700 33px/1.5 var(--serif);margin:18px 0 5px}
+.package-card p{margin:0;color:#5e6c5f;font-size:14px;line-height:1.9}
+.package-pills{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}
+.package-pills span{border:1px solid #ded2b8;border-radius:28px;padding:5px 11px;color:#49634f;font-size:12px;font-weight:700}
+.package-copy .section-heading{margin:0 0 20px}
+.package-copy p{font-size:14px;line-height:2;color:#667264}
+.demo-flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:#66806d;margin-top:14px;font-size:12px;font-weight:700}
+.demo-flow span{background:#f2ead7;padding:4px 8px;border-radius:4px}
+.demo-flow b{color:#ac832f}
+.registration-shell{background:#fffdf7;border:1px solid #d4c19b;padding:29px 29px 25px;box-shadow:9px 9px 0 #d7c49d;border-radius:5px}
+.registration-shell h3{font:700 30px var(--serif);margin:0 0 5px}
+.registration-shell .sub{font-size:13px;color:#71806c;margin:0 0 13px}
+.registration-shell .stepper{display:flex;gap:7px;align-items:center;margin:15px 0 22px}
+.stepper span{height:5px;border-radius:3px;flex:1;background:#e4dbc7}
+.stepper span.current{background:#b08432}
+.audience-selector{display:flex;gap:8px;margin:0 0 14px}
+.audience-selector label{cursor:pointer;display:flex;gap:7px;align-items:center;background:#f7f3e8;border:1px solid #e2d7c0;border-radius:5px;padding:8px 12px;flex:1;font-size:12px;font-weight:800}
+.audience-selector label:has(input:checked){background:#e8efe6;border-color:#95ab94;color:#2b4a39}
+.sibling-list{margin-top:14px;display:grid;gap:9px}
+.sibling-field{display:flex;align-items:center;gap:8px}
+.sibling-field input{width:100%;height:42px;border:1px solid #ded3bd;padding:0 12px;border-radius:4px;background:#faf8f1}
+.sibling-field button{border:1px solid #dfd3bd;border-radius:4px;background:#fff5ee;color:#995b3a;font-size:12px;padding:8px 12px}
+.add-sibling{border:1px dashed #b79b65;border-radius:5px;background:#faf5e9;color:#8b6b27;font-weight:800;font-size:12px;padding:8px 14px;margin-top:12px}
+.registration-shell .form-note{margin-top:10px}
+.enroll-layout{grid-template-columns:.9fr 1.1fr}
+.mock-dashboard-modal{position:fixed;z-index:100;inset:0;display:none;align-items:center;justify-content:center;background:rgba(15,31,24,.72);padding:24px;backdrop-filter:blur(7px)}
+.mock-dashboard-modal.open{display:flex}
+.modal-dialog{background:#fbf9f1;width:min(770px,100%);max-height:min(90vh,930px);overflow:auto;border:1px solid #d6c4a2;border-radius:9px;box-shadow:0 30px 90px #05120b5c;padding:25px}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #e4d8c2;padding-bottom:14px}
+.modal-head h2{margin:0;font:700 29px var(--serif)}
+.modal-close{width:37px;height:37px;border:1px solid #d8c7a8;border-radius:5px;background:#fff;color:#344d3e;font-size:24px;line-height:1;display:grid;place-items:center}
+.modal-welcome{font-size:13px;color:#667664;margin:13px 0}
+.modal-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:13px 0 18px}
+.modal-tabs button{border:1px solid #ddd0b7;background:#fffdf7;color:#3c5545;font-weight:800;font-size:12px;padding:7px 13px;border-radius:4px}
+.modal-tabs button.active{background:#315341;color:white;border-color:#315341}
+.modal-panels [data-panel]{display:none}
+.modal-panels [data-panel].active{display:block}
+.modal-card{background:#fff;border:1px solid #e6d9bd;border-radius:5px;padding:17px;margin-bottom:12px}
+.modal-card h3{font:700 25px var(--serif);margin:0 0 4px}
+.modal-card p{font-size:13px;line-height:1.7;color:#6a766b;margin:0 0 10px}
+.mock-slots{display:flex;flex-wrap:wrap;gap:8px}
+.mock-slots button{border:1px solid #d0be9b;background:#fff8eb;color:#436047;padding:9px 14px;font-weight:700;font-size:12px;border-radius:5px}
+.mock-slots button.selected{background:#315541;color:white;border-color:#315541}
+.status-msg{color:#31513f;font-size:13px;font-weight:700;line-height:1.8;margin:10px 0}
+.site-header .mobile-menu-btn{align-items:center;justify-content:center}
+.nav a.primary-mobile{display:none}
+@media(max-width:980px){.family-layout,.package-layout{gap:35px}.classroom-body{grid-template-columns:minmax(0,1fr) 225px}.classroom-section{padding:75px 0}}
+@media(max-width:760px){.enroll-layout{grid-template-columns:1fr;gap:26px}.nav a.primary-mobile{display:block;color:#916b24}.classroom-section{padding:69px 0}.classroom-head-flex{align-items:start;flex-direction:column;gap:13px;margin-bottom:25px}.classroom-body{grid-template-columns:1fr}.class-sidebar{display:grid;grid-template-columns:1fr 1fr;gap:0}.video-tiles{grid-template-columns:1fr 1fr;grid-column:1/-1}.video-tile{min-height:75px}.class-notes{min-height:150px;border-inline-end:1px solid #e5ddcb}.notes-add{border-top:1px solid #e5ddcb}.board-ayat{font-size:24px;line-height:2.45}.board-content{min-height:240px}.after-class-bar{grid-template-columns:1fr;gap:9px}.family-section{padding:74px 0}.family-layout,.package-layout{grid-template-columns:1fr;gap:30px}.family-preview{padding:17px;box-shadow:6px 6px 0 #e6dbc4}.package-section{padding:69px 0}.package-card{max-width:none}.registration-shell{padding:23px 18px;box-shadow:5px 5px 0 #d7c49d}.modal-dialog{padding:18px}.mock-dashboard-modal{padding:12px}}
+@media(max-width:520px){.board-ayat{font-size:21px;padding:0 2px;gap:2px;line-height:2.45}.board-controls{padding:10px}.tool-btn{font-size:11px;padding:6px 8px}.class-sidebar{grid-template-columns:1fr}.class-notes{border-inline-end:none}.notes-add{border-top:1px solid #e5ddcb}.classroom-frame{padding:9px}.classroom-date{font-size:10px}.classroom-toolbar{flex-wrap:wrap}.sample-dash{grid-template-columns:1fr}.sample-box.wide{grid-column:auto}.fields{grid-template-columns:1fr}.audience-selector{flex-wrap:wrap}.registration-shell h3{font-size:27px}.modal-dialog{max-height:93vh}}
+@media print{body>*:not(main){display:none!important}main>*:not(#interactive-classroom){display:none!important}#interactive-classroom .section-heading,#interactive-classroom .class-sidebar,#interactive-classroom .classroom-toolbar,#interactive-classroom .board-controls,#interactive-classroom .board-helper,#interactive-classroom .after-class-bar,#interactive-classroom .demo-note{display:none!important}#interactive-classroom .classroom-frame,#interactive-classroom .board{box-shadow:none!important;background:white!important;border:0!important}#interactive-classroom .classroom-body{display:block!important}#interactive-classroom .board-content{min-height:800px!important;padding:100px 50px!important}#interactive-classroom .board-ayat{font-size:42px!important}#interactive-classroom{padding:0!important;background:#fff!important}}
+
+  
+    /* Approved CTA navigation and guardian contact field */
+    /* Shared sticky-header offset for all anchor sections via html scroll-padding */
+    .required-mark{color:#99541f;font-weight:800}
+    .optional-mark{color:#798679;font-size:11px;font-weight:500}
+    .input-hint{font-size:11px;color:#69766d;line-height:1.8;margin-top:2px}
+    #parentPhone{text-align:left;font-family:var(--sans);direction:ltr}
+    @keyframes enroll-spotlight{0%{box-shadow:9px 9px 0 #d7c49d,0 0 0 0 rgba(173,128,40,.46)}45%{box-shadow:9px 9px 0 #d7c49d,0 0 0 9px rgba(173,128,40,.18)}100%{box-shadow:9px 9px 0 #d7c49d,0 0 0 0 rgba(173,128,40,0)}}
+    .registration-shell.scroll-spotlight{animation:enroll-spotlight 1.15s ease-out 1}
+    @media(max-width:760px){html{scroll-padding-top:75px}}
+    @media(prefers-reduced-motion:reduce){.registration-shell.scroll-spotlight{animation:none}}
+
+    /* Revised brand signature: full wordmark + original crescent and open mushaf */
+    .brand{gap:12px;align-items:center}
+    .brand-logo{height:55px;width:55px;flex:0 0 55px}
+    .brand-logo svg{display:block;width:100%;height:100%;overflow:visible}
+    .brand > span:last-child{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-width:max-content}
+    .brand-name{display:block;font:700 31px/1.33 var(--serif);white-space:nowrap;letter-spacing:0;min-height:40px}
+    .brand-caption{display:block;font:700 10px/1.55 var(--sans);margin-top:0;letter-spacing:0;text-align:right}
+    .brand-name,.brand-caption{overflow:visible}
+    .journey-cards-section{background:#f0eadc;border-block:1px solid var(--border)}
+    .journey-cards-section .section-heading{margin-bottom:33px}
+    .journey-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+    .journey-card{background:#fffcf4;border:1px solid #dfd0ae;padding:27px 24px 30px;position:relative;min-height:226px;box-shadow:0 5px 18px rgba(32,55,44,.035)}
+    .journey-card::before{content:"";position:absolute;top:0;right:0;left:0;height:3px;background:var(--gold)}
+    .journey-card-no{font:700 38px/1.2 var(--serif);color:var(--gold-dark);display:block;margin-bottom:17px}
+    .journey-card h3{font:700 25px/1.45 var(--serif);margin:0 0 7px;color:var(--ink)}
+    .journey-card p{font-size:14px;line-height:1.95;color:#647064;margin:0}
+    .enroll.simplified-enroll{padding:89px 0;background:#e8ddc7}
+    .enroll-title{max-width:760px;margin:0 auto 30px;text-align:center}
+    .enroll-title .eyebrow::before{display:none}
+    .enroll.simplified-enroll .registration-shell{width:min(100%,760px);margin-inline:auto;box-shadow:9px 9px 0 #d7c49d}
+    .enroll.simplified-enroll .registration-shell h3{font-size:37px;text-align:center}
+    .enroll.simplified-enroll .registration-shell .sub{text-align:center;margin-bottom:17px}
+    .faq-section.final-faq{padding-top:95px;padding-bottom:95px;background:var(--paper)}
+    .program-card{min-height:275px}
+    @media(max-width:980px){
+      .brand-logo{height:46px;width:46px;flex-basis:46px}.brand-name{font-size:27px;min-height:36px}
+      .journey-cards{gap:12px}.journey-card{padding:23px 20px}
+    }
+    @media(max-width:760px){
+      .brand{gap:7px}.brand-logo{height:40px;width:40px;flex-basis:40px}.brand-name{font-size:25px;min-height:34px}.brand-caption{font-size:8.5px}
+      .journey-cards{grid-template-columns:1fr;gap:12px}.journey-card{min-height:0;padding:20px 21px}
+      .journey-card-no{font-size:29px;margin-bottom:6px}.journey-card h3{font-size:24px}
+      .enroll.simplified-enroll{padding:65px 0}.enroll-title{margin-bottom:22px}
+      .enroll.simplified-enroll .registration-shell{box-shadow:5px 5px 0 #d7c49d}
+      .enroll.simplified-enroll .registration-shell h3{font-size:32px}
+      .faq-section.final-faq{padding-top:69px;padding-bottom:75px}
+    }
+    @media(max-width:370px){.brand-name{font-size:23px}.brand-logo{width:37px;height:37px;flex-basis:37px}.brand-caption{font-size:8px}}
+
+  </style>
+</head>
+<body>
+  <div class="top-ornament" aria-hidden="true"></div>
+  <div class="demo-strip">تصور تفاعلي لتصميم نور القرآن · <span>لا توجد حجوزات أو حسابات حقيقية في هذه النسخة</span></div>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#home" aria-label="نور القرآن — الرئيسية">
+        <span class="brand-logo" aria-hidden="true">
+          <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M51 7C44.6 13.5 39.9 22 41 30.9C42.1 39.5 47.6 44.4 55.1 46.1C52.4 49.4 47.4 51.1 42.2 50.2C30.7 48.2 24.4 39.7 26.2 29.4C27.9 19.5 37.2 10.5 51 7Z" fill="currentColor"/>
+  <path d="M36 47.4C28.3 42.8 20.8 42.2 10.5 45.2V62.8C21 59.2 28.8 60.3 36 65.2V47.4Z" fill="#F8E7C2" stroke="currentColor" stroke-width="2.8" stroke-linejoin="round"/>
+  <path d="M36 47.4C43.7 42.8 51.2 42.2 61.5 45.2V62.8C51 59.2 43.2 60.3 36 65.2V47.4Z" fill="#FFF8E6" stroke="currentColor" stroke-width="2.8" stroke-linejoin="round"/>
+  <path d="M16 49.5C22 47.9 27 48.6 32 51.3M16 54C22 52.5 27 53.2 32 55.7M56 49.5C50 47.9 45 48.6 40 51.3M56 54C50 52.5 45 53.2 40 55.7" stroke="#B58C43" stroke-width="1.3" stroke-linecap="round"/>
+</svg>
+        </span>
+        <span><span class="brand-name">نور القرآن</span><span class="brand-caption">لِلحِفْظِ وَالْإِتْقَان</span></span>
+      </a>
+      <nav class="nav" id="siteNav" aria-label="القائمة الرئيسية">
+        <a href="#about">عن المنهج</a>
+        <a href="#programs">البرامج</a>
+        <a href="#interactive-classroom">الفصل التفاعلي</a>
+        <a href="#journey">كيف نبدأ؟</a>
+        <a href="#questions">الأسئلة الشائعة</a>
+        <a class="primary-mobile" href="#enroll">إنشاء حساب تجريبي</a>
+      </nav>
+      <a class="btn btn-gold header-cta" href="#enroll">احجز حصة تجريبية <span aria-hidden="true">↖</span></a>
+      <button class="mobile-menu-btn" id="menuBtn" type="button" aria-controls="siteNav" aria-expanded="false" aria-label="فتح القائمة">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <span class="eyebrow">حَلَقَاتُ القُرْآنِ الكَرِيمِ عَنْ بُعْد</span>
+          <h1>مع القرآنِ،<br>يُزهرُ <span class="gold-word">القلبُ</span><br>ويستقيمُ اللسان.</h1>
+          <p class="hero-desc">رحلة حفظٍ وتلاوة بصحبة معلّم يتابعك خطوة بخطوة. مصحف تفاعلي، وحصص مباشرة، وتدريبات تظل معك بعد انتهاء كل لقاء — للصغار والكبار.</p>
+          <div class="hero-actions">
+            <a href="#enroll" class="btn btn-gold">احجز حصة تجريبية <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m14 5-7 7 7 7"/></svg></a>
+            <a href="#programs" class="btn btn-outline">تعرّف على البرامج</a>
+          </div>
+          <div class="hero-meta"><span class="hero-meta-item"><span class="checkmark">✓</span> حصص مباشرة مع معلّم</span><span class="sep"></span><span class="hero-meta-item"><span class="checkmark">✓</span> لوحة طالب كاملة من أول يوم</span></div>
+        </div>
+        <div class="hero-art" role="img" aria-label="زخرفة هندسية مستوحاة من الطراز الإسلامي مع مصحف مفتوح داخل محراب بلون أخضر عميق وذهبي">
+          <svg class="star-side" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M33.5 4.5C23 13 22.4 25.7 29.8 33.2c4.4 4.3 9.6 5.6 14.2 5.1C37 44.6 27.7 44.9 20.9 39 10.5 30.1 13.1 15.2 23.4 8.3c3.1-2.1 6.5-3.3 10.1-3.8Z" fill="#C8A059"/></svg>
+          <div class="art-frame">
+            <div class="art-inner">
+              <svg class="art-motif" viewBox="0 0 240 130" fill="none" aria-hidden="true"><path d="M42 117V90C42 47 74 16 120 7c46 9 78 40 78 83v27" stroke="#dfc487" stroke-width="1.2" opacity=".75"/><path d="M61 117V92c0-31 21-53 59-64 38 11 59 33 59 64v25" stroke="#dfc487" stroke-width="1" opacity=".5"/><path d="M87 113c13-7 23-10 33-10s20 3 33 10M98 88h44M120 36v42" stroke="#dfc487" stroke-width="1" opacity=".5"/><circle cx="120" cy="86" r="5" fill="#dfc487" opacity=".7"/></svg>
+              <div class="art-halo" aria-hidden="true"></div>
+              <div class="art-saying">نورٌ على نور</div>
+              <div class="art-sub">مَعَ القُرْآنِ خُطْوَةً بِخُطْوَة</div>
+              <svg class="book-illustration" viewBox="0 0 270 145" fill="none" aria-hidden="true">
+                <ellipse cx="135" cy="131" rx="123" ry="10" fill="#13251b" opacity=".6"/>
+                <path d="M25 43c36-14 75-12 109 4v75c-35-18-70-20-109-8V43Z" fill="#f5e6bd" stroke="#bb9853" stroke-width="3"/>
+                <path d="M245 43c-36-14-75-12-109 4v75c35-18 70-20 109-8V43Z" fill="#f8edce" stroke="#bb9853" stroke-width="3"/>
+                <path d="M19 50c41-13 81-12 115 6M251 50c-41-13-81-12-115 6" stroke="#f6cc6c" stroke-width="7"/>
+                <path d="M31 52c37-10 72-7 103 8M239 52c-37-10-72-7-103 8" stroke="#c0a46e" stroke-width="1.3"/>
+                <path d="M135 48v76" stroke="#9b783d" stroke-width="3"/>
+                <path d="M43 72c26-6 53-4 73 4M43 84c26-6 53-4 73 4M43 96c26-6 53-4 73 4M226 72c-26-6-53-4-73 4M226 84c-26-6-53-4-73 4M226 96c-26-6-53-4-73 4" stroke="#9a885d" stroke-width="1.4" stroke-linecap="round" opacity=".7"/>
+                <path d="M19 114 135 131 251 114" stroke="#ddbd74" stroke-width="7" stroke-linejoin="round"/><path d="m134 128-33 8-21 3M136 128l33 8 21 3" stroke="#bc8e42" stroke-width="6" stroke-linecap="round"/><path d="m135 124-26 16m26-16 26 16" stroke="#e1b25b" stroke-width="6" stroke-linecap="round"/>
+              </svg>
+              <div class="art-plinth"></div>
+            </div>
+          </div>
+          <div class="art-corner"><div class="art-corner-icon"><svg viewBox="0 0 24 24" width="22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3 4 7v5c0 5 3.5 8 8 9 4.5-1 8-4 8-9V7l-8-4Z"/><path d="m8 12 3 3 5-6"/></svg></div><div><p>صحبةٌ تُعين على الإتقان</p><span>تعليم مباشر ومتابعة مستمرة</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="feature-bar" id="about" aria-label="مميزات الحلقات">
+      <div class="container feature-row">
+        <div class="feature"><svg class="feature-ico" width="38" height="38" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="5" width="24" height="30" rx="2"/><path d="M13 10h14M13 16h14M13 22h10M13 28h14"/></svg><div><h3>منهج واضح ومتدرّج</h3><p>حفظٌ جديد ومراجعةٌ تثبّت ما سبق</p></div></div>
+        <div class="feature"><svg class="feature-ico" width="38" height="38" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="20" cy="11" r="6"/><path d="M7 33c1-8 6-12 13-12s12 4 13 12M6 34h28"/></svg><div><h3>تسميع مع الشيخ مباشرة</h3><p>تصحيح للتلاوة ومتابعة لكل طالب</p></div></div>
+        <div class="feature"><svg class="feature-ico" width="38" height="38" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="9" width="28" height="26" rx="2"/><path d="M6 16h28M13 5v8M27 5v8M13 23h5M22 23h5M13 29h5"/></svg><div><h3>مواعيد تناسب يومك</h3><p>حصص أونلاين من الهاتف أو الحاسوب</p></div></div>
+      </div>
+    </section>
+
+    <section class="section" id="programs">
+      <div class="container">
+        <div class="section-heading center"><span class="eyebrow">بَرَامِجُنَا التَّعْلِيمِيَّة</span><h2>لكلِّ مرحلةٍ طريقٌ إلى الإتقان</h2><p>نختار لك البرنامج الذي يوافق مستواك، مع العناية بحسن التلاوة وثبات المحفوظ.</p></div>
+        <div class="program-grid">
+          <article class="program-card"><span class="num">٠١</span><div class="program-icon"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 8c5-2 8-1 11 1 3-2 6-3 11-1v18c-5-2-8-1-11 1-3-2-6-3-11-1V8ZM16 9v18"/><path d="M9 12h4M19 12h4"/></svg></div><h3>تصحيح التلاوة</h3><p>للمبتدئين ومن يرغب في تحسين القراءة، مع العناية بمخارج الحروف وأحكام التجويد.</p></article>
+          <article class="program-card"><span class="num">٠٢</span><div class="program-icon"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 4h18v25l-9-7-9 7V4Z"/><path d="M11 10h10M11 14h10"/></svg></div><h3>حفظ القرآن الكريم</h3><p>ورد حفظ مناسب لقدرة الطالب، وتسميع مباشر مع الشيخ، وخطة مراجعة مصاحبة.</p></article>
+          <article class="program-card"><span class="num">٠٣</span><div class="program-icon"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M26 15a10 10 0 1 1-4-8M26 5v8h-8"/><path d="M16 9v7l5 3"/></svg></div><h3>المراجعة والتثبيت</h3><p>لمن أتمّ حفظ سور أو أجزاء، ويريد استدراك مواضع الضعف وتثبيت المحفوظ.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="classroom-section" id="interactive-classroom">
+      <div class="container">
+        <div class="classroom-head-flex">
+          <div class="section-heading"><span class="eyebrow">لِأَنَّ الحِصَّةَ أَكْثَرُ مِنْ مُكَالَمَة</span><h2>المصحفُ أمامكما، والحفظُ هدفكما.</h2><p>يحدّد الشيخ الكلمات، ويكتب الطالب ملاحظاته، وتبقى آثار التعلّم بعد انتهاء الحصة. جرّب الأدوات في النموذج المصغّر!</p></div>
+          <span class="label-demo">معاينة واجهة فقط · بدون بث فعلي</span>
+        </div>
+        <div class="classroom-frame">
+          <div class="classroom-toolbar"><span class="classroom-brand">✦ نور القرآن <span class="classroom-date">/ نموذج الفصل الذكي</span></span><span class="live-badge">● نموذج الفصل</span></div>
+          <div class="classroom-body">
+            <div class="board">
+              <div class="board-head"><div><strong>سُورَةُ الإِخْلَاصِ</strong><span> · معاينة مصحف تفاعلي</span></div><span>صفحة تجريبية</span></div>
+              <div class="board-content" id="boardSurface">
+                <div class="board-label">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+                <div class="board-ayat" id="verseWords" aria-label="معاينة تفاعلية لآيات سورة الإخلاص">
+                  <span class="ayah" tabindex="0">قُلْ هُوَ اللَّهُ أَحَدٌ ۝١</span><span class="ayah" tabindex="0">اللَّهُ الصَّمَدُ ۝٢</span><span class="ayah" tabindex="0">لَمْ يَلِدْ وَلَمْ يُولَدْ ۝٣</span><span class="ayah" tabindex="0">وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ ۝٤</span>
+                </div>
+                <canvas class="ayat-overlay" id="drawingCanvas" aria-label="طبقة رسم تجريبية فوق المصحف"></canvas>
+              </div>
+              <div class="board-controls">
+                <div class="tool-group" role="toolbar" aria-label="أدوات التعليم على المصحف">
+                  <button type="button" class="tool-btn active" data-tool="highlight">✦ تظليل</button>
+                  <button type="button" class="tool-btn" data-tool="pen">✎ قلم</button>
+                  <button type="button" class="tool-btn" data-tool="note">▤ ملاحظة</button>
+                  <button type="button" class="tool-btn" data-tool="clear">↶ مسح الكل</button>
+                </div>
+                <button type="button" class="tool-btn text-only" id="printBoard">حفظ الصفحة PDF ↗</button>
+              </div>
+              <p class="board-helper" id="boardHelper">اضغط على أي آية لتظليلها، أو اختر القلم وارسم فوق الصفحة.</p>
+            </div>
+            <aside class="class-sidebar">
+              <div class="video-tiles">
+                <div class="video-tile"><div class="avatar">م</div><small>الشيخ · نموذج</small></div>
+                <div class="video-tile student"><div class="avatar">أ</div><small>الطالب · نموذج</small></div>
+              </div>
+              <div class="class-notes"><h4>ملاحظات الحصة</h4><p>حدد أي آية ثم أضف تعليقًا بسيطًا بجانب المصحف.</p><div id="lessonNotes" aria-live="polite"><div class="note-entry"><b>الشيخ</b><span>راجع لفظ «الصمد» وكرر الآية مرتين.</span></div></div></div>
+              <div class="notes-add"><label for="lessonNoteText">أضف ملاحظة تجريبية</label><textarea id="lessonNoteText" maxlength="150" placeholder="مثال: أراجع آخر آيتين قبل الحصة القادمة..."></textarea><div class="note-add-row"><select id="noteAuthor" aria-label="كاتب الملاحظة"><option>الطالب</option><option>الشيخ</option></select><button type="button" class="tool-btn active" id="addNote">إضافة +</button></div></div>
+            </aside>
+          </div>
+        </div>
+        <div class="after-class-bar"><div class="after-feature"><strong>يكتب الاثنان</strong><p>قلم وتظليل وملاحظات للشيخ وللطالب، مع تمييز صاحب التعليق.</p></div><div class="after-feature"><strong>لا يضيع ما تعلّمتَه</strong><p>تظل العلامات في ملف الحصة، ويمكنك الرجوع لها عند المراجعة.</p></div><div class="after-feature"><strong>صفحة محفوظة</strong><p>حفظ الصورة أو PDF في ملف الطالب بعد الحصة، إلى جانب تقرير الشيخ.</p></div></div>
+        <p class="demo-note"><strong>تنبيه:</strong> المصحف أعلاه مثال نصّي للتصميم فقط، لا يُستخدم كمصدر قرآني رسمي. عند التنفيذ نربطه بمصدر مصحف موثوق، ولا تُحفظ أي ملاحظات على خادم في هذه النسخة.</p>
+      </div>
+    </section>
+
+    <section class="verse-section" aria-labelledby="verse-heading">
+      <div class="container verse-inner"><div class="verse-mark" aria-hidden="true">۞</div><h2 id="verse-heading" class="verse-text">﴿ وَلَقَدْ يَسَّرْنَا الْقُرْآنَ لِلذِّكْرِ فَهَلْ مِن مُّدَّكِرٍ ﴾</h2><p class="verse-ref">سورة القمر · الآية ١٧</p></div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-heading center"><span class="eyebrow">تَعْلِيمٌ يَرَاعِي احْتِيَاجَكَ</span><h2>للأبناء وللكبار</h2><p>تعليم للأبناء وللكبار، رجالًا ونساءً، بخطة تناسب عمر كل طالب ومستواه وهدفه.</p></div>
+        <div class="audience-grid"><div class="audience"><svg class="aud-ico" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="15" cy="12" r="5"/><circle cx="28" cy="16" r="4"/><path d="M5 35v-5c0-6 4-10 10-10s10 4 10 10v5M25 24c5-1 10 3 10 9v2"/></svg><h3>للأبناء وأولياء الأمور</h3><p>حلقات تناسب عمر الطفل ومستواه، مع تقارير مختصرة تتيح لولي الأمر متابعة الحفظ والمراجعة والانتظام.</p></div><div class="audience"><svg class="aud-ico" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 6 8 12v9c0 8 5 13 12 15 7-2 12-7 12-15v-9L20 6Z"/><path d="m14 21 4 4 8-9"/></svg><h3>للكبار ومن يريد الإتقان</h3><p>برامج للكبار، رجالًا ونساءً، سواء أردتم بدء الحفظ أو تصحيح التلاوة أو إتقان المراجعة والتثبيت.</p></div></div>
+      </div>
+    </section>
+
+    <section class="section journey-cards-section" id="journey">
+      <div class="container">
+        <div class="section-heading center"><span class="eyebrow">رِحْلَتُكَ مَعَنَا</span><h2>خطواتٌ قليلة، وأثرٌ يبقى بإذن الله.</h2><p>ثلاث خطوات بسيطة لتبدأ رحلتك مع القرآن، ثم تواصل الحفظ والمراجعة بما يناسبك.</p></div>
+        <div class="journey-cards">
+          <article class="journey-card"><span class="journey-card-no">٠١</span><h3>أنشئ حسابك</h3><p>أضف ملف الطالب لنفسك أو لأبنائك، بحساب واحد وملفات مستقلة لكل طالب.</p></article>
+          <article class="journey-card"><span class="journey-card-no">٠٢</span><h3>اكتشف لوحة الطالب</h3><p>تصفح المصحف والحصص والتدريبات وتعرّف على تجربتك التعليمية من البداية.</p></article>
+          <article class="journey-card"><span class="journey-card-no">٠٣</span><h3>احجز حصتك التجريبية</h3><p>من داخل حسابك تختار موعدك، ثم تبدأ أول لقاء مع الشيخ لتحديد المستوى.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="enroll simplified-enroll" id="enroll">
+      <div class="container">
+        <div class="enroll-title"><span class="eyebrow">البِدَايَةُ مِنْ هُنَا</span></div>
+        <form class="registration-shell" id="registrationForm"><h3>ابدأ رحلتك القرآنية</h3><p class="sub">تجربة تسجيل تفاعلية — ستظهر لوحة الطالب بعد الإكمال مباشرة.</p>
+          <div class="fields"><div class="field"><label for="accountName">اسم صاحب الحساب <span class="required-mark" aria-hidden="true">*</span></label><input id="accountName" autocomplete="name" name="accountName" required maxlength="60" placeholder="الاسم الذي سنناديك به"></div><div class="field"><label for="parentPhone" id="parentPhoneLabel">رقم موبايل ولي الأمر <span class="required-mark" aria-hidden="true">*</span></label><input id="parentPhone" name="parentPhone" type="tel" autocomplete="tel" inputmode="tel" required minlength="11" maxlength="13" pattern="(?:01[0125][0-9]{8}|\+201[0125][0-9]{8})" title="رقم موبايل مصري صحيح يبدأ بـ 01 أو +20" placeholder="01xxxxxxxxx" dir="ltr" aria-describedby="phoneHelp"></div></div>
+          <div class="field full" style="margin-top:14px"><label for="accountContact">البريد الإلكتروني <span class="optional-mark">(اختياري للمعاينة)</span></label><input id="accountContact" name="accountContact" type="email" autocomplete="email" maxlength="80" placeholder="example@mail.com" dir="ltr"><span class="input-hint" id="phoneHelp">رقم التواصل أساسي لتأكيد الحصص والتواصل مع ولي الأمر لاحقًا. لن نرسل أي رسالة من هذه النسخة التجريبية.</span></div>
+          <div class="field" style="margin-top:15px"><label>لمن تريد إنشاء ملف طالب؟</label><div class="audience-selector"><label><input type="radio" name="learnerType" value="child" checked> لطفلي / لأحد أفراد الأسرة</label><label><input type="radio" name="learnerType" value="self"> لنفسي</label></div></div>
+          <div class="fields"><div class="field"><label id="learnerNameLabel" for="learnerName">اسم الطفل الأول</label><input id="learnerName" name="learnerName" required maxlength="50" placeholder="اسم الطالب"></div><div class="field"><label for="learnerLevel">المستوى التقريبي</label><select id="learnerLevel" required><option value="" disabled selected>اختر المستوى</option><option>يبدأ من الصفر</option><option>يقرأ ويحتاج تصحيحًا</option><option>يحفظ بعض السور</option><option>يريد المراجعة والتثبيت</option></select></div></div>
+          <div id="siblingsArea"><div class="sibling-list" id="siblingList"></div><button type="button" class="add-sibling" id="addSiblingBtn">+ إضافة طفل آخر لنفس الحساب</button></div>
+          <button type="submit" class="btn btn-gold" style="margin-top:20px;width:100%">إنشاء حساب تجريبي وفتح لوحة الطالب ↖</button><p class="form-note">لا توجد كلمة مرور أو رمز تحقق في هذا الـMock. الربط الآمن مع Supabase Auth يأتي في مرحلة الـBackend.</p>
+        </form>
+      </div>
+    </section>
+
+    <section class="section faq-section final-faq" id="questions">
+      <div class="container faq-layout"><div class="section-heading"><span class="eyebrow">أَسْئِلَةٌ شَائِعَة</span><h2>ما الذي تودّ معرفته؟</h2><p>أجبنا هنا عن الأسئلة الأساسية قبل بداية رحلتك.</p></div>
+        <div class="faq"><details><summary>هل الحصص فردية أم جماعية؟</summary><p>نبدأ بالحلقات الفردية المباشرة بين الشيخ والطالب، مع إمكانية إضافة برامج جماعية لاحقًا.</p></details>
+          <details><summary>هل أستطيع متابعة الحصة من الهاتف؟</summary><p>نعم، ستكون غرفة الحصة مصممة للعمل من الهاتف والحاسوب، مع إمكانية الاكتفاء بالصوت إذا كانت سرعة الإنترنت ضعيفة.</p></details>
+          <details><summary>هل تُحفظ العلامات والملاحظات بعد الحصة؟</summary><p>نعم، هذا جزء أساسي من تصميم المنصة: تُحفظ ملاحظات الشيخ والطالب على صفحة المصحف، مع إمكانية الرجوع لها وتحميل نسخة PDF أو صورة.</p></details>
+          <details><summary>هل توجد برامج للمبتدئين؟</summary><p>نعم، يبدأ البرنامج بتقييم مستوى القراءة ثم اختيار مسار مناسب لتصحيح التلاوة والحفظ بالتدريج.</p></details>
+          <details><summary>هل أحتاج إلى حجز حصة قبل فتح لوحة الطالب؟</summary><p>لا. بعد إنشاء الحساب وملف الطالب تظهر لوحة الطالب كاملة، ويمكنك منها حجز الحصة التجريبية وقتما يناسبك.</p></details>
+          <details><summary>هل يمكن إضافة إخوة تحت حساب واحد؟</summary><p>نعم، يمكنك إضافة أكثر من طالب لنفس حساب الأسرة، ولكل واحد دروسه وتقاريره وملاحظاته المستقلة.</p></details>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div class="mock-dashboard-modal" id="dashboardModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-head"><div><span class="eyebrow">تَجْرِبَةُ الطَّالِب</span><h2 id="modalTitle">لوحة الطالب</h2></div><button type="button" class="modal-close" id="closeModal" aria-label="إغلاق النافذة">×</button></div><p class="modal-welcome" id="modalWelcome">أهلًا بك في نور القرآن! هذه لوحة تجريبية ببيانات محلية فقط.</p>
+      <div class="profiles" id="createdProfiles"></div><div class="modal-tabs" id="modalTabs"><button type="button" class="active" data-tab="home">الرئيسية</button><button type="button" data-tab="classes">حصصي</button><button type="button" data-tab="quran">المصحف</button><button type="button" data-tab="training">تدريباتي</button><button type="button" data-tab="progress">تقدمي</button></div>
+      <div class="modal-panels"><div class="active" data-panel="home"><div class="modal-card"><h3>حفظك يبدأ اليوم 🌿</h3><p>لوحتك جاهزة بالفعل. شاهد المصحف واستكشف التدريب، ثم احجز حصتك التجريبية عندما تكون مستعدًا.</p><button class="btn btn-gold" id="homeBookBtn" type="button">احجز حصتك التجريبية</button></div></div>
+      <div data-panel="classes"><div class="modal-card"><h3>حصصي القادمة</h3><p id="classesText">ليس لديك موعد بعد. اختر موعدًا تجريبيًا داخل هذه المعاينة.</p><div class="mock-slots" id="mockSlots"><button type="button" data-slot="الأحد · ٥:٠٠ مساءً">الأحد · ٥:٠٠ م</button><button type="button" data-slot="الثلاثاء · ٦:٣٠ مساءً">الثلاثاء · ٦:٣٠ م</button><button type="button" data-slot="الخميس · ٤:٣٠ مساءً">الخميس · ٤:٣٠ م</button></div><div class="status-msg" id="bookingStatus">اختر موعدًا تجريبيًا — كل المواعيد افتراضية.</div></div></div>
+      <div data-panel="quran"><div class="modal-card"><h3>مصحفك</h3><p>من هنا يقرأ الطالب أو يستمع للمصحف. في التنفيذ الحقيقي نربطه بنص قرآني وتلاوات موثوقة. ويمكنك تجربة السبورة أعلاه من صفحة الهبوط.</p><a class="btn btn-outline" href="#interactive-classroom" id="openClassDemoFromModal">شاهد نموذج المصحف التفاعلي</a></div></div>
+      <div data-panel="training"><div class="modal-card"><h3>تدريباتي</h3><p>قبل تقييم الشيخ يمكنك تجربة واجهة التدريب. بعد الحصة يظهر الورد الذي اعتمده الشيخ، والتكرار والمراجعة المناسبة لك.</p><div class="note-entry"><b>مثال</b><span>استمع إلى سورة الإخلاص وكرر تلاوتها مرتين.</span></div></div></div>
+      <div data-panel="progress"><div class="modal-card"><h3>تقدمي</h3><p>لم تبدأ حصصك بعد، ولذلك لا نظهر إنجازات وهمية. بعد أول حصة سيظهر تقييم المعلم وتقرير الحفظ.</p></div></div></div>
+      <p class="form-note" style="padding-top:12px;border-top:1px solid #e6dac6">هذه معاينة UI تعمل في المتصفح فقط؛ لا تنشئ حسابًا أو حجزًا أو ملف طالب فعليًا.</p>
+    </div>
+  </div>
+
+
+  <footer class="footer"><div class="container"><div class="footer-top"><div><a class="brand" href="#home"><span class="brand-logo" aria-hidden="true"><svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path d="M51 7C44.6 13.5 39.9 22 41 30.9C42.1 39.5 47.6 44.4 55.1 46.1C52.4 49.4 47.4 51.1 42.2 50.2C30.7 48.2 24.4 39.7 26.2 29.4C27.9 19.5 37.2 10.5 51 7Z" fill="currentColor"/>
+  <path d="M36 47.4C28.3 42.8 20.8 42.2 10.5 45.2V62.8C21 59.2 28.8 60.3 36 65.2V47.4Z" fill="#F8E7C2" stroke="currentColor" stroke-width="2.8" stroke-linejoin="round"/>
+  <path d="M36 47.4C43.7 42.8 51.2 42.2 61.5 45.2V62.8C51 59.2 43.2 60.3 36 65.2V47.4Z" fill="#FFF8E6" stroke="currentColor" stroke-width="2.8" stroke-linejoin="round"/>
+  <path d="M16 49.5C22 47.9 27 48.6 32 51.3M16 54C22 52.5 27 53.2 32 55.7M56 49.5C50 47.9 45 48.6 40 51.3M56 54C50 52.5 45 53.2 40 55.7" stroke="#B58C43" stroke-width="1.3" stroke-linecap="round"/>
+</svg></span><span><span class="brand-name">نور القرآن</span><span class="brand-caption">لِلحِفْظِ وَالْإِتْقَان</span></span></a><p class="footer-desc">حلقات القرآن الكريم عن بُعد، بعنايةٍ في التعليم ومتابعةٍ في الحفظ والمراجعة.</p></div><nav class="footer-links" aria-label="روابط التذييل"><a href="#about">عن المنهج</a><a href="#programs">البرامج</a><a href="#journey">كيف نبدأ؟</a><a href="#enroll">ابدأ رحلتك</a></nav></div><div class="footer-bottom"><span>© <span id="year">2026</span> نور القرآن. جميع الحقوق محفوظة.</span><span>تعليمٌ برفق، وحفظٌ بإتقان.</span></div></div></footer>
+
+  <script>
+  (function(){
+    'use strict';
+    const $=id=>document.getElementById(id);
+    const menuBtn=$('menuBtn'),nav=$('siteNav');
+    menuBtn.addEventListener('click',()=>{const open=nav.classList.toggle('open');menuBtn.setAttribute('aria-expanded',String(open));menuBtn.setAttribute('aria-label',open?'إغلاق القائمة':'فتح القائمة')});
+    nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');menuBtn.setAttribute('aria-expanded','false')}));
+    document.getElementById('year').textContent=new Date().getFullYear();
+
+    // Smooth section navigation: clicking any CTA scrolls instead of opening a premature booking flow.
+    // Browsers with reduced-motion preference receive immediate scrolling.
+    document.querySelectorAll('a[href^="#"]').forEach(anchor=>anchor.addEventListener('click',event=>{
+      const hash=anchor.getAttribute('href');
+      if(!hash||hash==='#')return;
+      const target=document.getElementById(hash.slice(1));
+      if(!target)return;
+      event.preventDefault();
+      const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      target.scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});
+      history.replaceState(null,'',hash);
+      if(target.id==='enroll'){
+        const formCard=$('registrationForm');
+        formCard.classList.remove('scroll-spotlight');
+        void formCard.offsetWidth;
+        formCard.classList.add('scroll-spotlight');
+        formCard.addEventListener('animationend',()=>formCard.classList.remove('scroll-spotlight'),{once:true});
+      }
+    }));
+
+    // Classroom interactive annotation DEMO. No data is transmitted or persisted.
+    let tool='highlight',canvas=$('drawingCanvas'),ctx=canvas.getContext('2d'),drawing=false,last=null,selectedVerse=null;
+    function resizeBoard(){ const old=canvas.toDataURL();const r=canvas.getBoundingClientRect(); if(r.width<1)return;const ratio=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(r.width*ratio);canvas.height=Math.round(r.height*ratio);ctx.setTransform(ratio,0,0,ratio,0,0);ctx.strokeStyle='#b18327';ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=3.2; if(old&&old!=='data:,'){const image=new Image();image.onload=()=>{ctx.drawImage(image,0,0,r.width,r.height)};image.src=old;}}
+    requestAnimationFrame(resizeBoard);window.addEventListener('resize',()=>{clearTimeout(window.noorResize);window.noorResize=setTimeout(resizeBoard,180)});
+    function setTool(next){ if(next==='clear'){$('verseWords').querySelectorAll('.ayah').forEach(a=>a.classList.remove('marked','selected'));ctx.clearRect(0,0,canvas.width,canvas.height);$('lessonNotes').replaceChildren();selectedVerse=null;setTool('highlight');return;}
+      tool=next; document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===next));canvas.classList.toggle('ink-enabled',next==='pen');$('boardHelper').textContent=next==='pen'?'ارسم بالقلم فوق المصحف بإصبعك أو بالماوس؛ الرسم هنا تجريبي فقط.':next==='highlight'?'اضغط على أي آية لتظليلها.':'اضغط على الآية المطلوبة، ثم اكتب تعليقك على اليمين.'; }
+    document.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>setTool(b.dataset.tool)));
+    function verseClick(el){if(tool==='highlight'){el.classList.toggle('marked');}else if(tool==='note'){document.querySelectorAll('.ayah').forEach(a=>a.classList.remove('selected'));el.classList.add('selected');selectedVerse=el.textContent.trim();$('lessonNoteText').focus();}}
+    document.querySelectorAll('.ayah').forEach(v=>{v.addEventListener('click',()=>verseClick(v));v.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();verseClick(v)}})});
+    function position(e){const r=canvas.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};}
+    canvas.addEventListener('pointerdown',e=>{if(tool!=='pen')return;drawing=true;last=position(e);canvas.setPointerCapture(e.pointerId);ctx.beginPath();ctx.arc(last.x,last.y,1.7,0,Math.PI*2);ctx.fillStyle='#b18327';ctx.fill()});
+    canvas.addEventListener('pointermove',e=>{if(!drawing||tool!=='pen')return;const p=position(e);ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p});
+    ['pointerup','pointercancel','lostpointercapture'].forEach(n=>canvas.addEventListener(n,()=>drawing=false));
+    $('addNote').addEventListener('click',()=>{const value=$('lessonNoteText').value.trim();if(!value){$('lessonNoteText').focus();return} const container=document.createElement('div');container.className='note-entry';const who=document.createElement('b');who.textContent=$('noteAuthor').value;const content=document.createElement('span');content.textContent=(selectedVerse?'«'+selectedVerse+'»: ':'')+value;container.append(who,content);$('lessonNotes').append(container);$('lessonNoteText').value='';});
+    $('printBoard').addEventListener('click',()=>window.print());
+
+    // Registration-first flow: temporary on-device mock only (no API and no fake real booking).
+    const registration=$('registrationForm'),modal=$('dashboardModal');let students=[],activeStudent='',bookings={};
+    function toggleSibling(){const child=registration.querySelector('[name=learnerType]:checked').value==='child';$('siblingsArea').hidden=!child;$('learnerNameLabel').textContent=child?'اسم الطفل الأول':'اسم الطالب';$('parentPhoneLabel').innerHTML=(child?'رقم موبايل ولي الأمر':'رقم الموبايل')+' <span class="required-mark" aria-hidden="true">*</span>'; }
+    registration.querySelectorAll('[name=learnerType]').forEach(el=>el.addEventListener('change',toggleSibling));toggleSibling();
+    $('addSiblingBtn').addEventListener('click',()=>{const box=document.createElement('div');box.className='sibling-field';const input=document.createElement('input');input.setAttribute('aria-label','اسم الطفل الإضافي');input.placeholder='اسم الطفل الآخر';input.maxLength=50;const del=document.createElement('button');del.type='button';del.textContent='حذف';del.addEventListener('click',()=>box.remove());box.append(input,del);$('siblingList').append(box);input.focus()});
+    function studentSelection(){ $('createdProfiles').replaceChildren();students.forEach(n=>{const b=document.createElement('button');b.type='button';b.className='profile-btn'+(n===activeStudent?' active':'');b.textContent=n;b.addEventListener('click',()=>{activeStudent=n;studentSelection();changeTab('home')});$('createdProfiles').append(b)}); $('modalTitle').textContent='لوحة '+activeStudent;$('classesText').textContent=bookings[activeStudent]?'لديك حصة تجريبية توضيحية في '+bookings[activeStudent]:'ليس لديك موعد بعد. اختر موعدًا تجريبيًا داخل هذه المعاينة.';$('bookingStatus').textContent=bookings[activeStudent]?'موعد محفوظ للعرض فقط: '+bookings[activeStudent]:'اختر موعدًا تجريبيًا — كل المواعيد افتراضية.';document.querySelectorAll('#mockSlots button').forEach(b=>b.classList.toggle('selected',b.dataset.slot===bookings[activeStudent])); }
+    function changeTab(id){document.querySelectorAll('#modalTabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));document.querySelectorAll('.modal-panels [data-panel]').forEach(p=>p.classList.toggle('active',p.dataset.panel===id));}
+    registration.addEventListener('submit',e=>{e.preventDefault();if(!registration.reportValidity())return;const main=$('learnerName').value.trim();const extra=[...$('siblingList').querySelectorAll('input')].map(e=>e.value.trim()).filter(Boolean);students=[...new Set([main,...extra])];activeStudent=students[0];bookings={};$('modalWelcome').textContent='مرحبًا '+$('accountName').value.trim()+'! أنشأنا لك لوحة تجريبية محلية. يمكنك التبديل بين الطلاب واستكشاف الصفحات قبل الحجز.';studentSelection();changeTab('home');modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';$('closeModal').focus()});
+    function closeModal(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.style.overflow='';}
+    $('closeModal').addEventListener('click',closeModal);modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();nav.classList.remove('open');menuBtn.setAttribute('aria-expanded','false')}});
+    $('modalTabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)changeTab(b.dataset.tab)});
+    $('homeBookBtn').addEventListener('click',()=>changeTab('classes'));
+    $('mockSlots').addEventListener('click',e=>{const b=e.target.closest('button[data-slot]');if(!b)return;bookings[activeStudent]=b.dataset.slot;studentSelection();});
+    $('openClassDemoFromModal').addEventListener('click',()=>{closeModal();});
+  })();
+  </script>
+</body>
+</html>

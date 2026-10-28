@@ -111,18 +111,18 @@ try {
     await socket.send('Page.navigate', { url });
     const rendered = await waitFor(async () => {
       const evaluated = await socket.send('Runtime.evaluate', {
-        expression: "(() => ({ready: document.readyState, url: location.href, lang: document.documentElement?.lang, dir: document.documentElement?.dir, width: innerWidth, scrollWidth: document.documentElement?.scrollWidth, title: document.querySelector('h1')?.textContent || '', demo: document.body?.textContent.includes('نسخة تجريبية')}))()",
+        expression: "(() => ({ready: document.readyState, url: location.href, lang: document.documentElement?.lang, dir: document.documentElement?.dir, width: innerWidth, scrollWidth: document.documentElement?.scrollWidth, title: document.querySelector('h1')?.textContent || '', demo: document.body?.textContent.includes('صفحة تجريبية')}))()",
         returnByValue: true,
       });
       const value = evaluated.result?.value;
-      return value?.ready === 'complete' && value?.url === url && value?.title ? value : null;
+      return value?.ready === 'complete' && value?.url === url + 'landing-approved-v3.html' && value?.title ? value : null;
     }, 'Arabic page at ' + width + 'px');
     assert.equal(rendered.lang, 'ar');
     assert.equal(rendered.dir, 'rtl');
     assert.equal(rendered.width, width, 'Viewport mismatch');
     assert(rendered.scrollWidth <= width, 'Horizontal overflow at ' + width + 'px');
     assert(rendered.title.includes('القرآن'), 'Arabic heading missing');
-    assert(rendered.demo, 'Foundation-only disclosure missing');
+    assert(rendered.demo, 'Approved landing demo disclosure missing');
     const capture = await socket.send('Page.captureScreenshot', {
       format: 'png', captureBeyondViewport: false,
     });
