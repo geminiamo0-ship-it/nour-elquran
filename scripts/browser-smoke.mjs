@@ -132,15 +132,10 @@ try {
     console.log('Chrome browser smoke passed: ' + width + 'px, RTL, no overflow');
   }
 
-  // Verify real hydrated React behavior, not merely static HTML/screenshots.
+  // Exercise real React hydration rather than inspecting inert server HTML.
   await waitFor(async () => {
     const response = await socket.send('Runtime.evaluate', {
-      expression: "Object.keys(document.querySelector('#menuBtn') || {}).some(key => key.startsWith('__reactProps
-  for (const child of children.reverse()) child.kill('SIGTERM');
-  await sleep(500);
-  fs.rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
-}
-))",
+      expression: "Object.keys(document.querySelector('#menuBtn') || {}).some(key => key.includes('reactProps'))",
       returnByValue: true,
     });
     return response.result?.value === true;
@@ -189,7 +184,7 @@ try {
   const checks = interaction.result?.value;
   assert(checks && Object.values(checks).every(Boolean),
     'Native React interaction smoke failed: ' + JSON.stringify(checks ?? interaction));
-  console.log('Native React interaction smoke passed: nav, ayah highlight/clear, siblings, signup, demo booking and modal');
+  console.log('Native React interaction smoke passed: nav, ayah, sibling profiles, booking and modal');
 
 } finally {
   socket?.close();
