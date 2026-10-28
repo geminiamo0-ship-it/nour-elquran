@@ -249,6 +249,25 @@ try {
   assert(values && Object.values(values).every(Boolean), 'Mushaf interactions failed: ' + JSON.stringify(values ?? mushafResult));
   console.log('Student Mushaf interactive highlight, notes and clear smoke passed');
 
+
+  // S01: semantic progress table, in-row report details, no approved report filters.
+  await socket.send('Page.navigate', { url: url + 'student/progress' });
+  await waitFor(async () => {
+    const result = await socket.send('Runtime.evaluate', {
+      expression: "document.querySelector('#learner-switch')?.options.length >= 5",
+      returnByValue: true,
+    });
+    return Boolean(result.result?.value);
+  }, 'hydrated progress route');
+  const progressResult = await socket.send('Runtime.evaluate', {
+    expression: "(async()=>{ const pause=()=>new Promise(r=>setTimeout(r,150)); const switcher=document.querySelector('#learner-switch'); switcher.value='demo-active'; switcher.dispatchEvent(new Event('change',{bubbles:true})); await pause(); const table=document.querySelector('table'); const headers=[...document.querySelectorAll('table thead th')].map(x=>x.textContent); const noFilters=!document.querySelector('[aria-label=\"تصفية التقارير بحسب التقييم\"]'); const button=document.querySelector('table tbody button[aria-expanded]'); const before=button?.getAttribute('aria-expanded')==='false'; button?.click(); await pause(); const expanded=button?.getAttribute('aria-expanded')==='true'; const details=document.querySelector('table tbody tr td[colspan]')?.textContent.includes('المصحف المشروح'); switcher.value='demo-new'; switcher.dispatchEvent(new Event('change',{bubbles:true})); await pause(); const isolated=!document.querySelector('table')&&document.querySelector('#student-main')?.textContent.includes('لا توجد تقارير منشورة'); return {table:!!table,headers:headers.length===5,noFilters,before,expanded,details,isolated}; })()",
+    awaitPromise: true, returnByValue: true,
+  });
+  const prog = progressResult.result?.value;
+  assert(prog && Object.values(prog).every(Boolean),
+    'S01 progress table Chrome smoke: ' + JSON.stringify(prog ?? progressResult));
+  console.log('S01 progress RTL table, inline expansion, no filters and sibling isolation passed');
+
 } finally {
   socket?.close();
   for (const child of children.reverse()) child.kill('SIGTERM');

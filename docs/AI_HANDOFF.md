@@ -58,3 +58,9 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - State is explicitly browser-only. No actual registration/Auth, database RLS, official Quran canonical edition, lesson media, formal teacher approvals, booking, payments, or uploaded student audio. Never describe these UI previews as operational.
 - Verify full `code-quality` and governance checks, expanded Chrome smoke, mobile screenshots on the exact PR HEAD; fix failures before merge, record final run/PR SHA and whether visual review was done.
 - Next within student portal: real verified Quran source and recorder after licensing/consent, Supabase Auth with guardian verification and RLS (#46), genuine teacher-approved tasks/reports and signed archives; do NOT jump to teacher portal before student UX acceptance.
+
+## Student Portal A–Z S01 current handoff (2026-10-28)
+- Start main: `cee86d70`. User approved 16-step student-only scope, written to `docs/STUDENT_PORTAL_A_TO_Z.md`.
+- Current S01 branch: `feat/44-student-az-reports-s01` refs #44; table uses latest published report per lesson and five-row pagination with inline details, null scores distinct from zero, no report filters/charts.
+- Before merge inspect EXACT branch head Actions: repository policy, governance, lint/typecheck, unit, Next build, HTTP and Chrome at 360/390/1440 incl. academic report interaction. Fix failures and rerun; record run in status. Screenshots still need manual visual acceptance.
+- Next strictly S02 attendance register+7day appeals, but only after S01 CI/merge. Real identity, media, booking and payments remain unavailable.
