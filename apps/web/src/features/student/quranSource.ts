@@ -60,21 +60,30 @@ export function parseQuranAyahRegions(data: unknown): QuranAyahRegion[] {
   walk(data);
   return [...result.values()];
 }
+/** Quran JSON chapter ids and verse ids are explicit. Never guess an ayah from array position. */
 export function parseQuranChapter(data: unknown, surah: number): Map<number, string> {
   const result = new Map<number, string>();
-  if (!data || typeof data !== 'object') return result;
-  const verses = (data as { verses?: unknown }).verses;
-  if (!Array.isArray(verses)) return result;
-  verses.forEach((raw, index) => {
-    if (!raw || typeof raw !== 'object') return;
-    const item = raw as Record<string, unknown>;
-    if (typeof item.text !== 'string' || !item.text.trim()) return;
-    const id = typeof item.id === 'string' ? item.id : '';
-    const parts = id.split(':').map(Number);
-    const n = parts.length === 2 && parts[0] === surah && Number.isInteger(parts[1])
-      ? Number(parts[1]) : index + 1;
-    if (n > 0) result.set(n, item.text);
-  });
+  if (!Number.isInteger(surah) || surah < 1 || surah > QURAN_CHAPTER_COUNT
+    || !data || typeof data !== 'object' || Array.isArray(data)) return result;
+  const chapter = data as Record<string, unknown>;
+  // The pinned Quran JSON Uthmani files identify the chapter and verses with numeric ids.
+  if (chapter.id !== surah || !Array.isArray(chapter.verses)) return result;
+  for (const raw of chapter.verses) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
+    const verse = raw as Record<string, unknown>;
+    if (typeof verse.text !== 'string' || !verse.text.trim()) continue;
+    let ayah: number | null = null;
+    if (typeof verse.id === 'number' && Number.isInteger(verse.id)) {
+      ayah = verse.id;
+    } else if (typeof verse.id === 'string') {
+      const match = /^(\\d+):(\\d+)$/.exec(verse.id);
+      if (match && Number(match[1]) === surah) ayah = Number(match[2]);
+    }
+    if (ayah !== null && Number.isSafeInteger(ayah) && ayah > 0 && !result.has(ayah)) {
+      // Preserve the source's Quran text byte-for-byte, including diacritics and spacing.
+      result.set(ayah, verse.text);
+    }
+  }
   return result;
 }
 /** Respects surah:ayah uniqueness and keeps page order from the publisher sidecar. */
