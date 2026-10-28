@@ -412,7 +412,7 @@ try {
   await socket.send('Page.navigate',{url:url+'student/mushaf'});
   await waitFor(async()=>{
     const r=await socket.send('Runtime.evaluate',{
-      expression:"(()=>{const b=document.querySelector('[aria-label=\\"تقليب إلى الصفحة التالية\\"]');return !!b&&Object.keys(b).some(k=>k.includes('reactProps'));})()",
+      expression:`(()=>{const b=document.querySelector('[aria-label="تقليب إلى الصفحة التالية"]');return !!b&&Object.keys(b).some(k=>k.includes('reactProps'));})()`,
       returnByValue:true,
     });
     return Boolean(r.result?.value);
