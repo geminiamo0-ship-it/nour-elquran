@@ -427,11 +427,11 @@ try {
   // A passing 768px page-turn test is insufficient if the student header hides the reader footer.
   // Assert the entire reading surface owns the viewport and does not create an inner scroll trap.
   const tabletGeometry=await socket.send('Runtime.evaluate',{
-    expression:`(()=>{const stage=document.querySelector('main[aria-label="صفحات مصحف المدينة"]');const reader=stage?.parentElement?.parentElement;const footer=document.querySelector('footer[aria-label="شريط التنقل بين صفحات المصحف"]');const leaf=document.querySelector('[aria-label^="مصحف المدينة، الصفحة"]');const r=reader?.getBoundingClientRect();const f=footer?.getBoundingClientRect();const l=leaf?.getBoundingClientRect();return {fullViewport:!!r&&Math.abs(r.top)<2&&Math.abs(r.bottom-innerHeight)<2,footerVisible:!!f&&f.top>=0&&f.bottom<=innerHeight+1,leafVisible:!!l&&l.height>420&&l.top>=0&&l.bottom<=innerHeight+1,bodyLocked:document.body.style.overflow==='hidden',noNestedScroll:!!stage&&stage.scrollHeight<=stage.clientHeight+2};})()`,
+    expression:`(()=>{const stage=document.querySelector('main[aria-label="صفحات مصحف المدينة"]');const reader=stage?.parentElement?.parentElement;const footer=document.querySelector('footer[aria-label="شريط التنقل بين صفحات المصحف"]');const leaf=document.querySelector('[aria-label^="مصحف المدينة، الصفحة"]');const r=reader?.getBoundingClientRect();const f=footer?.getBoundingClientRect();const l=leaf?.getBoundingClientRect();return {fullViewport:!!r&&Math.abs(r.top)<2&&Math.abs(r.bottom-innerHeight)<2,footerVisible:!!f&&f.top>=0&&f.bottom<=innerHeight+1,leafVisible:!!l&&l.height>420&&l.top>=0&&l.bottom<=innerHeight+1,bodyLocked:document.body.style.overflow==='hidden',noNestedScroll:!!stage&&stage.scrollHeight<=stage.clientHeight+2,diagnostics:{stageClient:stage?.clientHeight,stageScroll:stage?.scrollHeight,leafHeight:l?.height,readerHeight:r?.height,warningVisible:!!document.querySelector('[role="alert"]')}};})()`,
     returnByValue:true,
   });
   const tabletGeometryValues=tabletGeometry.result?.value;
-  assert(tabletGeometryValues&&Object.values(tabletGeometryValues).every(Boolean),
+  assert(tabletGeometryValues&&['fullViewport','footerVisible','leafVisible','bodyLocked','noNestedScroll'].every(key=>tabletGeometryValues[key]),
     'Tablet Quran must fill viewport, expose footer and avoid nested scrolling: '+JSON.stringify(tabletGeometryValues??tabletGeometry));
   const tabletScreen=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
   fs.writeFileSync(path.join(screenshots,'quran-tablet-768.png'),Buffer.from(tabletScreen.data,'base64'));
