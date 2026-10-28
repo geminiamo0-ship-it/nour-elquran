@@ -1,0 +1,44 @@
+name: Vinext compatibility spike (no deployment)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/vinext-spike.sh'
+      - '.github/workflows/vinext-spike.yml'
+      - 'apps/web/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vinext-compatibility:
+    name: vinext-compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare "$(node -p 'require("./package.json").packageManager')" --activate
+      - name: Install existing Next.js baseline
+        run: pnpm install --frozen-lockfile
+      - name: Non-deploying Cloudflare vinext probe
+        run: bash scripts/vinext-spike.sh
+      - name: Upload diagnostic logs only (no cookies, HTML or private content)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: noor-vinext-compatibility-report
+          path: |
+            ${{ runner.temp }}/noor-vinext-spike/check.log
+            ${{ runner.temp }}/noor-vinext-spike/result.txt
+            ${{ runner.temp }}/noor-vinext-spike/server.log
+          if-no-files-found: warn
