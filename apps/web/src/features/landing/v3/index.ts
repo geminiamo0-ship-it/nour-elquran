@@ -13,3 +13,4 @@ export { Enrollment } from './Enrollment';
 export { Faq } from './Faq';
 export { DashboardModal } from './DashboardModal';
 export { Footer } from './Footer';
+export { LandingDemoProvider } from './LandingDemoProvider';
