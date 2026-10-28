@@ -75,3 +75,13 @@
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
 
 .miniBook { display: inline-block; font-size: 1rem; transform: rotate(-10deg); margin-inline-start: -.5rem; }
+
+/* Keyboard navigation, small screens, and accessible targets */
+.header nav a, .faq summary, .textButton { border-radius: 4px; }
+.header a:focus-visible, .actions a:focus-visible { outline: 3px solid var(--gold-dark); outline-offset: 3px; }
+@media (max-width: 360px) {
+  .header > .container { flex-wrap: wrap; padding-block: .4rem; }
+  .headerCta { margin-inline-start: auto; }
+  .hero h1 { font-size: 2.7rem; }
+  .actions > a { width: 100%; }
+}
