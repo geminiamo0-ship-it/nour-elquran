@@ -225,7 +225,7 @@ try {
     ['lessons', 'سجل الحصص'], ['training', 'التحضير قبل التسميع'],
     ['progress', 'السجل الأكاديمي'], ['notebook', 'دفتر الطالب الخاص'],
     ['subscription', 'ملخص الاشتراك'], ['account', 'ملفات الطلاب'],
-    ['mushaf', 'المصحف الشريف التفاعلي'],
+    ['mushaf', 'مصحف نور القرآن'],
   ]) {
     const response = await fetch(url + 'student/' + section, { signal: AbortSignal.timeout(10000) });
     assert.equal(response.status, 200, 'Student route did not render: ' + section);
@@ -244,7 +244,7 @@ try {
     return Boolean(result.result?.value);
   }, 'hydrated real Madinah Mushaf reader');
   const mushafResult = await socket.send('Runtime.evaluate', {
-    expression: "(async () => { const sleep=t=>new Promise(r=>setTimeout(r,t)); const input=document.querySelector('#quran-page-input');const initiallyFirst=input?.value==='1';const next=document.querySelector('button[aria-label=\"الصفحة التالية\"]');next?.click();await sleep(180);const second=document.querySelector('#quran-page-input')?.value==='2'; const ayah=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='آية بآية'); ayah?.click();await sleep(100);const toggled=ayah?.getAttribute('aria-pressed')==='true';const switcher=document.querySelector('#learner-switch');switcher.value='demo-active';switcher.dispatchEvent(new Event('change',{bubbles:true}));await sleep(180);const isolated=document.querySelector('#quran-page-input')?.value==='1';return {initiallyFirst,second,toggled,isolated};})()",
+    expression: "(async () => { const sleep=t=>new Promise(r=>setTimeout(r,t)); const input=document.querySelector('#quran-page-input');const initiallyFirst=input?.value==='1';const next=document.querySelector('button[aria-label=\"الصفحة التالية\"]');next?.click();await sleep(180);const second=document.querySelector('#quran-page-input')?.value==='2'; const ayah=document.querySelector('button[title="آية بآية"]'); ayah?.click();await sleep(100);const toggled=ayah?.getAttribute('aria-pressed')==='true';const switcher=document.querySelector('#learner-switch');switcher.value='demo-active';switcher.dispatchEvent(new Event('change',{bubbles:true}));await sleep(180);const isolated=document.querySelector('#quran-page-input')?.value==='1';return {initiallyFirst,second,toggled,isolated};})()",
     awaitPromise: true, returnByValue: true,
   });
   const mushafValues = mushafResult.result?.value;
@@ -270,7 +270,7 @@ try {
     return Boolean(check.result?.value);
   }, 'immersive Quran mobile layout');
   const readingResult = await socket.send('Runtime.evaluate', {
-    expression: "(async()=>{const sleep=t=>new Promise(r=>setTimeout(r,t)); const img=document.querySelector('[aria-label^=\"مصحف المدينة، الصفحة\"]'); const initial=img?.getBoundingClientRect(); const next=document.querySelector('button[aria-label=\"تقليب إلى الصفحة التالية\"]'); next?.click(); await sleep(120);const after=document.querySelector('[aria-label^=\"مصحف المدينة، الصفحة\"]')?.getBoundingClientRect(); const fixed=!!initial&&!!after&&initial.height>100&&Math.abs(initial.height-after.height)<2; const immersive=[...document.querySelectorAll('button')].some(x=>x.textContent.includes('الخروج من وضع القراءة')); const show=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='إظهار الأدوات');show?.click();await sleep(100);const search=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='بحث شامل');search?.click();await sleep(100);const query=!!document.querySelector('#whole-quran-query');const tools=[...document.querySelectorAll('button')].some(x=>x.textContent.trim()==='ماركر');const notes=[...document.querySelectorAll('button')].some(x=>x.textContent.includes('جميع ملاحظاتي'));return {fixed,immersive,query,tools,notes};})()",
+    expression: "(async()=>{const sleep=t=>new Promise(r=>setTimeout(r,t)); const img=document.querySelector('[aria-label^=\"مصحف المدينة، الصفحة\"]'); const initial=img?.getBoundingClientRect(); const next=document.querySelector('button[aria-label=\"تقليب إلى الصفحة التالية\"]'); next?.click(); await sleep(120);const after=document.querySelector('[aria-label^=\"مصحف المدينة، الصفحة\"]')?.getBoundingClientRect(); const fixed=!!initial&&!!after&&initial.height>100&&Math.abs(initial.height-after.height)<2; const immersive=[...document.querySelectorAll('button')].some(x=>x.textContent.includes('الخروج من وضع القراءة')); const show=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='إظهار الأدوات');show?.click();await sleep(100);const search=document.querySelector('button[aria-label="بحث شامل في المصحف"]');search?.click();await sleep(100);const query=!!document.querySelector('#whole-quran-query');const tools=!!document.querySelector('button[title="ماركر"]');const notes=[...document.querySelectorAll('button')].some(x=>x.textContent.includes('جميع ملاحظاتي'));return {fixed,immersive,query,tools,notes};})()",
     awaitPromise:true, returnByValue:true,
   });
   const readingChecks=readingResult.result?.value;

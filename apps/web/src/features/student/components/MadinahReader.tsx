@@ -262,7 +262,7 @@ export function MadinahReader() {
     <div className={css.grid}>
       <main className={css.bookStage} aria-label="صفحات مصحف المدينة">
         {mode==='madinah' ?
-          <div className={spreadPages.length===2?css.doubleBook:css.singleBook}>
+          <div className={spreadPages.length===2?css.doubleBook:css.singleBook} data-spread-pages={spreadPages.join(",")}>
             {spreadPages.map(leaf=><div key={leaf} className={css.leaf}
               onTouchStart={e=>{startTouch.current={x:e.touches[0]?.clientX??0,y:e.touches[0]?.clientY??0};}}
               onTouchEnd={e=>{
