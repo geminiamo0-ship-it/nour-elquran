@@ -250,6 +250,11 @@ try {
   const mushafValues = mushafResult.result?.value;
   assert(mushafValues && Object.values(mushafValues).every(Boolean),
     'S04 real Quran reader controls failed: ' + JSON.stringify(mushafValues ?? mushafResult));
+  const surahNavigation = await socket.send('Runtime.evaluate', {
+    expression: "Boolean(document.querySelector('#quran-surah-select'))",
+    returnByValue: true,
+  });
+  assert(surahNavigation.result?.value === true, 'Surah navigation selector is absent');
   console.log('S04 Quran 604-page reader controls, alternate ayah mode and sibling reset smoke passed');
 
 
