@@ -85,3 +85,8 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `apps/web/src/features/student/StudentSection.tsx`: route-to-component composition with profile key preventing transient cross-sibling text leaks.
 - `apps/web/src/features/student/StudentPortal.module.css`: scoped responsive styles and controls.
 - `apps/web/src/features/student/student.test.tsx`, `scripts/browser-smoke.mjs`: seven-route and interaction checks.
+
+## CORE-02 #40 — isolated vinext compatibility spike (unmerged)
+- `scripts/vinext-spike.sh`: CI-only, non-deploying adapter check/init/build/local SSR, RTL and synthetic-cookie route smoke. The fixture is generated in the ephemeral checkout and never committed.
+- `.github/workflows/vinext-spike.yml`: separate pull-request and manual diagnostic job; preserves normal Next.js build/Verify as baseline, uploads only diagnostic logs.
+- `docs/adr/0003-vinext-compatibility-spike.md`: proposed adapter decision, evidence still pending and Worker/staging acceptance gates. This does not add a production Cloudflare adapter or change runtime ownership.

@@ -58,3 +58,8 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - State is explicitly browser-only. No actual registration/Auth, database RLS, official Quran canonical edition, lesson media, formal teacher approvals, booking, payments, or uploaded student audio. Never describe these UI previews as operational.
 - Verify full `code-quality` and governance checks, expanded Chrome smoke, mobile screenshots on the exact PR HEAD; fix failures before merge, record final run/PR SHA and whether visual review was done.
 - Next within student portal: real verified Quran source and recorder after licensing/consent, Supabase Auth with guardian verification and RLS (#46), genuine teacher-approved tasks/reports and signed archives; do NOT jump to teacher portal before student UX acceptance.
+
+## 2026-10-28 — CORE-02 #40 non-deploying adapter spike
+- Source branch: `feat/40-vinext-compatibility-spike`; linked Issue #40; ADR 0003 status PROPOSED. Prior work #44 merged in PR #70; #68 remains draft and requires human review.
+- Added an isolated GitHub Actions vinext 1.3.1 check/init/build and local SSR/RTL/synthetic-cookie probe. This does not modify the existing Next.js application runtime or require Cloudflare credentials.
+- **Next exact action:** inspect the new PR head, Verify and Vinext compatibility run logs; fix real errors on this branch; document warnings, output and run URLs in #40. Follow with actual Workers runtime/staging tests only with appropriate approval. Do not claim stack compatibility from local server alone. #1 branch protection still pending owner verification.
