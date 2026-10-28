@@ -1,214 +1,353 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStudent } from '../StudentContext';
 import {
   clampQuranPage, parseQuranAyahRegions, parseQuranChapter, pageName,
-  quranChapterUrl, quranPageMetadataUrl, quranPageUrl, quranReferenceKey,
-  quranSurahIndexUrl, parseSurahIndex, type QuranSurahInfo,
-  QURAN_PAGE_COUNT, type QuranAyahRegion, type QuranViewMode,
+  quranChapterUrl, quranPageMetadataUrl, quranReferenceKey,
+  quranSurahIndexUrl, parseSurahIndex, QURAN_PAGE_COUNT,
+  type QuranAyahRegion, type QuranSurahInfo, type QuranViewMode,
 } from '../quranSource';
+import {
+  validTarget, visibleAnnotations, notePreview, targetKey, type QuranTarget,
+  type QuranAnnotation, type QuranInkStroke,
+} from '../quranAnnotations';
+import { SmoothMadinahPage } from './SmoothMadinahPage';
+import { QuranInk, type InkMode } from './QuranInk';
+import { QuranSearchPanel } from './QuranSearchPanel';
 import css from './MadinahReader.module.css';
 
-async function readJson(primary: string, fallback: string, signal: AbortSignal): Promise<unknown> {
+async function readJson(primary:string,fallback:string,signal:AbortSignal):Promise<unknown> {
   try {
-    const res = await fetch(primary, { signal });
-    if (!res.ok) throw new Error('Primary Quran source unavailable');
-    return await res.json() as unknown;
-  } catch (error) {
-    if (signal.aborted) throw error;
-    const res = await fetch(fallback, { signal });
-    if (!res.ok) throw new Error('المصدر القرآني غير متاح حاليًا');
-    return await res.json() as unknown;
+    const response=await fetch(primary,{signal});
+    if(!response.ok)throw Error('Main Quran source unavailable');
+    return await response.json() as unknown;
+  } catch(e) {
+    if(signal.aborted)throw e;
+    const response=await fetch(fallback,{signal});
+    if(!response.ok)throw Error('تعذّر الوصول إلى بيانات المصحف من المصدر المعتمد.');
+    return await response.json() as unknown;
   }
 }
+function refOf(region:QuranAyahRegion):string {return quranReferenceKey(region);}
+const palette=['#f6cd46','#86c5a8','#ec99a4','#81b5e4','#d2a7df'];
 
 export function MadinahReader() {
-  const { selected } = useStudent();
-  const [page, setPage] = useState(1);
-  const [pageEntry, setPageEntry] = useState('1');
-  const [mode, setMode] = useState<QuranViewMode>('madinah');
-  const [sourceFallback, setSourceFallback] = useState(false);
-  const [imageFailed, setImageFailed] = useState(false);
-  const [regions, setRegions] = useState<QuranAyahRegion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [texts, setTexts] = useState<Record<string,string>>({});
-  const [notes, setNotes] = useState<Record<string,string>>({});
-  const [draft, setDraft] = useState('');
-  const [search, setSearch] = useState('');
-  const [fontSize, setFontSize] = useState(27);
-  const [refresh, setRefresh] = useState(0);
-  const [surahs, setSurahs] = useState<QuranSurahInfo[]>([]);
-  const [indexError, setIndexError] = useState(false);
+  const {selected}=useStudent();
+  const [page,setPage]=useState(1);
+  const [pageEntry,setPageEntry]=useState('1');
+  const [mode,setMode]=useState<QuranViewMode>('madinah');
+  const [regions,setRegions]=useState<QuranAyahRegion[]>([]);
+  const [loading,setLoading]=useState(true);
+  const [error,setError]=useState('');
+  const [texts,setTexts]=useState<Record<string,string>>({});
+  const [surahs,setSurahs]=useState<QuranSurahInfo[]>([]);
+  const [indexError,setIndexError]=useState(false);
+  const [selectedTarget,setSelectedTarget]=useState<QuranTarget|null>(null);
+  const [pendingKey,setPendingKey]=useState<string|null>(null);
+  const [notes,setNotes]=useState<QuranAnnotation[]>([]);
+  const [draft,setDraft]=useState('');
+  const [marked,setMarked]=useState<Record<string,string>>({});
+  const [color,setColor]=useState(palette[0]!);
+  const [inkMode,setInkMode]=useState<InkMode>('off');
+  const [inkByPage,setInkByPage]=useState<Record<number,QuranInkStroke[]>>({});
+  const [redoByPage,setRedoByPage]=useState<Record<number,QuranInkStroke[]>>({});
+  const [showSearch,setShowSearch]=useState(false);
+  const [showNotes,setShowNotes]=useState(false);
+  const [showAside,setShowAside]=useState(true);
+  const [immersive,setImmersive]=useState(false);
+  const [hideChrome,setHideChrome]=useState(false);
+  const [fontSize,setFontSize]=useState(27);
+  const [localSearch,setLocalSearch]=useState('');
+  const [refresh,setRefresh]=useState(0);
+  const startTouch=useRef<{x:number;y:number}|null>(null);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    void readJson(quranSurahIndexUrl(), quranSurahIndexUrl(true), controller.signal)
-      .then((data) => {
-        if (controller.signal.aborted) return;
-        const validated = parseSurahIndex(data);
-        if (validated.length !== 114) throw new Error('Invalid surah index');
-        setSurahs(validated);
-        setIndexError(false);
-      }).catch(() => { if (!controller.signal.aborted) setIndexError(true); });
-    return () => controller.abort();
-  }, []);
+  useEffect(()=>{
+    if(window.matchMedia('(max-width:700px)').matches){setImmersive(true);setHideChrome(true);setShowAside(false);}
+  },[]);
+  useEffect(()=>{
+    if(!immersive)return;
+    const old=document.body.style.overflow;
+    document.body.style.overflow='hidden';
+    return ()=>{document.body.style.overflow=old;};
+  },[immersive]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true); setError(''); setRegions([]); setSelectedKey(null); setSourceFallback(false); setImageFailed(false);
-    void readJson(quranPageMetadataUrl(page), quranPageMetadataUrl(page,true), controller.signal)
-      .then((data) => {
-        if (controller.signal.aborted) return;
-        const normalized = parseQuranAyahRegions(data);
-        if (!normalized.length) throw new Error('الصفحة لا تحتوي على خريطة آيات موثقة.');
-        setRegions(normalized);
-      }).catch((e:unknown) => {
-        if (!controller.signal.aborted) setError(e instanceof Error ? e.message : 'تعذّر تحميل مواضع الآيات.');
-      }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    return () => controller.abort();
+  useEffect(()=>{
+    const controller=new AbortController();
+    void readJson(quranSurahIndexUrl(),quranSurahIndexUrl(true),controller.signal)
+      .then(data=>{
+        if(controller.signal.aborted)return;
+        const parsed=parseSurahIndex(data);
+        if(parsed.length!==114)throw Error('Invalid surah index');
+        setSurahs(parsed);setIndexError(false);
+      }).catch(()=>{if(!controller.signal.aborted)setIndexError(true);});
+    return ()=>controller.abort();
+  },[]);
+
+  useEffect(()=>{
+    const controller=new AbortController();
+    setLoading(true);setError('');setRegions([]);setSelectedTarget(null);
+    void readJson(quranPageMetadataUrl(page),quranPageMetadataUrl(page,true),controller.signal)
+      .then(data=>{
+        if(controller.signal.aborted)return;
+        const parsed=parseQuranAyahRegions(data);
+        if(parsed.length===0)throw Error('لم تُرجع خريطة الصفحة آيات موثقة.');
+        setRegions(parsed);
+      }).catch(e=>{
+        if(!controller.signal.aborted)setError(e instanceof Error?e.message:'تعذّر تحميل مواضع آيات الصفحة');
+      }).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
+    return ()=>controller.abort();
   },[page,refresh]);
 
-  useEffect(() => {
-    if (mode !== 'ayah' || !regions.length) return;
-    const controller = new AbortController();
-    const surahs = [...new Set(regions.map(x=>x.surah))];
-    void Promise.all(surahs.map(async (surah) => {
-      const data = await readJson(quranChapterUrl(surah),quranChapterUrl(surah,true),controller.signal);
-      const result = parseQuranChapter(data,surah);
-      return [...result].map(([ayah,text]) => [`${surah}:${ayah}`,text] as const);
-    })).then((groups) => {
-      if (!controller.signal.aborted) setTexts((old) => Object.assign({},old,...groups.map(Object.fromEntries)));
-    }).catch(() => {
-      if (!controller.signal.aborted) setError('تعذّر تحميل النص المصاحب لهذه الصفحة. يمكن متابعة عرض المصحف الأصلي.');
-    });
-    return () => controller.abort();
+  useEffect(()=>{
+    if(!pendingKey||loading||!regions.length)return;
+    const match=regions.find(r=>refOf(r)===pendingKey);
+    if(match){
+      const target:QuranTarget={page,surah:match.surah,ayah:match.ayah,wordIndex:null};
+      setSelectedTarget(target);
+      const original=notes.find(n=>n.learnerId===selected.profile.id&&targetKey(n.target)===targetKey(target));
+      setDraft(original?.text??'');
+      setShowAside(true);setShowNotes(false);
+      if(mode==='ayah'){
+        window.requestAnimationFrame(()=>document.getElementById('quran-ayah-'+pendingKey.replace(':','-'))?.scrollIntoView({block:'center',behavior:'smooth'}));
+      }
+    }
+    setPendingKey(null);
+  },[pendingKey,regions,loading,page,mode,notes,selected.profile.id]);
+
+  useEffect(()=>{
+    if(mode!=='ayah'||regions.length===0)return;
+    const controller=new AbortController();
+    const chapters=[...new Set(regions.map(r=>r.surah))];
+    void Promise.all(chapters.map(async surah=>{
+      const data=await readJson(quranChapterUrl(surah),quranChapterUrl(surah,true),controller.signal);
+      return [...parseQuranChapter(data,surah)].map(([ayah,text])=>[surah+':'+ayah,text] as const);
+    })).then(groups=>{
+      if(!controller.signal.aborted)setTexts(prev=>Object.assign({},prev,...groups.map(Object.fromEntries)));
+    }).catch(()=>{if(!controller.signal.aborted)setError('تعذّر تحميل نص الآيات؛ يمكن متابعة المصحف المصوّر.');});
+    return ()=>controller.abort();
   },[mode,regions]);
 
-  const filtered = useMemo(() => {
-    const query = search.trim();
-    if (!query) return regions;
-    return regions.filter((region) => {
-      const key = quranReferenceKey(region);
-      return key.includes(query) || (texts[key] ?? '').includes(query);
-    });
-  },[regions,search,texts]);
+  const visible=useMemo(()=>visibleAnnotations(notes,selected.profile.id),[notes,selected.profile.id]);
+  const noteByKey=useMemo(()=>new Set(visible.map(n=>n.target.surah+':'+n.target.ayah)),[visible]);
+  const filtered=useMemo(()=>{
+    const q=localSearch.trim();
+    return q?regions.filter(r=>refOf(r).includes(q)||(texts[refOf(r)]??'').includes(q)):regions;
+  },[localSearch,regions,texts]);
 
-  function go(next:number) {
-    const target=clampQuranPage(next);
-    setPage(target); setPageEntry(String(target)); setSearch('');
+  function go(n:number,focus?:string) {
+    const next=clampQuranPage(n);
+    setPage(next);setPageEntry(String(next));setLocalSearch('');
+    setPendingKey(focus??null);
   }
-  function selectAyah(key:string) {
-    setSelectedKey(key);setDraft(notes[key] ?? '');
+  function selectTarget(target:QuranTarget) {
+    if(!validTarget(target))return;
+    setSelectedTarget(target);
+    const old=visible.find(n=>n.type==='private'&&targetKey(n.target)===targetKey(target));
+    setDraft(old?.text??'');setShowAside(true);
   }
   function saveNote() {
-    if (!selectedKey) return;
-    setNotes((old)=>({...old,[selectedKey]:draft.trim().slice(0,250)}));
+    if(!selectedTarget||!validTarget(selectedTarget))return;
+    const text=notePreview(draft),key=targetKey(selectedTarget);
+    setNotes(prev=>{
+      const remaining=prev.filter(n=>!(n.learnerId===selected.profile.id&&n.type==='private'&&targetKey(n.target)===key));
+      if(!text)return remaining;
+      return [...remaining,{
+        id:'local-'+Date.now(),learnerId:selected.profile.id,type:'private',published:false,
+        authorLabel:'ملاحظتي الشخصية',target:selectedTarget,text,color,createdAt:new Date().toISOString()
+      }];
+    });
   }
+  function changeInk(strokes:QuranInkStroke[]) {
+    setInkByPage(prev=>({...prev,[page]:strokes}));setRedoByPage(prev=>({...prev,[page]:[]}));
+  }
+  function undoInk() {
+    const current=inkByPage[page]??[];
+    if(!current.length)return;
+    const last=current[current.length-1]!;
+    setInkByPage(prev=>({...prev,[page]:current.slice(0,-1)}));
+    setRedoByPage(prev=>({...prev,[page]:[...(prev[page]??[]),last]}));
+  }
+  function redoInk() {
+    const redo=redoByPage[page]??[],item=redo[redo.length-1];
+    if(!item)return;
+    setInkByPage(prev=>({...prev,[page]:[...(prev[page]??[]),item]}));
+    setRedoByPage(prev=>({...prev,[page]:redo.slice(0,-1)}));
+  }
+  const selectedKey=selectedTarget?targetKey(selectedTarget):null;
+  const activeSurah=surahs.filter(s=>s.pageNumber<=page).at(-1)?.number??'';
 
-  return <div className={css.reader}>
-    <div className={css.intro}>
-      <strong>مصحف المدينة النبوية — حفص عن عاصم</strong>
-      <p>صفحات رسمية مطابقة للأصل بصيغة SVG، مع خريطة مواضع الآيات من المصدر الموثق. لا نولّد أي كلمة من القرآن بالذكاء الاصطناعي.</p>
-    </div>
-    <div className={css.toolbar} role="group" aria-label="أوضاع المصحف">
-      <button type="button" className={mode==='madinah'?css.active:css.button}
-        aria-pressed={mode==='madinah'} onClick={()=>setMode('madinah')}>مصحف المدينة</button>
-      <button type="button" className={mode==='ayah'?css.active:css.button}
-        aria-pressed={mode==='ayah'} onClick={()=>setMode('ayah')}>آية بآية</button>
-      <label htmlFor="quran-font-size">حجم النص</label>
-      <input id="quran-font-size" type="range" min="22" max="42" step="2"
-        value={fontSize} onChange={(event)=>setFontSize(Number(event.target.value))}
-        disabled={mode==='madinah'}/>
-    </div>
-    <form className={css.navigation} onSubmit={(event)=>{
-      event.preventDefault();const n=Number(pageEntry);
-      if (Number.isInteger(n) && n>=1 && n<=QURAN_PAGE_COUNT) go(n);
-    }}>
-      <button type="button" className={css.button} disabled={page===1}
-        onClick={()=>go(page-1)} aria-label="الصفحة السابقة">السابق</button>
-      <label htmlFor="quran-page-input">الصفحة</label>
-      <input id="quran-page-input" type="number" min="1" max="604" step="1"
-        value={pageEntry} onChange={(event)=>setPageEntry(event.target.value)} dir="ltr"/>
-      <span>من {QURAN_PAGE_COUNT}</span>
-      <button type="submit" className={css.button}>انتقال</button>
-      <button type="button" className={css.button} disabled={page===QURAN_PAGE_COUNT}
-        onClick={()=>go(page+1)} aria-label="الصفحة التالية">التالي</button>
-    </form>
-    <div className={css.navigation} role="group" aria-label="الانتقال إلى سورة">
-      <label htmlFor="quran-surah-select">الانتقال للسورة</label>
-      <select id="quran-surah-select" className={css.surahSelect}
-        value={surahs.filter((surah) => surah.pageNumber <= page).at(-1)?.number ?? ''}
-        disabled={surahs.length === 0}
-        onChange={(event) => {
-          const selectedSurah = surahs.find((surah) => surah.number === Number(event.target.value));
-          if (selectedSurah) go(selectedSurah.pageNumber);
-        }}>
-        {surahs.length === 0 ? <option value="">جار تحميل فهرس السور…</option> :
-          surahs.map((surah) => <option key={surah.number} value={surah.number}>
-            {surah.number} — {surah.nameArabic} (ص {surah.pageNumber})
-          </option>)}
-      </select>
-      {indexError && <span role="status">الفهرس غير متاح؛ يمكنك استخدام رقم الصفحة مباشرة.</span>}
-    </div>
-    {error && <div className={css.warning} role="alert">{error}
-      <button type="button" onClick={()=>setRefresh((n)=>n+1)}>إعادة المحاولة</button>
-    </div>}
-    <div className={css.grid}>
-      <div className={css.pageShell}>
-        {mode==='madinah' ? <>
-          {!imageFailed ? <img key={page+'-'+sourceFallback} className={css.pageImage}
-            alt={`صفحة ${page} من مصحف المدينة النبوية برواية حفص`}
-            src={quranPageUrl(page,sourceFallback)}
-            onError={()=>{if(!sourceFallback)setSourceFallback(true);else setImageFailed(true);}} /> :
-            <div className={css.warning} role="alert">تعذر تحميل صورة الصفحة من المصدرين. تحقق من الاتصال ثم أعد المحاولة.</div>}
-        </> : <div className={css.ayahDisplay} aria-label="عرض القرآن آية بآية">
-          {loading ? <p>جار تحميل آيات الصفحة…</p> : regions.length ? regions.map((region)=>{
-            const key=quranReferenceKey(region);
-            return <button key={key} type="button" className={selectedKey===key?css.ayahSelected:css.ayah}
-              aria-pressed={selectedKey===key} onClick={()=>selectAyah(key)}
-              style={{fontSize}}>
-              {texts[key] ? <span>{texts[key]}</span> : <span>جاري تحميل نص الآية…</span>}
-              <small>﴿{region.surah}:{region.ayah}﴾</small>
-            </button>;
-          }) : <p>لا توجد بيانات آيات متاحة.</p>}
-        </div>}
-        <div className={css.pageCaption}>صفحة {pageName(page)} من 604 · {sourceFallback?'العرض المباشر من المصدر الرسمي الموثّق':'خادم أصول نور القرآن'}</div>
+  return <div className={[css.reader,immersive?css.immersive:'',hideChrome&&immersive?css.readingOnly:''].join(' ')}>
+    <div className={css.readerHeader}>
+      <strong>مصحف المدينة · حفص عن عاصم</strong>
+      <div className={css.headerActions}>
+        {immersive&&<button type="button" className={css.button} onClick={()=>setHideChrome(v=>!v)}>
+          {hideChrome?'إظهار الأدوات':'إخفاء الأدوات'}</button>}
+        <button type="button" className={css.button} onClick={()=>{setImmersive(v=>!v);setHideChrome(false);}}>
+          {immersive?'الخروج من وضع القراءة':'وضع القراءة'}</button>
       </div>
-      <aside className={css.sidebar} aria-label="آيات الصفحة والملاحظات">
+    </div>
+    <div className={css.chrome}>
+      <div className={css.toolbar} role="group" aria-label="أوضاع المصحف">
+        <button type="button" className={mode==='madinah'?css.active:css.button}
+          aria-pressed={mode==='madinah'} onClick={()=>setMode('madinah')}>مصحف المدينة</button>
+        <button type="button" className={mode==='ayah'?css.active:css.button}
+          aria-pressed={mode==='ayah'} onClick={()=>{setMode('ayah');setInkMode('off');}}>آية بآية</button>
+        <button type="button" className={showSearch?css.active:css.button}
+          onClick={()=>{setShowSearch(v=>!v);setShowAside(true);}}>بحث شامل</button>
+        <button type="button" className={showNotes?css.active:css.button}
+          onClick={()=>{setShowNotes(v=>!v);setShowAside(true);}}>جميع ملاحظاتي ({visible.length})</button>
+        <button type="button" className={css.button}
+          onClick={()=>setShowAside(v=>!v)}>{showAside?'إخفاء القائمة':'الآيات والملاحظات'}</button>
+        {mode==='ayah'&&<><label htmlFor="quran-font-size">حجم النص</label>
+          <input id="quran-font-size" type="range" min="22" max="42" step="2" value={fontSize}
+            onChange={e=>setFontSize(Number(e.target.value))}/></>}
+      </div>
+      <div className={css.toolbar} role="group" aria-label="أدوات القلم والماركر">
+        {(['off','pen','marker','eraser'] as InkMode[]).map((tool)=>
+          <button key={tool} type="button" disabled={mode!=='madinah'} aria-pressed={inkMode===tool}
+            className={inkMode===tool?css.active:css.button} onClick={()=>setInkMode(tool)}>
+            {({off:'تصفح',pen:'قلم',marker:'ماركر',eraser:'ممحاة'} as const)[tool]}</button>)}
+        <div className={css.colors} aria-label="ألوان التحديد">
+          {palette.map(c=><button key={c} type="button" className={css.colorDot}
+            style={{background:c}} aria-label={'لون '+c} aria-pressed={color===c}
+            onClick={()=>setColor(c)}/>)}
+        </div>
+        <button type="button" className={css.button} onClick={undoInk}
+          disabled={!(inkByPage[page]?.length)}>تراجع</button>
+        <button type="button" className={css.button} onClick={redoInk}
+          disabled={!(redoByPage[page]?.length)}>إعادة</button>
+      </div>
+      <form className={css.navigation} onSubmit={e=>{
+        e.preventDefault();const n=Number(pageEntry);
+        if(Number.isInteger(n)&&n>=1&&n<=QURAN_PAGE_COUNT)go(n);
+      }}>
+        <button type="button" className={css.button} disabled={page===1}
+          aria-label="الصفحة السابقة" onClick={()=>go(page-1)}>السابق</button>
+        <label htmlFor="quran-page-input">الصفحة</label>
+        <input id="quran-page-input" type="number" min="1" max="604" step="1"
+          value={pageEntry} onChange={e=>setPageEntry(e.target.value)} dir="ltr"/>
+        <span>من {QURAN_PAGE_COUNT}</span>
+        <button type="submit" className={css.button}>انتقال</button>
+        <button type="button" className={css.button} disabled={page===QURAN_PAGE_COUNT}
+          aria-label="الصفحة التالية" onClick={()=>go(page+1)}>التالي</button>
+      </form>
+      <div className={css.navigation} role="group" aria-label="الانتقال إلى سورة">
+        <label htmlFor="quran-surah-select">انتقال لسورة</label>
+        <select id="quran-surah-select" className={css.surahSelect} value={activeSurah}
+          disabled={!surahs.length} onChange={e=>{
+            const chosen=surahs.find(x=>x.number===Number(e.target.value));
+            if(chosen)go(chosen.pageNumber);
+          }}>
+          {!surahs.length?<option value="">جار تحميل فهرس السور…</option>:
+            surahs.map(x=><option key={x.number} value={x.number}>{x.number} — {x.nameArabic} (ص {x.pageNumber})</option>)}
+        </select>
+        {indexError&&<span role="status">يمكن الانتقال برقم الصفحة عند تعذر تحميل الفهرس.</span>}
+      </div>
+    </div>
+    {error&&<div role="alert" className={css.warning}>{error}
+      <button type="button" onClick={()=>setRefresh(x=>x+1)}>إعادة المحاولة</button></div>}
+    <div className={css.grid}>
+      <div className={css.pageShell}
+        onTouchStart={e=>{startTouch.current={x:e.touches[0]?.clientX??0,y:e.touches[0]?.clientY??0};}}
+        onTouchEnd={e=>{
+          const start=startTouch.current,end=e.changedTouches[0];startTouch.current=null;
+          if(!start||!end||inkMode!=='off'||mode!=='madinah')return;
+          const dx=end.clientX-start.x,dy=end.clientY-start.y;
+          if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.6)go(page+(dx>0?1:-1));
+        }}>
+        {mode==='madinah'?
+          <SmoothMadinahPage page={page} overlay={
+            <QuranInk page={page} mode={inkMode} color={color}
+              strokes={inkByPage[page]??[]} onChange={changeInk}/>}/>:
+          <div className={css.ayahDisplay} aria-label="عرض القرآن آية بآية">
+            {loading?<p>جار تحميل آيات الصفحة…</p>:regions.length===0?<p>لا توجد بيانات آيات متاحة.</p>:
+              regions.map(region=>{
+                const key=refOf(region),text=texts[key];
+                let wordIndex=0;
+                return <div id={'quran-ayah-'+key.replace(':','-')} key={key}
+                  className={css.ayahRow} style={{fontSize}}>
+                  <button type="button" aria-pressed={selectedKey===key}
+                    className={css.ayahRef} style={{background:marked[key]}}
+                    onClick={()=>selectTarget({page,surah:region.surah,ayah:region.ayah,wordIndex:null})}>
+                    ﴿{key}﴾{noteByKey.has(key)?' 📝':''}
+                  </button>{' '}
+                  {text?text.split(/(\s+)/u).map((part,i)=>{
+                    if(!part.trim())return <span key={i}>{part}</span>;
+                    wordIndex++;
+                    const k=key+':w'+wordIndex,n=wordIndex;
+                    return <button key={i} type="button" className={css.word} style={{background:marked[k]}}
+                      aria-pressed={selectedKey===k}
+                      onClick={()=>selectTarget({page,surah:region.surah,ayah:region.ayah,wordIndex:n})}>
+                      {part}</button>;
+                  }):<span>جار تحميل النص العثماني…</span>}
+                </div>;
+              })}
+          </div>}
+        <div className={css.pageCaption}>صفحة {pageName(page)} من 604 — التقليب يحتفظ بأبعاد الصفحة حتى اكتمال التحميل</div>
+      </div>
+      {showAside&&<aside className={css.sidebar} aria-label="آيات الصفحة والملاحظات">
+        {showSearch&&<QuranSearchPanel onNavigate={(target,key)=>{
+          go(target,key);setShowSearch(false);setMode('ayah');
+        }}/>}
+        {showNotes&&<section className={css.noteList} aria-label="جميع ملاحظاتي">
+          <h3>جميع ملاحظاتي</h3>
+          {visible.length===0?<p>لم تحفظ ملاحظات بعد في هذه المعاينة.</p>:
+            visible.map(n=><button key={n.id} type="button" className={css.noteJump}
+              onClick={()=>{go(n.target.page,n.target.surah+':'+n.target.ayah);setMode('ayah');}}>
+              <strong>{n.type==='teacher'?'ملاحظة الشيخ':'ملاحظتي'} · {targetKey(n.target)} · ص {n.target.page}</strong>
+              <span>{n.text}</span></button>)}
+        </section>}
         <h3>آيات هذه الصفحة</h3>
         <label htmlFor="quran-page-search">بحث في الصفحة الحالية</label>
-        <input id="quran-page-search" value={search} onChange={(e)=>setSearch(e.target.value)}
-          placeholder="نص الآية أو 2:255" />
-        {loading && <p role="status">جار تحميل خريطة الآيات…</p>}
+        <input id="quran-page-search" placeholder="نص الآية أو 2:255" value={localSearch}
+          onChange={e=>setLocalSearch(e.target.value)}/>
+        {loading&&<p role="status">تحميل مواضع الآيات…</p>}
         <div className={css.ayahLinks} aria-label="اختيار آية من الصفحة">
-          {filtered.map((ref)=>{
-            const key=quranReferenceKey(ref);
+          {filtered.map(region=>{
+            const key=refOf(region);
             return <button type="button" key={key} aria-pressed={selectedKey===key}
               className={selectedKey===key?css.active:css.button}
-              onClick={()=>selectAyah(key)}>{key}</button>;
+              style={{borderColor:marked[key]??undefined}}
+              onClick={()=>selectTarget({page,surah:region.surah,ayah:region.ayah,wordIndex:null})}>
+              {key}{noteByKey.has(key)?' ●':''}</button>;
           })}
         </div>
-        {!loading && !filtered.length && <p>لا توجد آيات مطابقة في هذه الصفحة.</p>}
-        {selectedKey && <div className={css.note}>
-          <h3>ملاحظتي الخاصة على آية {selectedKey}</h3>
-          <label htmlFor="quran-note">ملاحظة محلية، لا تُرسل للشيخ</label>
-          <textarea id="quran-note" maxLength={250} rows={3}
-            value={draft} onChange={(e)=>setDraft(e.target.value)} />
+        {selectedTarget&&<div className={css.note}>
+          <h3>آية {selectedTarget.surah}:{selectedTarget.ayah}
+            {selectedTarget.wordIndex!==null?' · الكلمة '+selectedTarget.wordIndex:''}</h3>
+          <div className={css.toolbar}>
+            <button type="button" className={css.button} onClick={()=>setMarked(prev=>({
+              ...prev,[targetKey(selectedTarget)]:color
+            }))}>تظليل هذا الموضع</button>
+            <button type="button" className={css.button} onClick={()=>setMarked(prev=>{
+              const next={...prev};delete next[targetKey(selectedTarget)];return next;
+            })}>إزالة التظليل</button>
+          </div>
+          <label htmlFor="quran-note">ملاحظة شخصية على الموضع المحدد (حتى 500 حرف)</label>
+          <textarea id="quran-note" maxLength={500} rows={4} value={draft}
+            onChange={e=>setDraft(e.target.value)}/>
           <button type="button" className={css.active} onClick={saveNote}>حفظ الملاحظة</button>
         </div>}
-        {Object.entries(notes).some(([,t])=>t) && <div className={css.noteList}>
+        {visible.filter(n=>n.target.page===page).length>0&&<div className={css.noteList}>
           <h3>ملاحظات الصفحة</h3>
-          {Object.entries(notes).filter(([,t])=>t).map(([key,text])=>
-            <p key={key}><strong>{key}:</strong> {text}</p>)}
-          <button type="button" className={css.button} onClick={()=>{setNotes({});setDraft('');setSelectedKey(null);}}>
-            مسح العلامات
-          </button>
+          {visible.filter(n=>n.target.page===page).map(n=>
+            <button key={n.id} type="button" className={css.noteJump}
+              onClick={()=>{selectTarget(n.target);setShowNotes(false);}}>
+              <strong>{targetKey(n.target)} · {n.type==='teacher'?'ملاحظة الشيخ':'ملاحظتي'}</strong>
+              <span>{n.text}</span></button>)}
         </div>}
-      </aside>
+        <p className={css.info}>ستظهر ملاحظات الشيخ المعتمدة من سجل الفصل بعد ربط خدمة التقارير الآمنة. لا تعرض هذه المعاينة بيانات شيخ وهمية.</p>
+      </aside>}
     </div>
-    <p className={css.disclaimer}>النص العثماني يُعرض دون تعديل. الملاحظات في هذه المرحلة محلية مؤقتة للطالب {selected.profile.name}، ولا تُرفع للسحابة ولا تُمثل تصحيحًا أكاديميًا. التلاوات والتحديد بالكلمات تأتي في المراحل التالية.</p>
+    <div className={css.readerFoot}>
+      <span>الملاحظات والتظليل والرسم الآن محلية مؤقتة لملف {selected.profile.name}، ولا تتم مزامنتها مع الشيخ أو الخادم بعد.</span>
+      <button type="button" className={css.button} aria-label="تقليب إلى الصفحة السابقة"
+        disabled={page===1} onClick={()=>go(page-1)}>السابق</button>
+      <strong aria-live="polite">{page} / 604</strong>
+      <button type="button" className={css.button} aria-label="تقليب إلى الصفحة التالية"
+        disabled={page===604} onClick={()=>go(page+1)}>التالي</button>
+      <button type="button" className={css.button} onClick={()=>{setShowAside(v=>!v);setHideChrome(false);}}>الآيات والملاحظات</button>
+    </div>
   </div>;
 }

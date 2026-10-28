@@ -81,3 +81,9 @@ Date / Issue / PR / exact head SHA; changed paths; tests and exact Actions URL; 
 - Source: Quran.ws version-locked Hafs-KFGQPC SVG v1.1.1 (publisher KFGQPC artwork) and Quran JSON Uthmani Hafs chapters. Frontend prefers dedicated R2 Worker `noor-quran-assets`, falling back to named versioned public sources until upload/Worker is operational. Source attribution and publisher usage rights retained.
 - `santoreno` PR #216 (Issue #215) provisions **new isolated bucket** `noor-quran-hafs-v1` and read-only `noor-quran-assets` Worker via its existing Cloudflare Actions secrets; **merge and remote workflow validation pending**. Do not claim bucket exists, that 604 assets were uploaded, or production is deployed until verified.
 - No canonical word-level interaction, persistent per-learner annotations, styled mini-player, signed media, or classroom recordings: these belong to S05–S09. Screenshot/production and exact-head CI still required.
+
+## 2026-10-28 — Quran reader experience (#85)
+- One batch feature branch for smooth fixed-aspect SVG page rendering, decode-before-swap with last page retained, bounded 10-neighbor preloading (3 concurrent), responsive immersive mobile and bottom paging controls.
+- Verse/word source-text selection, private notes list with direct page/ayah jumps, highlighter, S Pen/mouse strokes, marker, eraser, undo/redo, global Hafs search validated against 6,236 ayah page markers. Never modifies canonical Quran text.
+- Vercel preview deployments DISABLED temporarily on 3 Noor linked projects to conserve build quota. PR must pass exact-head GitHub Verify before one merge. Production deploy separate.
+- All ink/notes are DEMO local memory only; real teacher approved notes and classroom sync, durable private storage and audio/tafsir service require backend/auth/rights. Do not claim those as live.
