@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { getMockLearnerSnapshot, DEMO_PROFILES, readSessionDemoProfiles } from './mock-adapter';
-import { sanitizeStudyNote, type LearnerProfile, type LearnerSnapshot, type LocalStudyNote } from './domain';
+import { MAX_SIBLINGS, sanitizeStudyNote, type LearnerProfile, type LearnerSnapshot, type LocalStudyNote } from './domain';
 
 type StudentContextValue = {
   learners: readonly LearnerProfile[]; selectedId: string;
@@ -14,6 +14,8 @@ type StudentContextValue = {
   preparedTasks: readonly string[];
   markTaskPrepared: (taskId: string) => boolean;
   selectedAyat: readonly number[]; toggleAyah: (index: number) => void;
+  createDemoLearner: (name: string) => string | null;
+  removeDemoLearner: (id: string) => boolean;
 };
 const Context = createContext<StudentContextValue | null>(null);
 
@@ -85,9 +87,42 @@ export function StudentProvider({ children }: { children: ReactNode }) {
         ? current.filter((item) => item !== index) : [...current, index] };
     });
   }
+
+  function persistDemoNames(profiles: readonly LearnerProfile[]) {
+    try {
+      const names = profiles.filter((item) => item.id.startsWith('session-learner-')).map((item) => item.name);
+      if (names.length) window.sessionStorage.setItem('noor:demo-profiles:v1', JSON.stringify(names));
+      else window.sessionStorage.removeItem('noor:demo-profiles:v1');
+    } catch { /* Memory-only fallback when storage is restricted. */ }
+  }
+  function createDemoLearner(raw: string): string | null {
+    const name = raw.trim();
+    const current = learners.filter((item) => item.id.startsWith('session-learner-'));
+    if (!name || name.length > 50 || current.length >= MAX_SIBLINGS ||
+      learners.some((item) => item.name.trim().toLocaleLowerCase('ar') === name.toLocaleLowerCase('ar'))) return null;
+    const id = 'session-learner-' + globalThis.crypto.randomUUID();
+    const updated = [...current, { id, name, stage: 'new' as const, demo: true as const }];
+    setLearners([...updated, ...DEMO_PROFILES]);
+    persistDemoNames(updated);
+    setSelectedId(id);
+    return id;
+  }
+  function removeDemoLearner(id: string): boolean {
+    if (!learners.some((item) => item.id === id && id.startsWith('session-learner-'))) return false;
+    const updated = learners.filter((item) => item.id !== id);
+    setLearners(updated);
+    persistDemoNames(updated);
+    if (selectedId === id) setSelectedId(updated[0]?.id ?? 'demo-new');
+    setNotesByLearner((prev) => { const next = { ...prev }; delete next[id]; return next; });
+    setDraftsByLearner((prev) => { const next = { ...prev }; delete next[id]; return next; });
+    setPreparedByLearner((prev) => { const next = { ...prev }; delete next[id]; return next; });
+    setAyatByLearner((prev) => { const next = { ...prev }; delete next[id]; return next; });
+    setCompleted((prev) => { const next = { ...prev }; delete next[id]; return next; });
+    return true;
+  }
   const value = { learners, selectedId: profile.id, selected, selectLearner, finished, toggleTask,
     notes, addNote, removeNote, taskDrafts, updateTaskDraft, preparedTasks,
-    markTaskPrepared, selectedAyat, toggleAyah };
+    markTaskPrepared, selectedAyat, toggleAyah, createDemoLearner, removeDemoLearner };
 
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
