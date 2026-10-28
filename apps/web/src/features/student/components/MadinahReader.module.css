@@ -1,0 +1,32 @@
+.reader { display:grid;gap:16px;direction:rtl;color:#2b4836; }
+.intro {background:#f7f1df;border-inline-start:4px solid #b58d41;padding:14px 18px;border-radius:8px;}
+.intro strong {font-size:17px;font-weight:800;}.intro p {margin:7px 0 0;line-height:1.8;color:#647363;font-size:13px;}
+.toolbar,.navigation {display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 14px;background:#fffdf8;border:1px solid #e3d8bd;border-radius:8px;}
+.button,.active {border:1px solid #c8b48a;padding:8px 13px;min-height:42px;border-radius:7px;cursor:pointer;background:#fffdf7;color:#355442;font:inherit;font-size:13px;}
+.active {background:#30533e;border-color:#30533e;color:#fffdf1;}
+.button:disabled,.active:disabled {opacity:.45;cursor:not-allowed;}
+.button:focus-visible,.active:focus-visible,.navigation input:focus-visible,.sidebar input:focus-visible,.sidebar textarea:focus-visible,.ayah:focus-visible,.ayahSelected:focus-visible {outline:3px solid #aa8739;outline-offset:2px;}
+.navigation input {width:78px;min-height:42px;border:1px solid #c9bc9f;border-radius:6px;text-align:center;font-size:17px;background:#fff;}
+.navigation label,.toolbar label {font-weight:700;font-size:13px;}
+.navigation span {font-size:12px;color:#66766a;}
+.grid {display:grid;grid-template-columns:minmax(0,2.1fr) minmax(220px,1fr);gap:17px;align-items:start;}
+.pageShell {display:grid;justify-items:center;background:#fcf8ee;border:1px solid #d5c49f;border-radius:12px;padding:16px;min-width:0;}
+.pageImage {display:block;max-width:100%;width:min(100%,490px);height:auto;object-fit:contain;filter:drop-shadow(0 5px 9px #523b2016);}
+.pageCaption {color:#6b7b69;font-size:12px;text-align:center;margin-top:9px;}
+.sidebar {background:#fffdf8;border:1px solid #e5d9c4;border-radius:10px;padding:16px;display:grid;gap:10px;min-width:0;position:sticky;top:18px;}
+.sidebar h3 {font-size:18px;margin:0;font-weight:800;color:#2f503c;}
+.sidebar label {font-size:12px;font-weight:750;}
+.sidebar input,.sidebar textarea {border:1px solid #c5b898;padding:11px;border-radius:7px;min-width:0;background:#fff;color:#263b2d;font:inherit;}
+.ayahLinks {display:flex;gap:7px;flex-wrap:wrap;max-height:240px;overflow:auto;align-content:start;}
+.ayahLinks button {min-width:62px;direction:ltr;}
+.ayahDisplay {display:grid;gap:13px;align-content:start;width:100%;max-width:600px;min-height:360px;}
+.ayah,.ayahSelected {font-family:'Amiri',serif;line-height:2.1;cursor:pointer;text-align:right;background:#fffdf7;border:1px solid #e3d6b6;padding:13px 15px;color:#283e32;border-radius:8px;width:100%;}
+.ayahSelected {background:#f0e0aa;border-color:#b48a34;}
+.ayah small,.ayahSelected small {display:inline;margin-right:8px;font:500 12px/1.2 'Tajawal',sans-serif;color:#796034;white-space:nowrap;direction:ltr;}
+.note,.noteList {border-top:1px solid #e7dec9;padding-top:12px;display:grid;gap:8px;}
+.noteList p {font-size:12px;line-height:1.7;margin:0;overflow-wrap:anywhere;}
+.warning {padding:14px;border:1px solid #c68e67;border-radius:8px;color:#78402d;background:#fff6ec;font-size:13px;line-height:1.7;}
+.warning button {margin-inline-start:12px;padding:6px 10px;border:1px solid #c68e67;border-radius:5px;background:transparent;cursor:pointer;}
+.disclaimer {font-size:12px;color:#657365;line-height:1.8;margin:0;padding:6px;}
+@media(max-width:820px){.grid {grid-template-columns:minmax(0,1fr);}.sidebar {position:static;}.pageShell {padding:10px;}.pageImage {width:min(100%,490px);}}
+@media(max-width:390px){.toolbar,.navigation {gap:5px;padding:9px;}.button,.active {padding:7px 10px;font-size:12px;}.sidebar {padding:12px;}}
