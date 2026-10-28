@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { boundaryError, findCycle, inspectArchitecture } from '../scripts/check-architecture.mjs';
+import { boundaryError, resolvedBoundaryError, findCycle, inspectArchitecture } from '../scripts/check-architecture.mjs';
 
 test('shared UI must never import a feature', () => {
   assert.match(boundaryError('shared/ui/Panel.tsx', '@/features/student-dashboard'), /Shared/);
@@ -18,4 +18,10 @@ test('import cycles are detected', () => {
 
 test('current repository feature graph has no violations', () => {
   assert.deepEqual(inspectArchitecture(), []);
+});
+
+test('relative imports cannot bypass feature boundaries', () => {
+  assert.match(resolvedBoundaryError('features/student/Card.tsx', 'features/teacher/components/Teacher.tsx'), /public index/);
+  assert.equal(resolvedBoundaryError('features/student/Card.tsx', 'features/teacher/index.ts'), null);
+  assert.match(resolvedBoundaryError('shared/ui/Panel.tsx', 'features/student/index.ts'), /Shared/);
 });
