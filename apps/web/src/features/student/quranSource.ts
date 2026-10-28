@@ -72,7 +72,7 @@ export function parseQuranChapter(data: unknown, surah: number): Map<number, str
     const id = typeof item.id === 'string' ? item.id : '';
     const parts = id.split(':').map(Number);
     const n = parts.length === 2 && parts[0] === surah && Number.isInteger(parts[1])
-      ? parts[1] : index + 1;
+      ? Number(parts[1]) : index + 1;
     if (n > 0) result.set(n, item.text);
   });
   return result;
