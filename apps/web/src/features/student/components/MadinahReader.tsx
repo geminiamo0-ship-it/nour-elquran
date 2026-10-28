@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStudent } from '../StudentContext';
 import {
-  clampQuranPage, parseQuranAyahRegions, parseQuranChapter, pageName,
+  clampQuranPage, parseQuranAyahRegions, parseQuranChapter,
   quranChapterUrl, quranPageMetadataUrl, quranReferenceKey,
   quranSurahIndexUrl, parseSurahIndex, QURAN_PAGE_COUNT,
   type QuranAyahRegion, type QuranSurahInfo, type QuranViewMode,
