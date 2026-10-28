@@ -28,7 +28,8 @@ function Frame({ children }: { children: ReactNode }) {
       <span aria-hidden="true" className={styles.navIcon}>{item.icon}</span><span>{item.label}</span>
     </Link>
   ));
-  return <div className={styles.root} id="student-top">
+  const inMushaf = pathname === '/student/mushaf';
+  return <div className={inMushaf ? `${styles.root} ${styles.mushafScreen}` : styles.root} id="student-top">
     <div className={styles.demoBanner} role="note">معاينة تفاعلية للواجهة فقط — لا توجد حسابات أو حصص أو اشتراكات حقيقية</div>
     <header className={styles.topBar}>
       <div className={styles.topContent}>
