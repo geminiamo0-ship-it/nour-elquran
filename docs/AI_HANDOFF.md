@@ -1,5 +1,12 @@
 # AI agent handoff contract
 
+## AUTH-01 #110 / PR #111 — current continuation
+- #109 merged as `a8ea58cdc76c25ad89ff02bb1e280bd3b90559e4`; postmerge Verify 40800758113 succeeded. Earlier entries below are historical.
+- AUTH-01 code head `e1fd72e68a786d7c41497d124b3c91cc332fce5b` passed **all four jobs** in [Verify 40802629650](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40802629650): strict types, unit/build/Chrome and native local auth/session/ownership/rate-limit/logout/disabled/expired acceptance. 26 Node + 22 SQLite backend tests; maintained Better Auth + Drizzle, additive 0002, default-disabled same-origin wrappers. See workers/api/README.md and ADR 0005.
+- Final docs and explicit session DTO assertions were added after that verified head. Recheck newest PR head and all four jobs, record evidence in #110/PR, then merge and inspect main. Do not infer newer CI from older green runs.
+- No remote provision/deploy, real users or phone messages. Keep #46 OPEN for frontend session UX, delivery-backed verification/recovery, pre-registration abuse prevention, restricted-child and staff flows, cloud staging and restore rehearsal. A password does not verify phone ownership. Raw internal auth endpoints must remain unreachable.
+- Next exact implementation after this PR: existing signup/profile UI integration in its own linked issue, preserving demo disclosure and default-off deployment until rollout prerequisites pass.
+
 ## Current continuation — #46 native local D1 gate (2026-10-29, branch-only)
 - Main baseline `dc3da3e041c57e9e6af8734fc2bb323885f9be60`, merged #108; #104 closed, #46 open. This branch introduces `scripts/cloudflare-local-smoke.sh` and a separate `cloudflare-local-d1` Verify job.
 - Disposable local Wrangler 4.45.0 only: apply migration twice, run real Worker with same local D1 persistence, probe /health, /ready, /v1 and forged identity. Never use --remote or deploy. PR #109 code head `c098fad5476ee276e17887e3a32c8cdca4f52fb9` passed all four jobs in [Verify 40795971889](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40795971889), including native local D1 migration replay and Worker HTTP. This is **local only**, not cloud staging; recheck the newest docs-only commit's exact-head CI before merge.

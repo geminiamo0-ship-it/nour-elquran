@@ -1,5 +1,12 @@
 # PROJECT_STATUS — verified handoff state
 
+## AUTH-01 #110 / PR #111 — 2026-10-29, native implementation verified before final handoff
+- Main includes #109, merge `a8ea58cdc76c25ad89ff02bb1e280bd3b90559e4`; its postmerge [Verify 40800758113](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40800758113) passed. #46 remains open.
+- AUTH-01 implements pinned Better Auth 1.7.14 + Drizzle 0.45.2 on Workers/D1: phone/password registration/login, signed HttpOnly session, D1 revalidation/logout revocation, and owner-scoped learner create/list/read using the existing owner-read SQL boundary. Default OFF until explicitly configured. Phone ownership remains unverified; no OTP/recovery/messages enabled. See [ADR 0005](docs/adr/0005-d1-phone-password-auth.md).
+- **Verified code head `e1fd72e68a786d7c41497d124b3c91cc332fce5b`: [Verify 40802629650](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40802629650), all four jobs SUCCESS.** Includes 26 Node + 22 SQLite backend tests, existing frontend/build/Chrome regression, native local migration replay and real Better Auth signup/login, cross-account denial, profile cap, origin/body restrictions, persistent credential throttling, logout replay, account disable and expiry. First run 40802500608 passed native but failed two unused smoke declarations; corrected before the green run.
+- Final handoff/docs and explicit session-response assertions follow that code head; inspect their exact-head CI in #110/PR #111 before merge. Native evidence is local, not cloud staging.
+- No cloud resources, remote migrations, real users or frontend auth integration. Next exact action after #111: connect existing signup/profile UI via a separate issue; #46 also retains phone verification/recovery, restricted child/staff flows, isolated staging and operational acceptance.
+
 ## Active #46 native local runtime gate — 2026-10-29 (unmerged)
 - Baseline main `dc3da3e041c57e9e6af8734fc2bb323885f9be60` is the merged CF-01 #108; [main Verify 40792047893](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40792047893) passed. #104 is CLOSED; #46 and #102 remain OPEN.
 - Branch `test/46-native-local-d1-worker-gate` adds a disposable **Wrangler local** D1 migration replay + Worker HTTP gate to Verify. It checks the actual Worker D1 binding reports `database: ready` while all protected routes stay closed even with forged headers. Uses pinned Wrangler 4.45.0; no cloud account, remote D1, deployment, user data or new runtime dependencies.

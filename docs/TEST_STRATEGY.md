@@ -1,5 +1,10 @@
 # Verification and test strategy
 
+## AUTH-01 #110 native local acceptance
+- `pnpm test:backend`: 26 dependency-free Node tests (including E.164/Egypt normalization, strict HTTPS opt-in and bounded JSON) plus 22 SQLite core tests. These alone do not execute Better Auth.
+- `bash scripts/cloudflare-auth-smoke.sh`: installs no remote resources; runs pinned Wrangler on isolated local D1 with both migrations and a temporary secret. Requires installed root dependencies. Tests real Better Auth signup/phone login, HttpOnly/SameSite cookie, wrong password, account/learner ownership, forged identity rejection, body-key and origin restrictions, profile cap, blocked raw auth routes, logout replay, disabled account and expired session rejection.
+- Verify retains default-disabled native migration replay and all existing lint/type/unit/build/HTTP/Chrome gates. Synthetic local acceptance is separate from cloud staging, real phone delivery, recovery, child-session policy and browser auth integration.
+
 ## #46 native Cloudflare-local verification gate (unmerged)
 - Dedicated Verify job `cloudflare-local-d1` uses pinned Wrangler 4.45.0, isolated temporary persistence, applies the D1 migration twice, starts the Worker locally with the same D1 binding, and asserts /health 200, /ready 503 with `database: ready`, forged /v1 503, and unknown route 404.
 - Fail-closed is intentional until real auth exists. This tests native **local** Worker/D1 rather than only Node/Python emulation; it does not establish remote D1, production configuration, cookie/session validation, billing or PITR. Verify exact head and do not count a queued/failed job as a pass.

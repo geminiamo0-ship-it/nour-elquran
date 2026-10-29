@@ -1,5 +1,18 @@
 # Repository map and file ownership
 
+## AUTH-01 #110
+- `docs/adr/0005-d1-phone-password-auth.md`: maintained-library choice, phone/password integration default, verification/recovery rollout prerequisites and safe rollback.
+- `workers/api/src/auth/{settings,config,schema}.ts`: explicit opt-in configuration, pinned Better Auth + first-party Drizzle D1 adapter and matching SQLite models. No home-grown password hashing or session signing.
+- `workers/api/src/auth/{routes,input,accounts}.ts`: bounded/whitelisted public credentials and learner routes; normalize phone, enforce origin, map verified session subject to active core account, query ownership in SQL. `responses.ts` centralizes non-cacheable safe responses.
+- `workers/api/migrations/0002_auth.sql`: additive auth users/sessions/credentials/verifications/rate-limit tables and database-enforced eight-active-learner insertion cap. 0001 is unchanged.
+- `scripts/cloudflare-auth-smoke.{sh,mjs}`: disposable native local registration/session/ownership/revocation/expiry gate, included in the fourth Verify job. Root manifest/lock pin Better Auth 1.7.14 and Drizzle 0.45.2; Wrangler enables nodejs_compat.
+
+## #110 auth integration (draft PR #111; no HTTP auth yet)
+- `workers/api/src/owner-learners.ts`: D1 read-only account-to-learner boundary requiring server-verified auth subject, active account/profile filtering and optional child scope; never accepts caller-supplied account ownership. Not wired to public routes until Better Auth sessions exist.
+- `workers/api/tests/owner-learners.test.ts`: Node SQL parameterization/child-scope regression; `workers/api/tests/test_owner_queries.py`: Python SQLite integration against actual core migration and exact TypeScript SQL, synthetic only.
+- `pnpm-lock.yaml`: pinned Better Auth/Drizzle dependency graph generated in one-time GitHub Actions; temporary resolver workflow removed. No schema, login, session, provider messaging or deployment is implemented.
+
+
 ## #46 native local runtime verification (branch-only)
 - `scripts/cloudflare-local-smoke.sh`: disposable local Wrangler 4.45.0 D1 migration replay and Worker HTTP fail-closed smoke; no remote commands or real records.
 - `.github/workflows/verify.yml`: adds independent `cloudflare-local-d1` job. Existing repository-policy, governance-tests and code-quality jobs are unchanged. Native local is not deployed staging.

@@ -96,5 +96,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install pinned application dependencies
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.22.0 --activate
+          pnpm install --frozen-lockfile
       - name: Native local D1 migration and Worker fail-closed smoke
         run: bash scripts/cloudflare-local-smoke.sh
+      - name: Native local Better Auth session and learner ownership smoke
+        run: bash scripts/cloudflare-auth-smoke.sh
