@@ -77,6 +77,18 @@ class ProfileLifecycleTests(unittest.TestCase):
         with self.assertRaises(sqlite3.IntegrityError):self.issue(event(9,action='archive'))
         self.assertEqual(self.db.execute("SELECT count(*) FROM learner_profile_events").fetchone(),(1,))
 
+    def test_open_scheduled_or_live_lesson_blocks_archive_without_audit(self):
+        for status in ('scheduled','live'):
+            self.db.execute("UPDATE lessons SET status=? WHERE id='lesson-a'",(status,))
+            with self.assertRaisesRegex(sqlite3.IntegrityError,'PROFILE_HAS_OPEN_LESSONS'):
+                self.issue(event(30 if status=='scheduled' else 31,action='archive'))
+            self.assertEqual(self.db.execute("SELECT status,revision FROM learners WHERE id='a-1'").fetchone(),
+                             ('active',1))
+            self.assertEqual(self.db.execute("SELECT count(*) FROM learner_profile_events").fetchone(),(0,))
+        self.db.execute("UPDATE lessons SET status='completed' WHERE id='lesson-a'")
+        self.issue(event(32,action='archive'))
+        self.assertEqual(self.db.execute("SELECT status FROM learners WHERE id='a-1'").fetchone(),('archived',))
+
     def test_disabled_household_is_denied(self):
         self.db.execute("UPDATE accounts SET status='disabled' WHERE id='account-a'")
         with self.assertRaises(sqlite3.IntegrityError):self.issue(event(11))
