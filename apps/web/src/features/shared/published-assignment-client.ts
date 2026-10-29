@@ -28,7 +28,7 @@ export function parsePublishedTasks(raw:unknown):readonly PublishedAssignment[]{
    Number.isSafeInteger(x)&&Number(x)>=min&&Number(x)<=max;
   if(typeof v.id!=='string'||!/^[-a-f\d]{36}$/i.test(v.id)||
     typeof v.learnerId!=='string'||!checkId(v.learnerId)||
-    !['memorization','revision','recitation'].includes(String(v.kind))||
+    (typeof v.kind!=='string'||!['memorization','revision','recitation'].includes(v.kind))||
     typeof v.editionId!=='string'||!/^[a-zA-Z0-9_.:-]{1,80}$/.test(v.editionId)||
     !integer(v.surah,1,114)||!integer(v.fromAyah,1,286)||
     !integer(v.toAyah,Number(v.fromAyah),286)||

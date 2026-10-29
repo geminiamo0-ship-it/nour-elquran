@@ -1,6 +1,10 @@
+## #173 exact next action — strict DTO parser hardening
+- `feat/173-published-assignments-main` now includes server and client tests for JSON arrays masquerading as valid string fields (operation UUID, edition, assignment kind). Reject before any D1 bind or UI display; no permissive `String(...)` coercion for protected fields.
+- Next: inspect draft PR exact-head fast Verify (Node/TS/Vitest/native D1 and Better Auth); if green and review accepted, merge with postmerge Verify and run scoped Noor Dev D1 publish/reload/role acceptance. Do not close #173 until that evidence exists; no audio/Production.
+
 ## Phase 05A #173 current source handoff
-- Branch `feat/173-published-assignments-main` supersedes conflicting draft branch `feat/173-published-assignments` after Noor teacher static route #169 merged. Worker `published-assignments.ts`, migration 0010, shared client and Student Training/Teacher Assignments UI are source-only.
-- Next fast Verify must cover sqlite native migration/Better Auth teacher publish + owner read, no automatic Chrome. After merge and success, targeted Dev publish/reload/role checks; audio uploads and grading are separate Phase 05B/06. Keep #173 open until remote acceptance.
+- The Phase 05A Worker `published-assignments.ts`, migration 0010, shared client and Student Training/Teacher Assignments UI reached `main` in `bff8c6be7015a0a3fd48254158f5e93b58e23527`. Fast Verify run [40970199798](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40970199798) passed on PR head `845d89f5...`; this does not prove remote Dev acceptance.
+- Draft PR #177 is a narrow follow-up parser safety fix. Next: exact-head Verify + review for #177, then targeted isolated Dev publish/reload/role checks. Audio uploads and grading are separate Phase 05B/06. Keep #173 open until remote acceptance.
 
 ## Active blocker #169 — connected teacher route trailing slash
 - The scoped Dev build and D1/owner lifecycle checks succeeded, but the targeted teacher browser screenshot in Santoreno run 40968034708 showed generic "هذا القسم قيد ربط الـBackend" with banner "بوابة الشيخ المتصلة". Root cause: static URL `/teacher/students/` vs strict unsuffixed check in `TeacherReadOnlyView`.

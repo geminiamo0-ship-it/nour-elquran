@@ -19,8 +19,9 @@ export function parsePublishAssignment(raw:unknown):AssignmentPublish|null{
  if(!raw||typeof raw!=='object'||Array.isArray(raw))return null;
  const v=raw as Record<string,unknown>;
  if(Object.keys(v).length!==keys.length||!keys.every(k=>k in v)||
-    !operationId.test(String(v.operationId))||!['memorization','revision','recitation'].includes(String(v.kind))||
-    !edition.test(String(v.editionId))||![v.surah,v.fromAyah,v.toAyah,v.dueAtMs].every(Number.isSafeInteger)||
+    typeof v.operationId!=='string'||typeof v.kind!=='string'||typeof v.editionId!=='string'||
+    !operationId.test(v.operationId)||!['memorization','revision','recitation'].includes(v.kind)||
+    !edition.test(v.editionId)||![v.surah,v.fromAyah,v.toAyah,v.dueAtMs].every(Number.isSafeInteger)||
     Number(v.surah)<1||Number(v.surah)>114||Number(v.fromAyah)<1||
     Number(v.toAyah)<Number(v.fromAyah)||
     typeof v.instructions!=='string'||v.instructions.trim().length<1||
