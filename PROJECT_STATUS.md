@@ -176,6 +176,10 @@ Date / Issue / PR / exact head SHA; changed paths; tests and exact Actions URL; 
 
 
 
+## 2026-10-29 — Classroom booking eligibility hardening (PR #121)
+- New D1 triggers reject new scheduled bookings and canceled-slot reactivation/reassignment when the acting teacher is disabled or not qualified. Existing completed historical lessons remain unchanged; qualification is not a substitute for runtime role/presence authorization.
+- Added three synthetic SQLite regressions for ineligible insert, canceled reactivation and atomic reassignment/history. Branch commit `f957c31f0e425b44b93cd28e86e4267ec859cee0` contains the code/tests; **exact-head CI remains to be checked** after documentation updates. No remote migration or production changes.
+
 ## 2026-10-29 — Classroom implementation begins: 40-minute booking guard (#120 / PR #121)
 
 Owner authorized execution of the full classroom implementation plan #120. A focused **draft/unmerged** PR #121 proposes `0003_teacher_schedule.sql` to enforce 40-minute teacher+learner bookings and no overlaps, with SQLite regression tests. Preserve 30-minute instructional entitlement, manual teacher-only Start/End, and 40-minute calendar interval as distinct concepts. No actual classroom media/sync, scheduler HTTP endpoint, remote migration, or production deployment is claimed. Next: exact-head CI, migration compatibility, then a separate teacher/learner presence and Start/End lifecycle issue/PR; reconcile LiveKit Cloud versus RealtimeKit ADR before media integration.
