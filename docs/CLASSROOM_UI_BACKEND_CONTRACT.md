@@ -55,3 +55,14 @@
 Run exact-head GitHub CI: TypeScript strict, Vitest, architecture boundaries, full Next build, Chrome at 360/390/1440 with camera/mic mock indicators, and isolated native Cloudflare D1 smoke. Then real two-device Cairo/Egypt network, LiveKit token expiration/revocation, DO crash/replay and private R2 archive integration before claiming the class works. No deployed live functionality or LiveKit Secret is part of this PR.
 
 **Next coding after preview:** authorized Lesson DO authenticated two-client presence plus Worker session-backed Start/End, then LiveKit token/SDK, actual shared annotations, report archive and homework. Do not promote the demo role switch to an authentication mechanism.
+
+
+## UX viewport/immersive mode acceptance — owner feedback 2026-10-29
+
+Owner reviewed the deployed live preview screenshot and requested no document-level vertical scrolling; teacher must see Quran, important controls and camera without scrolling, plus a prominent `وضع الحصة` immersive toggle. **Mobile student** specifically prioritizes Sheikh video first and the synced Quran second; everything else is tertiary.
+
+- Preview `ClassroomPreview` provides `focusMode` / root-scoped Fullscreen API request with CSS viewport-contained fallback and explicit exit, no A/V permission changes. Fullscreen is a presentation toggle, **NOT** educational lesson End/Start and not an auth state. Browser Escape exits true fullscreen.
+- CSS uses a `100dvh` grid/flex shell and consumes leftover height, **without document-level scroll**. Fixed toolbar/status, constrained Quran with original 345:550 ratio; only the independent teacher corrections/notes panel may scroll internally. All required drawing, navigation, Start/End and teacher-mute controls remain accessible; secondary reminders and explanatory text compact/hide in focus mode.
+- Sheikh desktop: shared Quran largest middle pane; side camera and corrections always bounded within viewport. Sheikh mobile: Quran first with compact docked student camera, and corrections/grade sheet toggled as an overlay without displacing Quran.
+- Student mobile: remote **Sheikh** camera pinned above the Quran, both within viewport; lesson-only tools reduced, no permission to navigate Quran or end lesson. A/V provider still not connected; placeholder accurately discloses it. Do not interpret mock camera as live.
+- At 360/390/768/1440 px real Chrome, verify document height never exceeds viewport, Quran sheet bounds stay inside stage, student video is above Quran on phones, focus button changes state without auto-End. Test real mobile Chrome/Samsung browser safe-area/small landscape after LiveKit integration; page zoom and OS accessibility must not clip essential controls.

@@ -632,6 +632,60 @@ try {
   const classroomChecks=classroomInteraction.result?.value;
   assert(classroomChecks&&Object.values(classroomChecks).every(Boolean),
     'Classroom React safety preview smoke failed: '+JSON.stringify(classroomChecks??classroomInteraction));
+
+  // Immersive focus layout #50: no document scrollbar; the Quran sheet must
+  // fit inside its stage. Mobile learner view shows Sheikh video ABOVE Quran.
+  for(const width of [360,390,768,1440]){
+    await socket.send('Emulation.setDeviceMetricsOverride',{
+      width,height:900,deviceScaleFactor:1,mobile:false,
+    });
+    await socket.send('Page.navigate',{url:url+'classroom'});
+    await waitFor(async()=>{
+      const x=await socket.send('Runtime.evaluate',{
+        expression:"(()=>{const el=document.querySelector('select[aria-label=\\\"تبديل منظور المعاينة\\\"]');return !!el&&Object.keys(el).some(k=>k.startsWith('__reactProps'));})()",
+        returnByValue:true,
+      });
+      return x.result?.value===true;
+    },'immersive viewport hydration '+width);
+    await socket.send('Runtime.evaluate',{
+      expression:"(()=>{const sel=document.querySelector('select[aria-label=\\\"تبديل منظور المعاينة\\\"]'); sel.value='student';sel.dispatchEvent(new Event('change',{bubbles:true}));return true;})()",
+      returnByValue:true,
+    });
+    await sleep(300);
+    const geometry=await socket.send('Runtime.evaluate',{
+      expression:`(()=>{
+        const quran=document.querySelector('[aria-label="المصحف المشترك داخل الفصل"]');
+        const video=document.querySelector('[aria-label="لوحة فيديو المشاركين"]');
+        const sheet=document.querySelector('[aria-label^="مصحف المدينة، الصفحة"]');
+        const qr=quran?.getBoundingClientRect(),vr=video?.getBoundingClientRect(),
+              sr=sheet?.getBoundingClientRect();
+        return {
+          noPageScroll:document.documentElement.scrollHeight<=innerHeight+2,
+          videoFirst:innerWidth>760 || (!!vr&&!!qr&&vr.top<qr.top&&vr.bottom<=qr.top+3),
+          sheetFits:!!sr&&!!qr&&sr.top>=qr.top-3&&sr.bottom<=qr.bottom+3,
+          windowHeight:innerHeight,documentHeight:document.documentElement.scrollHeight,
+          quranTop:qr?.top,videoTop:vr?.top,sheetBottom:sr?.bottom,quranBottom:qr?.bottom,
+          role:document.querySelector('[data-view-role]')?.getAttribute('data-view-role')
+        };
+      })()`,
+      returnByValue:true,
+    });
+    await socket.send('Runtime.evaluate',{
+      expression:"(()=>{[...document.querySelectorAll('button')].find(b=>b.textContent.includes('وضع الحصة'))?.click();return true;})()",
+      returnByValue:true,
+    });
+    await sleep(160);
+    const focusCheck=await socket.send('Runtime.evaluate',{
+      expression:"document.querySelector('[data-focus]')?.getAttribute('data-focus')==='on'",
+      returnByValue:true,
+    });
+    const actual={...(geometry.result?.value||{}),focusOn:focusCheck.result?.value===true};
+    for(const field of ['noPageScroll','videoFirst','sheetFits','focusOn']){
+      assert(actual?.[field]===true,'Immersive '+width+'px '+field+' failed: '+JSON.stringify(actual));
+    }
+  }
+  console.log('Immersive no-scroll classroom and student-first Sheikh video Chrome checks passed');
+
   console.log('Classroom reader, waiting room, teacher-only controls and 360/390/1440 Chrome smoke passed');
 
 } finally {
