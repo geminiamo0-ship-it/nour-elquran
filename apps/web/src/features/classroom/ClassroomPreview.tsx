@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {ReaderPrintedPage,targetKey} from '@/features/student';
 import {ClassroomControls} from './ClassroomControls';
+import {ClassroomSessionHeader} from './ClassroomSessionHeader';
 import {ClassroomMedia} from './ClassroomMedia';
 import {ClassroomSidePanel} from './ClassroomSidePanel';
 import {useClassroomPreview} from './useClassroomPreview';
@@ -13,7 +14,6 @@ export function ClassroomPreview(){
   const rootRef=useRef<HTMLDivElement>(null);
   const [focusMode,setFocusMode]=useState(false);
   const [panelOpen,setPanelOpen]=useState(false);
-  const [compactToolbar,setCompactToolbar]=useState(false);
   useEffect(()=>{
     const handler=()=>{ if(!document.fullscreenElement)setFocusMode(false); };
     document.addEventListener('fullscreenchange',handler);
@@ -31,21 +31,11 @@ export function ClassroomPreview(){
   const {room,role,inkMode,inkColor,pageStrokes,target,setTarget,errors,updateInk,drawingAvailable,setPage}=model;
   const keys=useMemo(()=>new Set(errors.map(err=>targetKey(err.target))),[errors]);
   const mode=room.phase==='live'&&drawingAvailable?inkMode:'off';
-  return <div ref={rootRef} className={[css.root,focusMode?css.focusMode:'',panelOpen?css.panelExpanded:'',compactToolbar?css.toolbarCollapsed:''].filter(Boolean).join(' ')}
+  return <div ref={rootRef} className={[css.root,focusMode?css.focusMode:'',panelOpen?css.panelExpanded:''].filter(Boolean).join(' ')}
     data-view-role={role} data-focus={focusMode?'on':'off'}>
-    <div className={css.pageTop}>
-      <Link href="/teacher">العودة إلى بوابة الشيخ</Link>
-      <span className={css.previewDisclosure}>معاينة تجريبية · دون بث أو بيانات طلاب</span>
-      <div className={css.workspaceActions}>
-        <button type="button" className={css.focusButton} aria-pressed={focusMode} onClick={()=>void toggleFocus()}>
-          {focusMode?'الخروج من وضع الحصة':'⛶ وضع الحصة'}
-        </button>
-        <button type="button" className={css.panelToggle} aria-expanded={panelOpen} aria-controls="lesson-notes"
-          onClick={()=>setPanelOpen(v=>!v)}>{panelOpen?'إخفاء لوحة الأدوات':'الأخطاء والتقييم'}</button>
-        <button type="button" className={css.toolbarToggle} aria-expanded={!compactToolbar}
-          onClick={()=>setCompactToolbar(v=>!v)}>{compactToolbar?'إظهار أدوات إضافية':'إخفاء الأدوات الإضافية'}</button>
-      </div>
-    </div>
+    <ClassroomSessionHeader model={model} focusMode={focusMode}
+      onToggleFocus={()=>void toggleFocus()} panelOpen={panelOpen}
+      onTogglePanel={()=>setPanelOpen(value=>!value)}/>
     <ClassroomControls model={model}/>
     <div className={css.workspace}>
       <ClassroomMedia model={model}/>
