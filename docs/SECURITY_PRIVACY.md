@@ -1,5 +1,10 @@
 # Security, child safety and privacy baseline
 
+## AUTH-01 #110 implementation boundary
+Better Auth handles password hashing and signed session cookies. Cookie caching is disabled; each protected request revalidates its session in D1, then loads the active owner account. Only session-derived account IDs reach learner SQL. Owner sessions intentionally access all their learner profiles; no restricted-child login or teacher/staff route is introduced.
+Public wrappers accept a bounded JSON allowlist, enforce exact trusted Origin for mutations, use non-cacheable sanitized responses and library database-backed credential rate limiting. Production cookies are Secure, HttpOnly and SameSite=Lax. HTTP cookies require explicit localhost development configuration. The internal library API is not publicly routed, so optional email, verification, password reset and user-update endpoints are not exposed.
+Phone/password is the initial integration default; phone ownership and adult/guardian identity remain unverified. Generated internal `.invalid` email identifiers are never presented as customer contact addresses. Delivery-backed verification/recovery, protection against phone pre-registration abuse and adult authorization must be completed before real-user rollout. No real student records or messages are used by tests.
+
 Platform approved in [ADR 0004](adr/0004-cloudflare-only-platform.md): D1 + Workers application authorization replaces Supabase Auth/Postgres/RLS. Family owner access vs restricted child sessions must be represented honestly. Current API foundation denies all learner endpoints until actual auth integration.
 
 

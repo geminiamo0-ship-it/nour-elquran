@@ -22,3 +22,7 @@ test-results/
 .wrangler/
 .artifacts/
 __pycache__/
+
+# Local Worker secrets (never commit)
+.dev.vars
+.dev.vars.*

@@ -1,5 +1,11 @@
 # Repository map and file ownership
 
+## AUTH-01 #110
+- `workers/api/src/auth/{settings,config,schema}.ts`: explicit opt-in configuration, pinned Better Auth + first-party Drizzle D1 adapter and matching SQLite models. No home-grown password hashing or session signing.
+- `workers/api/src/auth/{routes,input,accounts}.ts`: bounded/whitelisted public credentials and learner routes; normalize phone, enforce origin, map verified session subject to active core account, query ownership in SQL. `responses.ts` centralizes non-cacheable safe responses.
+- `workers/api/migrations/0002_auth.sql`: additive auth users/sessions/credentials/verifications/rate-limit tables and database-enforced eight-active-learner insertion cap. 0001 is unchanged.
+- `scripts/cloudflare-auth-smoke.{sh,mjs}`: disposable native local registration/session/ownership/revocation/expiry gate, included in the fourth Verify job. Root manifest/lock pin Better Auth 1.7.14 and Drizzle 0.45.2; Wrangler enables nodejs_compat.
+
 ## #110 auth integration (draft PR #111; no HTTP auth yet)
 - `workers/api/src/owner-learners.ts`: D1 read-only account-to-learner boundary requiring server-verified auth subject, active account/profile filtering and optional child scope; never accepts caller-supplied account ownership. Not wired to public routes until Better Auth sessions exist.
 - `workers/api/tests/owner-learners.test.ts`: Node SQL parameterization/child-scope regression; `workers/api/tests/test_owner_queries.py`: Python SQLite integration against actual core migration and exact TypeScript SQL, synthetic only.

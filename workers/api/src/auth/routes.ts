@@ -1,0 +1,110 @@
+import type { CoreDatabase, Env } from '../bindings.ts';
+import { reply } from '../responses.ts';
+import { createAuth } from './config.ts';
+import { authSettings } from './settings.ts';
+import { ownerAccount } from './accounts.ts';
+import { getOwnedLearner, listOwnedLearners } from '../owner-learners.ts';
+import { normalizePhone, onlyKeys, readObject, validName } from './input.ts';
+
+type Auth = ReturnType<typeof createAuth>;
+async function forwardAuth(auth: Auth, request: Request, path: string, body?: Record<string, unknown>) {
+  const settings = new URL(request.url);
+  settings.pathname = '/internal-auth' + path; settings.search = '';
+  const headers = new Headers(request.headers);
+  headers.delete('content-length');
+  if (body) headers.set('content-type', 'application/json');
+  return auth.handler(new Request(settings, {
+    method: request.method, headers,
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  }));
+}
+async function credentials(auth: Auth, db: CoreDatabase, request: Request, path: string, requestId: string) {
+  if (request.method !== 'POST') return reply(405, { code: 'METHOD_NOT_ALLOWED' }, requestId);
+  const input = await readObject(request), register = path === '/api/auth/register';
+  const phone = normalizePhone(input?.phoneNumber);
+  if (!input || !phone || typeof input.password !== 'string' || input.password.length < 8 ||
+      input.password.length > 128 || !onlyKeys(input, register ? ['name','phoneNumber','password'] : ['phoneNumber','password']) ||
+      (register && !validName(input.name))) return reply(400, { code: 'INVALID_CREDENTIAL_INPUT' }, requestId);
+  const body = register ? { name: (input.name as string).trim(), phoneNumber: phone,
+    email: crypto.randomUUID() + '@accounts.noor.invalid', password: input.password }
+    : { phoneNumber: phone, password: input.password };
+  const response = await forwardAuth(auth, request, register ? '/sign-up/email' : '/sign-in/phone-number', body);
+  if (!response.ok) return reply(response.status >= 500 ? 503 : response.status, {
+    code: response.status === 429 ? 'RATE_LIMITED' : register ? 'REGISTRATION_FAILED' : 'INVALID_CREDENTIALS',
+  }, requestId);
+  const result: unknown = await response.json();
+  const user = result && typeof result === 'object' ? (result as Record<string, unknown>).user : null;
+  if (!user || typeof user !== 'object' || typeof (user as Record<string, unknown>).id !== 'string')
+    return reply(503, { code: 'AUTH_UNAVAILABLE' }, requestId);
+  const userId = (user as { id: string }).id;
+  const owner = await ownerAccount(db, userId);
+  if (!owner) {
+    const token = (result as Record<string, unknown>).token;
+    if (typeof token === 'string') await db.prepare('DELETE FROM auth_sessions WHERE user_id=? AND token=?').bind(userId, token).run();
+    return reply(403, { code: 'ACCOUNT_UNAVAILABLE' }, requestId);
+  }
+  const outgoing = reply(200, { user: { id: userId, name: (user as Record<string, unknown>).name },
+    phoneVerified: (user as Record<string, unknown>).phoneNumberVerified === true }, requestId);
+  for (const cookie of response.headers.getSetCookie()) outgoing.headers.append('Set-Cookie', cookie);
+  return outgoing;
+}
+
+async function profiles(db: CoreDatabase, accountId: string, authSubject: string, request: Request, path: string, requestId: string) {
+  if (path === '/v1/me/learners' && request.method === 'GET') {
+    const learners = await listOwnedLearners(db, { authSubject });
+    return reply(200, { learners: learners.map(row => ({ id: row.id, name: row.displayName, learnerType: row.learnerType })) }, requestId);
+  }
+  if (path === '/v1/me/learners' && request.method === 'POST') {
+    const input = await readObject(request);
+    if (!input || !onlyKeys(input, ['name','learnerType']) || !validName(input.name) ||
+      !['adult','child'].includes(String(input.learnerType))) return reply(400, { code: 'INVALID_LEARNER' }, requestId);
+    const id = crypto.randomUUID();
+    try {
+      await db.prepare("INSERT INTO learners(id,account_id,display_name,learner_type,status,created_at_ms) VALUES(?,?,?,?,'active',?)")
+        .bind(id, accountId, input.name.trim(), input.learnerType, Date.now()).run();
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('learner profile limit'))
+        return reply(409, { code: 'LEARNER_LIMIT' }, requestId);
+      throw error;
+    }
+    return reply(201, { learner: { id, name: input.name.trim(), learnerType: input.learnerType } }, requestId);
+  }
+  const match = /^\/v1\/learners\/([a-zA-Z0-9-]{1,128})$/.exec(path);
+  if (match && request.method === 'GET') {
+    const row = await getOwnedLearner(db, { authSubject }, match[1]!);
+    return row ? reply(200, { learner: { id: row.id, name: row.displayName, learnerType: row.learnerType } }, requestId)
+      : reply(404, { code: 'NOT_FOUND' }, requestId);
+  }
+  return reply(404, { code: 'NOT_FOUND' }, requestId);
+}
+
+export async function handleAuthenticated(request: Request, env: Env, requestId: string): Promise<Response> {
+  const settings = authSettings(env);
+  if (!settings || !env.DB) return reply(503, { code: 'AUTH_NOT_CONFIGURED' }, requestId);
+  const origin = request.headers.get('origin');
+  const mutation = request.method !== 'GET' && request.method !== 'HEAD';
+  if ((origin !== null && origin !== settings.origin) || (mutation && origin !== settings.origin))
+    return reply(403, { code: 'BAD_ORIGIN' }, requestId);
+  const version = await env.DB.prepare("SELECT version FROM noor_schema_meta WHERE component='auth'").first<{ version: number }>();
+  if (version?.version !== 1) return reply(503, { code: 'AUTH_SCHEMA_NOT_READY' }, requestId);
+  const auth = createAuth(env), path = new URL(request.url).pathname;
+  if (path === '/api/auth/register' || path === '/api/auth/login')
+    return credentials(auth, env.DB, request, path, requestId);
+  if (path === '/api/auth/logout') {
+    if (request.method !== 'POST') return reply(405, { code: 'METHOD_NOT_ALLOWED' }, requestId);
+    const response = await forwardAuth(auth, request, '/sign-out');
+    const result = reply(response.ok ? 200 : 401, { code: response.ok ? 'SIGNED_OUT' : 'UNAUTHENTICATED' }, requestId);
+    for (const cookie of response.headers.getSetCookie()) result.headers.append('Set-Cookie', cookie);
+    return result;
+  }
+  // The library re-reads the signed session from D1; cookie cache and unverified token auth are disabled.
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session) return reply(401, { code: 'UNAUTHENTICATED' }, requestId);
+  const owner = await ownerAccount(env.DB, session.user.id);
+  if (!owner) return reply(403, { code: 'ACCOUNT_UNAVAILABLE' }, requestId);
+  if (path === '/api/auth/session' && request.method === 'GET')
+    return reply(200, { user: { id: session.user.id, name: session.user.name },
+      phoneVerified: session.user.phoneNumberVerified === true }, requestId);
+  return profiles(env.DB, owner.id, session.user.id, request, path, requestId);
+}
+
