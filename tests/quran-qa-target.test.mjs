@@ -19,6 +19,8 @@ test('Quran QA target rejects production, preview, redirects and alternate hosts
     'https://noor-site-staging.geminiamo0.workers.dev/anything',
     'https://noor-site-staging.geminiamo0.workers.dev?redirect=1',
     'https://noor-site-staging.geminiamo0.workers.dev.evil.invalid',
+    'https://noor-site-staging.other-account.workers.dev',
+    'https://noor-site-staging.geminiamo1.workers.dev',
     'https://noor-site-quran-qa.geminiamo0.workers.dev',
     'https://nour-elquran.geminiamo0.workers.dev',
     'https://example.com',
