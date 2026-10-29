@@ -52,6 +52,6 @@ jobs:
         with:
           name: verified-hafs-anchors-${{ github.sha }}
           path: |
-            ${{ runner.temp }}\u002fquran-anchors/verified-quran-anchors.sql
-            ${{ runner.temp }}\u002fquran-anchors/verified-quran-anchors-evidence.json
+            ${{ runner.temp }}/quran-anchors/verified-quran-anchors.sql
+            ${{ runner.temp }}/quran-anchors/verified-quran-anchors-evidence.json
           retention-days: 14
