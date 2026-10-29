@@ -1,3 +1,8 @@
+## 05A/05B real Dev D1 routes — postmerge verification (2026-10-30)
+- 05A `workers/api/migrations/0010_published_assignments.sql`, `workers/api/src/published-assignments.ts`: verified publisher; [Dev remote #40971275548](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40971275548) passed.
+- 05B `workers/api/migrations/0011_assignment_submissions.sql`, `workers/api/src/assignment-submissions.ts`: owner-scoped `GET/POST /v1/me/learners/:learner/assignments/:task/submissions` and active qualified primary teacher `GET/POST /v1/teacher/learners/:learner/assignments/:task/reviews`. Append-only retry/accept history max 5. `StudentAssignmentSubmission.tsx` and `TeacherAssignmentReview.tsx` use `assignment-attempt-client.ts`; [Dev remote #40975149637](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40975149637) passed API security/owner/teacher/replay.
+- UI visual acceptance in #173/#178 not yet done. R2 voice #180 remains separate/off until private bucket, guardian consent and retention policy. Below source-only sections are earlier history.
+
 ## Phase 05B #178 (source-only; pending verification)
 - `workers/api/migrations/0011_assignment_submissions.sql`: immutable submissions/reviews, current owner/current primary teacher, max five retry attempts, one immutable teacher decision per attempt. Independent of published-task 0010 projection; no editing the published Quran target.
 - `workers/api/src/assignment-submissions.ts`, `auth/routes.ts`: signed-session backed GET/POST student submissions and teacher reviews, operation UUID replays and 409 CAS.
