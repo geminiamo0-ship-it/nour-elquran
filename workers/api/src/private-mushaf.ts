@@ -109,12 +109,13 @@ export async function applyPrivateMushaf(
  if(!row)throw Error('Private Quran operation committed without item');
  return {status:was?200:201,code:was?'OPERATION_ALREADY_APPLIED':'QURAN_SAVED',item:asItem(row)};
 }
-// Include hidden rows so a reload can recover their versions and safely
-// restore a tombstoned bookmark/note/highlight instead of retrying version 0.
-// Consumers must filter visible=false from rendered content.
+// Return hidden stable-ID notes/highlights/bookmarks to recover CAS versions after
+// reload, but exclude tombstoned freehand strokes (new strokes use new IDs).
+// Consumers render only visible=true; hidden rows never become visible by reading.
 const PAGE_SQL=`SELECT item_id AS itemId,kind,page,version,visible,payload_json AS payloadJson
  FROM private_mushaf_items WHERE learner_id=? AND edition_id=?
    AND page=? AND kind IN ('pen','marker','note','highlight')
+   AND (visible=1 OR kind IN ('note','highlight'))
  ORDER BY updated_at_ms ASC,item_id ASC LIMIT 301`;
 const INDEX_SQL=`SELECT item_id AS itemId,kind,page,version,visible,payload_json AS payloadJson
  FROM private_mushaf_items WHERE learner_id=? AND edition_id=?
