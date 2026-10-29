@@ -34,7 +34,7 @@ export function ClassroomPreview(){
   return <div ref={rootRef} className={[css.root,focusMode?css.focusMode:'',panelOpen?css.panelExpanded:'',compactToolbar?css.toolbarCollapsed:''].filter(Boolean).join(' ')}
     data-view-role={role} data-focus={focusMode?'on':'off'}>
     <div className={css.pageTop}><Link href="/teacher">العودة إلى بوابة الشيخ</Link>
-      <span>الفصل التجريبي · مسار مستقل عن جلسات الطلاب الحقيقية</span></div>
+      <span>المعاينة تجريبية ولا تستخدم بثًا حيًا أو بيانات طلاب</span></div>
     <div className={css.workspaceActions}>
       <span className={css.workspaceIdentity}>وضع تدريس بدون تشتيت · {role==='student'?'أولوية كاميرا الشيخ والمصحف':'المصحف وأدوات الشيخ أمامك'}</span>
       <button type="button" className={css.focusButton} aria-pressed={focusMode} onClick={()=>void toggleFocus()}>
@@ -58,7 +58,7 @@ export function ClassroomPreview(){
           <button type="button" className={css.pageEdgePrev} title="الصفحة السابقة" aria-label="الصفحة السابقة"
             disabled={role!=='teacher'||room.phase!=='live'||room.currentPage<=1}
             onClick={()=>setPage(room.currentPage-1)}>‹</button>
-          <ReaderPrintedPage page={room.currentPage} inkMode={mode} color={inkColor}
+          <ReaderPrintedPage page={room.currentPage} viewportFit inkMode={mode} color={inkColor}
             strokes={pageStrokes} selectedKey={target?targetKey(target):null} noteKeys={keys}
             onSelect={setTarget} onOpenNote={setTarget}
             onInkChange={updateInk}/>
@@ -70,7 +70,7 @@ export function ClassroomPreview(){
           <span>الصفحة {room.currentPage} من ٦٠٤ · التحديد والتظليل فوق طبقة منفصلة عن نص المصحف</span>
           {target&&<span>الآية المحددة: {target.surah}:{target.ayah}</span>}
         </footer>
-        {room.phase==='waiting'&&<div className={css.stageNotice}>في انتظار وجود الشيخ والطالب، ثم يضغط الشيخ «بدء الحصة». لا يبدأ الفصل تلقائيًا.</div>}
+
         {room.phase==='ended'&&<div className={css.stageNotice}>
           انتهى الفصل يدويًا في المعاينة. تظل التصحيحات والتقييمات هنا محلية؛ التقرير الحقيقي يحتاج مراجعة الشيخ واعتماده.
           <Link href="/teacher/reports">فتح صفحة تقارير الشيخ</Link>
