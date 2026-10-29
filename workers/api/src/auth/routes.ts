@@ -261,7 +261,7 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
       :await (async()=>{
         const command=parseReview(await readObject(request));
         if(!command)return {status:400,code:'INVALID_REVIEW'} as const;
-        return reviewStudentAttempt(env.DB,session.user.id,learnerId,assignmentId,command);
+        return reviewStudentAttempt(env.DB!,session.user.id,learnerId,assignmentId,command);
       })();
     const {status,...body}=result;
     return reply(status,body,requestId);
