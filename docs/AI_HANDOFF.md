@@ -1,3 +1,8 @@
+## #167 connected teacher Students fidelity (draft)
+- Work branch `feat/167-connected-teacher-students-layout`, issue #167. Reuse original `TeacherPortal.module.css` students roster and detail, authorized `TeacherReadOnlyView` verified D1 roster and lessons, and `TeacherAcademicPlanEditor` for non-demo API.
+- Existing public preview remains unchanged with `NEXT_PUBLIC_TEACHER_READONLY_ENABLED` default OFF; never assert browser-ready from this branch. Need CI, stage flag plan preserving public preview, role-provisioned teacher Chrome/screenshots/409/revoke, before closing.
+- Recent account UX #160 remote Dev accepted via Santoreno #246, screenshot artifact #12937417843; Noor master #155 still open.
+
 ## #160 learner header/account responsive follow-up (draft)
 - Remote account data lifecycle #157 passed on Dev, but screenshots revealed a clipped selector at mobile widths. Branch `fix/160-account-mobile-header-ux` groups profile actions and creates full-width mobile selector/anchored menu while retaining pending Quran save/role guards.
 - Next: exact PR head Verify and real screenshots on open `noor-site-staging` 360/390/768/1280/1440; evaluate keyboard and long Arabic names; do not call the UX polished without remote screenshot review. No API/migration included.
