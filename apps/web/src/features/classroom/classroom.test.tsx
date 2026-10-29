@@ -78,13 +78,26 @@ describe('classroom safety and interaction contract',()=>{
     expect(html).toContain('الصفحة السابقة');
     expect(html).toContain('الصفحة التالية');
     expect(html).toContain('وضع الحصة');
+    expect(html).toContain('إعدادات المعاينة');
     expect(html).toContain('الشيخ موجود');
+    expect(html).toContain('الطالب موجود');
+    expect(html).toContain('رابط معاينة الشيخ');
+    expect(html).toContain('رابط معاينة الطالب');
+    expect(html).toContain('aria-label="أدوات المصحف المشترك"');
+    expect(html.match(/aria-label="اختر لون /g)).toHaveLength(5);
     expect(html).not.toContain('المشاركون 12');
+  });
+  it('does not consume a permanent microphone or preview settings row while waiting',()=>{
+    const html=renderToStaticMarkup(<ClassroomPreview/>);
+    expect(html).toContain('<details');
+    expect(html).toContain('ضبط الوقت التجريبي');
+    expect(html).not.toContain('كتم مايك الشيخ');
+    expect(html).toContain('لا توجد غرفة حقيقية');
   });
   it('renders original shared Quran with explicit mock-mode and no fake live call',()=>{
     const html=renderToStaticMarkup(<ClassroomPreview/>);
     expect(html).toContain('المصحف المشترك');
-    expect(html).toContain('معاينة الفصل التفاعلي فقط');
+    expect(html).toContain('شريط إدارة الحصة التجريبية');
     expect(html).toContain('بدء الحصة');
     expect(html).toContain('الشيخ موجود');
     expect(html).not.toContain('تم الاتصال بـLiveKit');
