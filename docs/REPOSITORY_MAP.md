@@ -1,6 +1,7 @@
 # Repository map and file ownership
 
 ## AUTH-01 #110
+- `docs/adr/0005-d1-phone-password-auth.md`: maintained-library choice, phone/password integration default, verification/recovery rollout prerequisites and safe rollback.
 - `workers/api/src/auth/{settings,config,schema}.ts`: explicit opt-in configuration, pinned Better Auth + first-party Drizzle D1 adapter and matching SQLite models. No home-grown password hashing or session signing.
 - `workers/api/src/auth/{routes,input,accounts}.ts`: bounded/whitelisted public credentials and learner routes; normalize phone, enforce origin, map verified session subject to active core account, query ownership in SQL. `responses.ts` centralizes non-cacheable safe responses.
 - `workers/api/migrations/0002_auth.sql`: additive auth users/sessions/credentials/verifications/rate-limit tables and database-enforced eight-active-learner insertion cap. 0001 is unchanged.

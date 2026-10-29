@@ -37,7 +37,7 @@ Authentication is disabled in the checked-in configuration. Explicitly set `AUTH
 | POST /v1/me/learners | `{name, learnerType: "adult" or "child"}` → profile; up to eight active profiles |
 | GET /v1/learners/:id | Owner-only profile; other account receives 404 |
 
-Mutations require an Origin header exactly matching AUTH_ORIGIN. Deploy frontend/API under the same trusted origin; no cross-origin CORS session configuration is implied. Password length is 8–128; name 1–80; JSON bodies at most 16 KiB. Egyptian local mobile input is normalized to +20, other numbers require E.164. Client accountId/role/verification fields are rejected. Raw `/internal-auth/*` routes return 404.
+Mutations require an Origin header exactly matching AUTH_ORIGIN. Deploy frontend/API under the same trusted origin; no cross-origin CORS session configuration is implied. Credential registration and login are each limited to five attempts per 60 seconds per trusted client IP (shared bucket if unavailable). Password length is 8–128; name 1–80; JSON bodies at most 16 KiB. Egyptian local mobile input is normalized to +20, other numbers require E.164. Client accountId/role/verification fields are rejected. Raw `/internal-auth/*` routes return 404.
 
 Better Auth uses its own scrypt password hashing/signing and the first-party Drizzle D1 adapter with transactions disabled. Cookie cache is disabled: logout/expiry is checked in D1. Production cookies are Secure/HttpOnly/SameSite=Lax, lifetime seven days. Wrapper never returns raw session tokens or internal email addresses. Core account is created lazily from the library's server-verified subject and disabled accounts cannot access learner routes.
 
