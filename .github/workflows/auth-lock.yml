@@ -1,0 +1,26 @@
+name: Resolve auth dependency lock
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Resolve pinned auth dependency graph without install scripts
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.22.0 --activate
+          pnpm install --lockfile-only --ignore-scripts --no-frozen-lockfile
+          python3 - <<'PYLOCK'
+          import base64
+          from pathlib import Path
+          data=base64.b64encode(Path('pnpm-lock.yaml').read_bytes()).decode()
+          for n in range(0,len(data),4000):
+              print('NOOR_AUTH_LOCK_%05d:'%(n//4000)+data[n:n+4000])
+          PYLOCK
