@@ -17,7 +17,7 @@ const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
 const levels=['beginner','intermediate','advanced'];
 function safeText(value:unknown,max:number):value is string {
  return typeof value==='string'&&value.trim().length>0&&value.trim().length<=max &&
-   !/[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(value);
+   !Array.from(value).some(char=>{const code=char.charCodeAt(0);return code<32&&code!==9&&code!==10&&code!==13;});
 }
 export function parsePlanAction(raw:unknown):PlanAction|null{
  if(!raw||typeof raw!=='object'||Array.isArray(raw))return null;
