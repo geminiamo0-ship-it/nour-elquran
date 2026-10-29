@@ -183,6 +183,76 @@ class TeacherCalendarConstraints(unittest.TestCase):
             "completed",
         )
 
+    def test_new_booking_requires_active_learner_and_owner(self):
+        self.db.execute("UPDATE learners SET status='archived' WHERE id='learner-b'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "active learner and account"):
+            lesson(self.db, "archived", teacher="teacher-b", learner="learner-b")
+        self.db.execute("UPDATE learners SET status='active' WHERE id='learner-b'")
+        self.db.execute("UPDATE accounts SET status='disabled' WHERE id='acct'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "active learner and account"):
+            lesson(self.db, "owner-disabled", teacher="teacher-b", learner="learner-b")
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM lessons").fetchone()[0], 0)
+        self.db.execute("UPDATE accounts SET status='active' WHERE id='acct'")
+        lesson(self.db, "eligible", teacher="teacher-b", learner="learner-b")
+
+    def test_cancelled_slot_reactivation_rechecks_learner_and_owner(self):
+        lesson(self.db, "cancelled", status="cancelled")
+        self.db.execute("UPDATE learners SET status='archived' WHERE id='learner-a'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "active learner and account"):
+            self.db.execute("UPDATE lessons SET status='scheduled' WHERE id='cancelled'")
+        self.db.execute("UPDATE learners SET status='active' WHERE id='learner-a'")
+        self.db.execute("UPDATE accounts SET status='disabled' WHERE id='acct'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "active learner and account"):
+            self.db.execute("UPDATE lessons SET status='scheduled' WHERE id='cancelled'")
+        self.assertEqual(
+            self.db.execute("SELECT status FROM lessons WHERE id='cancelled'").fetchone()[0],
+            "cancelled",
+        )
+        self.db.execute("UPDATE accounts SET status='active' WHERE id='acct'")
+        self.db.execute("UPDATE lessons SET status='scheduled' WHERE id='cancelled'")
+
+    def test_reschedule_rechecks_teacher_learner_and_owner(self):
+        lesson(self.db, "booked")
+        self.db.execute("UPDATE teachers SET status='disabled' WHERE id='teacher-a'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "active qualified teacher"):
+            self.db.execute(
+                "UPDATE lessons SET starts_at_ms=?, ends_at_ms=? WHERE id='booked'",
+                (T + SLOT_MS, T + 2 * SLOT_MS),
+            )
+        self.db.execute("UPDATE teachers SET status='active' WHERE id='teacher-a'")
+        self.db.execute("UPDATE learners SET status='archived' WHERE id='learner-a'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "active learner and account"):
+            self.db.execute(
+                "UPDATE lessons SET starts_at_ms=?, ends_at_ms=? WHERE id='booked'",
+                (T + SLOT_MS, T + 2 * SLOT_MS),
+            )
+        self.db.execute("UPDATE learners SET status='active' WHERE id='learner-a'")
+        self.db.execute("UPDATE accounts SET status='disabled' WHERE id='acct'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "active learner and account"):
+            self.db.execute(
+                "UPDATE lessons SET starts_at_ms=?, ends_at_ms=? WHERE id='booked'",
+                (T + SLOT_MS, T + 2 * SLOT_MS),
+            )
+        self.assertEqual(
+            self.db.execute("SELECT starts_at_ms FROM lessons WHERE id='booked'").fetchone()[0],
+            T,
+        )
+        self.db.execute("UPDATE accounts SET status='active' WHERE id='acct'")
+        self.db.execute(
+            "UPDATE lessons SET starts_at_ms=?, ends_at_ms=? WHERE id='booked'",
+            (T + SLOT_MS, T + 2 * SLOT_MS),
+        )
+
+    def test_archived_learner_history_can_complete_without_rebooking(self):
+        lesson(self.db, "booked")
+        self.db.execute("UPDATE learners SET status='archived' WHERE id='learner-a'")
+        self.db.execute("UPDATE accounts SET status='disabled' WHERE id='acct'")
+        self.db.execute("UPDATE lessons SET status='completed' WHERE id='booked'")
+        self.assertEqual(
+            self.db.execute("SELECT status FROM lessons WHERE id='booked'").fetchone()[0],
+            "completed",
+        )
+
     def test_core_readiness_version_unchanged_and_schedule_migration_recorded(self):
         self.assertEqual(
             self.db.execute("SELECT version FROM noor_schema_meta WHERE component='core'")
