@@ -9,6 +9,8 @@ import { QuranInk, type InkMode } from './QuranInk';
 
 type Props = {
   page: number;
+  /** Optional publisher regions already verified by the lesson scope gate. */
+  verifiedRegions?: readonly QuranAyahRegion[];
   inkMode: InkMode;
   color: string;
   strokes: readonly QuranInkStroke[];
@@ -22,11 +24,18 @@ type Props = {
 };
 
 /** Every visible printed page owns its own verified polygons, including both sides of a spread. */
-export function ReaderPrintedPage({ page, inkMode, color, strokes, selectedKey, noteKeys, focusKeys, allowedKeys, onSelect, onOpenNote, onInkChange }: Props) {
+export function ReaderPrintedPage({ page, verifiedRegions, inkMode, color, strokes, selectedKey, noteKeys, focusKeys, allowedKeys, onSelect, onOpenNote, onInkChange }: Props) {
   const [regions, setRegions] = useState<QuranAyahRegion[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // The notebook supplies the exact sidecar used to authorize visible verses.
+    // Independent primary/fallback requests could otherwise disagree on polygons.
+    if (verifiedRegions) {
+      setRegions([...verifiedRegions]);
+      setLoading(false);
+      return;
+    }
     const controller = new AbortController();
     setLoading(true);
     setRegions([]);
@@ -46,7 +55,7 @@ export function ReaderPrintedPage({ page, inkMode, color, strokes, selectedKey, 
     })().catch(() => { if (!controller.signal.aborted) setRegions([]); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [page]);
+  }, [page, verifiedRegions]);
 
   return <SmoothMadinahPage page={page} overlay={<>
     <QuranInk page={page} mode={inkMode} color={color} strokes={strokes}

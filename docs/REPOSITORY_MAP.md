@@ -1,4 +1,37 @@
+## #102 real two-page browser fixture (PR #116, unmerged)
+- `apps/web/src/features/student/mock-adapter.ts`: separate synthetic completed lesson/report/publication for page 1→2 (Fatiha/Baqarah), each page with an independent teacher mark; only demo-active receives it.
+- `apps/web/src/features/student/notebookContracts.test.ts`: ensures fixture remains scoped to its learner and lesson and nullable grades are not fabricated.
+- `scripts/browser-smoke.mjs`: native Chrome real-publisher metadata/page-turn/overlay isolation at 390/768/1440; captures `student-notebook-multipage-*.png`. No real student or backend data.
+
 # Repository map and file ownership
+
+## #102 lesson Quran source consistency (PR #116, unmerged)
+- `LessonQuranViewer.tsx` verifies the active page's publisher metadata and passes its exact parsed regions to `ReaderPrintedPage.tsx` via optional `verifiedRegions`. The shared printed reader keeps its existing fetch behavior for other features. No duplicate sidecar/fallback source divergence for lesson overlays.
+- `notebookContracts.test.ts` adds a synthetic two-page boundary regression; physical S Pen and real multi-page browser evidence remain outstanding.
+
+
+
+## #102 private lesson drawing continuation (draft PR #116)
+- apps/web/src/features/student/components/LessonQuranViewer.tsx and .module.css: same verified printed Quran page, immutable published teacher layer toggle, and bounded ephemeral per-page private pen/marker/eraser strokes with undo/clear. Page/scope verification prevents stale page rendering; no server write.
+- apps/web/src/features/student/components/NotebookWorkspace.tsx: remount viewer when the selected lesson or publication revision changes; parent remounts on learner switch.
+- scripts/browser-smoke.mjs: Chrome responsive layer toggles and real pointer-drag/undo smoke; exact-head CI must be inspected before claiming it passed. No production/staging deploy in this PR.
+
+
+## STU S11 #102 — partial notebook F0
+- `apps/web/src/features/student/notebookContracts.ts`: versioned structural Quran range, latest published revision/report and learner/lesson layer separation. Does not verify publisher page mapping or persist anything.
+- `apps/web/src/features/student/notebookContracts.test.ts`: synthetic scope/revision/teacher/private isolation and nullable-grade tests.
+- `apps/web/src/features/student/components/NotebookReportCard.tsx`: read-only published/pending report and honest unavailable archive/share states.
+- `apps/web/src/features/student/components/NotebookWorkspace.tsx`: per-learner keyed local draft reset and scoped report/notes. Shared Quran lesson viewer remains to implement.
+
+
+
+## #102 read-only lesson mushaf slice (draft)
+
+- `apps/web/src/features/student/components/LessonQuranViewer.tsx` and its CSS module: bounded page navigation, publisher metadata verification, shared printed-page rendering, read-only published teacher annotations and explicit invalid-source state.
+- `apps/web/src/features/student/notebookContracts.ts`: `pageKeysForNotebookScope` checks actual page sidecar boundary verses before exposing allowed verse keys.
+- `apps/web/src/features/student/mock-adapter.ts`: one explicitly synthetic lesson publication only for the active demo profile; no connected-user or new-learner fabricated reports.
+- `apps/web/src/features/student/notebookContracts.test.ts`: publisher boundary and cross-learner safety regression. No backend persistence or export.
+
 
 ## STAGING #114
 - `workers/site/src/staging-access.ts`: staging-only Basic access gate; refuses missing secret, protects all Worker-routed requests; production unaffected.

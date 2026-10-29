@@ -2,8 +2,18 @@
 import { useState, type FormEvent } from 'react';
 import { useStudent } from '../StudentContext';
 import styles from '../StudentPortal.module.css';
+import { latestLessonReport, latestPublishedNotebook, personalLessonNotes } from '../notebookContracts';
+import { NotebookReportCard } from './NotebookReportCard';
+import { LessonQuranViewer } from './LessonQuranViewer';
+import { getMockNotebookRevisions } from '../mock-adapter';
 
+/** Keying the local form by learner discards drafts and selection before a sibling's UI renders. */
 export function NotebookWorkspace() {
+  const { selected } = useStudent();
+  return <LearnerNotebookWorkspace key={selected.profile.id} />;
+}
+
+function LearnerNotebookWorkspace() {
   const { selected, notes, addNote, removeNote } = useStudent();
   const completed = selected.lessons.filter((lesson) => lesson.status === 'completed');
   const [picked, setPicked] = useState('');
@@ -11,7 +21,8 @@ export function NotebookWorkspace() {
   const [error, setError] = useState('');
   const lessonId = completed.some((item) => item.id === picked) ? picked : completed[0]?.id ?? '';
   const lesson = completed.find((item) => item.id === lessonId);
-  const report = selected.reports.find((item) => item.lessonId === lessonId);
+  const report = latestLessonReport(selected.reports, selected.profile.id, lessonId);
+  const publication = latestPublishedNotebook(getMockNotebookRevisions(selected.profile), selected.profile.id, lessonId);
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!addNote(lessonId, draft)) { setError('اكتب ملاحظة لا تزيد على 500 حرف لحصة مكتملة.'); return; }
@@ -28,13 +39,11 @@ export function NotebookWorkspace() {
           onChange={(event) => { setPicked(event.target.value); setDraft(''); setError(''); }}>
           {completed.map((item) => <option key={item.id} value={item.id}>{item.topic} · {item.time}</option>)}
         </select>
-        <div className={styles.noteSheet}>
-          <strong>{lesson.topic} · {lesson.teacher}</strong>
-          <p>{report?.summary ?? 'لم يُنشر تقرير من الشيخ لهذه الحصة بعد.'}</p>
-          <p className={styles.muted}>لا توجد نسخة PDF أو صورة مصحف محفوظة لهذه الحصة في النموذج الحالي.</p>
-        </div>
+        <NotebookReportCard lesson={lesson} report={report} />
+        {publication && <p className={styles.infoNote}>معاينة توضيحية بعلامة شيخ افتراضية؛ ليست حصة محفوظة على الخادم.</p>}
+        <LessonQuranViewer key={lessonId + ':' + (publication?.id ?? 'unpublished')} revision={publication} />
         <div className={styles.stack}>
-          {notes.filter((note) => note.lessonId === lessonId).map((note) =>
+          {personalLessonNotes(notes, selected.profile.id, lessonId).map((note) =>
             <article className={styles.personalNote} key={note.id}>
               <p>{note.text}</p><button type="button" className={styles.textButton} onClick={() => removeNote(note.id)}>حذف الملاحظة</button>
             </article>)}

@@ -1,4 +1,45 @@
+## #102 two-page visual verification — code head eaa22ca, 2026-10-29
+- [Verify 40831141757](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40831141757) on code head `eaa22ca77d4574025adbfbe1405ed21fe5495294`: all four jobs SUCCESS (repository-policy, governance-tests, code-quality with real Chrome, cloudflare-local-d1).
+- Downloaded screenshot artifact `noor-bootstrap-browser-screenshots` (ID 12878433906) and **visually inspected** `student-notebook-multipage-{390,768,1440}.png`: Baqarah page 2 is actually in frame at all three sizes; expected ayah highlights are visible, no obvious horizontal clipping. The earlier green run 40830894384 captured header rather than page at 768/1440; fixed by scrolling the printed page into the screenshot viewport before capture.
+- This is synthetic browser QA only. Physical S Pen, real publication/archive, authorization and human review remain open. Subsequent documentation commits require their own exact-head CI; no merge or production deployment.
+
+## #102 multi-page Chrome publisher fixture — draft PR #116, 2026-10-29
+- Added a second **synthetic-only** completed lesson for `demo-active`, with an independent report and Fatiha 1:6 (page 1) → Baqarah 2:2 (page 2) publication; teacher marks on each page are deliberately distinct. Connected/new learners receive neither fixture. The existing Ikhlas example is preserved.
+- `scripts/browser-smoke.mjs` now selects this lesson at 390/768/1440px, checks real publisher sidecar verse overlay boundaries, navigates page 1 → 2 → 1, verifies marks cannot leak across pages, checks horizontal overflow and captures page-2 screenshots. This extends the earlier synthetic two-page unit gate; it is **not** physical S Pen or a full-source audit.
+- Changed mock-adapter, notebookContracts tests and browser smoke on PR #116. CI for this continuation must be inspected on the final exact SHA before calling it verified. No remote deploy, data migration, private data or production change. #102 stays OPEN; human review, physical stylus QA and authorized backend/report/archive/share remain.
+
 # PROJECT_STATUS — verified handoff state
+
+## #102 notebook sidecar consistency — unmerged continuation (2026-10-29)
+- PR #116 now passes publisher-verified page regions directly into `ReaderPrintedPage`; the lesson scope gate and the rendered Quran polygons use **one identical metadata response**. Previously two independent fetches could disagree (primary vs fallback), and duplicate metadata requests. Other reader callers retain their own fetch path.
+- Added a synthetic two-page Fatiha/Baqarah boundary regression (page 1→2), including wrong-page and missing end-anchor rejection. This is not yet a real multi-page Chrome fixture or a full Quran source audit.
+- Changes are on the existing #102 draft branch only. Exact-head GitHub Verify **pending**; no remote deploy, real learners, permanent private ink or PDF. Next: inspect all four jobs and multi-page visual/device evidence before review.
+
+
+
+## STU S11 #102 — private drawing layer (draft PR #116, unmerged)
+
+- Continued the existing feature branch with **ephemeral personal pen, marker and eraser strokes** over the verified lesson page. Separate toolbar controls hide/show published teacher marks without editing them; local ink supports per-page undo and clear. Private strokes are bounded to 100 per page and live only in the mounted viewer (no server, browser storage, export or archive).
+- A page is no longer rendered with a stale verification result after navigation: the viewer requires the loaded page and scope to match the current request before displaying the Quran and its marks. Changing learner, lesson or published revision remounts the viewer and discards private strokes.
+- Added native Chrome touch-drag/undo and teacher-layer visibility checks in scripts/browser-smoke.mjs at 390px, plus layer toolbar checks at 768/1440px. **Code head 717e61889aa90714b8916483f964e200354687cb passed all four Verify jobs in [40817562294](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40817562294)**, including strict TypeScript, Vitest, Next build, real Chrome touch drawing/undo at 390px, layer controls at 768/1440px and native local Cloudflare D1/auth. Earlier failed CI identified smooth-scroll timing in the new browser test; fixed by instant scroll before hit testing. Documentation commits after this head need their own checks. Existing publisher metadata, local notes and synthetic demo isolation remain.
+- No physical S Pen test, multi-page visual fixture, persisted notebook API, remote publication/share/export or production deployment. Keep #102 and PR #116 OPEN. Next: inspect exact-head Verify and fix any failure, then test multi-page and physical stylus before review.
+- Staging #118 has since been completed on main via [PR #119](https://github.com/geminiamo0-ship-it/nour-elquran/pull/119), with remote Santoreno [run 40812368658](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40812368658) SUCCESS. Its older pending text below is historical; public developer staging uses synthetic data only and is not a real-user launch.
+
+
+## STU S11 #102 — notebook contracts + Quran lesson viewer (draft PR #116)
+
+- Continued the existing draft PR with `LessonQuranViewer`, reusing `ReaderPrintedPage` and the canonical page sidecar. Per-page anchors are checked against publisher metadata before the lesson range/teacher marks are displayed; invalid or unavailable metadata fails closed with an honest message.
+- One explicitly synthetic demo-active completed lesson has a scoped 112:1–4 example on page 604 with a sample teacher mark; it is not a server record, private student data or real teacher assessment. New and connected learners receive no fake published lesson.
+- Navigation is bounded to the published lesson pages; teacher annotations are read-only, personal notebook notes stay separate. No ink mutation, archive/share/export, backend lesson API or deployment is claimed.
+- New tests cover boundary anchor mismatch, empty metadata, scope/page restrictions and sibling-safe demo filtering. **Exact-head CI and Chrome lesson interaction remain to verify**; physical S Pen, multi-page visual QA and end-to-end publication are pending. Keep #102 and PR #116 OPEN.
+
+
+### Earlier contracts checkpoint
+- Branch `feat/102-notebook-contracts-reports` adds strict learner/lesson-scoped published revision and Quran scope contracts, teacher-approved annotation filtering, and independent private-note filtering. Cross-surah/page ranges are structurally checked against the pinned edition, **not** claimed verified against publisher page metadata.
+- The existing notebook now selects the newest valid published report, displays each nullable /10 grade independently and says clearly when report, approved Quran layers, sharing, PDF or archive are unavailable. Keyed learner remount discards unsent draft/selection on sibling switch.
+- Synthetic Vitest covers L1/L2, cross-account denial, invalid edition/page/range, latest revision, private note separation and nullable grades. No published notebook records or shared Quran viewer are supplied yet; no server persistence, deployment or real learner data.
+- Exact-head GitHub Actions pending; **do not mark #102 complete**. Next: verify PR CI and build a read-only LessonQuranViewer with publisher-verified anchors and teacher layer; then separate personal ink/notes and Chrome responsive tests.
+
 
 ## OPEN DEV STAGING #118 — implementation branch (not yet deployed)
 - Owner requested open, passwordless preview of the existing `noor-site-staging` site. Site Worker offers `NOOR_DEV_OPEN=true` specifically for the developer staging Worker: no extra Basic password for pages or API. Normal Better Auth password/session and owner-level learner authorization remain enforced.
