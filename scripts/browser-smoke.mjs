@@ -608,6 +608,13 @@ try {
   const classroomInteraction=await socket.send('Runtime.evaluate',{
     expression:`(async()=>{const pause=()=>new Promise(r=>setTimeout(r,190));
       const buttons=()=>[...document.querySelectorAll('button')];
+      const settings=document.querySelector('summary[aria-label="إعدادات المعاينة"]');
+      settings?.click();await pause();
+      const settingsOpened=settings?.parentElement?.open===true;
+      settings?.parentElement?.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+      await pause();
+      const settingsClosed=settings?.parentElement?.open===false;
+      const focusReturned=document.activeElement===settings;
       const start=buttons().find(b=>b.textContent.includes('بدء الحصة'));
       const before=start?.disabled===true;
       const people=[...document.querySelectorAll('input[type=checkbox]')];
@@ -625,7 +632,7 @@ try {
       const clock=document.querySelector('input[type=range]');
       clock.value='42';clock.dispatchEvent(new Event('input',{bubbles:true}));clock.dispatchEvent(new Event('change',{bubbles:true}));await pause();
       const notAutoEnded=document.querySelector('[data-phase="live"]')!==null;
-      return {before,both,live,hasQuran,noStudentEnd,noStudentNavigation,notAutoEnded};
+      return {settingsOpened,settingsClosed,focusReturned,before,both,live,hasQuran,noStudentEnd,noStudentNavigation,notAutoEnded};
     })()`,
     awaitPromise:true,returnByValue:true,
   });
@@ -693,6 +700,8 @@ try {
   for(const viewport of [
     {width:360,height:667,role:'student',minimumWidth:205,minimumVideoHeight:75},
     {width:390,height:844,role:'student',minimumWidth:245,minimumVideoHeight:80},
+    {width:844,height:390,role:'student',minimumWidth:145,minimumVideoHeight:140},
+    {width:768,height:1024,role:'teacher',minimumWidth:300,minimumVideoHeight:180},
     {width:1280,height:900,role:'teacher',minimumWidth:395,minimumVideoHeight:180},
     {width:1440,height:900,role:'teacher',minimumWidth:395,minimumVideoHeight:180},
   ]){
