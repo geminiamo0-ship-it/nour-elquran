@@ -1,5 +1,15 @@
 # PROJECT_STATUS — verified handoff state
 
+
+## STU S11 #102 — private drawing layer (draft PR #116, unmerged)
+
+- Continued the existing feature branch with **ephemeral personal pen, marker and eraser strokes** over the verified lesson page. Separate toolbar controls hide/show published teacher marks without editing them; local ink supports per-page undo and clear. Private strokes are bounded to 100 per page and live only in the mounted viewer (no server, browser storage, export or archive).
+- A page is no longer rendered with a stale verification result after navigation: the viewer requires the loaded page and scope to match the current request before displaying the Quran and its marks. Changing learner, lesson or published revision remounts the viewer and discards private strokes.
+- Added native Chrome pointer-drag/undo and teacher-layer visibility checks in scripts/browser-smoke.mjs at 390px, plus layer toolbar checks at 768/1440px. **Exact-head CI is pending; this is implemented code, not yet verified behavior.** Existing publisher metadata, local notes and synthetic demo isolation remain.
+- No physical S Pen test, multi-page visual fixture, persisted notebook API, remote publication/share/export or production deployment. Keep #102 and PR #116 OPEN. Next: inspect exact-head Verify and fix any failure, then test multi-page and physical stylus before review.
+- Staging #118 has since been completed on main via [PR #119](https://github.com/geminiamo0-ship-it/nour-elquran/pull/119), with remote Santoreno [run 40812368658](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40812368658) SUCCESS. Its older pending text below is historical; public developer staging uses synthetic data only and is not a real-user launch.
+
+
 ## STU S11 #102 — notebook contracts + Quran lesson viewer (draft PR #116)
 
 - Continued the existing draft PR with `LessonQuranViewer`, reusing `ReaderPrintedPage` and the canonical page sidecar. Per-page anchors are checked against publisher metadata before the lesson range/teacher marks are displayed; invalid or unavailable metadata fails closed with an honest message.
