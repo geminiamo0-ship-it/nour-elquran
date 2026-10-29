@@ -92,7 +92,7 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
     const {status,...body}=result;
     return reply(status,body,requestId);
   }
-  const myAttempts=/^\\/v1\\/me\\/learners\\/([a-zA-Z0-9-]{1,128})\\/assignments\\/([a-zA-Z0-9-]{1,128})\\/submissions$/.exec(path);
+  const myAttempts=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/assignments\/([a-zA-Z0-9-]{1,128})\/submissions$/.exec(path);
   if(myAttempts){
     if(request.method!=='GET'&&request.method!=='POST')
       return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
@@ -248,7 +248,7 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     const {status,...body}=result;
     return reply(status,body,requestId);
   }
-  const teacherReviews=/^\\/v1\\/teacher\\/learners\\/([a-zA-Z0-9-]{1,128})\\/assignments\\/([a-zA-Z0-9-]{1,128})\\/reviews$/.exec(path);
+  const teacherReviews=/^\/v1\/teacher\/learners\/([a-zA-Z0-9-]{1,128})\/assignments\/([a-zA-Z0-9-]{1,128})\/reviews$/.exec(path);
   if(teacherReviews){
     if(request.method!=='GET'&&request.method!=='POST')
       return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
