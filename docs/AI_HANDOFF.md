@@ -1,3 +1,8 @@
+## CLASSROOM #120 / PR #121 — concurrent live-room guard (2026-10-29)
+- Draft branch `feat/noor-classroom-40m-booking-guard`: two additional D1/SQLite triggers in `workers/api/migrations/0003_teacher_schedule.sql` deny an INSERT/UPDATE producing a second `live` lesson for the same teacher OR learner. Adjacent reserved 40-minute slots remain bookable; an overrun does not auto-end the first lesson. Four synthetic tests added to `workers/api/tests/test_teacher_calendar.py`.
+- Review exact-head GitHub Verify before claiming tests pass. No authorized Start/End endpoint, teacher presence or learner presence is implemented; a direct SQL status write is not actor authorization. Leave PR #121 Draft, no remote migration/deploy, no real child records.
+- Next exact engineering step: authenticated teacher-only lifecycle with durable simultaneous two-party presence, atomic checks and idempotent Start/End. Reconcile provider ADR conflict before A/V coding. Owner's main-branch protection decision #1 remains unverified due GitHub integration 403 on the protection endpoint; do not claim enabled.
+
 ## CLASSROOM #120 / PR #121 — historical teacher integrity (2026-10-29, draft only)
 - CI exposed an incorrect assumption in an initial test: `0001_core.sql` already makes `lessons.learner_id` immutable, so reassignment is prohibited even for active learners. Corrected the test and removed the redundant proposed eligibility trigger change.
 - Added `lessons_teacher_immutable_after_start` to draft `0003_teacher_schedule.sql`: the acting teacher may change while scheduled, but cannot be silently rewritten when the lesson is live or completed. Two SQLite regressions cover immutable learner identity and teacher identity across scheduled/live/completed.
