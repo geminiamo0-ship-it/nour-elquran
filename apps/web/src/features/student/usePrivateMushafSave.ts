@@ -81,6 +81,19 @@ export function usePrivateMushafSave({
  },[enabled,indexReady,pageReady,page]);
  useEffect(()=>{
   if(!enabled)return;
+  // Next.js client navigation does not reliably trigger beforeunload.
+  // Stop in-app links while an unsaved operation awaits a D1 ACK.
+  const guard=(event:MouseEvent)=>{
+   if(!queue.current.length||!(event.target instanceof Element)||
+       !event.target.closest('a[href]'))return;
+   event.preventDefault();event.stopPropagation();
+   setError('لم يكتمل حفظ المصحف بعد؛ أكمل الحفظ أو أعد المحاولة قبل مغادرة الصفحة.');
+  };
+  document.addEventListener('click',guard,true);
+  return ()=>document.removeEventListener('click',guard,true);
+ },[enabled]);
+ useEffect(()=>{
+  if(!enabled)return;
   const onUnload=(event:BeforeUnloadEvent)=>{
    if(!queue.current.length)return;
    event.preventDefault();event.returnValue='';

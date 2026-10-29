@@ -22,6 +22,7 @@ function Frame({ children }: { children: ReactNode }) {
   const { learners, selectedId, selectLearner, selected } = useStudent();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [switchWarning,setSwitchWarning]=useState('');
   const selectedNav = (href: string) => pathname === href;
   const navigation = (mobile = false) => studentNavigation.map((item) => (
     <Link key={item.href} href={item.href} aria-current={selectedNav(item.href) ? 'page' : undefined}
@@ -44,9 +45,16 @@ function Frame({ children }: { children: ReactNode }) {
           <div className={styles.profileGroup}>
             <label htmlFor="learner-switch">ملف الطالب</label>
             <select id="learner-switch" aria-label="اختر ملف الطالب" value={selectedId}
-              onChange={(event) => selectLearner(event.target.value)}>
+              onChange={(event) => {
+                if(document.querySelector('[data-quran-save-status="pending"],[data-quran-save-status="failed"]')){
+                  setSwitchWarning('لا يمكن تبديل ملف الطالب قبل اكتمال حفظ المصحف. أعد المحاولة من المصحف.');
+                  return;
+                }
+                setSwitchWarning('');selectLearner(event.target.value);
+              }}>
               {learners.map((learner) => <option key={learner.id} value={learner.id}>{learner.name}</option>)}
             </select>
+            {switchWarning&&<span role="status">{switchWarning}</span>}
           </div>
           <span className={styles.stageTag}>{selected.profile.stage === 'new' ? 'لم تبدأ الحصص' :
             selected.profile.stage === 'active' ? 'حالة نشطة · مثال' :

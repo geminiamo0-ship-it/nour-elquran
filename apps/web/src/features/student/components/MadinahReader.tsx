@@ -257,7 +257,7 @@ export function MadinahReader() {
       {privateSave.enabled && <div role="status" aria-live="polite" className={css.saveNotice}
         data-quran-save-status={privateSave.status}>
         {privateSave.status==='saved'?'تم الحفظ على الحساب ✓':
-          privateSave.status==='pending'?'جارٍ الحفظ على الحساب…':
+          privateSave.status==='pending'?(privateSave.error||'جارٍ الحفظ على الحساب…'):
           privateSave.status==='loading'?'جارٍ تحميل المصحف المحفوظ…':
           privateSave.status==='failed'?privateSave.error:''}
         {privateSave.status==='failed'&&<button type="button" onClick={privateSave.retry}>
