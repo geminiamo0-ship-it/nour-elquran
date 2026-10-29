@@ -1,3 +1,8 @@
+## #102 real two-page browser fixture (PR #116, unmerged)
+- `apps/web/src/features/student/mock-adapter.ts`: separate synthetic completed lesson/report/publication for page 1→2 (Fatiha/Baqarah), each page with an independent teacher mark; only demo-active receives it.
+- `apps/web/src/features/student/notebookContracts.test.ts`: ensures fixture remains scoped to its learner and lesson and nullable grades are not fabricated.
+- `scripts/browser-smoke.mjs`: native Chrome real-publisher metadata/page-turn/overlay isolation at 390/768/1440; captures `student-notebook-multipage-*.png`. No real student or backend data.
+
 # Repository map and file ownership
 
 ## #102 lesson Quran source consistency (PR #116, unmerged)
