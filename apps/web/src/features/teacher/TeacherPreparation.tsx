@@ -1,5 +1,6 @@
 'use client';
 import {useState} from 'react';
+import Link from 'next/link';
 import {useTeacher} from './TeacherContext';
 import {canStartLesson} from './domain';
 import {Empty,Panel,Pill,SectionHeading} from './TeacherUI';
@@ -53,10 +54,13 @@ export function TeacherPreparation(){
         </Panel>
       </div>
       <div className={styles.prepFooter}><div><b>جاهزية الفصل</b><p>الشيخ {lesson.teacherPresent?'موجود':'غير متصل'} · الطالب {lesson.learnerPresent?'موجود':'غير متصل'}.</p></div>
-        <button className={styles.primaryButton} type="button" disabled
-          title="خادم الحضور وغرفة الاتصال لم يتم ربطهما بعد">
-          {canStartLesson(lesson)?'بدء الحصة · بعد تفعيل الفصل':'في انتظار الطرفين'}
-        </button>
+        <div className={styles.actions}>
+          <Link className={styles.secondaryButton} href="/classroom">فتح معاينة الفصل</Link>
+          <button className={styles.primaryButton} type="button" disabled
+            title="خادم الحضور وغرفة الاتصال لم يتم ربطهما بعد">
+            {canStartLesson(lesson)?'بدء الحصة · بعد تفعيل الفصل':'في انتظار الطرفين'}
+          </button>
+        </div>
       </div>
     </>}
   </div>;
