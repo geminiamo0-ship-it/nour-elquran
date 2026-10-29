@@ -1,3 +1,7 @@
+## Active blocker #169 — connected teacher route trailing slash
+- The scoped Dev build and D1/owner lifecycle checks succeeded, but the targeted teacher browser screenshot in Santoreno run 40968034708 showed generic "هذا القسم قيد ربط الـBackend" with banner "بوابة الشيخ المتصلة". Root cause: static URL `/teacher/students/` vs strict unsuffixed check in `TeacherReadOnlyView`.
+- On branch `fix/169-teacher-static-trailing-slash`, normalization plus unit test covers Students, Schedule, Assignments, root and preservation of non-teacher paths. Validate PR CI, merge, postmerge Verify and rerun existing Santoreno #248 via workflow dispatch (not default Chrome). Do not claim remote teacher UI ready until actual screenshot and role denial pass.
+
 ## #171 fast default CI / on-demand browser QA
 - Owner preference (2026-10-30): prioritize quick CI; Chrome full E2E should NOT run with every PR/main push. Branch `chore/171-fast-ci-browser-on-demand` keeps core lint, typecheck, unit/integration, build, HTTP plus native local Wrangler D1 and Better Auth session/ownership smoke in Verify.
 - Manual `.github/workflows/browser-qa.yml` choice static/account/all covers the exact local synthetic Chrome journeys and screenshots when needed for material UI/role work or pre-release. Staging remote browser is an independent explicitly invoked acceptance step; do not conflate green Verify with UI acceptance.
