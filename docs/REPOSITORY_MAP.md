@@ -215,3 +215,9 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `quranAssignment.ts` + tests: structured surah/from/to/page and demo references; reject scope string guessing, nearest booked lesson.
 - `components/QuranAyahOverlay.tsx` and `components/ReaderPrintedPage.tsx`: optional allowed/focus verse keys for task-specific view; default full Mushaf behaviour unchanged.
 
+
+## #102 read-only lesson mushaf slice (draft)
+- `apps/web/src/features/student/components/LessonQuranViewer.tsx` and its CSS module: bounded page navigation, publisher metadata verification, shared printed-page rendering, read-only published teacher annotations and explicit invalid-source state.
+- `apps/web/src/features/student/notebookContracts.ts`: `pageKeysForNotebookScope` checks actual page sidecar boundary verses before exposing allowed verse keys.
+- `apps/web/src/features/student/mock-adapter.ts`: one explicitly synthetic lesson publication only for the active demo profile; no connected-user or new-learner fabricated reports.
+- `apps/web/src/features/student/notebookContracts.test.ts`: publisher boundary and cross-learner safety regression. No backend persistence or export.
