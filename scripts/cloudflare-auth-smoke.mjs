@@ -1,4 +1,3 @@
-/* global Request, URL */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
@@ -68,6 +67,16 @@ assert.equal((await call('/v1/me/learners',{cookie:cookieA})).response.status,40
 const again = await call('/api/auth/login',{method:'POST',body:{phoneNumber:'+12025550101',password}});
 assert.equal(again.response.status,200,JSON.stringify(again.data));
 cookieA = cookieHeader(again.response);
+// Each request constructs a fresh library instance; the limit must persist in D1.
+for (let i=0; i<2; i++) {
+  const denied = await call('/api/auth/login',{method:'POST',body:{phoneNumber:'+12025550101',password:'wrong-password'}});
+  assert.equal(denied.response.status,401,JSON.stringify(denied.data));
+}
+const limited = await call('/api/auth/login',{method:'POST',body:{phoneNumber:'+12025550101',password},
+  headers:{'x-forwarded-for':'203.0.113.99','x-real-ip':'203.0.113.98'}});
+assert.equal(limited.response.status,429,JSON.stringify(limited.data));
+assert.equal(limited.data.code,'RATE_LIMITED');
+assert.equal(limited.response.headers.getSetCookie().length,0);
 const id = a.data.user.id;
 assert.match(id,/^[a-zA-Z0-9_-]+$/);
 sql("UPDATE accounts SET status='disabled' WHERE auth_subject='"+id+"'");
@@ -75,5 +84,5 @@ assert.equal((await call('/v1/me/learners',{cookie:cookieA})).response.status,40
 sql("UPDATE accounts SET status='active' WHERE auth_subject='"+id+"'");
 sql("UPDATE auth_sessions SET expires_at=0 WHERE user_id='"+id+"'");
 assert.equal((await call('/v1/me/learners',{cookie:cookieA})).response.status,401,'Expired session must not be cached');
-console.log('Native Better Auth/D1: signup, phone login, owner isolation, limits, CSRF, logout, disabled account and expiry passed');
+console.log('Native Better Auth/D1: signup, phone login, owner isolation, profile/credential limits, CSRF, logout, disabled account and expiry passed');
 

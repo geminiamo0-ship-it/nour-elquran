@@ -32,7 +32,13 @@ export function createAuth(env: Env) {
       ipAddress: { ipAddressHeaders: ['cf-connecting-ip'] },
       defaultCookieAttributes: { httpOnly: true, secure: !settings.local, sameSite: 'lax', path: '/' },
     },
-    rateLimit: { enabled: true, storage: 'database', modelName: 'authRateLimits', window: 60, max: 30 },
+    rateLimit: {
+      enabled: true, storage: 'database', modelName: 'authRateLimits', window: 60, max: 30,
+      customRules: {
+        '/sign-in/phone-number': { window: 60, max: 5 },
+        '/sign-up/email': { window: 60, max: 5 },
+      },
+    },
     plugins: [phoneNumber({
       sendOTP: async () => { throw Error('Phone verification delivery is not configured'); },
     })],
