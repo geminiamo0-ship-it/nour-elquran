@@ -214,3 +214,7 @@ Owner authorized execution of the full classroom implementation plan #120. A foc
 ## 2026-10-29 — Classroom lifecycle policy + audit next PR (#120)
 
 After verified and merged 40-minute calendar PR #121, implement a small separate Worker's **server-input-only** policy module for Sheikh Start/End and both-person connected presence; 30/40 minute alerts never auto-stop the class. Add immutable D1 lesson Start/End ledger and tests; avoid claiming that the pure policy is already a deployed live room. Worker/DO presence enforcement, session-bound teacher API and atomic journal projection are required next. See #7, #18 and #120.
+
+## 2026-10-29 — Media provider ADR reconciliation (#120)
+
+The owner later approved LiveKit Cloud during the live-classroom UX discussion and delegated implementation of #120. ADR 0007 now selects **managed LiveKit Cloud for A/V only** as an explicit exception to the Cloudflare-hosted backend (Workers/D1/DO/R2/Queues). ADR 0004 remains binding for every other infrastructure concern; its earlier RealtimeKit *evaluation target* is no longer the active media instruction. #49/#50 still require two genuine devices, Egypt network/media-quality tests, scoped roles, token revocation, no automatic recording and explicit teacher Start/End before any release. No LiveKit credentials, rooms, API clients or bills are provisioned by this ADR. No production environment change.
