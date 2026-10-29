@@ -243,6 +243,33 @@ const assignedRoster=await call('/v1/teacher/learners',{cookie:cookieB});
 assert.equal(assignedRoster.response.status,200,JSON.stringify(assignedRoster.data));
 assert.equal(assignedRoster.data.learners.length,1);
 assert.equal(assignedRoster.data.learners[0].id,learner);
+// #162: current primary teacher authors a versioned plan; verified owner sees it.
+const planTeacher='/v1/teacher/learners/'+learner+'/plan';
+const planOwner='/v1/me/learners/'+learner+'/plan';
+const planWrite='/v1/teacher/learners/'+learner+'/plan-actions';
+const emptyPlan=await call(planTeacher,{cookie:cookieB});
+assert.equal(emptyPlan.response.status,200);
+assert.equal(emptyPlan.data.plan,null);
+const planCommand={operationId:randomUUID(),expectedRevision:0,level:'beginner',
+ nextWird:'Synthetic weekly Quran section',revisionWird:'Synthetic review section',focus:'Synthetic pronunciation'};
+assert.equal((await call(planWrite,{method:'POST',cookie:cookieA,body:planCommand})).response.status,404,
+  'Staff account is not a current assigned primary teacher');
+assert.equal((await call(planOwner,{cookie:cookieB})).response.status,404,
+  'Teacher account cannot read household owner data');
+assert.equal((await call(planWrite,{method:'POST',cookie:cookieB,body:{...planCommand,actor:'forged'}})).response.status,400);
+const savedPlan=await call(planWrite,{method:'POST',cookie:cookieB,body:planCommand});
+assert.equal(savedPlan.response.status,200,JSON.stringify(savedPlan.data));
+assert.equal(savedPlan.data.revision,1);
+assert.equal((await call(planWrite,{method:'POST',cookie:cookieB,body:planCommand})).data.code,'PLAN_ALREADY_SAVED');
+assert.equal((await call(planWrite,{method:'POST',cookie:cookieB,body:{
+ ...planCommand,operationId:randomUUID(),nextWird:'Stale write'}})).response.status,409);
+const ownerPlan=await call(planOwner,{cookie:cookieA});
+assert.equal(ownerPlan.response.status,200);
+assert.equal(ownerPlan.data.plan.nextWird,planCommand.nextWird);
+assert.equal(ownerPlan.data.plan.revision,1);
+assert.equal((await call('/v1/me/learners/invalid-other-owner/plan',{cookie:cookieA})).response.status,404);
+console.log('Native academic plan: assigned qualified teacher CAS/write/replay, owner read, foreign 404, stale 409 PASS');
+
 const bookRequest={action:'book',operationId:randomUUID(),
   reason:'Synthetic forty minute lesson booking',learnerId:learner,
   teacherId:provision.data.teacherId,startsAtMs:learnerBookingStart,kind:'standard'};
