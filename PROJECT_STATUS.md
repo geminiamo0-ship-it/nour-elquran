@@ -1,3 +1,9 @@
+## MASTER PERSISTENCE / RECOVERY PLAN — #142 (documentation only, 2026-10-29)
+
+- [Complete inventory / implementation blueprint](docs/PERSISTENCE_AND_LESSON_RECOVERY_MASTER_PLAN.md) records how pen, marker, erase/undo, private notes, shared lessons, teacher reports, assignments/audio, study progress, access, archives and backups must **actually** save and restore. [Issue #142](https://github.com/geminiamo0-ship-it/nour-elquran/issues/142) is the parent delivery tracker.
+- **No persistence service was implemented in this plan PR**. Student reader ink/notes and teacher classroom/report preview remain session-local; D1 `personal_annotations` table alone does not imply API. B1–B3 verified teacher CRUD read/role/assignment/booking source only. Do not infer remote staging or production migration.
+- Priority: isolated stage of existing B1–B3, then verified private Quran annotation save/reload + tombstone/undo, then LessonDO shared seq/ACK/replay, then immutable archive + draft/published report, then notebook and homework audio. Verify role/learner/sibling privacy and D1/DO/R2 restore before live minors.
+
 ## TEACHER BACKEND B3 #140 — audited staff assignments & 40m booking
 
 - `0006_staff_schedule.sql`: append-only staff scheduling commands and atomic D1 audit triggers for `assign,revoke,book,cancel`. Rechecks roles.manage, active qualified teacher, active owner/learner, full-interval primary assignment, overlap/40m, 6h normal cancellation, and no orphaned upcoming lessons. No room Start/End mutations.

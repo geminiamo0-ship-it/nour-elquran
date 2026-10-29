@@ -1,3 +1,9 @@
+## Master durable-data map — #142
+
+- `docs/PERSISTENCE_AND_LESSON_RECOVERY_MASTER_PLAN.md`: comprehensive D1 / LessonDO / private R2 persistence and recovery map across learner reader pen/marker/notes/bookmarks, live shared stroke protocol, reports/publication, diary, homework audio, academic plans, attendance, financial ledgers, notifications, privacy, offline, operations and restore. **Planning only**; no code/migrations deployed.
+- [Issue #142](https://github.com/geminiamo0-ship-it/nour-elquran/issues/142): master implementation backlog and acceptance, referencing existing specialty issues #87/#102/#120/#51/#52. Reuse existing canonical Quran renderer and permission constraints.
+- Next backend slice after B1–B3 synthetic staging: first real authenticated personal Quran `annotations/ops` and reading position, then synced LessonDO classroom and published immutable archive/reports; test actual server ACK and reload (not mere React-state success).
+
 ## Staff schedule B3 #140
 
 - `workers/api/migrations/0006_staff_schedule.sql`: atomic immutable D1 staff event ledger for primary teacher assignment, revocation and scheduled 40m class create/cancel; existing 0001/0003 triggers remain authoritative.
