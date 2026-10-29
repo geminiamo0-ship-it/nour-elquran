@@ -568,7 +568,7 @@ try {
     if (width === 390) {
       // Real Chrome touch drag, not an element.click() or fabricated React handler.
       const box = await socket.send('Runtime.evaluate', {
-        expression: "(()=>{const svg=document.querySelector('[aria-label=\\\"مصحف الحصة المنشور للقراءة فقط\\\"] svg[data-ink-mode=\\\"pen\\\"]');svg?.scrollIntoView({block:'center'});const r=svg?.getBoundingClientRect();if(!r)return null;const x=r.left+r.width*.4,y=r.top+r.height*.4,hit=document.elementFromPoint(x,y);return {x,y,w:r.width,h:r.height,top:r.top,bottom:r.bottom,viewport:innerHeight,hit:hit?.tagName,inSvg:svg.contains(hit)};})()",
+        expression: "(()=>{const svg=document.querySelector('[aria-label=\\\"مصحف الحصة المنشور للقراءة فقط\\\"] svg[data-ink-mode=\\\"pen\\\"]');svg?.scrollIntoView({block:'center',behavior:'instant'});const r=svg?.getBoundingClientRect();if(!r)return null;const x=r.left+r.width*.4,y=r.top+r.height*.4,hit=document.elementFromPoint(x,y);return {x,y,w:r.width,h:r.height,top:r.top,bottom:r.bottom,viewport:innerHeight,hit:hit?.tagName,inSvg:svg.contains(hit)};})()",
         returnByValue: true,
       });
       const rect = box.result?.value;
