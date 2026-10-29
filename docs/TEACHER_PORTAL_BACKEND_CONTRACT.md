@@ -1,3 +1,10 @@
+## B1 teacher read-only connection (#136, draft PR #137)
+
+- `GET /v1/teacher/learners` uses D1-qualified Better Auth subject and time-bounded, primary-only assignment. The pre-existing `GET /v1/teacher/lessons` is also verified server-side.
+- The **new separate browser read adapter** (`teacher-read-api.ts`) validates both response shapes, uses fixed same-origin GETs/HttpOnly-session credentials/no-cache, and fails closed on network/401/403/invalid response. It never returns mock fixtures for authenticated mode.
+- Set BOTH `NEXT_PUBLIC_ACCOUNT_UI=true` and `NEXT_PUBLIC_TEACHER_READONLY_ENABLED=true` at **build time** to enable the protected read-only teacher portal. Default is off: the existing synthetic teacher demo remains completely unchanged. Only home/assigned-students/schedule are backed by real reads; other screens explicitly say their server integration is pending, with no fake grade/report/assignment save action.
+- The live mode is **not** a teacher provisioning mechanism. Only previously provisioned, active, qualified D1 teacher subjects can read; no public role promotion, write API, real staff/child dataset or LiveKit. Remote staging with synthetic teacher identity and independent security verification remains a follow-up gate. Do not enable for general users without approved provisioning & validation.
+
 # Sheikh Portal → Cloudflare Backend Contract (Teacher-first implementation #45)
 
 **Status:** approved UI-driven API contract and implementation backlog, not a deployed API. Date: 2026-10-29.
