@@ -1,3 +1,8 @@
+## CLASSROOM #120 / PR #121 — terminal-state guard handoff (2026-10-29)
+- On `feat/noor-classroom-40m-booking-guard`, draft migration `0003_teacher_schedule.sql` now denies `live -> scheduled/cancelled` and `completed -> any other status`. Existing single-live guards cannot be bypassed by simply reopening a live booking. Three new synthetic SQLite regression tests are in `workers/api/tests/test_teacher_calendar.py`.
+- This is only D1 relational integrity; direct SQL `scheduled -> live` remains possible for trusted backend code. **No teacher authentication, both-party presence, Start/End endpoint, durable idempotency or media was implemented.** Never expose status updates directly to a client.
+- Check newest PR #121 exact-head Verify, then record SHA/run in #120 and PR. PR stays Draft pending review. No remote migration or deployment. #1 branch protection remains unverified (GitHub app 403); owner must enable/verify protection in repository settings, without changing PUBLIC visibility.
+
 ## CLASSROOM #120 / PR #121 — concurrent live-room guard (2026-10-29)
 - Draft branch `feat/noor-classroom-40m-booking-guard`: two additional D1/SQLite triggers in `workers/api/migrations/0003_teacher_schedule.sql` deny an INSERT/UPDATE producing a second `live` lesson for the same teacher OR learner. Adjacent reserved 40-minute slots remain bookable; an overrun does not auto-end the first lesson. Four synthetic tests added to `workers/api/tests/test_teacher_calendar.py`.
 - Review exact-head GitHub Verify before claiming tests pass. No authorized Start/End endpoint, teacher presence or learner presence is implemented; a direct SQL status write is not actor authorization. Leave PR #121 Draft, no remote migration/deploy, no real child records.
