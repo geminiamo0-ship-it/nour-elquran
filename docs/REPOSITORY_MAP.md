@@ -227,3 +227,8 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `workers/api/migrations/0003_teacher_schedule.sql`: additive 40-minute lesson occupancy constraint; D1 triggers reject same-teacher or same-learner overlapping bookings even on cancellation/reactivation/rescheduling, and keep legacy bookings untouched.
 - `workers/api/tests/test_teacher_calendar.py`: SQLite regression coverage for adjacency, collisions, status changes, scheduling edits, legacy migration and `core` readiness metadata.
 - This slice does not introduce media, live pen sync, teacher or learner booking HTTP routes. Next implementation should use authoritative D1 with authenticated actors and layer on classroom LessonDO; see #7/#120.
+
+## Media provider architecture clarification (#120)
+- `docs/adr/0007-livekit-media-exception.md`: later owner-approved LiveKit Cloud A/V-only provider exception, keeping Cloudflare Workers/D1/DO/R2/Queues as application and data source. Supersedes only the RealtimeKit choice in ADR 0004, not the data stack.
+- `docs/adr/0004-cloudflare-only-platform.md`: still authoritative for Cloudflare-hosted infrastructure, with its media vendor selection superseded per ADR 0007.
+- `docs/adr/0002-livekit-cloud-interactive-mushaf.md`: historical UX origin with explicit provider decision timeline. No media integration or paid room provisioned by documentation.
