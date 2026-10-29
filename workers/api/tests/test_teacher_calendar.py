@@ -286,6 +286,62 @@ class TeacherCalendarConstraints(unittest.TestCase):
             "teacher-b",
         )
 
+    def test_teacher_overrun_blocks_adjacent_start_until_explicit_end(self):
+        lesson(self.db, "first")
+        lesson(self.db, "next", start=T + SLOT_MS, learner="learner-b")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='first'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "teacher already has a live lesson"):
+            self.db.execute("UPDATE lessons SET status='live' WHERE id='next'")
+        self.assertEqual(
+            self.db.execute("SELECT status FROM lessons WHERE id='next'").fetchone()[0],
+            "scheduled",
+        )
+        # The 40-minute boundary must never auto-end the first room.
+        self.assertEqual(
+            self.db.execute("SELECT status FROM lessons WHERE id='first'").fetchone()[0],
+            "live",
+        )
+        self.db.execute("UPDATE lessons SET status='completed' WHERE id='first'")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='next'")
+        self.assertEqual(
+            self.db.execute("SELECT status FROM lessons WHERE id='next'").fetchone()[0],
+            "live",
+        )
+
+    def test_learner_cannot_be_live_with_two_teachers_in_adjacent_slots(self):
+        lesson(self.db, "first")
+        lesson(self.db, "next", start=T + SLOT_MS, teacher="teacher-b")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='first'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "learner already has a live lesson"):
+            self.db.execute("UPDATE lessons SET status='live' WHERE id='next'")
+        self.assertEqual(
+            self.db.execute("SELECT status FROM lessons WHERE id='next'").fetchone()[0],
+            "scheduled",
+        )
+        self.db.execute("UPDATE lessons SET status='completed' WHERE id='first'")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='next'")
+
+    def test_unrelated_teacher_and_learner_may_be_live_together(self):
+        lesson(self.db, "one")
+        lesson(self.db, "two", teacher="teacher-b", learner="learner-b")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='one'")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='two'")
+        self.assertEqual(
+            self.db.execute("SELECT COUNT(*) FROM lessons WHERE status='live'").fetchone()[0],
+            2,
+        )
+
+    def test_direct_live_insert_cannot_bypass_concurrent_room_guard(self):
+        lesson(self.db, "first")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='first'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "teacher already has a live lesson"):
+            lesson(self.db, "teacher-bypass", start=T + SLOT_MS,
+                   learner="learner-b", status="live")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "learner already has a live lesson"):
+            lesson(self.db, "learner-bypass", start=T + SLOT_MS,
+                   teacher="teacher-b", status="live")
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM lessons").fetchone()[0], 1)
+
     def test_core_readiness_version_unchanged_and_schedule_migration_recorded(self):
         self.assertEqual(
             self.db.execute("SELECT version FROM noor_schema_meta WHERE component='core'")
