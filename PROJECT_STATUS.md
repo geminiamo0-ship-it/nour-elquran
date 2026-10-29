@@ -1,3 +1,8 @@
+## TEACHER CONNECTED STUDENTS #167 — BRANCH ONLY (not deployed)
+- Issue #167 `feat/167-connected-teacher-students-layout`: replaces generic connected cards at `/teacher/students` with existing professional Teacher roster/detail layout, actual authorized D1 roster and lesson list, plus server-confirmed per-learner academic plan editor. No fixture scores/reports/assignments are injected into connected mode. Browser/role flag remains opt-in and OFF on ordinary staging build.
+- A derived roster guard prevents expired/revoked selection from exposing stale learner detail or another learner's lessons. Unit tests assert scope after roster changes.
+- **Not yet Verified/Merged/Deployed.** Next exact-head CI and native synthetic Chrome in connected teacher mode, then explicitly scoped Dev feature-flag staging; public teacher preview must not be lost, auth still resolved server-side. No Production, payments, WhatsApp or Classroom changes.
+
 ## STUDENT ACCOUNT MOBILE UX #160 (DRAFT, NOT DEPLOYED)
 - Branch `fix/160-account-mobile-header-ux` addresses connected profile selector truncation shown in Santoreno remote staging artifact #12934533154.
 - Mobile <=650px: learner selector gets real available row width, full current learner text is discoverable, session/logout controls get their own compact row; menu is anchored below the dynamic header instead of fixed pixel top. Account list edit/archive actions grouped so they wrap consistently at 1440 as well.
