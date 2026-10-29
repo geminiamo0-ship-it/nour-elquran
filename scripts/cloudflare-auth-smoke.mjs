@@ -127,13 +127,15 @@ const learnerBookingStart=Date.now()+8*60*60*1000;
 const assignmentRequest={
   action:'assign',operationId:randomUUID(),reason:'Synthetic teaching assignment acceptance',
   learnerId:learner,teacherId:provision.data.teacherId,
-  startsAtMs:Date.now()+10000,endsAtMs:Date.now()+30*24*60*60*1000,
+  startsAtMs:Date.now()+2000,endsAtMs:Date.now()+30*24*60*60*1000,
 };
 assert.equal((await schedule(assignmentRequest,cookieB)).response.status,403);
 assert.equal((await schedule({...assignmentRequest,role:'admin'})).response.status,400);
 const assignmentCreated=await schedule(assignmentRequest);
 assert.equal(assignmentCreated.response.status,201,JSON.stringify(assignmentCreated.data));
 assert.equal((await schedule(assignmentRequest)).data.code,'OPERATION_ALREADY_APPLIED');
+// The primary roster is deliberately time-scoped; wait until the new assignment begins.
+await new Promise(resolve=>setTimeout(resolve,2300));
 const assignedRoster=await call('/v1/teacher/learners',{cookie:cookieB});
 assert.equal(assignedRoster.response.status,200,JSON.stringify(assignedRoster.data));
 assert.equal(assignedRoster.data.learners.length,1);
