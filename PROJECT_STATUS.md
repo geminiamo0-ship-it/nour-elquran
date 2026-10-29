@@ -1,3 +1,9 @@
+## PRIVATE QURAN P0-1 #144 (code PR #145; gated, no remote rollout)
+
+- Added private D1 append-only Quran operations + versioned projection in `0007_private_mushaf.sql` and owner-verified GET/POST reader API. Supports pen, marker, ayah highlight, note, bookmark, reading position, hide/restore undo/redo with atomic CAS and idempotency.
+- `NEXT_PUBLIC_QURAN_PERSISTENCE_ENABLED` AND `NEXT_PUBLIC_ACCOUNT_UI` are required for real student reader; OFF by default, old demo preserved. UI shows pending/saved/failure; no claims of offline zero-loss. Native synthetic Worker/SQLite suite and mandatory remote staging follow-ups.
+- **Hard external gate**: Canonical R2 Quran edition `hafs-kfqc:v1.1.1` verified manifest and ayah anchors MUST be imported independently to staging D1; this PR adds no fake production metadata, deploy/secret/real learner. Read [full contract](docs/PRIVATE_QURAN_PERSISTENCE_CONTRACT.md) and #144/#142 for limitations and acceptance.
+
 ## MASTER PERSISTENCE / RECOVERY PLAN — #142 (documentation only, 2026-10-29)
 
 - [Complete inventory / implementation blueprint](docs/PERSISTENCE_AND_LESSON_RECOVERY_MASTER_PLAN.md) records how pen, marker, erase/undo, private notes, shared lessons, teacher reports, assignments/audio, study progress, access, archives and backups must **actually** save and restore. [Issue #142](https://github.com/geminiamo0-ship-it/nour-elquran/issues/142) is the parent delivery tracker.

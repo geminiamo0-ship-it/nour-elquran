@@ -10,7 +10,7 @@ export function validName(value: unknown): value is string {
 export function onlyKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
   return Object.keys(value).every(key => keys.includes(key));
 }
-export async function readObject(request: Request): Promise<Record<string, unknown> | null> {
+export async function readObject(request: Request, maxBytes = 16384): Promise<Record<string, unknown> | null> {
   if (!request.headers.get('content-type')?.toLowerCase().startsWith('application/json') || !request.body) return null;
   const reader = request.body.getReader();
   let bytes = 0;
@@ -20,7 +20,7 @@ export async function readObject(request: Request): Promise<Record<string, unkno
       const part = await reader.read();
       if (part.done) break;
       bytes += part.value.length;
-      if (bytes > 16384) { await reader.cancel(); return null; }
+      if (bytes > maxBytes) { await reader.cancel(); return null; }
       chunks.push(part.value);
     }
     const buffer = new Uint8Array(bytes);

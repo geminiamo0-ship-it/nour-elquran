@@ -22,6 +22,7 @@ import { getVisibleSpread, type ReaderPageMode } from '../quranReaderLayout';
 import type { InkMode } from './QuranInk';
 import { QuranSearchPanel } from './QuranSearchPanel';
 import css from './MadinahReader.module.css';
+import {usePrivateMushafSave} from '../usePrivateMushafSave';
 
 async function readJson(primary:string,fallback:string,signal:AbortSignal):Promise<unknown> {
   try {
@@ -80,6 +81,13 @@ export function MadinahReader() {
   const startTouch=useRef<{x:number;y:number}|null>(null);
   const lastVerseTap=useRef<QuranTap|null>(null);
   const [inkPaletteOpen,setInkPaletteOpen]=useState(false);
+  // Only authenticated real learner profiles opt in; public demo stays session-local.
+  const privateEnabled=process.env.NEXT_PUBLIC_QURAN_PERSISTENCE_ENABLED==='true' &&
+    process.env.NEXT_PUBLIC_ACCOUNT_UI==='true' && !selected.profile.demo;
+  const privateSave=usePrivateMushafSave({
+    learnerId:selected.profile.id,enabled:privateEnabled,page,
+    setPage,setPageEntry,setNotes,setInkByPage,setBookmarks,setMarked,
+  });
 
   useEffect(()=>{
     const update=()=>setCompactDevice(window.innerWidth<900);
@@ -158,6 +166,10 @@ export function MadinahReader() {
   },[localSearch,regions,texts]);
 
   function go(n:number,focus?:string) {
+    if(!privateSave.canNavigate){
+      setSavedNotice('لا تغادر الصفحة قبل تأكيد حفظ التعديلات أو إعادة المحاولة.');
+      return;
+    }
     const next=clampQuranPage(n);
     setPage(next);setPageEntry(String(next));setLocalSearch('');lastVerseTap.current=null;
     setPendingKey(focus??null);
@@ -184,7 +196,9 @@ export function MadinahReader() {
   }
   function saveNote() {
     if(!selectedTarget||!validTarget(selectedTarget))return;
+    if(!privateSave.canEdit){setSavedNotice('جارٍ تحميل الملاحظات المحفوظة؛ لا يمكن الكتابة الآن.');return;}
     const text=notePreview(draft),key=targetKey(selectedTarget);
+    if(privateSave.enabled)privateSave.note(selectedTarget,text,color);
     setNotes(prev=>{
       const remaining=prev.filter(n=>!(n.learnerId===selected.profile.id&&n.type==='private'&&targetKey(n.target)===key));
       if(!text)return remaining;
@@ -193,9 +207,12 @@ export function MadinahReader() {
         authorLabel:'ملاحظتي الشخصية',target:selectedTarget,text,color,createdAt:new Date().toISOString()
       }];
     });
-    setSavedNotice(text?'اتحفظت الملاحظة مؤقتًا في جلسة القراءة.':'اتمسحت الملاحظة المؤقتة.');
+    setSavedNotice(privateSave.enabled?'جارٍ مزامنة الملاحظة؛ راقب حالة الحفظ أعلى المصحف.':
+      text?'اتحفظت الملاحظة مؤقتًا في جلسة القراءة.':'اتمسحت الملاحظة المؤقتة.');
   }
   function changeInkFor(targetPage:number,strokes:QuranInkStroke[]) {
+    if(!privateSave.canEdit)return;
+    if(privateSave.enabled)privateSave.strokeDiff(targetPage,inkByPage[targetPage]??[],strokes);
     setInkByPage(prev=>({...prev,[targetPage]:strokes}));
     setRedoByPage(prev=>({...prev,[targetPage]:[]}));
   }
@@ -203,12 +220,16 @@ export function MadinahReader() {
     const current=inkByPage[page]??[];
     if(!current.length)return;
     const last=current[current.length-1]!;
+    if(!privateSave.canEdit)return;
+    if(privateSave.enabled)privateSave.strokeDiff(page,current,current.slice(0,-1));
     setInkByPage(prev=>({...prev,[page]:current.slice(0,-1)}));
     setRedoByPage(prev=>({...prev,[page]:[...(prev[page]??[]),last]}));
   }
   function redoInk() {
     const redo=redoByPage[page]??[],item=redo[redo.length-1];
     if(!item)return;
+    if(!privateSave.canEdit)return;
+    if(privateSave.enabled)privateSave.strokeDiff(page,inkByPage[page]??[],[...(inkByPage[page]??[]),item]);
     setInkByPage(prev=>({...prev,[page]:[...(prev[page]??[]),item]}));
     setRedoByPage(prev=>({...prev,[page]:redo.slice(0,-1)}));
   }
@@ -225,6 +246,7 @@ export function MadinahReader() {
     setShowAside(false);
   }
   function chooseTool(tool:InkMode) {
+    if(!privateSave.canEdit){setSavedNotice('جارٍ تحميل العلامات المحفوظة؛ انتظر التحميل أولًا.');return;}
     lastVerseTap.current=null;
     setInkMode(tool);setHideChrome(false);setShowAside(false);
     setInkPaletteOpen(tool!=='off');
@@ -232,6 +254,15 @@ export function MadinahReader() {
 
   return <div className={[css.reader,immersive?css.immersive:''].join(' ')} dir="rtl">
     <header className={css.readerHeader}>
+      {privateSave.enabled && <div role="status" aria-live="polite" className={css.saveNotice}
+        data-quran-save-status={privateSave.status}>
+        {privateSave.status==='saved'?'تم الحفظ على الحساب ✓':
+          privateSave.status==='pending'?(privateSave.error||'جارٍ الحفظ على الحساب…'):
+          privateSave.status==='loading'?'جارٍ تحميل المصحف المحفوظ…':
+          privateSave.status==='failed'?privateSave.error:''}
+        {privateSave.status==='failed'&&<button type="button" onClick={privateSave.retry}>
+          إعادة المحاولة</button>}
+      </div>}
       <div className={css.identity}>
         <span className={css.brandMark}><ReaderIcon name="book" /></span>
         <div><strong>مصحف نور القرآن</strong><small>مصحف المدينة · حفص عن عاصم · نص قرآني موثّق</small></div>
@@ -319,7 +350,7 @@ export function MadinahReader() {
                 const dx=end.clientX-start.x,dy=end.clientY-start.y;
                 if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.6)go(page+(dx>0?1:-1));
               }}>
-              <ReaderPrintedPage page={leaf} color={color} inkMode={inkMode}
+              <ReaderPrintedPage page={leaf} color={color} inkMode={privateSave.canEdit?inkMode:'off'}
                 strokes={inkByPage[leaf]??[]} onInkChange={changeInkFor}
                 selectedKey={audioVerse ? quranAudioKey(audioVerse) : selectedKey} noteKeys={noteByKey}
                 onSelect={handleVerseTap} onOpenNote={selectTarget}/>
@@ -375,7 +406,7 @@ export function MadinahReader() {
         </div> : showSearch ? <QuranSearchPanel onNavigate={(target,key)=>{
           go(target,key);setShowSearch(false);setMode('ayah');
         }}/> : showNotes ? <div className={css.noteList} aria-label="جميع ملاحظاتي">
-          {visible.length===0?<p>لا توجد ملاحظات شخصية محفوظة في هذه الجلسة.</p>:
+          {visible.length===0?<p>لا توجد ملاحظات شخصية {privateSave.enabled?'محفوظة في الحساب.':'محفوظة في هذه الجلسة.'}</p>:
             visible.map(n=><button key={n.id} type="button" className={css.noteJump}
               onClick={()=>{go(n.target.page,n.target.surah+':'+n.target.ayah);setMode('ayah');}}>
               <strong>{n.type==='teacher'?'ملاحظة الشيخ':'ملاحظتي'} · {targetKey(n.target)} · ص {n.target.page}</strong>
@@ -393,7 +424,10 @@ export function MadinahReader() {
             {!surahs.length&&<p>جار تحميل فهرس السور من المصدر المعتمد…</p>}
           </div> : indexTab==='juz'? <p className={css.info}>بدايات الأجزاء تحتاج فهرس صفحات مستقلًا موثقًا؛ التنقل بالسور والصفحات متاح الآن.</p>:
           indexTab==='marks'?<div className={css.indexRows}>
-            <button type="button" onClick={()=>setBookmarks(prev=>prev.includes(page)?prev.filter(n=>n!==page):[...prev,page].sort((a,b)=>a-b))}>
+            <button type="button" disabled={!privateSave.canEdit} onClick={()=>{
+              if(privateSave.enabled)privateSave.bookmark(page,bookmarks.includes(page));
+              setBookmarks(prev=>prev.includes(page)?prev.filter(n=>n!==page):[...prev,page].sort((a,b)=>a-b));
+            }}>
               {bookmarks.includes(page)?'إزالة علامة الصفحة الحالية':'إضافة علامة للصفحة الحالية'} · {page}
             </button>
             {bookmarks.map(n=><button type="button" key={n} onClick={()=>{go(n);setShowAside(false);}}>صفحة {n}</button>)}
@@ -411,12 +445,16 @@ export function MadinahReader() {
               <button type="button" className={css.smallButton} onClick={()=>openRecitation('ayah',selectedTarget)}>
                 <ReaderIcon name="play" /> استمع لهذه الآية
               </button>
-              <button type="button" className={css.smallButton} onClick={()=>setMarked(prev=>({
-                ...prev,[targetKey(selectedTarget)]:color
-              }))}>تظليل هذا الموضع</button>
-              <button type="button" className={css.smallButton} onClick={()=>setMarked(prev=>{
-                const next={...prev};delete next[targetKey(selectedTarget)];return next;
-              })}>إزالة التظليل</button>
+              <button type="button" className={css.smallButton} onClick={()=>{
+                 if(!privateSave.canEdit)return;
+                 if(privateSave.enabled)privateSave.highlight(selectedTarget,color);
+                 setMarked(prev=>({...prev,[targetKey(selectedTarget)]:color}));
+               }}>تظليل هذا الموضع</button>
+              <button type="button" className={css.smallButton} onClick={()=>{
+                 if(!privateSave.canEdit)return;
+                 if(privateSave.enabled)privateSave.highlight(selectedTarget,null);
+                 setMarked(prev=>{const next={...prev};delete next[targetKey(selectedTarget)];return next;});
+               }}>إزالة التظليل</button>
             </div>
             <label htmlFor="quran-note">ملاحظة على الموضع المحدد (حتى 500 حرف)</label>
             <textarea id="quran-note" maxLength={500} rows={4} value={draft}

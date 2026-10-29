@@ -1,3 +1,11 @@
+## Private learner Quran persistence #144
+
+- `workers/api/migrations/0007_private_mushaf.sql`: immutable, owner-verified D1 per-learner operation journal and current item projections.
+- `workers/api/src/private-mushaf.ts` + `auth/routes.ts`: strict input + canonical Quran metadata and owner-only page/index read, version-guarded writes.
+- `apps/web/src/features/student/private-mushaf-client.ts`, `usePrivateMushafSave.ts`, `components/MadinahReader.tsx`: real opt-in reader hydration + serialized server ACK/pending/retry; demo unchanged.
+- `workers/api/tests/test_private_mushaf.py`, `private-mushaf.test.ts`, `scripts/cloudflare-auth-smoke.mjs`: migration and synthetic D1 owner scope/erase/restore tests.
+- `docs/PRIVATE_QURAN_PERSISTENCE_CONTRACT.md`: scope, flags, staging canonical edition prerequisites, offline failure limitations.
+
 ## Master durable-data map — #142
 
 - `docs/PERSISTENCE_AND_LESSON_RECOVERY_MASTER_PLAN.md`: comprehensive D1 / LessonDO / private R2 persistence and recovery map across learner reader pen/marker/notes/bookmarks, live shared stroke protocol, reports/publication, diary, homework audio, academic plans, attendance, financial ledgers, notifications, privacy, offline, operations and restore. **Planning only**; no code/migrations deployed.

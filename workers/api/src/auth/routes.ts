@@ -4,6 +4,7 @@ import { createAuth } from './config.ts';
 import { authSettings } from './settings.ts';
 import { ownerAccount } from './accounts.ts';
 import { getOwnedLearner, listOwnedLearners } from '../owner-learners.ts';
+import {applyPrivateMushaf,parsePrivateMushafOp,readPrivateMushaf} from '../private-mushaf.ts';
 import { listOwnedLearnerLessons, listVerifiedTeacherLessons } from '../lesson-calendar.ts';
 import { listVerifiedTeacherLearners } from '../teacher-roster.ts';
 import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '../staff-teachers.ts';
@@ -73,6 +74,35 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
       throw error;
     }
     return reply(201, { learner: { id, name: input.name.trim(), learnerType: input.learnerType } }, requestId);
+  }
+  const mushafMatch = /^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/mushaf$/.exec(path);
+  if(mushafMatch){
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const learnerId=mushafMatch[1]!;
+    // The verified owner account + requested learner must agree on D1; this
+    // path never authorizes a teacher or a browser asserted owner header.
+    if(!await getOwnedLearner(db,{authSubject},learnerId))
+      return reply(404,{code:'NOT_FOUND'},requestId);
+    const schema=await db.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='private_mushaf'",
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'PRIVATE_MUSHAF_SCHEMA_NOT_READY'},requestId);
+    if(request.method==='GET'){
+      const url=new URL(request.url),q=url.searchParams;
+      if((q.has('index')&& (q.size!==1||q.get('index')!=='1')) ||
+         (!q.has('index')&&(q.size!==1||!/^([1-9]\d{0,2})$/.test(q.get('page')??'') ||
+           Number(q.get('page'))>604)))
+        return reply(400,{code:'INVALID_MUSHAF_PAGE'},requestId);
+      const result=await readPrivateMushaf(db,learnerId,q.has('index')?null:Number(q.get('page')));
+      const {status,...body}=result;
+      return reply(status,{learnerId,...body},requestId);
+    }
+    const command=parsePrivateMushafOp(await readObject(request,120000));
+    if(!command)return reply(400,{code:'INVALID_MUSHAF_OPERATION'},requestId);
+    const result=await applyPrivateMushaf(db,authSubject,learnerId,command);
+    const {status,...body}=result;
+    return reply(status,{learnerId,...body},requestId);
   }
   const learnerAccessMatch = /^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/access$/.exec(path);
   if (learnerAccessMatch && request.method === 'GET') {

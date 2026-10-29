@@ -56,6 +56,65 @@ const first = await call('/v1/me/learners',{method:'POST',cookie:cookieA,body:{n
 assert.equal(first.response.status,201,JSON.stringify(first.data));
 const learner = first.data.learner.id;
 assert.equal((await call('/v1/learners/'+learner,{cookie:cookieA})).response.status,200);
+
+// Private Quran P0 smoke uses a synthetic, throwaway edition + anchor in ONLY
+// the isolated local D1; never fabricate hashes or ayah mappings in real D1.
+const mushafPath='/v1/me/learners/'+learner+'/mushaf';
+assert.equal((await call(mushafPath+'?page=1',{cookie:cookieA})).data.items.length,0);
+assert.equal((await call(mushafPath+'?page=1',{cookie:cookieB})).response.status,404);
+sql("INSERT INTO quran_editions(id,riwayah,page_count,manifest_sha256) "+
+    "VALUES('hafs-kfqc:v1.1.1','hafs',604,'"+'c'.repeat(64)+"')");
+sql("INSERT INTO quran_ayah_anchors(edition_id,surah,ayah,page,word_count) "+
+    "VALUES('hafs-kfqc:v1.1.1',1,1,1,7)");
+const mushafOp=(itemId,kind,action='put',expectedVersion=0,payload={},page=1,operationId=randomUUID())=>({
+ itemId,kind,action,expectedVersion,payload,page,operationId,
+});
+const pen=mushafOp('stroke-1','pen','put',0,{
+ color:'#f6cd46',width:3,points:[{x:12,y:13},{x:14,y:15}],
+});
+assert.equal((await call(mushafPath,{method:'POST',cookie:cookieB,body:pen})).response.status,404);
+assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,origin:'https://attacker.invalid',body:pen})).response.status,403);
+const penCreated=await call(mushafPath,{method:'POST',cookie:cookieA,body:pen});
+assert.equal(penCreated.response.status,201,JSON.stringify(penCreated.data));
+assert.equal(penCreated.data.item.version,1);
+assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:pen})).data.code,'OPERATION_ALREADY_APPLIED');
+assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:{...pen,action:'hide',payload:{},expectedVersion:1}})).response.status,409);
+const noCAS=await call(mushafPath,{method:'POST',cookie:cookieA,body:{...pen,operationId:randomUUID()}});
+assert.equal(noCAS.response.status,409);
+const marker=mushafOp('marker-1','marker','put',0,{
+ color:'#86c5a8',width:16,points:[{x:100,y:200},{x:150,y:250}],
+});
+assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:marker})).response.status,201);
+const note=mushafOp('note-1-1-0','note','put',0,{
+ color:'#aabbcc',text:'Synthetic learner-only note',target:{surah:1,ayah:1,wordIndex:null},
+});
+assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:note})).response.status,201);
+const wrongAnchor=mushafOp('note-wrong','note','put',0,{
+ color:'#aabbcc',text:'Forged unverified page',target:{surah:1,ayah:1,wordIndex:null},
+},2);
+assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:wrongAnchor})).response.status,409);
+const highlight=mushafOp('highlight-1-1-0','highlight','put',0,{
+ color:'#ffff00',target:{surah:1,ayah:1,wordIndex:null},
+});
+assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:highlight})).response.status,201);
+const bookmark=mushafOp('bookmark-1','bookmark');
+assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:bookmark})).response.status,201);
+assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,
+ body:mushafOp('position','position')})).response.status,201);
+const pageBeforeHide=await call(mushafPath+'?page=1',{cookie:cookieA});
+assert.equal(pageBeforeHide.data.items.filter(x=>x.kind==='pen'||x.kind==='marker').length,2);
+assert.equal((await call(mushafPath+'?index=1',{cookie:cookieA})).data.items.length,4);
+const hide=mushafOp('stroke-1','pen','hide',1);
+assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:hide})).data.item.visible,false);
+assert.equal((await call(mushafPath+'?page=1',{cookie:cookieA})).data.items.some(x=>x.itemId==='stroke-1'),false);
+const restore=mushafOp('stroke-1','pen','restore',2);
+assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:restore})).data.item.version,3);
+assert.equal((await call(mushafPath+'?page=1',{cookie:cookieA})).data.items.some(x=>x.itemId==='stroke-1'),true);
+assert.equal((await call(mushafPath+'?page=0',{cookie:cookieA})).response.status,400);
+assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,
+ body:{...note,operationId:randomUUID(),actorAuthSubject:a.data.user.id}})).response.status,400);
+console.log('Native private Quran: verified learner save/reload, pen, marker, note anchor, bookmark, position, tombstone, CAS, replay, CSRF and cross-owner denial passed');
+
 assert.equal((await call('/v1/learners/'+learner,{cookie:cookieB,headers:{'x-account-id':'forged-owner-a'}})).response.status,404);
 assert.equal((await call('/v1/learners/'+learner,{headers:{authorization:'Bearer forged','x-user-id':a.data.user.id}})).response.status,401);
 assert.equal((await call('/v1/me/learners',{cookie:'better-auth.session_token=forged'})).response.status,401);
