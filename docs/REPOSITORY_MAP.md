@@ -1,5 +1,11 @@
 # Repository map and file ownership
 
+## #110 auth integration (draft PR #111; no HTTP auth yet)
+- `workers/api/src/owner-learners.ts`: D1 read-only account-to-learner boundary requiring server-verified auth subject, active account/profile filtering and optional child scope; never accepts caller-supplied account ownership. Not wired to public routes until Better Auth sessions exist.
+- `workers/api/tests/owner-learners.test.ts`: Node SQL parameterization/child-scope regression; `workers/api/tests/test_owner_queries.py`: Python SQLite integration against actual core migration and exact TypeScript SQL, synthetic only.
+- `pnpm-lock.yaml`: pinned Better Auth/Drizzle dependency graph generated in one-time GitHub Actions; temporary resolver workflow removed. No schema, login, session, provider messaging or deployment is implemented.
+
+
 ## #46 native local runtime verification (branch-only)
 - `scripts/cloudflare-local-smoke.sh`: disposable local Wrangler 4.45.0 D1 migration replay and Worker HTTP fail-closed smoke; no remote commands or real records.
 - `.github/workflows/verify.yml`: adds independent `cloudflare-local-d1` job. Existing repository-policy, governance-tests and code-quality jobs are unchanged. Native local is not deployed staging.
