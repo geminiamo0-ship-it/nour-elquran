@@ -1,3 +1,8 @@
+## #102 two-page visual verification — code head eaa22ca, 2026-10-29
+- [Verify 40831141757](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40831141757) on code head `eaa22ca77d4574025adbfbe1405ed21fe5495294`: all four jobs SUCCESS (repository-policy, governance-tests, code-quality with real Chrome, cloudflare-local-d1).
+- Downloaded screenshot artifact `noor-bootstrap-browser-screenshots` (ID 12878433906) and **visually inspected** `student-notebook-multipage-{390,768,1440}.png`: Baqarah page 2 is actually in frame at all three sizes; expected ayah highlights are visible, no obvious horizontal clipping. The earlier green run 40830894384 captured header rather than page at 768/1440; fixed by scrolling the printed page into the screenshot viewport before capture.
+- This is synthetic browser QA only. Physical S Pen, real publication/archive, authorization and human review remain open. Subsequent documentation commits require their own exact-head CI; no merge or production deployment.
+
 ## #102 multi-page Chrome publisher fixture — draft PR #116, 2026-10-29
 - Added a second **synthetic-only** completed lesson for `demo-active`, with an independent report and Fatiha 1:6 (page 1) → Baqarah 2:2 (page 2) publication; teacher marks on each page are deliberately distinct. Connected/new learners receive neither fixture. The existing Ikhlas example is preserved.
 - `scripts/browser-smoke.mjs` now selects this lesson at 390/768/1440px, checks real publisher sidecar verse overlay boundaries, navigates page 1 → 2 → 1, verifies marks cannot leak across pages, checks horizontal overflow and captures page-2 screenshots. This extends the earlier synthetic two-page unit gate; it is **not** physical S Pen or a full-source audit.
