@@ -17,7 +17,7 @@ class CoreMigrationTests(unittest.TestCase):
         self.db = database()
         self.db.executemany("INSERT INTO accounts VALUES (?,?,?,?)",
                             [("a","subject-a","active",0),("b","subject-b","active",0)])
-        self.db.executemany("INSERT INTO learners VALUES (?,?,?,?,?,?)",
+        self.db.executemany("INSERT INTO learners(id,account_id,display_name,learner_type,status,created_at_ms) VALUES (?,?,?,?,?,?)",
                             [("la","a","Fixture A","child","active",0),
                              ("lb","a","Fixture B","child","active",0),
                              ("lc","b","Fixture C","adult","active",0)])

@@ -1,3 +1,10 @@
+## NON-CLASSROOM PHASE 01A #157 — VERIFIED LOCAL IMPLEMENTATION, REMOTE PENDING
+- GitHub [PR #158](https://github.com/geminiamo0-ship-it/nour-elquran/pull/158), issue #157 / parent #155. Additive D1 0008 includes versioned rename/archive CAS, immutable before/after audit and SQL guard against archive with any scheduled/live lesson. No hard deletion; previous Quran items and completed lessons remain.
+- On earlier code head `78ae89b94601437806d0fbadcf2f63d502730c2c`, [Verify 40956372887](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40956372887) passed 4/4 including local Chrome rename/archive/refresh and 5 RTL viewports. Later code adds booked-lesson guard and Noor-only remote-browser origin allowlist; **new exact-head CI must be checked before merge**.
+- [Santoreno issue #242](https://github.com/geminiamo0-ship-it/santoreno/issues/242) / PR #243 prepares remote synthetic D1+Chrome acceptance on the existing `noor-site-staging`; that companion PR is not evidence of actual deployment until its main run finishes successfully.
+- NOT DONE: verified provider-backed phone/guardian/recovery, remote Staging migration and end-to-end connected account proof, human S Pen checks, production launch. `noor-core-staging` 0008 must be applied **before** deploying the new revision-dependent GET endpoints. Do not touch production.
+- Next: exact-head Noor Verify; merge code with issue left OPEN, verify main push, trigger existing Santoreno staging pipeline; review browser screenshots/404/CAS/restore evidence and only then consider closing the 01A slice. Rollback by reverting only staging Worker/UI, not destructive D1 schema removal.
+
 ## PRIVATE QURAN #149 — fail-closed current-page hydration (draft PR; 2026-10-29)
 
 - Connected Quran writing is now permitted only after **both** owner-scoped index and the **same learner + current page** have hydrated; stale previous-page or previous-learner results cannot unlock ink on a new page. A failed save locks further connected edits until Retry. Demo-only local drawing remains unchanged.

@@ -1,3 +1,8 @@
+## Non-Classroom #155 / Profile Phase 01A #157 — connected local passed, Cloudflare Dev pending
+- Noor #157 PR #158: D1 0008 revisioned owner profile rename/archive with immutable before/after audit, open-booking archive block, signed Better Auth subject, strict operationId/CAS and frontend ACK-only edit/archive controls. Native SQLite + Worker and Chrome accepted `78ae89b...` at [40956372887](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40956372887); latest code adds open-booking guard and remote staging Chrome URL allowlist, so latest head still needs exact SHA Verify.
+- Santoreno #242 PR #243 adds remote HTTP and Chrome verification for Noor's ordinary open `noor-site-staging` and independent `noor-core-staging`. No remote deployment or real-minor account launch is claimed by draft PRs.
+- Next exact sequence: verify Noor head; merge only when CI green; verify main push; merge/deploy dedicated Santoreno job; inspect its D1 migration and remote Chrome screenshots (360/390/768/1280/1440), cross-account 404, archive persistence, rollback status; leave #157 OPEN until independent acceptance. No Classroom, Santo clinical or production changes.
+
 ## #149 — private reader write readiness follow-up (2026-10-29; draft)
 
 - Branch `fix/149-private-reader-hydration-write-guard`: a page-specific readiness function blocks connected pen/marker/erase/note/highlight/bookmark writes until index and active page belong to the selected learner, and blocks new edits after a failed save. This closes the stale-page window between React navigation and its async page-load effect. Demo preview stays editable. New Vitest tests exercise stale page, sibling switch and failure.

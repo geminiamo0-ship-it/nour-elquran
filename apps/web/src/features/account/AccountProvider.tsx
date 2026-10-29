@@ -1,6 +1,6 @@
 'use client';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { AccountError, accountErrorMessage, createAccountClient, type AccountLearner, type Credentials, type Registration } from './api';
+import { AccountError, accountErrorMessage, createAccountClient, type AccountLearner, type Credentials, type Registration, type LearnerProfileAction } from './api';
 import { canApplyResult, type AccountState } from './state';
 
 import { ACCOUNT_UI_ENABLED } from './config';
@@ -10,11 +10,13 @@ type AccountContextValue = {
   login: (input: Credentials) => Promise<void>; register: (input: Registration) => Promise<void>;
   logout: () => Promise<void>;
   createLearner: (input: Pick<AccountLearner, 'name' | 'learnerType'>) => Promise<AccountLearner>;
+  profileAction: (learnerId:string, input:LearnerProfileAction) => Promise<void>;
 };
 const Context = createContext<AccountContextValue | null>(null);
 const disabled: AccountContextValue = { state: { status: 'disabled' }, refresh: async () => {},
   login: async () => { throw new AccountError('DISABLED'); }, register: async () => { throw new AccountError('DISABLED'); },
-  logout: async () => {}, createLearner: async () => { throw new AccountError('DISABLED'); } };
+  logout: async () => {}, createLearner: async () => { throw new AccountError('DISABLED'); },
+  profileAction: async () => { throw new AccountError('DISABLED'); } };
 
 export function AccountProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AccountState>({ status: ACCOUNT_UI_ENABLED ? 'checking' : 'disabled' });
@@ -88,7 +90,31 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       throw error;
     } finally { mutation.current = false; }
   }
-  const value: AccountContextValue = { state, refresh, logout, createLearner,
+  async function profileAction(learnerId:string,input:LearnerProfileAction):Promise<void> {
+    if (mutation.current) throw new AccountError('BUSY');
+    if (state.status!=='authenticated' || !state.learners.some(row=>row.id===learnerId &&
+        row.revision===input.expectedRevision))throw new AccountError('PROFILE_REVISION_CONFLICT',409);
+    const requestLease=lease.current;
+    mutation.current=true;
+    try {
+      const ack=await client.profileAction(learnerId,input);
+      if(!canApplyResult(lease.current,requestLease))throw new AccountError('SESSION_CHANGED');
+      setState(current=>current.status==='authenticated'?{
+        ...current,learners:input.action==='archive'
+          ? current.learners.filter(row=>row.id!==learnerId)
+          : current.learners.map(row=>row.id===learnerId
+            ? {...row,name:input.name,revision:ack.revision}:row),
+      }:current);
+      channel.current?.postMessage('changed');
+    } catch(error) {
+      if(canApplyResult(lease.current,requestLease) && error instanceof AccountError &&
+          (error.status===401 || error.status===403)){
+        ++lease.current;setState({status:'signed-out'});channel.current?.postMessage('changed');
+      }
+      throw error;
+    } finally {mutation.current=false;}
+  }
+  const value: AccountContextValue = { state, refresh, logout, createLearner, profileAction,
     login: input => authenticate(input, false), register: input => authenticate(input, true) };
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

@@ -55,6 +55,27 @@ assert.equal(badLogin.response.headers.getSetCookie().length,0);
 const first = await call('/v1/me/learners',{method:'POST',cookie:cookieA,body:{name:'Fixture Learner A',learnerType:'child'}});
 assert.equal(first.response.status,201,JSON.stringify(first.data));
 const learner = first.data.learner.id;
+// #157: exercise the actual Better Auth / Worker / D1 profile endpoint, not only SQL.
+assert.equal(first.data.learner.revision,1);
+const profilePath='/v1/me/learners/'+learner+'/profile-actions';
+const profileRename={action:'rename',operationId:randomUUID(),expectedRevision:1,name:'Fixture Learner A Revised'};
+assert.equal((await call(profilePath,{method:'POST',cookie:cookieB,body:profileRename})).response.status,404);
+assert.equal((await call(profilePath,{method:'POST',cookie:cookieA,origin:'https://attacker.invalid',body:profileRename})).response.status,403);
+assert.equal((await call(profilePath,{method:'POST',body:profileRename})).response.status,401);
+assert.equal((await call(profilePath,{method:'POST',cookie:cookieA,body:{...profileRename,accountId:'forged'}})).response.status,400);
+const renamed=await call(profilePath,{method:'POST',cookie:cookieA,body:profileRename});
+assert.equal(renamed.response.status,200,JSON.stringify(renamed.data));
+assert.equal(renamed.data.revision,2);
+const replayRename=await call(profilePath,{method:'POST',cookie:cookieA,body:profileRename});
+assert.equal(replayRename.response.status,200);
+assert.equal(replayRename.data.code,'OPERATION_ALREADY_APPLIED');
+const staleRename=await call(profilePath,{method:'POST',cookie:cookieA,
+ body:{...profileRename,operationId:randomUUID(),name:'Wrong stale update'}});
+assert.equal(staleRename.response.status,409);
+const checkedProfile=await call('/v1/learners/'+learner,{cookie:cookieA});
+assert.equal(checkedProfile.data.learner.name,'Fixture Learner A Revised');
+assert.equal(checkedProfile.data.learner.revision,2);
+console.log('Native learner profile: owner rename/CAS, idempotent replay, foreign owner denial, CSRF and refreshed detail PASS');
 assert.equal((await call('/v1/learners/'+learner,{cookie:cookieA})).response.status,200);
 
 // Private Quran P0 smoke uses a synthetic, throwaway edition + anchor in ONLY
@@ -239,6 +260,13 @@ assert.equal(teacherSchedule.data.lessons[0].endsAtMs-teacherSchedule.data.lesso
 const learnerTimetable=await call('/v1/me/learners/'+learner+'/lessons',{cookie:cookieA});
 assert.equal(learnerTimetable.response.status,200);
 assert.equal(learnerTimetable.data.lessons[0].id,lessonCreated.data.resourceId);
+const unsafeArchive=await call(profilePath,{method:'POST',cookie:cookieA,body:{
+  action:'archive',operationId:randomUUID(),expectedRevision:2,
+}});
+assert.equal(unsafeArchive.response.status,409,'Cannot archive a student with a scheduled lesson');
+assert.equal(unsafeArchive.data.code,'PROFILE_OPEN_LESSONS');
+assert.equal((await call('/v1/learners/'+learner,{cookie:cookieA})).data.learner.revision,2);
+
 assert.equal((await call('/v1/me/learners/'+learner+'/lessons',{cookie:cookieB})).response.status,404);
 const prematureRevoke=await schedule({action:'revoke',operationId:randomUUID(),
   reason:'Synthetic schedule reallocation',resourceId:assignmentCreated.data.resourceId});

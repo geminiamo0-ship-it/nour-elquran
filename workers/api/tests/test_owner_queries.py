@@ -20,6 +20,7 @@ class OwnerQueryTests(unittest.TestCase):
         self.db = sqlite3.connect(":memory:")
         self.db.execute("PRAGMA foreign_keys=ON")
         self.db.executescript((API / "migrations" / "0001_core.sql").read_text())
+        self.db.executescript((API / "migrations" / "0008_learner_profiles.sql").read_text())
         self.db.executemany(
             "INSERT INTO accounts(id,auth_subject,status,created_at_ms) VALUES(?,?,?,?)",
             [("account-a", "subject-a", "active", 1),

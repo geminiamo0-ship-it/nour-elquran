@@ -5,6 +5,11 @@
 **التتبع الرئيسي:** [#155](https://github.com/geminiamo0-ship-it/nour-elquran/issues/155)، وتتصل به خطط [#142](https://github.com/geminiamo0-ship-it/nour-elquran/issues/142) و[#44](https://github.com/geminiamo0-ship-it/nour-elquran/issues/44) و[#45](https://github.com/geminiamo0-ship-it/nour-elquran/issues/45).  
 **البنية المعتمدة:** Cloudflare Workers + D1 + R2 + Queues/Cron + Better Auth؛ التطوير على **الرابط المفتوح القائم** `noor-site-staging` مع D1 `noor-core-staging`، **بلا Worker QA منفصل وبلا كلمة سر Dev إضافية**. لا يغير شيء في Production أو Santo.
 
+## تنفيذ المرحلة 01 — الحالة الحالية (2026-10-29)
+- **01A إدارة ملفات الطلاب:** [Issue #157](https://github.com/geminiamo0-ship-it/nour-elquran/issues/157) — تم تنفيذ واختبار المسار محليًا على Worker/D1 وChrome، مع منع أرشفة طالب له حصة مفتوحة، وجارٍ التحقق على Cloudflare Dev؛ **LOCAL VERIFIED / REMOTE PENDING / NOT CLOSED**. لا يُعد نجاح Merge/CI بديلاً عن Staging E2E، ولا توجد موافقة نهائية على OTP أو موافقات القُصّر.
+- **باقي 01**: تحقق الهاتف، الاستعادة، الموافقات، جلسات الأجهزة، وتأهيل الشيخ بمسار الإدارة والاختبارات الحقيقية لم تُغلق.
+- **02–12:** كما في المصفوفة التالية؛ لم تنتقل إلى CLOSED بسبب عمل 01A.
+
 ## 0. النتيجة النهائية وحدودها
 
 نريد تحويل **كل صفحة حاليًا في `/` و`/student/*` و`/teacher/*`** من واجهة تجريبية إلى رحلة فعالة مترابطة، لا تختلق حجزًا ولا تقريرًا ولا حالة حفظ، وتحتفظ ببيانات كل متعلم على الخادم حتى بعد Refresh/تسجيل الخروج والعودة أو جهاز آخر. لا نخلق لوحة مستقلة لولي الأمر، ولا صفحة «خطة» جديدة للطالب.

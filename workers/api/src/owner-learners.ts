@@ -15,12 +15,14 @@ export interface OwnedLearner {
   readonly id: string;
   readonly displayName: string;
   readonly learnerType: 'adult' | 'child';
+  readonly revision: number;
 }
 
 interface LearnerRow {
   id: string;
   display_name: string;
   learner_type: string;
+  revision: number;
 }
 
 export interface BoundLearnerQuery {
@@ -36,7 +38,7 @@ export interface LearnerReadDatabase {
 }
 
 const BASE_QUERY = `
-  SELECT l.id, l.display_name, l.learner_type
+  SELECT l.id, l.display_name, l.learner_type, l.revision
   FROM learners AS l
   INNER JOIN accounts AS a ON a.id = l.account_id
   WHERE a.auth_subject = ?1
@@ -53,8 +55,9 @@ function validPrincipal(principal: VerifiedAccountSubject): boolean {
 function toOwnedLearner(row: LearnerRow): OwnedLearner | null {
   if (typeof row.id !== 'string' || !row.id ||
       typeof row.display_name !== 'string' ||
-      (row.learner_type !== 'adult' && row.learner_type !== 'child')) return null;
-  return { id: row.id, displayName: row.display_name, learnerType: row.learner_type };
+      (row.learner_type !== 'adult' && row.learner_type !== 'child') ||
+      !Number.isSafeInteger(row.revision) || row.revision<1) return null;
+  return { id: row.id, displayName: row.display_name, learnerType: row.learner_type, revision:row.revision };
 }
 
 /** Only active profiles belonging to the active account mapped to the verified subject. */
