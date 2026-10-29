@@ -1,5 +1,9 @@
 # AI agent handoff contract
 
+## PUBLIC STAGING PREVIEW #118 — current implementation
+- Branch `feat/118-public-preview` adds `NOOR_PUBLIC_PREVIEW=true` read-only demo routing to `workers/site/src/staging-access.ts` and tests. Only pages/static GET/HEAD are open; /api/*,/v1*,/health*,/ready* and all write requests stay behind stage password plus app-level authorization.
+- Before rollout, edit Santoreno `.github/workflows/noor-private-staging.yml` and `scripts/noor_private_staging.py` to serve `NEXT_PUBLIC_ACCOUNT_UI=false` labeled demo UI and verify public pages/real asset + private API and synthetic registration. No real student data/OTP. **Do not call it public until postmerge remote checks pass.**
+
 ## STAGING #114 — VERIFIED on Cloudflare (2026-10-29)
 - Latest Noor main `dff83b382b3774a7476ae8dee64b7454fd09859c` includes merged #113 same-origin account UI and #115 staging-only fail-closed access gate; Noor main [Verify 40808432004](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40808432004) SUCCESS.
 - Dedicated remote private staging `noor-core-staging` D1 and `noor-site-staging` Worker are deployed via `geminiamo0-ship-it/santoreno` isolated workflow. Confirmed [real remote run 40810303172](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40810303172) SUCCESS. See [runbook](NOOR_STAGING_RUNBOOK.md).
