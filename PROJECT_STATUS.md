@@ -1,5 +1,12 @@
 # PROJECT_STATUS — verified handoff state
 
+## STU S11 #102 — notebook contract/report slice (draft PR, not full F0)
+- Branch `feat/102-notebook-contracts-reports` adds strict learner/lesson-scoped published revision and Quran scope contracts, teacher-approved annotation filtering, and independent private-note filtering. Cross-surah/page ranges are structurally checked against the pinned edition, **not** claimed verified against publisher page metadata.
+- The existing notebook now selects the newest valid published report, displays each nullable /10 grade independently and says clearly when report, approved Quran layers, sharing, PDF or archive are unavailable. Keyed learner remount discards unsent draft/selection on sibling switch.
+- Synthetic Vitest covers L1/L2, cross-account denial, invalid edition/page/range, latest revision, private note separation and nullable grades. No published notebook records or shared Quran viewer are supplied yet; no server persistence, deployment or real learner data.
+- Exact-head GitHub Actions pending; **do not mark #102 complete**. Next: verify PR CI and build a read-only LessonQuranViewer with publisher-verified anchors and teacher layer; then separate personal ink/notes and Chrome responsive tests.
+
+
 ## STAGING #114 — private Cloudflare staging gate (branch, no remote deployment)
 - Source: AUTH-02 PR #113, currently pending exact-head CI; #114 branch contains a fail-closed staging-only Worker gate for all static and API routes, synthetic access tests, and [runbook](docs/NOOR_STAGING_RUNBOOK.md).
 - Stage design: dedicated `noor-core-staging` D1, `noor-site-staging` Worker, all-asset Worker-first execution, HTTPS same-origin with `AUTH_ENABLED=true`, Basic stage gate and no OTP messages. A real D1 and Worker are **NOT yet provisioned or deployed**.
