@@ -4,6 +4,7 @@ import {Empty,SectionHeading} from './TeacherUI';
 import {TeacherAcademicPlanEditor} from './TeacherAcademicPlanEditor';
 import type {TeacherRosterRow,TeacherCalendarRow} from './teacher-read-api';
 import styles from './TeacherPortal.module.css';
+import {selectAuthorizedTeacherLearner,currentAuthorizedLearnerLessons} from './connected-teacher-roster';
 
 type Props={
   learners:readonly TeacherRosterRow[];
@@ -15,11 +16,9 @@ const formatTime=(timestamp:number)=>new Intl.DateTimeFormat('ar-EG',{
 export function TeacherConnectedStudents({learners,lessons}:Props){
   const [query,setQuery]=useState('');
   const [selectedId,setSelectedId]=useState<string|null>(null);
-  const shown=learners.filter(item=>item.name.toLocaleLowerCase('ar').includes(query.trim().toLocaleLowerCase('ar')));
-  // A teacher's assignment may disappear at any moment (revoked/expired).
-  // Always derive the selected detail from the NEW authorized roster.
-  const selected=shown.find(item=>item.id===selectedId)??shown[0]??null;
-  const allowedLessons=selected?lessons.filter(item=>item.learnerId===selected.id):[];
+  // A revoked/expired assignment must immediately disappear from detail view.
+  const {shown,selected}=selectAuthorizedTeacherLearner(learners,query,selectedId);
+  const allowedLessons=currentAuthorizedLearnerLessons(selected,lessons);
   const upcoming=allowedLessons.filter(item=>['scheduled','live'].includes(item.status)&&item.endsAtMs>Date.now())
     .sort((a,b)=>a.startsAtMs-b.startsAtMs);
   return <div>
