@@ -254,3 +254,17 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `apps/web/src/features/teacher/teacher.test.tsx`: SSR/policy/role/grade/assignment/state tests. `scripts/browser-smoke.mjs`: Arabic RTL teacher route, 360/390/1440px screenshot and empty teacher scenario smoke.
 - `docs/TEACHER_PORTAL_BACKEND_CONTRACT.md`: explicit per-route Worker/D1/DO contract, UI scenario-to-backend acceptance matrix, privacy and role checks, future implementation order.
 - **NOT IMPLEMENTED:** production teacher provisioning, server mutations, LiveKit room, authorized class Start/End HTTP, database report publication, private audio playback, WhatsApp or classroom UI.
+
+
+## Interactive classroom Quran-first React preview (#50, after #126 Sheikh portal)
+
+- `apps/web/src/app/classroom/page.tsx` and `features/classroom/index.ts`: Next static page & public feature boundary. **Synthetic preview**, not secure classroom admission.
+- `features/classroom/ClassroomPreview.tsx`: classroom composition around original `features/student/components/ReaderPrintedPage.tsx` via student public index; no duplicated Quran source or screenshot-based lesson storage.
+- `features/classroom/ClassroomControls.tsx`: two-person prejoin simulation, Sheikh-only explicit Start/End, 30/40-minute notify-only, authorized UI page navigation, teacher-student draw modes, student mic permission/mute.
+- `features/classroom/ClassroomMedia.tsx`: student docked video placeholder, movable/resizable float and teacher local self-preview hide vs camera-off, with NO actual camera/LiveKit room.
+- `features/classroom/ClassroomSidePanel.tsx`: per-ayah teacher corrections, private notes, nullable three scores and author-aware shared ink moderation/audit; `useClassroomPreview.ts` + `domain.ts` local preview state/policy only.
+- `features/classroom/Classroom.module.css`: RTL responsive Quran-first three-column shell, mobile order and floating controls.
+- `features/classroom/classroom.test.tsx` and `scripts/browser-smoke.mjs`: unit/SSR policy and real Chrome controls, source Quran page, no overflow at 360/390/1440.
+- `features/student/index.ts`: exports canonical reader / ink types / page helpers for reuse by classroom without cross-feature internal imports.
+- `features/teacher/TeacherShell.tsx` and `TeacherPreparation.tsx`: demo-only link to classroom; authenticated live Start remains disabled.
+- `docs/CLASSROOM_UI_BACKEND_CONTRACT.md`: future authorized per-lesson Worker/D1/DO and LiveKit token interfaces, 30/40 timing, replay, audit and privacy test matrix. No claims of real video, saving or room access.
