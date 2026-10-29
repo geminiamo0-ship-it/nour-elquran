@@ -174,3 +174,8 @@ Date / Issue / PR / exact head SHA; changed paths; tests and exact Actions URL; 
 - Teacher demo assignments now have Quran-specific structured range references (surah 112/113 page 604, exact ayah ranges), reused `ReaderPrintedPage` with bounded source hit regions and source text, reveal/hide cards and optional browser-only microphone playback. No server persistence/transmission, no real teacher submission. Original new learner has genuine blank homework and no booked lesson; voluntary practice is clearly independent.
 - Next stage: filtered archival Notebook viewer UI, then remaining student pages; all auth/backend/PostgreSQL remain deferred to final one-shot phase. See `docs/STUDENT_TRAINING_NOTEBOOK_INFORMATION_ARCHITECTURE.md`.
 
+
+
+## 2026-10-29 — Classroom implementation begins: 40-minute booking guard (#120 / PR #121)
+
+Owner authorized execution of the full classroom implementation plan #120. A focused **draft/unmerged** PR #121 proposes `0003_teacher_schedule.sql` to enforce 40-minute teacher+learner bookings and no overlaps, with SQLite regression tests. Preserve 30-minute instructional entitlement, manual teacher-only Start/End, and 40-minute calendar interval as distinct concepts. No actual classroom media/sync, scheduler HTTP endpoint, remote migration, or production deployment is claimed. Next: exact-head CI, migration compatibility, then a separate teacher/learner presence and Start/End lifecycle issue/PR; reconcile LiveKit Cloud versus RealtimeKit ADR before media integration.
