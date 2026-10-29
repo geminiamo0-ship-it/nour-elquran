@@ -4,6 +4,7 @@ import { createAuth } from './config.ts';
 import { authSettings } from './settings.ts';
 import { ownerAccount } from './accounts.ts';
 import { getOwnedLearner, listOwnedLearners } from '../owner-learners.ts';
+import { listOwnedLearnerLessons, listVerifiedTeacherLessons } from '../lesson-calendar.ts';
 import { normalizePhone, onlyKeys, readObject, validName } from './input.ts';
 
 type Auth = ReturnType<typeof createAuth>;
@@ -69,6 +70,14 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
     }
     return reply(201, { learner: { id, name: input.name.trim(), learnerType: input.learnerType } }, requestId);
   }
+  const lessonMatch = /^\\/v1\\/me\\/learners\\/([a-zA-Z0-9-]{1,128})\\/lessons$/.exec(path);
+  if (lessonMatch && request.method === 'GET') {
+    const learnerId = lessonMatch[1]!;
+    const owned = await getOwnedLearner(db, { authSubject }, learnerId);
+    if (!owned) return reply(404, { code: 'NOT_FOUND' }, requestId);
+    const lessons = await listOwnedLearnerLessons(db, accountId, learnerId);
+    return reply(200, { learnerId, lessons }, requestId);
+  }
   const match = /^\/v1\/learners\/([a-zA-Z0-9-]{1,128})$/.exec(path);
   if (match && request.method === 'GET') {
     const row = await getOwnedLearner(db, { authSubject }, match[1]!);
@@ -100,6 +109,13 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // The library re-reads the signed session from D1; cookie cache and unverified token auth are disabled.
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return reply(401, { code: 'UNAUTHENTICATED' }, requestId);
+  if (path === '/v1/teacher/lessons' && request.method === 'GET') {
+    // Teacher role is resolved from the VERIFIED Better Auth identity in D1.
+    const lessons = await listVerifiedTeacherLessons(env.DB, session.user.id);
+    return lessons === null
+      ? reply(403, { code: 'TEACHER_ACCESS_DENIED' }, requestId)
+      : reply(200, { lessons }, requestId);
+  }
   const owner = await ownerAccount(env.DB, session.user.id);
   if (!owner) return reply(403, { code: 'ACCOUNT_UNAVAILABLE' }, requestId);
   if (path === '/api/auth/session' && request.method === 'GET')
