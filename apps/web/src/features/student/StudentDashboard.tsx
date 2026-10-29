@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useStudent } from './StudentContext';
 import { SchedulePanel } from './components/SchedulePanel';
 import { WirdPanel } from './components/WirdPanel';
+import {StudentAcademicPlanCard} from './components/StudentAcademicPlanCard';
 import styles from './StudentPortal.module.css';
 
 const stages = {
@@ -42,7 +43,7 @@ export function StudentDashboard() {
     </section>
     <div className={styles.primaryGrid}>
       <SchedulePanel />
-      <WirdPanel />
+      {profile.demo?<WirdPanel />:<StudentAcademicPlanCard key={profile.id} learnerId={profile.id}/>}
     </div>
     <div className={styles.secondaryGrid}>
       <section className={styles.panel}>
