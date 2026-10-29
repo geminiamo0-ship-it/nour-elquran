@@ -1,3 +1,8 @@
+## #102 multi-page Chrome continuation — 2026-10-29
+- Branch `feat/102-notebook-contracts-reports`, draft PR #116 / Issue #102. Added demo-only completed lesson `l-active-4` and publication across Quran page 1→2; first/second page marks are distinct. Existing `l-active-3` page-604 fixture remains.
+- New Chrome assertions select the fixture, use real Quran publisher sidecars, check allowed SVG ayah keys, page 1→2→1 navigation, page-specific teacher marks, 390/768/1440 overflow and page-2 screenshots. Unit test asserts cross-lesson and sibling isolation. No server state or recording.
+- **Next exact action:** inspect latest PR head and all four Verify jobs; fix any failed browser/sidecar check before claiming success. Then inspect screenshot artifact and request physical Android/S Pen and human review. No merge/close #102 or production deploy. #1 main branch protection remains independently blocked pending owner action; do not repeat the same request without new evidence.
+
 # AI agent handoff contract
 
 ## #102 notebook sidecar consistency — unmerged continuation (2026-10-29)
