@@ -33,7 +33,7 @@ test('non-staff cannot touch scheduling database beyond grant check',async()=>{
  assert.doesNotMatch(calls[0]??'',/staff_schedule_events/);
 });
 test('verified staff writes only bound fields to atomic immutable D1 event',async()=>{
- const calls:Array<{query:string;values:unknown[]}=[];
+ const calls:Array<{query:string;values:unknown[]}> = [];
  const db={prepare:(query:string)=>({bind:(...values:unknown[])=>{
    calls.push({query,values});return {
      first:async()=>query.includes('staff_grants')?{subject:'staff'}:null,
