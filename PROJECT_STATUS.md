@@ -1,3 +1,8 @@
+## TEACHER VERIFIED / PREVIEW SPLIT — #169 (DRAFT BRANCH ONLY)
+- `feat/169-authenticated-teacher-mode` makes connected Sheikh mode contingent on BOTH explicit build feature and verified Better Auth account state: signed-in -> existing teacher-only D1 adapter (403/404 for invalid roles), signed-out -> clearly labeled public fixture preview, checking/error -> no fake learner data. Default build flag remains OFF.
+- Pure state tests cover no authenticated fallback to previews; no teacher self-enrollment, staff grant or classroom access. This does NOT yet turn on connected mode in existing Staging; source PR CI and dedicated Chrome Dev synthetic teacher rollout must pass before closing #169.
+- #167 rich Students roster/details code is merged; direct per-learner plans read/write remains scoped to qualified active primary teacher D1. Avoid real guardian/student data.
+
 ## TEACHER CONNECTED STUDENTS #167 — BRANCH ONLY (not deployed)
 - Issue #167 `feat/167-connected-teacher-students-layout`: replaces generic connected cards at `/teacher/students` with existing professional Teacher roster/detail layout, actual authorized D1 roster and lesson list, plus server-confirmed per-learner academic plan editor. No fixture scores/reports/assignments are injected into connected mode. Browser/role flag remains opt-in and OFF on ordinary staging build.
 - A derived roster guard prevents expired/revoked selection from exposing stale learner detail or another learner's lessons. Unit tests assert scope after roster changes.
