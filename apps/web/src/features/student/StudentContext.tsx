@@ -18,6 +18,10 @@ type StudentContextValue = {
   removeDemoLearner: (id: string) => boolean;
 };
 const Context = createContext<StudentContextValue | null>(null);
+function requireProfile(profile: LearnerProfile | undefined): LearnerProfile {
+  if (!profile) throw new Error('A verified learner is required before mounting the learning workspace');
+  return profile;
+}
 
 export function StudentProvider({ children, liveLearners }: { children: ReactNode; liveLearners?: readonly LearnerProfile[] }) {
   const [demoLearners, setLearners] = useState<readonly LearnerProfile[]>(DEMO_PROFILES);
@@ -37,8 +41,7 @@ export function StudentProvider({ children, liveLearners }: { children: ReactNod
       setSelectedId(sessionProfiles[0]?.id ?? 'demo-new');
     }
   }, [liveLearners]);
-  const profile = learners.find((item) => item.id === selectedId) ?? learners[0];
-  if (!profile) throw new Error('A verified learner is required before mounting the learning workspace');
+  const profile = requireProfile(learners.find((item) => item.id === selectedId) ?? learners[0]);
   const selected = useMemo(() => profile.demo ? getMockLearnerSnapshot(profile) : scopedSnapshot(profile, [], [], []), [profile]);
   const finished = completed[profile.id] ?? [];
   function selectLearner(id: string) {

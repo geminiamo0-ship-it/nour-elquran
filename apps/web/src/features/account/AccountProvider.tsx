@@ -82,7 +82,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         ? { ...current, learners: [...current.learners.filter(row => row.id !== learner.id), learner] } : current);
       return learner;
     } catch (error) {
-      if (error instanceof AccountError && (error.status === 401 || error.status === 403)) {
+      if (canApplyResult(lease.current, id) && error instanceof AccountError && (error.status === 401 || error.status === 403)) {
         ++lease.current; setState({ status: 'signed-out' }); channel.current?.postMessage('changed');
       }
       throw error;

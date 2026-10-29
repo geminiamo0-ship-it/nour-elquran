@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { AccountError, accountErrorMessage } from './api';
 import { useAccount } from './AccountProvider';
 import css from './Account.module.css';
@@ -17,6 +17,12 @@ export function SessionControls() {
 export function AccountProfiles({ selectedId, onSelect }: { selectedId?: string; onSelect?: (id: string) => void }) {
   const account = useAccount(), [error, setError] = useState(''), [busy, setBusy] = useState(false);
   const [uncertain, setUncertain] = useState(false), lock = useRef(false);
+  const [pendingSelection, setPendingSelection] = useState<string | null>(null);
+  useEffect(() => {
+    if (pendingSelection && account.state.status === 'authenticated' && account.state.learners.some(row => row.id === pendingSelection)) {
+      onSelect?.(pendingSelection); setPendingSelection(null);
+    }
+  }, [account.state, pendingSelection, onSelect]);
   if (account.state.status !== 'authenticated') return null;
   const { learners } = account.state;
   async function add(event: FormEvent<HTMLFormElement>) {
@@ -28,7 +34,7 @@ export function AccountProfiles({ selectedId, onSelect }: { selectedId?: string;
     try {
       const learner = await account.createLearner({ name: String(data.get('name') ?? '').trim(),
         learnerType: data.get('learnerType') === 'adult' ? 'adult' : 'child' });
-      form.reset(); onSelect?.(learner.id);
+      form.reset(); setPendingSelection(learner.id);
     } catch (failure) {
       setError(accountErrorMessage(failure));
       // Do not blindly resend an insertion whose response may have been lost.
