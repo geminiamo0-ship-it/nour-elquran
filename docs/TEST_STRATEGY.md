@@ -1,3 +1,15 @@
+### One-time remaining UI acceptance for #173 / #178 (not a default CI gate)
+1. On the existing Dev site, sign in as synthetic qualified assigned Sheikh, open `/teacher/assignments/`, select verified assigned learner and publish one existing Hafs range; confirm only server-confirmed task appears after refresh.
+2. With synthetic household account, select target learner in `/student/training/`, see the new task and the right Quran range; sibling/foreign owner cannot see the task.
+3. Submit one short note using the explicit button; verify spinner/ACK, reload and pending status. Sheikh opens only that task, requests retry; student sees feedback, submits attempt two; Sheikh accepts; reload preserves both attempts.
+4. Verify signed-out demo remains marked as a preview, revoked teacher shows access denied rather than fixtures, error/offline and double-click states don't report false success.
+5. Inspect RTL/mobile overflow and readability at 360×667, 390×844 and 1280×900 using **one targeted manual browser QA**. Never run both generic Chrome suites on every commit. Voice playback/upload not tested until #180 privacy gate.
+
+## Phase 05A/05B native Cloudflare Dev evidence — no default Chrome
+- Published task Noor #173 API accepted: [Santoreno remote #40971275548](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40971275548), 0010 D1, canonical Hafs and owner/teacher 404/409/idempotency.
+- Student explicit submission/teacher review Noor #178 API accepted: [Noor push Verify #40974982514](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40974982514) 4/4 and [Santoreno #40975149637](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40975149637) real Dev D1 0011, owner submit, attempt replay 200, conflicting attempt 409, teacher retry, second attempt, accept, permanent immutable history, foreign owner 404 and revoked teacher 404.
+- **The passing runs do not cover new connected assignments/review browser UI.** #173/#178 retain that targeted release gate; make one explicit browser QA run only when validating UX, not on every source change. No child voice upload, guardian consent or R2 tests yet.
+
 ## CI policy from #171 — fast security checks + optional browser QA (2026-10-30)
 - Owner requested less redundant CI overhead. Default `.github/workflows/verify.yml` keeps repository policy, governance, ESLint/architecture rules, TS checks, unit/integration tests, production build, HTTP smoke, isolated real Cloudflare-local D1 migration/readiness and Better Auth session/owner API tests. **These run on every PR and main push.**
 - The prior *two* full Chrome journeys (static responsive screenshot and authenticated same-origin account Chrome) and a redundant connected-account Next rebuild are **not** in default Verify anymore. A green fast Verify proves code/native D1/auth gates only, **not** browser appearance, keyboard interactions or deployed E2E.

@@ -1,3 +1,8 @@
+## Implementation evidence update (2026-10-30; staging only)
+- Phase 02 connected Sheikh/student academic plan: [Santoreno #40968034708 attempt 2](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40968034708) PASS, including five viewports, real D1 roster/plan and non-teacher denial.
+- Phase 05A verified homework publish API: [Santoreno #40971275548](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40971275548) PASS.
+- Phase 05B verified text-only explicit assignment submit/teacher review API: [Noor Verify #40974982514](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40974982514) 4/4 and [Santoreno #40975149637](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40975149637) PASS on isolated Dev. Actual teacher/student assignment UI visual QA still open in #173/#178; R2 audio consent, upload and privacy gate #180 NOT implemented or enabled. Historical plans and "not deployed" messages below describe their then-current status.
+
 # نور القرآن — خطة إقفال جميع الواجهات الحالية (باستثناء Classroom)
 
 **الحالة:** خطة تنفيذ وتعريف قبول، **وليست تصريحًا بأن الوظائف مكتملة**.  
