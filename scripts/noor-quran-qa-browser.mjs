@@ -38,6 +38,7 @@ try{
   const learner=await signup(auth('Synthetic Quran QA A','+1202'+randomInt(1000000,9999999)));
   assert.match(learner,/^[A-Za-z0-9-]{1,128}$/);
   const resource='/v1/me/learners/'+learner+'/mushaf';
+  await browser.send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
   await go('/student/mushaf/');
   await available('[data-quran-save-status]');await saved();
   await evalJs('document.querySelector("button[title=\'قلم\']").click()');
