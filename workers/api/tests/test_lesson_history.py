@@ -93,6 +93,21 @@ class LessonHistoryIntegrityTests(unittest.TestCase):
         )
         self.assertEqual(state(self.db)[1], "live")
 
+    def test_new_completion_requires_explicit_end_timestamp(self):
+        self.start()
+        before = state(self.db)
+        with self.assertRaisesRegex(
+            sqlite3.IntegrityError, "End requires recorded timestamp"
+        ):
+            self.db.execute(
+                "UPDATE lessons SET status='completed' WHERE id='lesson'"
+            )
+        self.assertEqual(state(self.db), before)
+        self.assertEqual(state(self.db)[1], "live")
+        self.end()
+        self.assertEqual(state(self.db)[1], "completed")
+        self.assertEqual(state(self.db)[-1], START + 90_000)
+
     def test_completed_room_cannot_change_end_time_or_booked_history(self):
         self.start()
         self.end()
@@ -131,6 +146,9 @@ class LessonHistoryIntegrityTests(unittest.TestCase):
             old.execute(
                 "UPDATE lessons SET ended_at_ms=? WHERE id='lesson'", (START + 1000,)
             )
+        self.assertEqual(state(old), original)
+        # Historical completed rows with NULL End are not retroactively invalidated.
+        old.execute("UPDATE lessons SET status='completed' WHERE id='lesson'")
         self.assertEqual(state(old), original)
 
 

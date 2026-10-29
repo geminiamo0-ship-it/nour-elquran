@@ -22,5 +22,17 @@ BEGIN
   SELECT RAISE(ABORT, 'lesson history immutable after start');
 END;
 
+-- New completions must have an authoritative End timestamp in the SAME
+-- status transition. Existing completed rows with NULL (pre-migration history)
+-- are untouched, including harmless completed->completed no-op writes.
+-- This is NOT evidence of teacher authentication or DO presence.
+CREATE TRIGGER lessons_new_completion_requires_end_time
+BEFORE UPDATE OF status ON lessons
+WHEN OLD.status = 'live' AND NEW.status = 'completed'
+  AND NEW.ended_at_ms IS NULL
+BEGIN
+  SELECT RAISE(ABORT, 'lesson End requires recorded timestamp');
+END;
+
 INSERT INTO noor_schema_meta(component, version)
 VALUES ('lesson_history', 1);

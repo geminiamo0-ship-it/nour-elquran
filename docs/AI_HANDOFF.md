@@ -1,3 +1,8 @@
+## 2026-10-29 — #120 / PR #127 End timestamp guard follow-up
+- In existing draft `0005_lesson_history.sql`, added a transition guard: a new live→completed change must write `ended_at_ms` atomically, not just `status`. Legacy completed rows with NULL End remain unchanged; same-status retries remain valid.
+- Synthetic `test_lesson_history.py` now checks rejected NULL End leaves the room live, valid End succeeds and historical completed NULL no-ops remain possible. Check **exact-head** GitHub Verify before describing this as tested. No remote D1/production migration.
+- This does not implement an authenticated teacher-only Start/End route, DO-backed simultaneous presence, transactional audit event or idempotency. Keep PR Draft; next action: check CI and review, then build the authorized lifecycle API.
+
 ## 2026-10-29 — Classroom history integrity continuation (#120)
 - Dedicated branch `fix/120-lesson-history-immutability` from main `836c8afc2c27a6c487bc2860ae1a59b7c2e73fbc`. Added additive `workers/api/migrations/0005_lesson_history.sql` and synthetic `workers/api/tests/test_lesson_history.py`.
 - A started/completed room must not have its booked interval or entitlement kind silently rewritten; completed `ended_at_ms` is immutable and a still-live room cannot set it outside the completion transition. No historical data is changed; legacy completed rows with NULL End timestamps remain as they were.
