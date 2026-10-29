@@ -6,7 +6,7 @@
 **البنية المعتمدة:** Cloudflare Workers + D1 + R2 + Queues/Cron + Better Auth؛ التطوير على **الرابط المفتوح القائم** `noor-site-staging` مع D1 `noor-core-staging`، **بلا Worker QA منفصل وبلا كلمة سر Dev إضافية**. لا يغير شيء في Production أو Santo.
 
 ## تنفيذ المرحلة 01 — الحالة الحالية (2026-10-29)
-- **01A إدارة ملفات الطلاب:** [Issue #157](https://github.com/geminiamo0-ship-it/nour-elquran/issues/157) — فرع تنفيذ D1/Worker/UI واختبارات أولية؛ **IN PROGRESS / NOT CLOSED**. لا يُعد نجاح Merge/CI بديلاً عن Staging E2E، ولا توجد موافقة نهائية على OTP أو موافقات القُصّر.
+- **01A إدارة ملفات الطلاب:** [Issue #157](https://github.com/geminiamo0-ship-it/nour-elquran/issues/157) — تم تنفيذ واختبار المسار محليًا على Worker/D1 وChrome، مع منع أرشفة طالب له حصة مفتوحة، وجارٍ التحقق على Cloudflare Dev؛ **LOCAL VERIFIED / REMOTE PENDING / NOT CLOSED**. لا يُعد نجاح Merge/CI بديلاً عن Staging E2E، ولا توجد موافقة نهائية على OTP أو موافقات القُصّر.
 - **باقي 01**: تحقق الهاتف، الاستعادة، الموافقات، جلسات الأجهزة، وتأهيل الشيخ بمسار الإدارة والاختبارات الحقيقية لم تُغلق.
 - **02–12:** كما في المصفوفة التالية؛ لم تنتقل إلى CLOSED بسبب عمل 01A.
 
