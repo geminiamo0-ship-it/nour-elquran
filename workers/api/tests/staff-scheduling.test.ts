@@ -5,7 +5,7 @@ import {parseScheduleCommand,executeStaffSchedule,
 import type {CoreDatabase} from '../src/bindings.ts';
 const now=1_800_000_000_000;
 const operationId='00000000-0000-4000-8000-000000000001';
-const base={action:'assign',operationId,reason:'Approved learner assignment',
+const base={action:'assign' as const,operationId,reason:'Approved learner assignment',
   learnerId:'learner-a',teacherId:'teacher-a',startsAtMs:now+1000,endsAtMs:now+10_000_000};
 test('exact strict action schema with 40m book and no actor/role fields',()=>{
  assert.deepEqual(parseScheduleCommand(base,now),base);
