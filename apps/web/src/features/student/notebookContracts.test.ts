@@ -35,6 +35,7 @@ describe('notebook publication and learner isolation contracts (#102)', () => {
     expect(structurallyValidNotebookScope({ ...scope, end: { surah: 111, ayah: 1, page: 604 } })).toBe(false);
     expect(structurallyValidNotebookScope({ ...scope, end: { surah: 114, ayah: 2, page: 605 } })).toBe(false);
     expect(structurallyValidNotebookScope({ ...scope, edition: 'unknown' })).toBe(false);
+    expect(structurallyValidNotebookScope({ ...scope, start: { surah: 112, ayah: 999, page: 604 } })).toBe(false);
     expect(structurallyValidNotebookScope({ ...scope, start: { surah: 112, ayah: 3, page: 605 } })).toBe(false);
   });
   it('limits published teacher marks to the exact learner, lesson, and verse scope', () => {
@@ -59,6 +60,11 @@ describe('notebook publication and learner isolation contracts (#102)', () => {
       { ...revision(5), scope: { ...scope, edition: 'wrong' as typeof QURAN_EDITION } },
     ], 'a', 'l1');
     expect(latest?.revision).toBe(2);
+    const scrubbed = latestPublishedNotebook([{ ...revision(1), approvedAnnotations: [
+      annotation, { ...annotation, id: 'other', learnerId: 'b' },
+      { ...annotation, id: 'private', type: 'private' },
+    ] }], 'a', 'l1');
+    expect(scrubbed?.approvedAnnotations.map((mark) => mark.id)).toEqual(['mark']);
     expect(latestPublishedNotebook([revision(1)], 'b', 'l1')).toBeNull();
     expect(latestPublishedNotebook([revision(1)], 'a', 'l2')).toBeNull();
     expect(latestPublishedNotebook([], 'a', 'l1')).toBeNull();
