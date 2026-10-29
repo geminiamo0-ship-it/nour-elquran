@@ -1,4 +1,4 @@
-# Noor private Cloudflare staging runbook — #114
+# Noor Cloudflare staging runbook — private API + optional public demo
 
 **State:** remote staging was deployed and verified 2026-10-29: [Santoreno run 40810303172](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40810303172) SUCCESS against Noor main SHA `dff83b382b3774a7476ae8dee64b7454fd09859c`. Remote synthetic account acceptance is complete; human QA and restore rehearsal remain separate. Source of truth: [status](../PROJECT_STATUS.md), [Cloudflare ADR](adr/0004-cloudflare-only-platform.md), [backup plan](CLOUDFLARE_BACKUP_AND_RESTORE.md).
 
@@ -21,3 +21,11 @@
 - Stop or disable only `noor-site-staging` while preserving the dedicated D1 for analysis. Production Workers/D1/R2 remain unchanged; no destructive rollback of shared resources.
 - Phone verification, recovery, staff/minor login authorization, production secrets, paid services, message delivery and live learner data are out of scope.
 - D1 Time Travel is not equivalent to tested restoration. Native remote backup/restore rehearsal and data retention are tracked separately under #56 before public use.
+
+
+## Public preview option — #118 (pending rollout)
+- Owner requests a publicly viewable URL without site-wide passwords. Enable `NOOR_PUBLIC_PREVIEW=true` on `noor-site-staging` **only** after Noor #118 and the companion Santoreno workflow pass CI and real remote smoke.
+- Build the public site with `NEXT_PUBLIC_ACCOUNT_UI=false`: existing learner/student screens show labeled **mock examples**, not real account signup or records.
+- The Worker allows only GET/HEAD site pages and static assets without Basic credentials. `/api/*`, `/v1*`, `/internal-auth/*`, `/health*`, `/ready*` and any write method remain behind staging Basic Auth; downstream Better Auth/D1 owner authorization still applies.
+- Retain `STAGING_ACCESS_PASSWORD` in the Worker **only to protect the API**; do not ask public visitors for it. Staging has `assets.run_worker_first=true` so no static routing bypass.
+- Real public beta account registration is not authorized: phone ownership, guardian/child permissions and abuse protection are incomplete. No real user information or OTP. Revert to private preview instantly by setting `NOOR_PUBLIC_PREVIEW=false` and redeploying.
