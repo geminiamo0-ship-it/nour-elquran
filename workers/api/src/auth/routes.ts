@@ -8,6 +8,7 @@ import { applyLearnerProfileAction, parseLearnerProfileAction } from '../learner
 import {applyPrivateMushaf,parsePrivateMushafOp,readPrivateMushaf} from '../private-mushaf.ts';
 import { listOwnedLearnerLessons, listVerifiedTeacherLessons } from '../lesson-calendar.ts';
 import { listVerifiedTeacherLearners } from '../teacher-roster.ts';
+import {readOwnerPlan,readTeacherPlan,writeTeacherPlan,parsePlanAction} from '../academic-plans.ts';
 import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '../staff-teachers.ts';
 import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts';
 import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '../classroom-access.ts';
@@ -86,6 +87,17 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
     const input=parseLearnerProfileAction(await readObject(request));
     if(!input)return reply(400,{code:'INVALID_PROFILE_ACTION'},requestId);
     const result=await applyLearnerProfileAction(db,accountId,authSubject,profileMatch[1]!,input);
+    const {status,...body}=result;
+    return reply(status,body,requestId);
+  }
+  const ownedPlanMatch=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/plan$/.exec(path);
+  if(ownedPlanMatch){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const version=await db.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='academic_plan'",
+    ).first<{version:number}>();
+    if(version?.version!==1)return reply(503,{code:'PLAN_SCHEMA_NOT_READY'},requestId);
+    const result=await readOwnerPlan(db,authSubject,ownedPlanMatch[1]!);
     const {status,...body}=result;
     return reply(status,body,requestId);
   }
@@ -196,6 +208,26 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     const output=await issueTeacherRoleAction(env.DB,session.user.id,input);
     const {status,...data}=output;
     return reply(status,data,requestId);
+  }
+  const teacherPlanMatch=/^\/v1\/teacher\/learners\/([a-zA-Z0-9-]{1,128})\/(plan|plan-actions)$/.exec(path);
+  if(teacherPlanMatch){
+    const learnerId=teacherPlanMatch[1]!,kind=teacherPlanMatch[2];
+    if(request.method!==(kind==='plan'?'GET':'POST'))
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='academic_plan'",
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'PLAN_SCHEMA_NOT_READY'},requestId);
+    if(kind==='plan'){
+      const result=await readTeacherPlan(env.DB,session.user.id,learnerId);
+      const {status,...body}=result;
+      return reply(status,body,requestId);
+    }
+    const command=parsePlanAction(await readObject(request));
+    if(!command)return reply(400,{code:'INVALID_PLAN_ACTION'},requestId);
+    const result=await writeTeacherPlan(env.DB,session.user.id,learnerId,command);
+    const {status,...body}=result;
+    return reply(status,body,requestId);
   }
   const teacherAccessMatch = /^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/access$/.exec(path);
   if (teacherAccessMatch && request.method === 'GET') {
