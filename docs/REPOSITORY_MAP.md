@@ -7,6 +7,15 @@
 - `apps/web/src/features/student/components/NotebookWorkspace.tsx`: per-learner keyed local draft reset and scoped report/notes. Shared Quran lesson viewer remains to implement.
 
 
+
+## #102 read-only lesson mushaf slice (draft)
+
+- `apps/web/src/features/student/components/LessonQuranViewer.tsx` and its CSS module: bounded page navigation, publisher metadata verification, shared printed-page rendering, read-only published teacher annotations and explicit invalid-source state.
+- `apps/web/src/features/student/notebookContracts.ts`: `pageKeysForNotebookScope` checks actual page sidecar boundary verses before exposing allowed verse keys.
+- `apps/web/src/features/student/mock-adapter.ts`: one explicitly synthetic lesson publication only for the active demo profile; no connected-user or new-learner fabricated reports.
+- `apps/web/src/features/student/notebookContracts.test.ts`: publisher boundary and cross-learner safety regression. No backend persistence or export.
+
+
 ## STAGING #114
 - `workers/site/src/staging-access.ts`: staging-only Basic access gate; refuses missing secret, protects all Worker-routed requests; production unaffected.
 - `workers/site/src/index.ts`: stage gate precedes static asset/API dispatch; **deployment must set `assets.run_worker_first=true`** to intercept static resources too.
@@ -215,9 +224,3 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `quranAssignment.ts` + tests: structured surah/from/to/page and demo references; reject scope string guessing, nearest booked lesson.
 - `components/QuranAyahOverlay.tsx` and `components/ReaderPrintedPage.tsx`: optional allowed/focus verse keys for task-specific view; default full Mushaf behaviour unchanged.
 
-
-## #102 read-only lesson mushaf slice (draft)
-- `apps/web/src/features/student/components/LessonQuranViewer.tsx` and its CSS module: bounded page navigation, publisher metadata verification, shared printed-page rendering, read-only published teacher annotations and explicit invalid-source state.
-- `apps/web/src/features/student/notebookContracts.ts`: `pageKeysForNotebookScope` checks actual page sidecar boundary verses before exposing allowed verse keys.
-- `apps/web/src/features/student/mock-adapter.ts`: one explicitly synthetic lesson publication only for the active demo profile; no connected-user or new-learner fabricated reports.
-- `apps/web/src/features/student/notebookContracts.test.ts`: publisher boundary and cross-learner safety regression. No backend persistence or export.

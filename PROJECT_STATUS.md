@@ -1,26 +1,33 @@
 # PROJECT_STATUS — verified handoff state
 
-## STU S11 #102 — read-only Quran lesson projection (PR #116, branch only)
+## STU S11 #102 — notebook contracts + Quran lesson viewer (draft PR #116)
+
 - Continued the existing draft PR with `LessonQuranViewer`, reusing `ReaderPrintedPage` and the canonical page sidecar. Per-page anchors are checked against publisher metadata before the lesson range/teacher marks are displayed; invalid or unavailable metadata fails closed with an honest message.
 - One explicitly synthetic demo-active completed lesson has a scoped 112:1–4 example on page 604 with a sample teacher mark; it is not a server record, private student data or real teacher assessment. New and connected learners receive no fake published lesson.
 - Navigation is bounded to the published lesson pages; teacher annotations are read-only, personal notebook notes stay separate. No ink mutation, archive/share/export, backend lesson API or deployment is claimed.
 - New tests cover boundary anchor mismatch, empty metadata, scope/page restrictions and sibling-safe demo filtering. **Exact-head CI and Chrome lesson interaction remain to verify**; physical S Pen, multi-page visual QA and end-to-end publication are pending. Keep #102 and PR #116 OPEN.
 
 
-## STU S11 #102 — notebook contract/report slice (draft PR, not full F0)
+### Earlier contracts checkpoint
 - Branch `feat/102-notebook-contracts-reports` adds strict learner/lesson-scoped published revision and Quran scope contracts, teacher-approved annotation filtering, and independent private-note filtering. Cross-surah/page ranges are structurally checked against the pinned edition, **not** claimed verified against publisher page metadata.
 - The existing notebook now selects the newest valid published report, displays each nullable /10 grade independently and says clearly when report, approved Quran layers, sharing, PDF or archive are unavailable. Keyed learner remount discards unsent draft/selection on sibling switch.
 - Synthetic Vitest covers L1/L2, cross-account denial, invalid edition/page/range, latest revision, private note separation and nullable grades. No published notebook records or shared Quran viewer are supplied yet; no server persistence, deployment or real learner data.
 - Exact-head GitHub Actions pending; **do not mark #102 complete**. Next: verify PR CI and build a read-only LessonQuranViewer with publisher-verified anchors and teacher layer; then separate personal ink/notes and Chrome responsive tests.
 
 
-## STAGING #114 — private Cloudflare staging gate (branch, no remote deployment)
-- Source: AUTH-02 PR #113, currently pending exact-head CI; #114 branch contains a fail-closed staging-only Worker gate for all static and API routes, synthetic access tests, and [runbook](docs/NOOR_STAGING_RUNBOOK.md).
-- Stage design: dedicated `noor-core-staging` D1, `noor-site-staging` Worker, all-asset Worker-first execution, HTTPS same-origin with `AUTH_ENABLED=true`, Basic stage gate and no OTP messages. A real D1 and Worker are **NOT yet provisioned or deployed**.
-- Validation: PR #114 exact-head CI pending, merge only after #113 native browser is fully green. Next: obtain native PR CI, then create a separate Santoreno-backed scoped deployment workflow using its existing encrypted Cloudflare secrets. Do not publish private credentials or accept real children data.
+## OPEN DEV STAGING #118 — implementation branch (not yet deployed)
+- Owner requested open, passwordless preview of the existing `noor-site-staging` site. Site Worker offers `NOOR_DEV_OPEN=true` specifically for the developer staging Worker: no extra Basic password for pages or API. Normal Better Auth password/session and owner-level learner authorization remain enforced.
+- Companion Santoreno provisioning workflow must build `NEXT_PUBLIC_ACCOUNT_UI=true` (account-enabled developer UI), configure open-dev flag and verify real Cloudflare 200 pages/assets, app-level anonymous 401, synthetic registration/session/ownership smoke. **No remote public rollout verified yet.**
+- Existing account data and D1 stay private. Public phone registration is prohibited until provider verification/guardian authorization; OTP remains deferred. See [runbook](docs/NOOR_STAGING_RUNBOOK.md). Track #118; follow-up #46/#56 remain.
+
+## STAGING #114 — VERIFIED remote Cloudflare staging, 2026-10-29
+- Frontend account UI #112 merged as [PR #113](https://github.com/geminiamo0-ship-it/nour-elquran/pull/113), main `64eaaa2`, postmerge Verify [40807730642](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40807730642) SUCCESS. Stage-only access guard [PR #115](https://github.com/geminiamo0-ship-it/nour-elquran/pull/115) merged as `dff83b382b3774a7476ae8dee64b7454fd09859c`; postmerge Verify [40808432004](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40808432004) SUCCESS (all four).
+- Cloudflare-only remote staging **DEPLOYED and VERIFIED**, using isolated D1 `noor-core-staging` plus Worker `noor-site-staging`, same-origin static Next assets/API, `assets.run_worker_first=true`, server-only Basic access gate, and account/auth secrets. No production Worker/D1 or Santo product resource was changed.
+- Verified remote synthetic end-to-end in Santoreno [Noor Staging run 40810303172](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40810303172) **SUCCESS**; companion [Verify 40810302568](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40810302568) SUCCESS; deployed Noor source `dff83b382b3774a7476ae8dee64b7454fd09859c`. Checks unauthenticated assets/API denied 401, gated /health and /ready 200, synthetic registration and `phoneVerified=false`, HttpOnly/SameSite cookie and session restore, two learner profiles, cross-account 404 and logout replay denial.
+- This is **staging only with synthetic test accounts**. Email/SMS/WhatsApp OTP deliberately deferred, phone ownership unverified. Human staging access still requires rotating the random private gate credential to an authorized known password/Cloudflare Access. Remote real-browser visual QA, restricted child/staff flows, provider-backed recovery, billing, teacher assignments, private data APIs and cloud D1 restore rehearsal remain separate work under #46, #56 and notebook #102. No real students or messages. See [runbook](docs/NOOR_STAGING_RUNBOOK.md).
 
 
-## AUTH-02 #112 — same-origin account UI (branch; pending CI)
+## Historical AUTH-02 #112 — same-origin account UI (previous branch checkpoint; merged as PR #113)
 - Baseline main #111 `14e73efde6e406dff34603ef053b2f17e789984c` passed all four jobs in [postmerge Verify 40803047786](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40803047786). #110 closed; #43/#46 remain open.
 - `feat/112-account-ui` adds a typed/runtime-validated same-origin client, opt-in signup/login/logout/session and owner-profile UI. Connected learner data never uses demo fixtures; raw session tokens/passwords/contact are never persisted by application browser storage. Interrupted registration can recover the existing account/profile.
 - Public `NEXT_PUBLIC_ACCOUNT_UI=true` is a build-time UI switch only, OFF by default; server AUTH_ENABLED/D1/secret/origin remain independent requirements. Root Worker composes API paths with static assets so cookies stay same-origin and existing branded asset/404 behavior is retained. No remote D1 binding or authentication secret is checked in.

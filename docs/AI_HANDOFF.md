@@ -12,13 +12,18 @@
 - Next exact action: inspect draft PR exact-head four Verify jobs, repair failures, review; continue #102 with source-verified read-only lesson Quran projection and independent private layer, then browser tests. Do not close #102.
 
 
-## STAGING #114 — current planned private remote gate
-- Branch `feat/114-private-staging` based on AUTH-02 #113. Adds `workers/site/src/staging-access.ts` plus worker entrypoint pre-route guard and `tests/staging-access.test.mjs` to protect **assets and API** on dedicated staging hostname; production has no change. See [runbook](NOOR_STAGING_RUNBOOK.md).
-- Runtime staging must set `assets.run_worker_first=true`, `NOOR_ENVIRONMENT=staging` and a strong server-only `STAGING_ACCESS_PASSWORD`; otherwise the Worker returns 503 on staging. Do not deploy with an unguarded public workers.dev website, nor import actual student data.
-- No Cloudflare remote resource or billing change has occurred from this branch. Current next steps: finish #113 CI/merge, pass #114 PR checks, then dedicated GH Actions workflow in santoreno to provision/verify stage using authorized Cloudflare secrets. OTP deferred as owner approved.
+## OPEN DEV STAGING #118 — current implementation
+- Branch `feat/118-public-preview` adds `NOOR_DEV_OPEN=true` developer routing to `workers/site/src/staging-access.ts` and tests. The extra staging-wide Basic password is disabled on all routes, but account APIs still require their normal application sessions and per-owner authorization.
+- Before rollout, edit Santoreno `.github/workflows/noor-private-staging.yml` and `scripts/noor_private_staging.py` to serve `NEXT_PUBLIC_ACCOUNT_UI=true` developer account UI and verify the site/real assets, anonymous app-level 401 and synthetic account registration. No real student data/OTP. **Do not call it public until postmerge remote checks pass.**
+
+## STAGING #114 — VERIFIED on Cloudflare (2026-10-29)
+- Latest Noor main `dff83b382b3774a7476ae8dee64b7454fd09859c` includes merged #113 same-origin account UI and #115 staging-only fail-closed access gate; Noor main [Verify 40808432004](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40808432004) SUCCESS.
+- Dedicated remote private staging `noor-core-staging` D1 and `noor-site-staging` Worker are deployed via `geminiamo0-ship-it/santoreno` isolated workflow. Confirmed [real remote run 40810303172](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40810303172) SUCCESS. See [runbook](NOOR_STAGING_RUNBOOK.md).
+- Remote synthetic QA verified all-site Basic gate (401 unauthenticated), gated /health,/ready, signup, persistent owner profiles, two learner siblings, cookie reload, cross-account denial and logout replay. Private random staging password is intentionally not in GitHub logs; a known authorized secret or Cloudflare Access must be configured before human browser QA.
+- Keep OTP phone/email/WhatsApp deferred, allow only synthetic identities; no real users. Backend/Cloudflare staging is proven, but **not** lesson notebooks, teacher/student real records, bookings, payment, child-only logins, remote browser visual QA or D1 disaster recovery rehearsal. Resume #102 and #46/#56 as separately scoped changes.
 
 
-## AUTH-02 #112 — current branch continuation
+## Historical AUTH-02 #112 — former branch continuation (merged PR #113)
 - Read main #111 acceptance: merge `14e73efde6e406dff34603ef053b2f17e789984c`, all four postmerge Verify jobs in 40803047786 SUCCESS. #43/#46 remain open.
 - Branch `feat/112-account-ui` connects account UI to maintained backend contracts behind default-OFF NEXT_PUBLIC_ACCOUNT_UI. AccountProvider verifies session in D1, loads only owner profiles, guards stale async results and clears private views on logout/error/401. Connected StudentProvider has empty learning data and never reads demo storage/fixtures.
 - Root `workers/site` routes same-origin API to existing API handler and retains ASSETS behavior. Backend enablement/secret/D1 are independent of public UI flag; no real bindings/resources created. Local native Chrome fault-injection tests plus existing four-job Verify must pass before merge. Record exact head/run in #112/PR after CI, then verify main.
