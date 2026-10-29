@@ -33,7 +33,8 @@ try{
   }).catch(()=>{});});
   browser.on('Fetch.requestPaused',async e=>{await browser.send('Fetch.continueRequest',{requestId:e.requestId}).catch(()=>{});});
   await browser.send('Fetch.enable',{handleAuthRequests:true,patterns:[{urlPattern:origin+'/*',requestStage:'Request'}]});
-  await go('/');
+  // The marketing landing has no sign-up form. AccountGate mounts on /student/.
+  await go('/student/');
   const learner=await signup(auth('Synthetic Quran QA A','+1202'+randomInt(1000000,9999999)));
   assert.match(learner,/^[A-Za-z0-9-]{1,128}$/);
   const resource='/v1/me/learners/'+learner+'/mushaf';
