@@ -28,7 +28,7 @@ export function ClassroomPreview(){
       if(rootRef.current?.requestFullscreen)await rootRef.current.requestFullscreen().catch(()=>undefined);
     }
   }
-  const {room,role,inkMode,inkColor,pageStrokes,target,setTarget,errors,updateInk,drawingAvailable}=model;
+  const {room,role,inkMode,inkColor,pageStrokes,target,setTarget,errors,updateInk,drawingAvailable,setPage}=model;
   const keys=useMemo(()=>new Set(errors.map(err=>targetKey(err.target))),[errors]);
   const mode=room.phase==='live'&&drawingAvailable?inkMode:'off';
   return <div ref={rootRef} className={[css.root,focusMode?css.focusMode:'',panelOpen?css.panelExpanded:'',compactToolbar?css.toolbarCollapsed:''].filter(Boolean).join(' ')}
@@ -55,10 +55,16 @@ export function ClassroomPreview(){
           <span className={css.quranStatus}>{role==='teacher'?'التنقل بإذن الشيخ':'لا يحق للطالب تغيير الصفحة'}</span>
         </header>
         <div className={css.quranViewport}>
+          <button type="button" className={css.pageEdgePrev} title="الصفحة السابقة" aria-label="الصفحة السابقة"
+            disabled={role!=='teacher'||room.phase!=='live'||room.currentPage<=1}
+            onClick={()=>setPage(room.currentPage-1)}>‹</button>
           <ReaderPrintedPage page={room.currentPage} inkMode={mode} color={inkColor}
             strokes={pageStrokes} selectedKey={target?targetKey(target):null} noteKeys={keys}
             onSelect={setTarget} onOpenNote={setTarget}
             onInkChange={updateInk}/>
+          <button type="button" className={css.pageEdgeNext} title="الصفحة التالية" aria-label="الصفحة التالية"
+            disabled={role!=='teacher'||room.phase!=='live'||room.currentPage>=604}
+            onClick={()=>setPage(room.currentPage+1)}>›</button>
         </div>
         <footer className={css.quranFooter}>
           <span>الصفحة {room.currentPage} من ٦٠٤ · التحديد والتظليل فوق طبقة منفصلة عن نص المصحف</span>

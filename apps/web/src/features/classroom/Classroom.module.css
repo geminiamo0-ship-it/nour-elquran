@@ -376,3 +376,132 @@
  .quranHead h2{font-size:17px;}
  .videoBackdrop{height:80px;}
 }
+
+/* Approved final UX reference 2026-10-29: dense classroom for teacher desktop
+ * and Sheikh-video-first student mobile. Keep Quran source artwork untouched. */
+.lessonTitle{display:flex;align-items:center;gap:10px;min-width:0;}
+.lessonTitle h1{white-space:nowrap;margin:0;font-size:20px;line-height:1.15;}
+.demoTag{display:inline-flex;background:#edf5e9;border:1px solid #d3e6cd;color:#50775c;
+ border-radius:99px;font-size:10px;font-weight:800;padding:5px 9px;white-space:nowrap;}
+.root .pageTop{min-height:30px;padding:4px clamp(9px,1vw,19px);gap:9px;}
+.root .workspaceActions{min-height:29px;margin-bottom:3px;gap:5px;}
+.root .topline{min-height:38px;gap:10px;padding:3px clamp(10px,1vw,19px);}
+.root .prejoinCard{position:relative;z-index:10;min-height:38px;padding:3px 10px;margin-bottom:4px;gap:12px;}
+.prejoinPeople{flex:1;gap:12px;min-width:0;}
+.presenceHeading{font-size:10px!important;white-space:nowrap;opacity:.75;}
+.prejoinPeople label{white-space:nowrap;font-size:11px;}
+.compactClock{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:5px;margin-inline-start:auto;}
+.clockDetails{position:relative;}
+.clockDetails>summary{list-style:none;display:flex;align-items:center;gap:5px;white-space:nowrap;
+ cursor:pointer;padding:5px 9px;font-size:12px;font-weight:800;color:#946e30;
+ background:#faf3e4;border:1px solid #ebdec7;border-radius:7px;}
+.clockDetails>summary::-webkit-details-marker{display:none;}
+.clockDetails>summary:focus-visible{outline:2px solid #987c3e;outline-offset:2px;}
+.clockLabel{font-size:9px;color:#8c8c73;font-weight:600;}
+.clockDropdown{position:absolute;z-index:110;inset-inline-end:0;top:calc(100% + 6px);
+ width:min(270px,80vw);padding:14px;border:1px solid #d8c6a7;border-radius:10px;
+ background:#fffdfa;box-shadow:0 12px 35px #2b422c33;color:#415f48;}
+.clockDropdown label{display:grid;gap:10px;font-size:11px;font-weight:700;}
+.clockDropdown input{accent-color:#376949;width:100%;}
+.clockDropdown small{font-size:10px;line-height:1.7;color:#748378;}
+.prejoinActions{flex-shrink:0;gap:7px;}
+.prejoinActions>span{font-size:10px;}
+.root .toolbar{min-height:39px;flex:0 0 auto;padding:3px 7px;gap:5px;border-radius:8px;}
+.root .toolGroup{gap:3px;}
+.root .toolGroup button{min-height:30px;padding:4px 7px;border-radius:6px;}
+.root .toolGroup button:disabled{opacity:.5;}
+.root .toolGroup>span{font-size:11px;white-space:nowrap;}
+.root .mediaControls{min-height:29px;padding:3px 8px;gap:5px;}
+.root .workspace{grid-template-columns:minmax(175px,17%) minmax(0,1fr) minmax(215px,21%);
+ gap:7px;min-height:0;}
+.root .mediaPanel,.root .panelSlot>.notesPanel{padding:8px;}
+.root .mediaPanel{gap:3px;}
+.root .dockedVideo{display:flex;flex-direction:column;flex:1 1 0;min-height:0;margin-bottom:0;}
+.root .videoCard{display:flex;flex-direction:column;flex:1;min-height:0;height:100%;}
+.root .videoBackdrop{display:flex;flex-direction:column;flex:1 1 auto;min-height:55px;height:auto;}
+.root .videoOffline{flex:1;min-height:55px;}
+.root .selfPreview{display:flex;flex-direction:column;flex:0 1 40%;min-height:85px;overflow:hidden;}
+.root .selfPreview>.videoCard{flex:1;min-height:0;}
+.root .selfPreview .videoBackdrop{height:auto;min-height:40px;}
+.root .deviceNotice{margin:3px 0 0;font-size:9px;line-height:1.5;}
+.root .quranStage{padding:6px 8px;}
+.root .quranHead{min-height:25px;margin-bottom:1px;padding:0 4px 3px;}
+.root .quranHead h2{font-size:20px;}
+.root .quranFooter{min-height:18px;margin-top:2px;padding-top:3px;}
+.root .quranViewport{position:relative;isolation:isolate;}
+.pageEdgePrev,.pageEdgeNext{
+ position:absolute;top:50%;transform:translateY(-50%);z-index:4;
+ width:34px;height:34px;display:grid;place-items:center;
+ border-radius:50%;border:1px solid #d9c8a8;color:#516b59;
+ background:#fffdf7;font:700 25px/1 Georgia,serif;
+ box-shadow:0 2px 6px #31463116;
+}
+.pageEdgePrev{right:7px;}
+.pageEdgeNext{left:7px;}
+.pageEdgePrev:disabled,.pageEdgeNext:disabled{opacity:.24;}
+.root .notesPanel .tabs{margin-bottom:8px;padding:3px;gap:2px;}
+.root .notesPanel .tabs button{padding:7px 3px;}
+.root .notesPanel .tabBody{gap:8px;}
+.root .notesPanel .field select,.root .notesPanel .field textarea{padding:8px;}
+.root .notesPanel .panelHeading{margin-bottom:9px;}
+.root .quranStatus{white-space:nowrap;}
+@media(max-width:1100px){
+ .root .workspace{grid-template-columns:minmax(150px,17%) minmax(0,1fr) minmax(190px,25%);}
+ .root .prejoinCard{gap:6px;}
+ .presenceHeading{display:none;}
+ .root .toolGroup button{padding:4px 6px;}
+ .root .selfPreview{flex-basis:37%;}
+}
+@media(max-width:760px){
+ .root .pageTop{min-height:24px;padding:2px 8px;}
+ .root .workspaceActions{min-height:29px;margin:0 8px 2px;}
+ .root .topline{min-height:31px;padding:2px 8px;gap:6px;}
+ .lessonTitle h1{font-size:17px;}
+ .demoTag{font-size:8px;padding:3px 6px;}
+ .root .prejoinCard{margin:0 8px 2px;min-height:30px;padding:2px 5px;gap:4px;}
+ .root .prejoinPeople{gap:5px;flex:0 1 auto;}
+ .root .prejoinPeople label{font-size:9px;}
+ .root .prejoinActions{margin-inline-start:auto;}
+ .root .prejoinActions button{min-height:27px;padding:3px 6px;font-size:9px;}
+ .clockDetails>summary{padding:4px 5px;font-size:10px;}
+ .clockLabel{display:none;}
+ .root .toolbar{min-height:32px;margin:0 8px 2px;padding:2px 5px;}
+ .root .toolGroup button{min-height:28px;min-width:28px;padding:3px 5px;font-size:0;}
+ .root .toolGroup button>span{font-size:15px;}
+ .root .mediaControls{margin:0 8px 2px;min-height:27px;}
+ .root .workspace{display:flex;flex-direction:column;gap:3px;margin:0 8px 4px;}
+ .root[data-view-role="student"] .mediaPanel{
+   order:0;flex:0 0 auto;height:clamp(100px,20dvh,174px);
+   max-height:23dvh;min-height:100px;display:flex;flex-direction:column;
+ }
+ .root[data-view-role="student"] .dockedVideo{flex:1;min-height:0;}
+ .root[data-view-role="student"] .videoCard{min-height:0;}
+ .root[data-view-role="student"] .videoBackdrop{min-height:40px;}
+ .root[data-view-role="student"] .quranStage{order:1;flex:1;min-height:0;}
+ .root[data-view-role="teacher"] .quranStage{order:0;flex:1;min-height:0;}
+ .root[data-view-role="teacher"] .mediaPanel{order:1;flex:0 0 auto;height:clamp(65px,10dvh,88px);min-height:65px;}
+ .root[data-view-role="teacher"] .dockedVideo{min-height:0;}
+ .root[data-view-role="teacher"] .selfPreview{display:none;}
+ .pageEdgePrev,.pageEdgeNext{display:none;}
+ .root .quranHead h2{font-size:17px;}
+ .root .quranStatus{font-size:8px;}
+ .root .quranFooter{min-height:15px;font-size:8px;}
+ .root .panelSlot{display:none;position:absolute;z-index:40;}
+ .root.panelExpanded .panelSlot{display:block;}
+ .root[data-view-role="student"] .panelSlot{display:none;}
+}
+@media(max-width:390px){
+ .demoTag{display:none;}
+ .prejoinActions>span{display:none;}
+ .root .clockDetails>summary{font-size:9px;}
+ .root .prejoinPeople label{font-size:9px;}
+ .root .toolbar .colors{gap:1px;}
+ .root .toolbar .color,.root .toolbar .selectedColor{width:13px;height:13px;}
+}
+@media(max-height:650px) and (min-width:761px){
+ .root .topline{min-height:29px;}
+ .root .prejoinCard{min-height:32px;}
+ .root .workspaceActions{min-height:25px;}
+ .root .quranHead{min-height:20px;}
+ .root .selfPreview{flex:0 1 31%;}
+}

@@ -276,3 +276,12 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `workers/api/src/auth/routes.ts`: routes `GET /v1/teacher/lessons/:id/access` before owner account creation and `GET /v1/me/learners/:childId/lessons/:id/access` through verified owner context. Both deny unknown/canceled/ended lessons with 404.
 - `workers/api/tests/test_classroom_access.py`: exact SQL extraction and real SQLite migration lineage tests, with revoked/substitute consent, disabled teacher/owner, cross-child and terminal-state denials.
 - **Still absent:** per-lesson DO membership/replay, verified real-time presence, teacher Start/End write endpoint, LiveKit tokens and video. See `docs/CLASSROOM_UI_BACKEND_CONTRACT.md`.
+
+## Owner-approved dense Quran classroom implementation (2026-10-29)
+
+- `docs/CLASSROOM_APPROVED_DENSE_LAYOUT.md`: final approved desktop-teacher/mobile-student layout and strict no-fake-Quran/media acceptance constraints, originating from owner approval of the two design mockups.
+- `apps/web/src/features/classroom/ClassroomControls.tsx`: compact title/status, two-party lobby + small expandable demo clock, one compressed navigation and drawing toolbar; correct page range 1..604.
+- `apps/web/src/features/classroom/ClassroomPreview.tsx`: teacher-only lateral Quran page controls reuse previously unoccupied whitespace, without changing Quran source/rendering.
+- `apps/web/src/features/classroom/ClassroomSidePanel.tsx`: private notes available beside nullable grade inputs without unnecessary panel switching.
+- `apps/web/src/features/classroom/Classroom.module.css`: compact 100dvh layout, panels/video fill their allocated height, student mobile Sheikh camera first and canonical Quran second.
+- `apps/web/src/features/classroom/classroom.test.tsx`: semantic assertions for approved control structure and accurate demo state. Staging and LiveKit remain separate release gates.
