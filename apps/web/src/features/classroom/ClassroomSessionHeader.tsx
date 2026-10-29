@@ -109,8 +109,8 @@ export function ClassroomSessionHeader({model,focusMode,onToggleFocus,panelOpen,
               onChange={event=>setElapsed(Number(event.target.value))}/>
           </label>
           <div className={css.previewLinks}>
-            <Link href="/classroom?view=teacher">رابط معاينة الشيخ</Link>
-            <Link href="/classroom?view=student">رابط معاينة الطالب</Link>
+            <Link href="/classroom?view=teacher" onClick={()=>{setRole('teacher');setInkMode('off');}}>رابط معاينة الشيخ</Link>
+            <Link href="/classroom?view=student" onClick={()=>{setRole('student');setInkMode('off');}}>رابط معاينة الطالب</Link>
           </div>
           <small>٣٠ دقيقة تعليم · ٤٠ دقيقة حجز · الإنهاء بيد الشيخ فقط. لا اتصال أو حفظ على الخادم.</small>
         </div>
