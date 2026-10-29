@@ -30,7 +30,7 @@ export function parsePublishAssignment(raw:unknown):AssignmentPublish|null{
   editionId:v.editionId as string,surah:v.surah as number,fromAyah:v.fromAyah as number,
   toAyah:v.toAyah as number,dueAtMs:v.dueAtMs as number,instructions:v.instructions.trim()};
 }
-async function verifiedCurrentTeacher(db:CoreDatabase,subject:string,learnerId:string,now:number) {
+export async function verifiedCurrentTeacher(db:CoreDatabase,subject:string,learnerId:string,now:number) {
  const row=await db.prepare(`SELECT 1 AS allowed FROM learners l JOIN accounts owner ON owner.id=l.account_id
  JOIN teacher_assignments a ON a.learner_id=l.id
  JOIN teachers t ON t.id=a.teacher_id
@@ -40,7 +40,7 @@ async function verifiedCurrentTeacher(db:CoreDatabase,subject:string,learnerId:s
  .bind(learnerId,subject,now,now).first<{allowed:number}>();
  return row?.allowed===1;
 }
-async function verifiedOwner(db:CoreDatabase,subject:string,learnerId:string){
+export async function verifiedOwner(db:CoreDatabase,subject:string,learnerId:string){
  const row=await db.prepare(`SELECT 1 AS allowed FROM learners l JOIN accounts a ON a.id=l.account_id
  WHERE l.id=? AND l.status='active' AND a.status='active' AND a.auth_subject=? LIMIT 1`)
  .bind(learnerId,subject).first<{allowed:number}>();
