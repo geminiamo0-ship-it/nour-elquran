@@ -147,7 +147,11 @@
   .bottomLink small, .bottomActive small { font-size:10px; max-width:100%; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 }
 @media (max-width:650px) {
-  .topContent { padding:11px 13px; }
+  /* The signed-in controls add a warning and logout: allow a second header row
+     instead of forcing the student selector or menu off the RTL viewport. */
+  .topContent { padding:11px 13px; flex-wrap:wrap; row-gap:8px; }
+  .topTools { flex:1 1 100%; min-width:0; flex-wrap:wrap; justify-content:flex-end; }
+  .profileGroup { min-width:0; }
   .logo { width:38px; height:38px; font-size:21px; }
   .wordmark { gap:7px; }
   .wordmark strong { font-size:22px; }
