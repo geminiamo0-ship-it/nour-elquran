@@ -1,3 +1,6 @@
+import {createElement} from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {TeacherReadOnlyView} from './TeacherReadOnlyView';
 import {describe,expect,it,vi} from 'vitest';
 import {createTeacherReadClient,parseTeacherLessons,parseTeacherRoster,TeacherReadError} from './teacher-read-api';
 
@@ -39,5 +42,14 @@ describe('read-only teacher client contracts',()=>{
     await expect(invalid.roster()).rejects.toMatchObject({code:'INVALID_RESPONSE'});
     const offline=createTeacherReadClient(async()=>{throw Error('offline')});
     await expect(offline.lessons()).rejects.toMatchObject({code:'NETWORK_ERROR'});
+  });
+});
+
+describe('teacher real-data SSR trust boundary',()=>{
+  it('renders only an explicit loading state before verified API response',()=>{
+    const html=renderToStaticMarkup(createElement(TeacherReadOnlyView,{pathname:'/teacher'}));
+    expect(html).toContain('جاري التحقق');
+    expect(html).not.toContain('حساب الشيخ التجريبي');
+    expect(html).not.toContain('demo-learner');
   });
 });

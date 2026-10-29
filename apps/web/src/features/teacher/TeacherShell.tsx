@@ -22,8 +22,8 @@ function TeacherFrame({children}:{children:ReactNode}) {
   const pathname=usePathname();
   const {scenario,setScenario,notices,note,clearNote,incidents}=useTeacher();
   const [menuOpen,setMenuOpen]=useState(false);
-  const unread=notices.filter(item=>!item.read).length;
-  const pending=incidents.filter(item=>item.status==='pending').length;
+  const unread=TEACHER_READONLY_ENABLED?0:notices.filter(item=>!item.read).length;
+  const pending=TEACHER_READONLY_ENABLED?0:incidents.filter(item=>item.status==='pending').length;
   const links=(mobile=false)=>navigation.map(item=><Link href={item.href} key={item.href}
     aria-current={pathname===item.href?'page':undefined}
     className={pathname===item.href?styles.navActive:styles.navLink}
