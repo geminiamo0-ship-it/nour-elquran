@@ -10,6 +10,7 @@ import { listOwnedLearnerLessons, listVerifiedTeacherLessons } from '../lesson-c
 import { listVerifiedTeacherLearners } from '../teacher-roster.ts';
 import {readOwnerPlan,readTeacherPlan,writeTeacherPlan,parsePlanAction} from '../academic-plans.ts';
 import {readOwnerAssignments,readTeacherAssignments,getAssignmentCatalog,publishAssignment,parsePublishAssignment} from '../published-assignments.ts';
+import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '../staff-teachers.ts';
 import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts';
 import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '../classroom-access.ts';
@@ -88,6 +89,24 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
     const input=parseLearnerProfileAction(await readObject(request));
     if(!input)return reply(400,{code:'INVALID_PROFILE_ACTION'},requestId);
     const result=await applyLearnerProfileAction(db,accountId,authSubject,profileMatch[1]!,input);
+    const {status,...body}=result;
+    return reply(status,body,requestId);
+  }
+  const myAttempts=/^\\/v1\\/me\\/learners\\/([a-zA-Z0-9-]{1,128})\\/assignments\\/([a-zA-Z0-9-]{1,128})\\/submissions$/.exec(path);
+  if(myAttempts){
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const version=await db.prepare("SELECT version FROM noor_schema_meta WHERE component='assignment_submissions'")
+      .first<{version:number}>();
+    if(version?.version!==1)return reply(503,{code:'SUBMISSION_SCHEMA_NOT_READY'},requestId);
+    const learnerId=myAttempts[1]!,assignmentId=myAttempts[2]!;
+    const result=request.method==='GET'
+      ?await getStudentAttempts(db,authSubject,learnerId,assignmentId)
+      :await (async()=>{
+        const command=parseSubmission(await readObject(request));
+        if(!command)return {status:400,code:'INVALID_SUBMISSION'} as const;
+        return submitStudentAttempt(db,authSubject,learnerId,assignmentId,command);
+      })();
     const {status,...body}=result;
     return reply(status,body,requestId);
   }
@@ -226,6 +245,24 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
      .first<{version:number}>();
     if(version?.version!==1)return reply(503,{code:'ASSIGNMENT_SCHEMA_NOT_READY'},requestId);
     const result=await getAssignmentCatalog(env.DB,session.user.id);
+    const {status,...body}=result;
+    return reply(status,body,requestId);
+  }
+  const teacherReviews=/^\\/v1\\/teacher\\/learners\\/([a-zA-Z0-9-]{1,128})\\/assignments\\/([a-zA-Z0-9-]{1,128})\\/reviews$/.exec(path);
+  if(teacherReviews){
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const version=await env.DB.prepare("SELECT version FROM noor_schema_meta WHERE component='assignment_submissions'")
+      .first<{version:number}>();
+    if(version?.version!==1)return reply(503,{code:'SUBMISSION_SCHEMA_NOT_READY'},requestId);
+    const learnerId=teacherReviews[1]!,assignmentId=teacherReviews[2]!;
+    const result=request.method==='GET'
+      ?await getTeacherAttempts(env.DB,session.user.id,learnerId,assignmentId)
+      :await (async()=>{
+        const command=parseReview(await readObject(request));
+        if(!command)return {status:400,code:'INVALID_REVIEW'} as const;
+        return reviewStudentAttempt(env.DB,session.user.id,learnerId,assignmentId,command);
+      })();
     const {status,...body}=result;
     return reply(status,body,requestId);
   }
