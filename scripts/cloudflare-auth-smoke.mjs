@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 const base = 'http://127.0.0.1:8795';
@@ -72,7 +73,7 @@ assert.equal((await call('/internal-auth/sign-up/email',{method:'POST',body:{ema
 const teacherActor=a.data.user.id, teacherSubject=b.data.user.id;
 assert.match(teacherActor,/^[a-zA-Z0-9_-]+$/);
 assert.match(teacherSubject,/^[a-zA-Z0-9_-]+$/);
-const teacherCommand=(action,operationId=crypto.randomUUID())=>({
+const teacherCommand=(action,operationId=randomUUID())=>({
   targetUserId:teacherSubject,action,reason:'Synthetic qualified staff decision',operationId,
 });
 const beforeGrant=await call('/v1/staff/teacher-actions',{
