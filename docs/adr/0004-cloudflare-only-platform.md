@@ -23,10 +23,10 @@ The frontend exists with explicit mock state; there is no Supabase production da
 | Quran and private assets | Separate public canonical Quran and private R2 buckets |
 | Background work | Durable outbox, Queues and Cron; duplicate-safe consumers |
 | Frontend hosting | Current Next.js static export + Workers Static Assets configured in merged #105; #40 vinext verification applies before any SSR/runtime switch |
-| Live audio/video | Cloudflare RealtimeKit target; #49/#50 must verify browser/mobile/reconnect and revocation before production |
+| Live audio/video | **Superseded 2026-10-29 by ADR 0007:** managed LiveKit Cloud as explicit A/V-only exception; #49/#50 require two-client verification before production |
 | Recovery | D1 Time Travel plus private exports beyond retention; independent R2/DO recovery and reconciliation |
 
-The infrastructure direction supersedes the Supabase/Postgres/RLS design and **the media-provider selection in ADR 0002 only**. Its approved shared-mushaf UX, annotations, archives, permissions and no-recording policy remain binding. RealtimeKit is not claimed provisioned or tested. No silent fallback to an external media provider.
+The infrastructure direction supersedes the Supabase/Postgres/RLS design. **The RealtimeKit media vendor selection in this ADR was subsequently superseded by ADR 0007**, which explicitly selects LiveKit Cloud for A/V only based on later owner classroom discussions. All Cloudflare Workers/D1/DO/R2/Queues/frontend hosting and privacy boundaries remain unchanged; the narrow media exception does not change the app database/vendor. Neither provider is claimed provisioned or tested, and no automatic media-provider fallback is authorized.
 
 D1 has no PostgreSQL RLS/GRANT model for application end users. There is no browser database token: Workers must check session/account/learner/role/resource/time on every operation. Do not invent a second login system; integrate the maintained auth library before enabling learner endpoints. Verification delivery (phone/email), WhatsApp and payments still require their respective providers; Cloudflare-only refers to hosted application infrastructure.
 
