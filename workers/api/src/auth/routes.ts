@@ -5,6 +5,7 @@ import { authSettings } from './settings.ts';
 import { ownerAccount } from './accounts.ts';
 import { getOwnedLearner, listOwnedLearners } from '../owner-learners.ts';
 import { listOwnedLearnerLessons, listVerifiedTeacherLessons } from '../lesson-calendar.ts';
+import { listVerifiedTeacherLearners } from '../teacher-roster.ts';
 import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '../classroom-access.ts';
 import { normalizePhone, onlyKeys, readObject, validName } from './input.ts';
 
@@ -132,6 +133,14 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     return lessons === null
       ? reply(403, { code: 'TEACHER_ACCESS_DENIED' }, requestId)
       : reply(200, { lessons }, requestId);
+  }
+  if (path === '/v1/teacher/learners') {
+    if (request.method !== 'GET') return reply(405, { code: 'METHOD_NOT_ALLOWED' }, requestId);
+    // The teacher is obtained from the verified Better Auth subject, never a query/header.
+    const learners = await listVerifiedTeacherLearners(env.DB, session.user.id);
+    return learners === null
+      ? reply(403, { code: 'TEACHER_ACCESS_DENIED' }, requestId)
+      : reply(200, { learners }, requestId);
   }
   const owner = await ownerAccount(env.DB, session.user.id);
   if (!owner) return reply(403, { code: 'ACCOUNT_UNAVAILABLE' }, requestId);

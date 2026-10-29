@@ -1,3 +1,10 @@
+## Teacher read-only roster backend B1 (#136)
+
+- `GET /v1/teacher/learners` is authenticated with Better Auth session verified by D1 and requires an active qualified teacher `teachers.auth_subject`. An eligible teacher receives `{learners:[{id,name,learnerType}],requestId}` (max 50 primary-assigned active learners); no matches means `learners:[]`.
+- Only currently active, unrevoked `teacher_assignments` count for this general roster. A substitute grant **never** grants the general learner list. Archived learner, disabled owner, revoked/future/expired primary assignment excluded by SQL. No private notes, contacts, reports, or audio data.
+- `401` without a valid session, `403 TEACHER_ACCESS_DENIED` without a qualified teacher; no caller-supplied teacher ID or client role is accepted. `GET /v1/teacher/lessons` remains the existing verified timetable endpoint.
+- Teacher provisioning and editable study plans are NOT implemented; no server-side staff role is conferred by the public demo. Chrome preview remains synthetic until a guarded read-only UI adapter is explicitly enabled. No production D1 changes.
+
 ## Classroom terminal-status integrity (#120, draft PR #121)
 The additive `0003_teacher_schedule.sql` now rejects a `live` lesson reverting to scheduled/cancelled and a completed lesson being reopened. This prevents bypass of the single-live guard through status rollback. Same-status updates and pre-start cancellation/reactivation are preserved. Synthetic SQLite tests exercise both denial and allowed transitions. These database triggers do **not** authorize teacher Start/End, verify simultaneous presence or provide request-ID idempotency; only authenticated use cases may change lesson status. No remote migration has been performed.
 
