@@ -235,7 +235,7 @@ export function MadinahReader() {
   }
   const selectedKey=selectedTarget?targetKey(selectedTarget):null;
   const activeSurah=surahs.filter(s=>s.pageNumber<=page).at(-1)?.number??'';
-  const spreadPages=getVisibleSpread(page,spreadMode,compactDevice);
+  const spreadPages=privateSave.enabled?[page]:getVisibleSpread(page,spreadMode,compactDevice);
   function openDrawer(kind:'index'|'notes'|'search'|'settings'|'ayah') {
     setShowAside(true);setShowIndex(kind==='index');setShowNotes(kind==='notes');
     setShowSearch(kind==='search');setShowSettings(kind==='settings');setHideChrome(false);
@@ -281,7 +281,7 @@ export function MadinahReader() {
           onClick={()=>openDrawer('index')}><ReaderIcon name="index" /></button>
         <button type="button" className={css.iconButton} aria-label="إعدادات القراءة" title="الإعدادات"
           onClick={()=>openDrawer('settings')}><ReaderIcon name="settings" /></button>
-        <button type="button" className={css.exitButton} onClick={()=>{if(compactDevice&&immersive){window.location.assign('/student');return;}else setImmersive(v=>!v);setShowAside(false);}}>
+        <button type="button" className={css.exitButton} onClick={()=>{if(!privateSave.canNavigate){setSavedNotice('أكمل حفظ المصحف قبل مغادرة وضع القراءة.');return;}if(compactDevice&&immersive){window.location.assign('/student');return;}else setImmersive(v=>!v);setShowAside(false);}}>
           <span className={css.exitLabel}>{immersive?'الخروج من وضع القراءة':'وضع القراءة'}</span><span className={css.exitGlyph} aria-hidden="true">↗</span>
         </button>
       </div>
@@ -390,7 +390,7 @@ export function MadinahReader() {
           <fieldset><legend>عرض الصفحة</legend>
             {(['auto','single','double'] as ReaderPageMode[]).map(m=><label key={m}>
               <input type="radio" name="reader-page-mode" value={m} checked={spreadMode===m}
-                onChange={()=>setSpreadMode(m)}/>
+                onChange={()=>setSpreadMode(m)} disabled={privateSave.enabled&&m!=='single'}/>
               {m==='auto'?'تلقائي':m==='single'?'صفحة واحدة':'صفحتان (شاشة كبيرة)'}
             </label>)}
           </fieldset>
@@ -479,7 +479,7 @@ export function MadinahReader() {
             onClick={()=>selectTarget(n.target)}>{targetKey(n.target)} · {n.text}</button>)}</>}
           {selectedTarget&&<button type="button" className={css.smallButton} onClick={()=>setSelectedTarget(null)}>اختيار آية أخرى</button>}
         </>}
-        <p className={css.info}>الملاحظات والرسم في هذه النسخة محليان ومؤقتان، وليسا متزامنين مع الشيخ أو حساب الطالب بعد.</p>
+        <p className={css.info}>{privateSave.enabled?'الملاحظات والرسم الخاصة تُحفظ في حساب الطالب بعد تأكيد الخادم، وليست مشاركةً مع الشيخ.':'الملاحظات والرسم في هذه المعاينة محليان ومؤقتان، وليسا متزامنين مع الشيخ أو حساب الطالب.'}</p>
       </aside>}
     </div>
     <footer className={css.readerFoot} aria-label="شريط التنقل بين صفحات المصحف">
