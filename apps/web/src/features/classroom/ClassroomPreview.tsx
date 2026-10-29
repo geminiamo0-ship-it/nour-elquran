@@ -33,17 +33,18 @@ export function ClassroomPreview(){
   const mode=room.phase==='live'&&drawingAvailable?inkMode:'off';
   return <div ref={rootRef} className={[css.root,focusMode?css.focusMode:'',panelOpen?css.panelExpanded:'',compactToolbar?css.toolbarCollapsed:''].filter(Boolean).join(' ')}
     data-view-role={role} data-focus={focusMode?'on':'off'}>
-    <div className={css.pageTop}><Link href="/teacher">العودة إلى بوابة الشيخ</Link>
-      <span>المعاينة تجريبية ولا تستخدم بثًا حيًا أو بيانات طلاب</span></div>
-    <div className={css.workspaceActions}>
-      <span className={css.workspaceIdentity}>وضع تدريس بدون تشتيت · {role==='student'?'أولوية كاميرا الشيخ والمصحف':'المصحف وأدوات الشيخ أمامك'}</span>
-      <button type="button" className={css.focusButton} aria-pressed={focusMode} onClick={()=>void toggleFocus()}>
-        {focusMode?'الخروج من وضع الحصة':'⛶ وضع الحصة'}
-      </button>
-      <button type="button" className={css.panelToggle} aria-expanded={panelOpen} aria-controls="lesson-notes"
-        onClick={()=>setPanelOpen(v=>!v)}>{panelOpen?'إخفاء لوحة الأدوات':'الأخطاء والتقييم'}</button>
-      <button type="button" className={css.toolbarToggle} aria-expanded={!compactToolbar}
-        onClick={()=>setCompactToolbar(v=>!v)}>{compactToolbar?'إظهار أدوات إضافية':'إخفاء الأدوات الإضافية'}</button>
+    <div className={css.pageTop}>
+      <Link href="/teacher">العودة إلى بوابة الشيخ</Link>
+      <span className={css.previewDisclosure}>معاينة تجريبية · دون بث أو بيانات طلاب</span>
+      <div className={css.workspaceActions}>
+        <button type="button" className={css.focusButton} aria-pressed={focusMode} onClick={()=>void toggleFocus()}>
+          {focusMode?'الخروج من وضع الحصة':'⛶ وضع الحصة'}
+        </button>
+        <button type="button" className={css.panelToggle} aria-expanded={panelOpen} aria-controls="lesson-notes"
+          onClick={()=>setPanelOpen(v=>!v)}>{panelOpen?'إخفاء لوحة الأدوات':'الأخطاء والتقييم'}</button>
+        <button type="button" className={css.toolbarToggle} aria-expanded={!compactToolbar}
+          onClick={()=>setCompactToolbar(v=>!v)}>{compactToolbar?'إظهار أدوات إضافية':'إخفاء الأدوات الإضافية'}</button>
+      </div>
     </div>
     <ClassroomControls model={model}/>
     <div className={css.workspace}>
