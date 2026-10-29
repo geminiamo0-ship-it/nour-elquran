@@ -1,3 +1,8 @@
+## Private Quran #149 hydration guard
+
+- `private-mushaf-readiness.test.ts` checks that connected writes are allowed only when index and page are hydrated for the selected learner and active page, and denied after failure or during a page/learner switch; local demo remains editable. Run with `pnpm --filter @noor/web test` and strict typecheck in Verify.
+- Separate protected QA Chrome/D1 proof must simulate a slow page fetch, page navigation, failed POST + Retry, two-account isolation and actual reload; unit tests alone do not establish remote persistence or zero-loss before ACK.
+
 # Verification and test strategy
 
 ## AUTH-02 #112 full local account journey
