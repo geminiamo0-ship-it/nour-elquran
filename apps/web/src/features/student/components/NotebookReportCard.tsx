@@ -13,6 +13,6 @@ export function NotebookReportCard({ lesson, report }: { lesson: Lesson; report:
       <p>{report.summary}</p>
       <p className={styles.muted}>التقييم المنشور: الحفظ {gradeLabel(report.memorization)} · التلاوة {gradeLabel(report.recitation)} · التجويد {gradeLabel(report.tajweed)}</p>
     </> : <p role="status">تقرير الشيخ لم يُنشر لهذه الحصة بعد. لا توجد درجات معتمدة للعرض.</p>}
-    <p className={styles.muted}>طبقة علامات الحصة المعتمدة، والمشاركة والتصدير والأرشيف غير متاحة في هذه النسخة. الملاحظات الشخصية أدناه محلية فقط.</p>
+    <p className={styles.muted}>علامات الحصة تظهر في المصحف أدناه فقط عند وجود نطاق منشور موثّق؛ المشاركة والتصدير والأرشيف غير متاحة. الملاحظات الشخصية محلية فقط.</p>
   </div>;
 }
