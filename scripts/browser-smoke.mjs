@@ -572,7 +572,7 @@ try {
   // CLASSROOM #50: actual Quran reader route, preview permissions and responsive RTL.
   const classroomResponse=await fetch(url+'classroom');
   assert.equal(classroomResponse.status,200,'Classroom static preview route missing');
-  assert((await classroomResponse.text()).includes('معاينة الفصل التفاعلي فقط'),
+  assert((await classroomResponse.text()).includes('شريط إدارة الحصة التجريبية'),
     'Classroom must clearly disclose nonproduction room state');
   for(const width of [360,390,1440]){
     await socket.send('Emulation.setDeviceMetricsOverride',{
@@ -608,23 +608,23 @@ try {
   const classroomInteraction=await socket.send('Runtime.evaluate',{
     expression:`(async()=>{const pause=()=>new Promise(r=>setTimeout(r,190));
       const buttons=()=>[...document.querySelectorAll('button')];
-      const start=buttons().find(b=>b.textContent.includes('محاكاة «بدء الحصة»'));
+      const start=buttons().find(b=>b.textContent.includes('بدء الحصة'));
       const before=start?.disabled===true;
       const people=[...document.querySelectorAll('input[type=checkbox]')];
       people[1]?.click();await pause();
       const both=start?.disabled===false;
       start?.click();await pause();
-      const live=document.body.textContent.includes('حصة تجريبية جارية');
+      const live=document.querySelector('[data-phase="live"]')!==null;
       const hasQuran=!!document.querySelector('[aria-label^="مصحف المدينة، الصفحة"]');
       const studentRole=document.querySelector('select[aria-label="تبديل منظور المعاينة"]');
       studentRole.value='student';studentRole.dispatchEvent(new Event('change',{bubbles:true}));await pause();
-      const endBtn=buttons().find(b=>b.textContent.includes('إنهاء الفصل بيد الشيخ'));
-      const noStudentEnd=endBtn?.disabled===true;
-      const nav=buttons().find(b=>b.textContent.includes('صفحة تالية'));
+      const endBtn=buttons().find(b=>b.textContent.includes('إنهاء الحصة'));
+      const noStudentEnd=!endBtn;
+      const nav=buttons().find(b=>b.getAttribute('aria-label')==='الصفحة التالية');
       const noStudentNavigation=nav?.disabled===true;
       const clock=document.querySelector('input[type=range]');
       clock.value='42';clock.dispatchEvent(new Event('input',{bubbles:true}));clock.dispatchEvent(new Event('change',{bubbles:true}));await pause();
-      const notAutoEnded=document.body.textContent.includes('حصة تجريبية جارية');
+      const notAutoEnded=document.querySelector('[data-phase="live"]')!==null;
       return {before,both,live,hasQuran,noStudentEnd,noStudentNavigation,notAutoEnded};
     })()`,
     awaitPromise:true,returnByValue:true,
@@ -671,7 +671,7 @@ try {
       returnByValue:true,
     });
     await socket.send('Runtime.evaluate',{
-      expression:"(()=>{[...document.querySelectorAll('button')].find(b=>b.textContent.includes('وضع الحصة'))?.click();return true;})()",
+      expression:"(()=>{[...document.querySelectorAll('button')].find(b=>b.getAttribute('aria-label')==='وضع الحصة')?.click();return true;})()",
       returnByValue:true,
     });
     await sleep(160);
