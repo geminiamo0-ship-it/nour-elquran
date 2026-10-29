@@ -1,3 +1,8 @@
+## NON-CLASSROOM #159 — qualified teacher connected Home/Students/Schedule (source branch, not staged)
+- On `feat/159-connected-teacher-home-v2`, connected Sheikh shell bypasses the fixture-based TeacherProvider; Home shows verified roster/lesson stats, My Students offers authorized search, Schedule offers status filters and Cairo dates, reusing existing protected D1 teacher endpoint.
+- Build flag `NEXT_PUBLIC_TEACHER_READONLY_ENABLED` is OFF by default; no synthetic teacher provisioned on remote Dev yet. Remaining teacher routes explicitly await secure APIs; no actual report/assignment publishing. Source requires CI then real staging qualified-teacher/denied role browser proof before completion.
+- Parent #155 / #159 open; independent Phase 01A learner profile staging already PASS. No Production or Classroom media changes.
+
 ## NON-CLASSROOM PHASE 01A #157 — CLOUDFLARE DEV ACCEPTANCE PASS (2026-10-29)
 - [PR #158](https://github.com/geminiamo0-ship-it/nour-elquran/pull/158) was squash-merged as `68b218cf99ff436acf34292d39692a8011862c6a`, after exact-head [Verify 40957686804](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40957686804) 4/4. Postmerge [Noor main Verify 40958071853](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40958071853) passed.
 - [Santoreno PR #243](https://github.com/geminiamo0-ship-it/santoreno/pull/243) merged as `a0b28bc4af7e95de983c37ff696174ffb9a9797a`. [Remote Cloudflare staging run 40958341460](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40958341460) **SUCCESS**: only `noor-site-staging` + isolated D1 `noor-core-staging`; actual deployed API and Chrome with synthetic owner A/B/siblings.
