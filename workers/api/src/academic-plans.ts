@@ -72,10 +72,11 @@ export async function writeTeacherPlan(db:CoreDatabase,subject:string,learnerId:
       event.focus!==command.focus)return {status:409,code:'PLAN_OPERATION_CONFLICT'} as const;
    return {status:200,code:'PLAN_ALREADY_SAVED',revision:command.expectedRevision+1} as const;
  };
+ const now=Date.now();
+ // A revoked or expired teacher must not replay a historical successful op.
+ if(!await permittedTeacher(db,subject,learnerId,now))return {status:404,code:'NOT_FOUND'} as const;
  const current=await find();
  if(current)return replay(current);
- const now=Date.now();
- if(!await permittedTeacher(db,subject,learnerId,now))return {status:404,code:'NOT_FOUND'} as const;
  try{
   await db.prepare(`INSERT INTO academic_plan_events
    (operation_id,learner_id,actor_auth_subject,expected_revision,level,next_wird,revision_wird,focus,at_ms)
