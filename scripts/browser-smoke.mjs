@@ -549,6 +549,55 @@ try {
     const actual = check.result?.value;
     assert(actual && actual.readonly && actual.selected && actual.isolated && actual.cleared && !actual.overflow,
       'S11 notebook Quran viewer/sibling smoke failed: ' + JSON.stringify(actual ?? check));
+
+    await waitFor(async () => {
+      const r = await socket.send('Runtime.evaluate', {
+        expression: "Boolean(document.querySelector('[aria-label=\\\"طبقات مصحف الحصة\\\"]') && document.querySelector('[data-rendered-quran-page=\\\"604\\\"]'))",
+        returnByValue: true,
+      });
+      return r.result?.value === true;
+    }, 'notebook private layer toolbar at ' + width);
+    const layers = await socket.send('Runtime.evaluate', {
+      expression: "(async()=>{const pause=()=>new Promise(r=>setTimeout(r,100));const viewer=document.querySelector('[aria-label=\\\"مصحف الحصة المنشور للقراءة فقط\\\"]');const group=viewer?.querySelector('[aria-label=\\\"طبقات مصحف الحصة\\\"]');const buttons=[...(group?.querySelectorAll('button')??[])];const button=(s)=>buttons.find(b=>b.textContent.includes(s));const mark=()=>viewer.textContent.includes('مثال توضيحي لتصحيح الحصة');const initial=mark();button('قلم خاص')?.click();await pause();const pen=!!viewer.querySelector('svg[data-ink-mode=\\\"pen\\\"]')&&button('قلم خاص')?.getAttribute('aria-pressed')==='true';button('إخفاء علامات الشيخ')?.click();await pause();const hidden=!mark()&&viewer.textContent.includes('لم تُعدّل أو تُحذف');button('إظهار علامات الشيخ')?.click();await pause();const restored=mark();return {initial,pen,hidden,restored};})()",
+      awaitPromise: true, returnByValue: true,
+    });
+    const layerResult = layers.result?.value;
+    assert(layerResult && Object.values(layerResult).every(Boolean),
+      'S11 private/teacher layer separation failed: ' + JSON.stringify(layerResult ?? layers));
+
+    if (width === 390) {
+      // Real Chrome pointer drag, not an element.click() or fabricated React handler.
+      const box = await socket.send('Runtime.evaluate', {
+        expression: "(()=>{const svg=document.querySelector('[aria-label=\\\"مصحف الحصة المنشور للقراءة فقط\\\"] svg[data-ink-mode=\\\"pen\\\"]');svg?.scrollIntoView({block:'center'});const r=svg?.getBoundingClientRect();return r?{x:r.left+r.width*.4,y:r.top+r.height*.4,w:r.width,h:r.height}:null;})()",
+        returnByValue: true,
+      });
+      const rect = box.result?.value;
+      assert(rect && rect.w > 100 && rect.h > 100, 'Notebook pen SVG must have visible geometry');
+      const x = rect.x, y = rect.y;
+      await socket.send('Input.dispatchMouseEvent', { type:'mouseMoved', x, y, button:'none' });
+      await socket.send('Input.dispatchMouseEvent', { type:'mousePressed', x, y, button:'left', clickCount:1 });
+      await socket.send('Input.dispatchMouseEvent', { type:'mouseMoved', x:x+18, y:y+14, button:'left', buttons:1 });
+      await socket.send('Input.dispatchMouseEvent', { type:'mouseMoved', x:x+34, y:y+22, button:'left', buttons:1 });
+      await socket.send('Input.dispatchMouseEvent', { type:'mouseReleased', x:x+34, y:y+22, button:'left', clickCount:1 });
+      await waitFor(async () => {
+        const r = await socket.send('Runtime.evaluate', {
+          expression: "document.querySelectorAll('[aria-label=\\\"مصحف الحصة المنشور للقراءة فقط\\\"] svg[data-ink-mode=\\\"pen\\\"] path').length > 0",
+          returnByValue: true,
+        });
+        return r.result?.value === true;
+      }, 'real notebook pen stroke');
+      const cleanup = await socket.send('Runtime.evaluate', {
+        expression: "(async()=>{const pause=()=>new Promise(r=>setTimeout(r,120));const group=document.querySelector('[aria-label=\\\"طبقات مصحف الحصة\\\"]');const btn=s=>[...group.querySelectorAll('button')].find(b=>b.textContent.includes(s));const count=()=>document.querySelectorAll('[aria-label=\\\"مصحف الحصة المنشور للقراءة فقط\\\"] svg[data-ink-mode] path').length;const drawn=count()===1;btn('تراجع عن آخر خط')?.click();await pause();const undone=count()===0;return {drawn,undone};})()",
+        awaitPromise: true, returnByValue: true,
+      });
+      assert(cleanup.result?.value?.drawn && cleanup.result?.value?.undone,
+        'S11 local ink undo must not mutate published marks: ' + JSON.stringify(cleanup.result?.value));
+    }
+    await socket.send('Runtime.evaluate', {
+      expression: "document.querySelector('[aria-label=\\\"طبقات مصحف الحصة\\\"] button[aria-pressed=\\\"true\\\"]')?.click()",
+      returnByValue: true,
+    });
+
     const shot = await socket.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
     fs.writeFileSync(path.join(screenshots, 'student-notebook-' + width + '.png'), Buffer.from(shot.data, 'base64'));
     console.log('S11 notebook shared Quran read-only and learner isolation passed: ' + width + 'px');
