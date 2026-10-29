@@ -1,3 +1,9 @@
+## Active classroom layout handoff — #134 / PR #135 (2026-10-29)
+- Issue #134 is the owner-approved compact live-classroom layout continuation after merged #133. Branch `feat/134-compact-classroom-header` (Draft PR #135) changes `ClassroomPreview.tsx`, `ClassroomControls.tsx`, `ClassroomSessionHeader.tsx` + CSS, `useClassroomPreview.ts`, classroom SSR tests and status/map/handoff.
+- One session header keeps teacher-only simulated Start/End, phase/clock, fullscreen and notes; mock role/presence/time and live mic/drawing permissions move into accessible menus. Five colors remain reachable on mobile, and query links are presentation-only, not server auth.
+- **No acceptance claim yet:** inspect exact-head Verify, then test actual waiting/live/fullscreen at 360×667, 390×844, 1280×900, 1440×900 and landscape; keyboard Escape/focus, all colors and teacher-only controls. Review screenshots before any staging deployment. PR must remain Draft/unmerged until checks and review.
+- No real accounts, D1 migrations, production, paid services, media or student information. #120 authenticated Start/End with verified DO presence and durable idempotency remains a separate unimplemented backend slice.
+
 ## Classroom #120 — lifecycle shortcut hardening (2026-10-29, draft PR #121)
 - On `feat/noor-classroom-40m-booking-guard`, D1 `0003_teacher_schedule.sql` now rejects direct live/completed inserts, scheduled-to-completed skips, and cancelled-to-live/completed shortcuts. Preserve historical rows and normal reactivation; tests use the full scheduled/live/completed path.
 - This is **not** an authenticated Start/End API. DO-backed simultaneous teacher+learner presence, verified acting teacher, durable operation idempotency, ended-at audit and media remain unimplemented. Never expose direct status updates to clients.
