@@ -1,5 +1,14 @@
 # AI agent handoff contract
 
+
+## #102 — current unmerged personal ink continuation
+
+- Branch feat/102-notebook-contracts-reports, draft PR #116. LessonQuranViewer.tsx now has separate **temporary private pen/marker/eraser strokes** per verified page, undo/clear, independent teacher mark visibility, and strict page/scope matching before display. No published annotation or canonical Quran content is mutated.
+- NotebookWorkspace.tsx remounts on lesson/revision changes; its parent remounts on learner switch, discarding all private ink and unsent drafts. No browser persistence, backend write, PDF, share or private media.
+- scripts/browser-smoke.mjs now checks toolbar/teacher separation at 390/768/1440 and a real Chrome mouse drag plus undo at 390. These new tests have **not yet been certified on the latest commit**. Next exact action: inspect PR #116 latest SHA and all four Verify jobs, fetch failing job logs if needed, fix without disabling checks, then update Issue #102 with evidence. Multi-page visual fixture, actual S Pen/touch and human review remain required.
+- Main has merged staging #118/#119 and remote synthetic smoke succeeded; do not repeat the older "not yet deployed" staging notes below as current status. No real-user enrollment is authorized.
+
+
 ## #102 — current draft notebook Quran viewer continuation
 - Work on `feat/102-notebook-contracts-reports` / PR #116. A new `LessonQuranViewer` renders the same `ReaderPrintedPage` in read-only mode, only after publisher JSON verifies the current page's lesson boundary anchors. Teacher marks are filtered by learner/lesson/scope, and unavailable metadata never becomes a claimed verified page.
 - `getMockNotebookRevisions` supplies one explicitly synthetic lesson for demo-active only. Connected learners have no fabricated lesson publication. Local notes remain a separate layer; no real backend sync, media, archive, share or export.
