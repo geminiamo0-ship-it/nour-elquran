@@ -1,5 +1,12 @@
 # Repository map and file ownership
 
+## STU S11 #102 — partial notebook F0
+- `apps/web/src/features/student/notebookContracts.ts`: versioned structural Quran range, latest published revision/report and learner/lesson layer separation. Does not verify publisher page mapping or persist anything.
+- `apps/web/src/features/student/notebookContracts.test.ts`: synthetic scope/revision/teacher/private isolation and nullable-grade tests.
+- `apps/web/src/features/student/components/NotebookReportCard.tsx`: read-only published/pending report and honest unavailable archive/share states.
+- `apps/web/src/features/student/components/NotebookWorkspace.tsx`: per-learner keyed local draft reset and scoped report/notes. Shared Quran lesson viewer remains to implement.
+
+
 ## STAGING #114
 - `workers/site/src/staging-access.ts`: staging-only Basic access gate; refuses missing secret, protects all Worker-routed requests; production unaffected.
 - `workers/site/src/index.ts`: stage gate precedes static asset/API dispatch; **deployment must set `assets.run_worker_first=true`** to intercept static resources too.
