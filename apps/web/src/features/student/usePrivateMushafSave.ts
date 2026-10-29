@@ -41,8 +41,8 @@ export function usePrivateMushafSave({
    for(const item of items)versions.current[item.itemId]=item.version;
    setNotes(items.map(item=>asPrivateNote(item,learnerId)).filter(
      (note):note is QuranAnnotation=>note!==null));
-   setBookmarks(items.filter(i=>i.kind==='bookmark').map(i=>i.page).sort((a,b)=>a-b));
-   setMarked(Object.fromEntries(items.filter(i=>i.kind==='highlight').flatMap(item=>{
+   setBookmarks(items.filter(i=>i.kind==='bookmark'&&i.visible).map(i=>i.page).sort((a,b)=>a-b));
+   setMarked(Object.fromEntries(items.filter(i=>i.kind==='highlight'&&i.visible).flatMap(item=>{
     const target=item.payload.target;
     if(!target||typeof target!=='object'||typeof item.payload.color!=='string')return [];
     const t=target as {surah?:unknown;ayah?:unknown;wordIndex?:unknown};

@@ -40,6 +40,23 @@ test('event write binds verified actor/learner and returns D1-acknowledged versi
  assert.deepEqual(calls[1]?.args.slice(1,9),['owned-learner','verified-auth',valid.operationId,
   'put','ink-1','pen',PRIVATE_EDITION,12]);
 });
+test('hidden stable-ID metadata survives reload without loading erased strokes',async()=>{
+ const queries:string[]=[];
+ const db={prepare:(sql:string)=>({bind:()=>({all:async()=>{
+  queries.push(sql);
+  return {results:[sql.includes('page=?')
+   ?{itemId:'note-1-1-0',kind:'note',page:12,visible:0,version:2,payloadJson:'{}'}
+   :{itemId:'bookmark-12',kind:'bookmark',page:12,visible:0,version:2,payloadJson:'{}'}]};
+ }})})} as unknown as CoreDatabase;
+ const page=await readPrivateMushaf(db,'owned',12);
+ const index=await readPrivateMushaf(db,'owned',null);
+ assert.equal(page.items?.[0]?.visible,false);
+ assert.equal(page.items?.[0]?.version,2);
+ assert.equal(index.items?.[0]?.visible,false);
+ assert.equal(index.items?.[0]?.version,2);
+ assert.ok(queries[0]?.includes("visible=1 OR kind IN ('note','highlight')"));
+ assert.ok(!queries[1]?.includes('visible=1'));
+});
 test('index read never takes supplied actor or unrelated learner ID',async()=>{
  const args:unknown[][]=[];
  const db={prepare:()=>({bind:(...items:unknown[])=>{
