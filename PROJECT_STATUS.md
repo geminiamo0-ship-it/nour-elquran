@@ -1,3 +1,9 @@
+## NON-CLASSROOM PHASE 01A #157 — DRAFT IMPLEMENTATION BRANCH (2026-10-29)
+- Issue [#157](https://github.com/geminiamo0-ship-it/nour-elquran/issues/157), parent #155. Branch `feat/157-versioned-learner-profiles` adds additive D1 0008 learner revision/immutable event audit, session-derived owner rename/archive API, strict action DTO/CAS/replay and connected `/student/account` edit/archive controls.
+- **NOT YET ACCEPTED:** exact-head CI, native Cloudflare D1/browser, remote staging migration/deployment, two-sibling/owner B account isolation and archive after reload remain gates; no production deployment or verified OTP/guardian consent. Existing 0001–0007 data stays unchanged until a separately authorized D1 migration.
+- Rollback: do not migrate remote before exact-head CI; after additive migration, prefer disabling the new profile-actions endpoint/UI via code rollback rather than dropping version/audit tables. No hard deletes.
+- Next: inspect exact-head Verify and fix regressions; complete synthetic native and same existing `noor-site-staging` E2E; keep #157 open until evidence.
+
 ## PRIVATE QURAN #149 — fail-closed current-page hydration (draft PR; 2026-10-29)
 
 - Connected Quran writing is now permitted only after **both** owner-scoped index and the **same learner + current page** have hydrated; stale previous-page or previous-learner results cannot unlock ink on a new page. A failed save locks further connected edits until Retry. Demo-only local drawing remains unchanged.
