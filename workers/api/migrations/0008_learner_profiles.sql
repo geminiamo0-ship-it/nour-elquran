@@ -47,6 +47,12 @@ BEGIN
   WHERE NEW.action='rename' AND EXISTS(
     SELECT 1 FROM learners WHERE id=NEW.learner_id AND display_name=trim(NEW.new_name)
   );
+  -- An archived learner must not silently orphan a reserved or live lesson.
+  SELECT RAISE(ABORT,'PROFILE_HAS_OPEN_LESSONS')
+  WHERE NEW.action='archive' AND EXISTS (
+    SELECT 1 FROM lessons l
+    WHERE l.learner_id=NEW.learner_id AND l.status IN ('scheduled','live')
+  );
 END;
 CREATE TRIGGER learner_profile_event_apply AFTER INSERT ON learner_profile_events
 BEGIN
