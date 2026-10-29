@@ -4,7 +4,7 @@
 
 ## PHASE 05A #173 published assignments (source branch; not yet accepted)
 - Additive D1 0010 immutable publish journal, current primary-teacher-only operations, Quran canonical ayah FK, single-learner assignment publish and owner list. Connected teacher Assignments and student My Training read real server state; voice/audio, submission, feedback and cancellation not connected.
-- Branch `feat/173-published-assignments-main` is a rebase/reconciliation of the earlier draft onto merged teacher URL fix #169. **No Verify, merge or remote stage proof yet.** Exact-head fast CI, main push Verify, then targeted existing Noor Dev Worker/D1 acceptance required. No Production/real minors.
+- Phase 05A source is on `main` at `bff8c6be7015a0a3fd48254158f5e93b58e23527`; fast Verify [40970199798](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40970199798) completed successfully for its PR head (`845d89f5...`), but this is **not** Dev D1/UI acceptance. Follow-up draft PR #177 hardens JSON contracts and requires its own exact-head Verify and review. Targeted isolated Noor Dev Worker/D1 acceptance remains required. No Production/real minors.
 
 ## #169 Sheikh Dev connected routing — detected/patch pending (2026-10-30)
 - Santoreno [run #40968034708](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40968034708) failed ONLY at targeted teacher Chrome acceptance. Failure screenshot artifact #12938892414 revealed connected account was routed to generic non-backend page because exported `/teacher/students/` didn't equal strict `/teacher/students` in `TeacherReadOnlyView`.
