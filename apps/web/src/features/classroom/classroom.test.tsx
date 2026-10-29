@@ -71,6 +71,16 @@ describe('classroom safety and interaction contract',()=>{
     expect(validateAyahError({page:604,surah:114,ayah:0,wordIndex:null},'tajweed','')).toBe(false);
     expect(validateAyahError({page:604,surah:114,ayah:1,wordIndex:null},'tajweed','x'.repeat(501))).toBe(false);
   });
+  it('renders approved compact lobby clock and accessible Quran side navigation',()=>{
+    const html=renderToStaticMarkup(<ClassroomPreview/>);
+    expect(html).toContain('class="');
+    expect(html).toContain('ضبط الوقت التجريبي');
+    expect(html).toContain('الصفحة السابقة');
+    expect(html).toContain('الصفحة التالية');
+    expect(html).toContain('وضع الحصة');
+    expect(html).toContain('الشيخ موجود');
+    expect(html).not.toContain('المشاركون 12');
+  });
   it('renders original shared Quran with explicit mock-mode and no fake live call',()=>{
     const html=renderToStaticMarkup(<ClassroomPreview/>);
     expect(html).toContain('المصحف المشترك');
