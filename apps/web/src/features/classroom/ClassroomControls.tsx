@@ -82,11 +82,11 @@ export function ClassroomControls({model}:{model:ClassroomPreviewModel}){
         aria-label={'اختر لون '+c} aria-pressed={inkColor===c} disabled={room.phase!=='live'||!drawingAvailable}
         onClick={()=>setInkColor(c)}/>)}</div>
       <div className={css.toolGroup}>
-        <button type="button" disabled={role!=='teacher'||room.phase!=='live'}
-          onClick={()=>setPage(room.currentPage+1)}>صفحة سابقة ↑</button>
+        <button type="button" disabled={role!=='teacher'||room.phase!=='live'||room.currentPage<=1}
+          onClick={()=>setPage(room.currentPage-1)}>صفحة سابقة ↑</button>
         <span>صفحة {room.currentPage} / 604</span>
-        <button type="button" disabled={role!=='teacher'||room.phase!=='live'}
-          onClick={()=>setPage(room.currentPage-1)}>صفحة تالية ↓</button>
+        <button type="button" disabled={role!=='teacher'||room.phase!=='live'||room.currentPage>=604}
+          onClick={()=>setPage(room.currentPage+1)}>صفحة تالية ↓</button>
       </div>
     </div>
     {room.phase==='live'&&<div className={css.mediaControls}>
