@@ -3,6 +3,7 @@ export type StagingEnv = {
   NOOR_ENVIRONMENT?: string;
   STAGING_ACCESS_PASSWORD?: string;
   NOOR_DEV_OPEN?: string;
+  NOOR_PUBLIC_PREVIEW?: string;
 };
 
 function equalConstantTime(left: string, right: string): boolean {
