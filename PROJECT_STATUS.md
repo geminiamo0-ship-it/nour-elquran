@@ -1,3 +1,8 @@
+## CLASSROOM #120 / PR #121 — booking eligibility continuation (branch only, 2026-10-29)
+- Additive draft D1 migration `0003_teacher_schedule.sql` now rejects new/reactivated scheduled bookings when learner is archived or owning account disabled, and rechecks learner, owner and teacher eligibility on schedule changes. Existing completed history remains intact. Four synthetic SQLite regression cases added to `test_teacher_calendar.py`.
+- This is a database integrity guard, **not** authenticated booking/start/end or verified waiting-room presence. No remote D1 migration, deployment, child data or payment action. Exact-head GitHub Verify must be inspected before treating the branch as tested; PR #121 remains draft.
+- Next: verify PR #121 exact-head CI and human review; then design separate authenticated teacher-only Start/End with two-party presence and idempotency in #120, without inferring presence from lesson status.
+
 # PROJECT_STATUS — verified handoff state
 
 ## OPEN DEV STAGING #118 — implementation branch (not yet deployed)
