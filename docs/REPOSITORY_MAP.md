@@ -1,5 +1,12 @@
 # Repository map and file ownership
 
+## STAGING #114
+- `workers/site/src/staging-access.ts`: staging-only Basic access gate; refuses missing secret, protects all Worker-routed requests; production unaffected.
+- `workers/site/src/index.ts`: stage gate precedes static asset/API dispatch; **deployment must set `assets.run_worker_first=true`** to intercept static resources too.
+- `tests/staging-access.test.mjs`: deny missing/invalid credentials and unconfigured stage; preserve production behavior.
+- `docs/NOOR_STAGING_RUNBOOK.md`: isolated Cloudflare staging D1/Worker resource contract, deployment gates, smoke, limits, rollback.
+
+
 ## AUTH-02 #112
 - `apps/web/src/features/account/`: same-origin validated API DTO/client, safe public error mapping, lease-guarded session context, signup/login/partial-onboarding recovery, profiles and logout. Public index is the only cross-feature import surface. CSS uses existing ivory/green/gold palette.
 - Root layout hosts the account provider. Landing swaps demo enrollment for opt-in account UI; StudentShell gates connected pages and mounts account-keyed StudentProvider with real profile IDs and empty learning snapshots. Existing demo behavior remains when UI flag is off; no authenticated names/contacts/credentials enter demo session storage.
