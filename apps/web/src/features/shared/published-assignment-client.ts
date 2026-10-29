@@ -45,8 +45,9 @@ export function assignmentMessage(error:unknown){
  if(error instanceof AssignmentError){
   if(error.status===401)return 'انتهت الجلسة؛ سجّل الدخول من جديد.';
   if(error.status===404||error.status===403)return 'لم تعد صلاحية الوصول للطالب متاحة.';
-  if(error.status===409)return 'تعارض نشر الواجب أو تجاوز الحد؛ حدّث القائمة قبل إعادة المحاولة.';
+  if(error.status===409)return 'حدث تعارض في حالة الواجب؛ حدّث القائمة قبل إعادة المحاولة.';
   if(error.status===400)return 'تأكد من نطاق الآيات والموعد والنص المدخل.';
+  if(error.code==='SUBMISSION_SCHEMA_NOT_READY')return 'خدمة تسليم الواجبات قيد التجهيز على الخادم.';
   if(error.code==='ASSIGNMENT_SCHEMA_NOT_READY')return 'خدمة الواجبات قيد التجهيز على الخادم.';
  }
  return 'تعذر الاتصال بالواجبات. أعد المحاولة.';

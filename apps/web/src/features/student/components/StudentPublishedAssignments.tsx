@@ -3,6 +3,7 @@ import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {assignmentClient,assignmentMessage,type PublishedAssignment} from '../../shared';
 import {TrainingQuranSession} from './TrainingQuranSession';
+import {StudentAssignmentSubmission} from './StudentAssignmentSubmission';
 import css from './TrainingWorkspace.module.css';
 const client=assignmentClient();
 const kinds={memorization:'حفظ',revision:'مراجعة',recitation:'تلاوة'};
@@ -47,7 +48,8 @@ export function StudentPublishedAssignments({learnerId}:{learnerId:string}){
         title={'واجب سورة '+task.surah}
         range={{surah:task.surah,fromAyah:task.fromAyah,toAyah:task.toAyah,page:task.startPage}}
         onClose={()=>setOpened(null)}/>}
-      <p className={css.subtle}>التدريب هنا لا يعني التسليم. رفع التسميع الصوتي للشيخ سيُفعّل بعد ربط التخزين الخاص.</p>
+      <StudentAssignmentSubmission key={task.id} learnerId={learnerId} assignmentId={task.id}/>
+      <p className={css.subtle}>إرسال المحاولة يرسل الملاحظة المكتوبة فقط؛ التسجيل الصوتي لا يغادر الجهاز.</p>
      </article>;
     })}</div>}
  </div>;

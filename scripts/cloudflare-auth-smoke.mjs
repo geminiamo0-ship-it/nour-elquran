@@ -304,6 +304,52 @@ assert.equal(tasks.data.assignments[0].toAyah,1);
 assert.equal((await call(teacherTaskPath,{cookie:cookieB})).data.assignments.length,1);
 console.log('Native assignment publish: verified Quran anchors, current teacher, owner readback, owner isolation, replay and CSRF PASS');
 
+ // #178: explicit student submission, active primary teacher review, retry and final acceptance.
+const submitPath=ownerTaskPath+'/'+published.data.assignmentId+'/submissions';
+const reviewPath=teacherTaskPath+'/'+published.data.assignmentId+'/reviews';
+assert.equal((await call(submitPath,{cookie:cookieA})).response.status,200);
+assert.equal((await call(submitPath,{cookie:cookieB})).response.status,404);
+assert.equal((await call(reviewPath,{cookie:cookieA})).response.status,404);
+const submittedNote={operationId:randomUUID(),note:'Synthetic written readiness (no audio)'};
+assert.equal((await call(submitPath,{method:'POST',cookie:cookieB,body:submittedNote})).response.status,404);
+assert.equal((await call(submitPath,{method:'POST',cookie:cookieA,body:{...submittedNote,actor:'forged'}})).response.status,400);
+assert.equal((await call(submitPath,{method:'POST',cookie:cookieA,origin:'https://attacker.invalid',body:submittedNote})).response.status,403);
+const firstAttempt=await call(submitPath,{method:'POST',cookie:cookieA,body:submittedNote});
+assert.equal(firstAttempt.response.status,201,JSON.stringify(firstAttempt.data));
+assert.equal(firstAttempt.data.attempt,1);
+const submitReplay=await call(submitPath,{method:'POST',cookie:cookieA,body:submittedNote});
+assert.equal(submitReplay.response.status,200);
+assert.equal(submitReplay.data.submissionId,firstAttempt.data.submissionId);
+assert.equal((await call(submitPath,{method:'POST',cookie:cookieA,body:{...submittedNote,note:'forged'}})).response.status,409);
+assert.equal((await call(submitPath,{method:'POST',cookie:cookieA,
+ body:{...submittedNote,operationId:randomUUID()}})).response.status,409);
+const studentAttempts=await call(submitPath,{cookie:cookieA});
+assert.equal(studentAttempts.data.attempts.length,1);
+assert.equal(studentAttempts.data.attempts[0].decision,null);
+const reviewCommand={operationId:randomUUID(),submissionId:firstAttempt.data.submissionId,
+ decision:'retry_requested',feedback:'Please review the first ayah again'};
+const teacherRetry=await call(reviewPath,{method:'POST',cookie:cookieB,body:reviewCommand});
+assert.equal(teacherRetry.response.status,201,JSON.stringify(teacherRetry.data));
+assert.equal((await call(reviewPath,{method:'POST',cookie:cookieB,body:reviewCommand})).response.status,200);
+assert.equal((await call(reviewPath,{method:'POST',cookie:cookieB,
+ body:{...reviewCommand,operationId:randomUUID(),decision:'accepted'}})).response.status,409);
+const corrected=await call(submitPath,{method:'POST',cookie:cookieA,
+ body:{operationId:randomUUID(),note:'Second explicit student submission'}});
+assert.equal(corrected.response.status,201,JSON.stringify(corrected.data));
+assert.equal(corrected.data.attempt,2);
+const accepted=await call(reviewPath,{method:'POST',cookie:cookieB,
+ body:{operationId:randomUUID(),submissionId:corrected.data.submissionId,
+ decision:'accepted',feedback:'Memorization task confirmed'}});
+assert.equal(accepted.response.status,201,JSON.stringify(accepted.data));
+const finalRead=await call(submitPath,{cookie:cookieA});
+assert.equal(finalRead.data.attempts.length,2);
+assert.equal(finalRead.data.attempts[0].decision,'accepted');
+assert.equal(finalRead.data.attempts[1].decision,'retry_requested');
+assert.equal((await call(submitPath,{method:'POST',cookie:cookieA,
+ body:{operationId:randomUUID(),note:'Attempt after completion'}})).response.status,409);
+console.log('Native D1 student submission, duplicate/replay, teacher retry and accept, owner isolation and CSRF PASS');
+
+
 console.log('Native academic plan: assigned qualified teacher CAS/write/replay, owner read, foreign 404, stale 409 PASS');
 
 const bookRequest={action:'book',operationId:randomUUID(),

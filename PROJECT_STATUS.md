@@ -1,3 +1,8 @@
+## Phase 05B #178 — Student submission / Sheikh review (source implementation; NOT YET DEPLOYED)
+- Noor 05A publisher `main@bff8c6be7015a0a3fd48254158f5e93b58e23527` accepted on real [Cloudflare Dev #40971275548](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40971275548) with D1 owner readback, teacher auth, 409 replay/conflict. #173 still OPEN for specific student/Sheikh assignments visual acceptance (Chrome on demand).
+- Branch `feat/178-assignment-submission-review`: additive D1 migration `0011_assignment_submissions.sql` and append-only submitted attempts (max 5) / teacher decisions. Same verified Better Auth owner vs current qualified primary Sheikh; immutable event history; student explicit text note submit and Sheikh accept or request retry. No fake grades or private Quran leakage.
+- **This branch is unverified source, not on Dev or Production** until exact-head GitHub Verify and targeted Santoreno remote D1 acceptance. Child audio / MediaRecorder server upload / R2 / consent remain OFF and belong to Phase 06. No general Chrome added.
+
 ## PHASE 05A #173 published assignments (source branch; not yet accepted)
 - Additive D1 0010 immutable publish journal, current primary-teacher-only operations, Quran canonical ayah FK, single-learner assignment publish and owner list. Connected teacher Assignments and student My Training read real server state; voice/audio, submission, feedback and cancellation not connected.
 - Branch `feat/173-published-assignments-main` is a rebase/reconciliation of the earlier draft onto merged teacher URL fix #169. **No Verify, merge or remote stage proof yet.** Exact-head fast CI, main push Verify, then targeted existing Noor Dev Worker/D1 acceptance required. No Production/real minors.
