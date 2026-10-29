@@ -23,7 +23,7 @@ class TeacherRoleProvisioningTests(unittest.TestCase):
 
     def action(self, kind, actor="staff", target="teacher", tid="teacher-id", operation=None):
         self.serial+=1
-        op=operation or "op-"+str(self.serial)
+        op=operation or "operation-"+str(self.serial)
         return self.db.execute(OP,("event-"+str(self.serial),op,tid,actor,target,kind,
             "Verified staff decision",1000+self.serial))
 
