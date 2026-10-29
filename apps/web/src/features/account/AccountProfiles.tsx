@@ -74,7 +74,8 @@ export function AccountProfiles({ selectedId, onSelect }: { selectedId?: string;
     <h2 id="account-profiles-heading">ملفات الطلاب</h2>
     <p>كل طالب له ملف مستقل داخل نفس الحساب. لديك {learners.length} من 8 ملفات.</p>
     {learners.length > 0 ? <ul className={css.list}>{learners.map(learner => <li className={css.row} key={learner.id}>
-      <strong>{learner.name}</strong><span>{learner.learnerType === 'child' ? 'طفل / فرد من الأسرة' : 'طالب بالغ'}</span>
+      <div className={css.profileIdentity}><strong>{learner.name}</strong><span>{learner.learnerType === 'child' ? 'طفل / فرد من الأسرة' : 'طالب بالغ'}</span></div>
+      <div className={css.profileActions}>
       {onSelect && <button type="button" className={`${css.button} ${css.secondary}`} aria-pressed={selectedId === learner.id}
         disabled={actionBusy || actionUncertain}
         onClick={() => onSelect(learner.id)}>{selectedId === learner.id ? 'الملف الحالي' : 'اختيار'}</button>}
@@ -86,6 +87,7 @@ export function AccountProfiles({ selectedId, onSelect }: { selectedId?: string;
         aria-expanded={archiveId===learner.id} aria-controls={'archive-profile-'+learner.id}
         onClick={()=>{setArchiveId(archiveId===learner.id?null:learner.id);setEditingId(null);setActionError('');}}>
         أرشفة الملف</button>
+      </div>
       {editingId===learner.id&&<form id={'rename-profile-'+learner.id} className={css.form}
         onSubmit={e=>{e.preventDefault();const field=new FormData(e.currentTarget).get('profileName');
           void changeProfile(learner,'rename',String(field??''));}}>

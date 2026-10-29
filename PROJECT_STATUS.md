@@ -1,3 +1,8 @@
+## STUDENT ACCOUNT MOBILE UX #160 (DRAFT, NOT DEPLOYED)
+- Branch `fix/160-account-mobile-header-ux` addresses connected profile selector truncation shown in Santoreno remote staging artifact #12934533154.
+- Mobile <=650px: learner selector gets real available row width, full current learner text is discoverable, session/logout controls get their own compact row; menu is anchored below the dynamic header instead of fixed pixel top. Account list edit/archive actions grouped so they wrap consistently at 1440 as well.
+- Native Chrome checks include 360/390/768/1280/1440 account screenshots, selector min width and positioned menu; exact-head Verify and actual remote staging visual comparison are **still pending**. No D1/roles/messaging or Classroom changes.
+
 ## NON-CLASSROOM PHASE 02A #162 — ACADEMIC PLAN DRAFT (2026-10-29)
 - [Issue #162](https://github.com/geminiamo0-ship-it/nour-elquran/issues/162) implements a first teacher-owned learner plan slice with additive D1 0009, immutable audit+CAS and owner/assigned teacher routes. The connected teacher `/teacher/students` read adapter now has a per-student plan form; connected student `/student` reads its own plan without falling back to mock academic scores.
 - **Branch only. No proof of passing CI, Staging migration, teacher account provisioning or remote UI yet.** Production, Classroom and related billing/message providers unaffected. Building one plan does not publish any homework.

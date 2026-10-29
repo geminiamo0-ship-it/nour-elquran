@@ -41,10 +41,9 @@ function Frame({ children }: { children: ReactNode }) {
           <span><strong>نور القرآن</strong><small>لِلحِفْظِ وَالْإِتْقَان</small></span>
         </Link>
         <div className={styles.topTools}>
-          {!selected.profile.demo && <SessionControls />}
           <div className={styles.profileGroup}>
             <label htmlFor="learner-switch">ملف الطالب</label>
-            <select id="learner-switch" aria-label="اختر ملف الطالب" value={selectedId}
+            <select id="learner-switch" aria-label="اختر ملف الطالب" title={selected.profile.name} value={selectedId}
               onChange={(event) => {
                 if(document.querySelector('[data-quran-save-status="pending"],[data-quran-save-status="failed"]')){
                   setSwitchWarning('لا يمكن تبديل ملف الطالب قبل اكتمال حفظ المصحف. أعد المحاولة من المصحف.');
@@ -54,8 +53,10 @@ function Frame({ children }: { children: ReactNode }) {
               }}>
               {learners.map((learner) => <option key={learner.id} value={learner.id}>{learner.name}</option>)}
             </select>
+            <span className={styles.selectedLearnerName} title={selected.profile.name}>{selected.profile.name}</span>
             {switchWarning&&<span role="status">{switchWarning}</span>}
           </div>
+          {!selected.profile.demo&&<div className={styles.sessionGroup}><SessionControls/></div>}
           <span className={styles.stageTag}>{selected.profile.stage === 'new' ? 'لم تبدأ الحصص' :
             selected.profile.stage === 'active' ? 'حالة نشطة · مثال' :
             selected.profile.stage === 'trial_booked' ? 'حصة تجريبية · مثال' : 'حالة توضيحية'}</span>
@@ -63,6 +64,9 @@ function Frame({ children }: { children: ReactNode }) {
             aria-controls="student-navigation-mobile" onClick={() => setMobileOpen((value) => !value)}>☰</button>
         </div>
       </div>
+    {mobileOpen && <nav id="student-navigation-mobile" className={styles.mobileMenu} aria-label="القائمة المختصرة">
+      {navigation(true)}
+    </nav>}
     </header>
     <div className={styles.layout}>
       <aside className={styles.sidebar} aria-label="قائمة الطالب">
@@ -75,9 +79,7 @@ function Frame({ children }: { children: ReactNode }) {
       </aside>
       <main className={styles.main} id="student-main">{children}</main>
     </div>
-    {mobileOpen && <nav id="student-navigation-mobile" className={styles.mobileMenu} aria-label="القائمة المختصرة">
-      {navigation(true)}
-    </nav>}
+
     <nav className={styles.bottomNav} aria-label="التنقل السريع للطالب">
       {studentNavigation.slice(0,5).map((item) =>
         <Link href={item.href} key={item.href} aria-current={selectedNav(item.href) ? 'page' : undefined}

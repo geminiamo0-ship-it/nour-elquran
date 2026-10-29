@@ -13,5 +13,15 @@
 .error { color: #8b2424; border-inline-start: 3px solid #8b2424; padding-inline-start: 10px; overflow-wrap: anywhere; }
 .hint { color: #47544a; font-size: 14px; line-height: 1.8; }
 .list { display: grid; gap: 12px; list-style: none; padding: 0; }
-.row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #e4d9c0; }
+.row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:center; padding:12px; border:1px solid #e4d9c0; }
+.profileIdentity { min-width:0; display:grid; gap:5px; overflow-wrap:anywhere; }
+.profileIdentity span { font-size:13px; color:#5b6d5d; }
+.profileActions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:7px; }
+.profileActions .button { min-height:38px; padding:7px 10px; white-space:nowrap; }
+.row > form, .row > [role="group"] { grid-column:1/-1; width:100%; min-width:0; }
+@media(max-width:600px){
+ .row { grid-template-columns:minmax(0,1fr); }
+ .profileActions { justify-content:flex-start; }
+ .profileActions button { flex:1 1 auto; }
+}
 .row strong { overflow-wrap: anywhere; }
