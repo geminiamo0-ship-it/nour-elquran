@@ -84,6 +84,19 @@ BEGIN
   SELECT RAISE(ABORT, 'acting teacher is immutable after start');
 END;
 
+-- A live class can only become completed, never silently revert to a
+-- scheduled/cancelled slot to evade the single-live guard. Completed history
+-- cannot be resurrected into another live room. Same-status retries are safe.
+-- This protects stored state only: it does NOT authenticate the actor or
+-- verify two-person presence; those belong to the classroom use case.
+CREATE TRIGGER lessons_terminal_lifecycle_guard
+BEFORE UPDATE OF status ON lessons
+WHEN (OLD.status = 'live' AND NEW.status NOT IN ('live', 'completed'))
+  OR (OLD.status = 'completed' AND NEW.status != 'completed')
+BEGIN
+  SELECT RAISE(ABORT, 'live or completed lesson cannot be reopened');
+END;
+
 -- Adjacent 40-minute reservations do not permit two simultaneously live rooms.
 -- A teacher overrun must block a second Start until the first is explicitly Ended;
 -- the same learner cannot be live in two rooms either. These are D1 integrity
