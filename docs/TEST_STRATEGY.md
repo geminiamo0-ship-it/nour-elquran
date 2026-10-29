@@ -1,3 +1,8 @@
+## Classroom #134 compact session viewport (Chrome code-head `b24005ab`)
+- [Verify 40912922621](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40912922621) passed repository-policy, governance-tests, code-quality and cloudflare-local-d1 on `b24005ab30e44ab010290cafd328cbd7b76b0c12`.
+- Native Chrome exercises mock teacher-only Start/End, Escape-close focus return for preview menu, live/fullscreen layout, all five reachable colors, portrait student camera-first, canonical Quran aspect and no document overflow at 360×667, 390×844, 844×390, 768×1024, 1280×900 and 1440×900. It waits for actual Quran render before screenshots; [artifact 12914517738](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40912922621/artifacts/12914517738) visually inspected.
+- Measured Quran width 262/365/474/474px on 360/390/1280/1440, up from earlier 227/330/418/418px. These are synthetic UI geometry checks, **not** authenticated room, device camera, WebRTC, production or staging acceptance.
+
 # Verification and test strategy
 
 ## AUTH-02 #112 full local account journey
