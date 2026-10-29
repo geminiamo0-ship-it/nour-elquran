@@ -1,0 +1,82 @@
+-- Classroom schedule rule from #120: each lesson reserves exactly 40 minutes.
+-- Earlier rows, if any, are preserved without destructive rewriting.
+-- The instructional target is separately 30 minutes; no timer may auto-end a class.
+--
+-- Slot limits and conflicts are enforced by D1/SQLite statements, not client state.
+-- Intervals are half-open: [starts_at_ms, ends_at_ms), so adjacent slots are valid.
+
+CREATE TRIGGER lessons_40m_insert
+BEFORE INSERT ON lessons
+WHEN NEW.ends_at_ms - NEW.starts_at_ms != 2400000
+BEGIN
+  SELECT RAISE(ABORT, 'lesson booking must reserve 40 minutes');
+END;
+
+CREATE TRIGGER lessons_40m_reschedule
+BEFORE UPDATE OF starts_at_ms, ends_at_ms ON lessons
+WHEN NEW.ends_at_ms - NEW.starts_at_ms != 2400000
+BEGIN
+  SELECT RAISE(ABORT, 'lesson booking must reserve 40 minutes');
+END;
+
+-- A canceled appointment releases both teacher and learner calendar capacity.
+-- Completed bookings still occupy their original historical interval.
+CREATE TRIGGER lessons_teacher_conflict_insert
+BEFORE INSERT ON lessons
+WHEN NEW.status != 'cancelled'
+BEGIN
+  SELECT RAISE(ABORT, 'teacher has a conflicting lesson')
+  WHERE EXISTS (
+    SELECT 1 FROM lessons booked
+    WHERE booked.actual_teacher_id = NEW.actual_teacher_id
+      AND booked.status != 'cancelled'
+      AND booked.starts_at_ms < NEW.ends_at_ms
+      AND NEW.starts_at_ms < booked.ends_at_ms
+  );
+END;
+
+CREATE TRIGGER lessons_teacher_conflict_update
+BEFORE UPDATE OF actual_teacher_id, starts_at_ms, ends_at_ms, status ON lessons
+WHEN NEW.status != 'cancelled'
+BEGIN
+  SELECT RAISE(ABORT, 'teacher has a conflicting lesson')
+  WHERE EXISTS (
+    SELECT 1 FROM lessons booked
+    WHERE booked.id != OLD.id
+      AND booked.actual_teacher_id = NEW.actual_teacher_id
+      AND booked.status != 'cancelled'
+      AND booked.starts_at_ms < NEW.ends_at_ms
+      AND NEW.starts_at_ms < booked.ends_at_ms
+  );
+END;
+
+CREATE TRIGGER lessons_learner_conflict_insert
+BEFORE INSERT ON lessons
+WHEN NEW.status != 'cancelled'
+BEGIN
+  SELECT RAISE(ABORT, 'learner has a conflicting lesson')
+  WHERE EXISTS (
+    SELECT 1 FROM lessons booked
+    WHERE booked.learner_id = NEW.learner_id
+      AND booked.status != 'cancelled'
+      AND booked.starts_at_ms < NEW.ends_at_ms
+      AND NEW.starts_at_ms < booked.ends_at_ms
+  );
+END;
+
+CREATE TRIGGER lessons_learner_conflict_update
+BEFORE UPDATE OF learner_id, starts_at_ms, ends_at_ms, status ON lessons
+WHEN NEW.status != 'cancelled'
+BEGIN
+  SELECT RAISE(ABORT, 'learner has a conflicting lesson')
+  WHERE EXISTS (
+    SELECT 1 FROM lessons booked
+    WHERE booked.id != OLD.id
+      AND booked.learner_id = NEW.learner_id
+      AND booked.status != 'cancelled'
+      AND booked.starts_at_ms < NEW.ends_at_ms
+      AND NEW.starts_at_ms < booked.ends_at_ms
+  );
+END;
+
+INSERT INTO noor_schema_meta(component, version) VALUES ('teacher_schedule', 1);
