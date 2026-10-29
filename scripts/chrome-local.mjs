@@ -13,8 +13,19 @@ export async function waitFor(check, description, attempts = 120) {
   }
   throw Error('Timed out: '+description);
 }
+export function isNoorStagingOrigin(url) {
+  return typeof url==='string' &&
+    /^https:\/\/noor-site-staging\.[a-z0-9-]+\.workers\.dev\/$/.test(url);
+}
+export async function openNoorStagingChrome(url) {
+  if (!isNoorStagingOrigin(url)) throw Error('Only verified Noor development staging is allowed');
+  return openChrome(url);
+}
 export async function openLocalChrome(url) {
   if (!/^http:\/\/127\.0\.0\.1:\d+\/$/.test(url)) throw Error('Local test origin required');
+  return openChrome(url);
+}
+async function openChrome(url) {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(),'noor-auth-chrome-'));
   const port = 45000 + Math.floor(Math.random()*4000);
   const child = spawn(process.env.CHROME_BIN || 'google-chrome',[
