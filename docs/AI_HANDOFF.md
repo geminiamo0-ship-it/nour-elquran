@@ -1,3 +1,8 @@
+## #149 — existing development host Quran QA harness (2026-10-29; draft)
+
+- `scripts/noor-quran-qa-target.mjs` strictly limits synthetic browser writes to `https://noor-site-staging.<account>.workers.dev`, requiring `NOOR_QA_RUN_SYNTHETIC=yes`; old password-gated QA hostname is intentionally refused. `tests/quran-qa-target.test.mjs` checks opt-in and hostile/production URLs. The QA browser no longer supplies Basic credentials, and only switches the account form into signup when necessary.
+- Owner's change to ordinary Dev is tracked in separate Santoreno PR #241, **not yet assumed merged/deployed**. No real remote QA was run by this patch. Next: verify exact-head Noor CI; once approved developer Worker is actually deployed with canonical D1 and save flag, run synthetic Chrome+API+mobile QA with explicit env, inspect screenshots and D1 ACK, and keep #149 open for failed POST/retry, page-turn-during-load and multi-device tests. Never run against production or real minors.
+
 ## #149 — private reader write readiness follow-up (2026-10-29; draft)
 
 - Branch `fix/149-private-reader-hydration-write-guard`: a page-specific readiness function blocks connected pen/marker/erase/note/highlight/bookmark writes until index and active page belong to the selected learner, and blocks new edits after a failed save. This closes the stale-page window between React navigation and its async page-load effect. Demo preview stays editable. New Vitest tests exercise stale page, sibling switch and failure.

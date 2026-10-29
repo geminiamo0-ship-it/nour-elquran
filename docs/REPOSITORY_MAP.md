@@ -1,3 +1,8 @@
+## #149 synthetic development Quran QA target
+
+- `scripts/noor-quran-qa-target.mjs`: exact developer Worker hostname + explicit synthetic-write opt-in guard; `tests/quran-qa-target.test.mjs`: no production/host/path/query bypass tests.
+- `scripts/noor-quran-qa-browser.mjs`: real Chrome/CDP synthetic Quran persistence QA for the existing development host (no Basic gate), conditional signup form mode; **not automatically deployed or executed** by this source change. See #149 and Santoreno PR #241 for the separate deployment decision.
+
 ## #149 private Quran connected-page readiness
 
 - `apps/web/src/features/student/private-mushaf-readiness.ts`: pure, fail-closed selected learner + active page hydration guard for connected writes; `private-mushaf-readiness.test.ts` covers page/learner/failure/demo cases.

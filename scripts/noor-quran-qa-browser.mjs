@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import {randomInt,randomUUID} from 'node:crypto';
 import {openLocalChrome,waitFor} from './chrome-local.mjs';
-const origin=process.env.NOOR_QA_ORIGIN, gate=process.env.NOOR_QA_ACCESS_PASSWORD;
-if(!origin||!/^https:\/\/noor-site-quran-qa\.[a-z0-9-]+\.workers\.dev$/.test(origin)||!gate||gate.length<32)
-  throw Error('Only password-gated Noor QA staging is allowed');
+import {assertNoorDevQaTarget} from './noor-quran-qa-target.mjs';
+// Deliberate synthetic writes only against the approved existing development host.
+const origin=assertNoorDevQaTarget(process.env);
 const browser=await openLocalChrome('http://127.0.0.1:8797/');
 const pass='Fixture-Quran-'+randomUUID()+'Aa1!';
 const auth=(name,phone)=>({name,phoneNumber:phone,password:pass,learnerName:name+' Learner',learnerType:'child'});
@@ -20,7 +20,9 @@ async function saved(){await waitFor(()=>evalJs("document.querySelector('[data-q
 async function signup(details){
   await available('#account-form');
   await waitFor(()=>evalJs("Object.keys(document.querySelector('#account-form')).some(k=>k.includes('reactProps'))"),'hydration');
-  await evalJs("document.querySelector('#account-mode-switch').click()");
+  // Fresh signup and post-logout login may start in different form modes.
+  if(!(await evalJs("Boolean(document.querySelector('#auth-name'))")))
+    await evalJs("document.querySelector('#account-mode-switch').click()");
   await available('#auth-name');
   const ok=await evalJs('(()=>{const f=document.querySelector("#account-form");for(const [key,value] of Object.entries('+JSON.stringify(details)+')){const el=f.elements.namedItem(key);if(!el)return false;el.value=value;}f.requestSubmit();return true;})()');
   assert.equal(ok,true,'QA registration fields must exist');
@@ -28,11 +30,7 @@ async function signup(details){
   return evalJs("document.querySelector('#learner-switch').value");
 }
 try{
-  browser.on('Fetch.authRequired',async e=>{await browser.send('Fetch.continueWithAuth',{
-    requestId:e.requestId,authChallengeResponse:{response:'ProvideCredentials',username:'noor-preview',password:gate}
-  }).catch(()=>{});});
-  browser.on('Fetch.requestPaused',async e=>{await browser.send('Fetch.continueRequest',{requestId:e.requestId}).catch(()=>{});});
-  await browser.send('Fetch.enable',{handleAuthRequests:true,patterns:[{urlPattern:origin+'/*',requestStage:'Request'}]});
+  // The approved developer Worker uses Better Auth; no global Basic password.
   // The marketing landing has no sign-up form. AccountGate mounts on /student/.
   await go('/student/');
   const learner=await signup(auth('Synthetic Quran QA A','+1202'+randomInt(1000000,9999999)));
@@ -89,7 +87,7 @@ try{
   assert.notEqual(other,learner);
   const denied=await api(resource+'?page=1');
   assert.equal(denied.status,404,'second household must have no access');
-  console.log('PASS: password-gated Noor QA, real Chrome pen drag, D1 marker/note/highlight/bookmark, reload, notes, tombstone and restore, second-owner 404, mobile screenshots.');
+  console.log('PASS: Noor development-only synthetic QA, real Chrome pen drag, D1 marker/note/highlight/bookmark, reload, notes, tombstone and restore, second-owner 404, mobile screenshots.');
 }catch(error){
   await browser.screenshot('artifacts/quran-qa/failure.png').catch(()=>{});
   throw error;

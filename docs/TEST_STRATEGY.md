@@ -1,3 +1,8 @@
+## #149 developer-only Quran QA target safety
+
+- `node --test tests/quran-qa-target.test.mjs` verifies the synthetic Chrome runner requires `NOOR_QA_RUN_SYNTHETIC=yes` and the exact `https://noor-site-staging.<account>.workers.dev` origin. It rejects the public frontend, legacy QA host, alternate domain, URL path/query, insecure HTTP and missing opt-in.
+- Once the existing Dev site is independently confirmed deployed with verified canonical D1 anchors and private save enabled, the manual `NOOR_QA_ORIGIN=https://noor-site-staging.<account>.workers.dev NOOR_QA_RUN_SYNTHETIC=yes node scripts/noor-quran-qa-browser.mjs` exercises synthetic accounts/Chrome/D1. It **writes synthetic records** to the isolated development database, so never run it on production. This source-only change does not constitute a remote pass; page-turn-during-fetch, failed POST/Retry and multi-device proof remain separate.
+
 ## Private Quran #149 hydration guard
 
 - `private-mushaf-readiness.test.ts` checks that connected writes are allowed only when index and page are hydrated for the selected learner and active page, and denied after failure or during a page/learner switch; local demo remains editable. Run with `pnpm --filter @noor/web test` and strict typecheck in Verify.

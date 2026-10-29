@@ -1,3 +1,9 @@
+## PRIVATE QURAN #149 — developer-host synthetic Chrome QA runner (draft; 2026-10-29)
+
+- Following the owner's separate development-only decision in Santoreno PR #241 (still open at this check), the existing Chrome QA script is adapted to the ordinary `noor-site-staging.<account>.workers.dev` host instead of the retiring password-gated `noor-site-quran-qa` host. It never deploys, and refuses to run without `NOOR_QA_ORIGIN` matching that exact development host and `NOOR_QA_RUN_SYNTHETIC=yes`. No credentials or actual child data are embedded.
+- Fixes a QA harness mode bug: the registration form can already be in signup mode, so the runner only toggles when the signup name field is absent. Adds dependency-free Node tests rejecting production/alternate host/path/query and missing opt-in.
+- Source and tests are in a dedicated draft branch; **no live browser run or D1 writes have been performed in this change**. Run after independently verifying that the approved Dev deployment includes Quran save flag, canonical anchors and synthetic-only data; inspect exact-head CI first. Physical S Pen, pre-ACK crash recovery, 300-row pagination and full multi-device checks remain open.
+
 ## PRIVATE QURAN #149 — fail-closed current-page hydration (draft PR; 2026-10-29)
 
 - Connected Quran writing is now permitted only after **both** owner-scoped index and the **same learner + current page** have hydrated; stale previous-page or previous-learner results cannot unlock ink on a new page. A failed save locks further connected edits until Retry. Demo-only local drawing remains unchanged.
