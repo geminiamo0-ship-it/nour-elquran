@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useStudent } from '../StudentContext';
 import { nextBookedLesson, validAssignmentRange, VOLUNTARY_SAMPLES } from '../quranAssignment';
 import { TrainingQuranSession } from './TrainingQuranSession';
+import {StudentPublishedAssignments} from './StudentPublishedAssignments';
 import css from './TrainingWorkspace.module.css';
 
 type Tab = 'homework' | 'practice' | 'prepare';
@@ -30,8 +31,8 @@ export function TrainingWorkspace(){
         <p>الواجب من الشيخ، والتدريب الحر بمبادرتك، والاستعداد للحصة القادمة. أما دفتر الحصص فيحتفظ بما تعلّمته في اللقاءات السابقة.</p>
       </div>
       <div className={css.summaryBox}>
-        <span>الواجبات في المعاينة</span><strong>{done} / {total}</strong>
-        <small>علامات إنجاز داخل الصفحة فقط</small>
+        <span>{selected.profile.demo?'الواجبات في المعاينة':'الواجبات المعتمدة'}</span><strong>{selected.profile.demo?done+' / '+total:'من الشيخ'}</strong>
+        <small>{selected.profile.demo?'علامات إنجاز داخل الصفحة فقط':'قائمة الخادم دون تسليم تلقائي'}</small>
       </div>
     </section>
 
@@ -50,7 +51,8 @@ export function TrainingWorkspace(){
       </button>)}
     </nav>
 
-    {tab==='homework'&&<section id="training-panel-homework" role="tabpanel" aria-labelledby="training-tab-homework" className={css.content}>
+    {tab==='homework'&&!selected.profile.demo&&<StudentPublishedAssignments key={selected.profile.id} learnerId={selected.profile.id}/>}
+    {tab==='homework'&&selected.profile.demo&&<section id="training-panel-homework" role="tabpanel" aria-labelledby="training-tab-homework" className={css.content}>
       <div className={css.sectionHeading}><div>
         <p className={css.overline}>الواجبات المعتمدة في بيانات العرض</p>
         <h3>واجباتي من الشيخ</h3>
@@ -157,6 +159,6 @@ export function TrainingWorkspace(){
       </div>}
     </section>}
 
-    <p className={css.footnote}>تدريباتي للعمل القادم؛ دفتر الحصص لسجل ما حدث؛ والمصحف هو مرجع الطالب الواحد. هذه الواجهة تجريبية ولا تحفظ درجات أو ملفات صوتية على خادم.</p>
+    <p className={css.footnote}>تدريباتي للعمل القادم؛ دفتر الحصص لسجل ما حدث؛ والمصحف هو مرجع الطالب الواحد. {selected.profile.demo?'هذه الواجهة تجريبية ولا تحفظ درجات أو ملفات صوتية على خادم.':'الواجبات من الشيخ محفوظة على الخادم، لكن التسجيل والتسليم والتصحيح غير متصلين بعد.'}</p>
   </div>;
 }
