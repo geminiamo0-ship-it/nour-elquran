@@ -2,6 +2,8 @@ import {
   isLearnerProfile, MAX_SIBLINGS, scopedSnapshot,
   type LearnerProfile, type Lesson, type PracticeTask, type PublishedReport,
 } from './domain';
+import { QURAN_EDITION, QURAN_VERSION } from './quranSource';
+import type { PublishedNotebookRevision } from './notebookContracts';
 
 export const DEMO_PROFILES: readonly LearnerProfile[] = [
   { id: 'demo-new', name: 'طالب جديد (مثال)', stage: 'new', demo: true },
@@ -38,4 +40,31 @@ export function readSessionDemoProfiles(storage: Pick<Storage, 'getItem'>): Lear
   } catch {
     return [];
   }
+}
+
+/**
+ * Explicitly synthetic lesson publication for browser QA. Not a server record.
+ * New/connected learners never receive this example, even with the same lesson ID.
+ */
+export function getMockNotebookRevisions(profile: LearnerProfile): readonly PublishedNotebookRevision[] {
+  if (!profile.demo || profile.id !== 'demo-active') return [];
+  const report = reports.find((item) => item.id === 'r-active-1');
+  if (!report) return [];
+  return [{
+    id: 'demo-notebook-r1', learnerId: profile.id, lessonId: 'l-active-3',
+    revision: 1, publishedAt: report.publishedAt, report,
+    scope: {
+      edition: QURAN_EDITION, version: QURAN_VERSION,
+      start: { surah: 112, ayah: 1, page: 604 },
+      end: { surah: 112, ayah: 4, page: 604 },
+    },
+    approvedAnnotations: [{
+      id: 'demo-teacher-mark', learnerId: profile.id, lessonId: 'l-active-3',
+      type: 'teacher', published: true, authorLabel: 'شيخ تجريبي',
+      target: { page: 604, surah: 112, ayah: 2, wordIndex: null },
+      text: 'مثال توضيحي لتصحيح الحصة، وليس تقييمًا لطالب حقيقي.',
+      color: '#AD8028', createdAt: report.publishedAt,
+    }],
+    archive: 'unavailable',
+  }];
 }
