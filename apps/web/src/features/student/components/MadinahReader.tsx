@@ -196,7 +196,7 @@ export function MadinahReader() {
   }
   function saveNote() {
     if(!selectedTarget||!validTarget(selectedTarget))return;
-    if(!privateSave.canEdit){setSavedNotice('جارٍ تحميل الملاحظات المحفوظة؛ لا يمكن الكتابة الآن.');return;}
+    if(!privateSave.canEdit){setSavedNotice(privateSave.status==='failed'?'تعذّر الحفظ؛ أعد المحاولة أولًا.':'جارٍ تحميل الملاحظات المحفوظة؛ لا يمكن الكتابة الآن.');return;}
     const text=notePreview(draft),key=targetKey(selectedTarget);
     if(privateSave.enabled)privateSave.note(selectedTarget,text,color);
     setNotes(prev=>{
@@ -211,7 +211,7 @@ export function MadinahReader() {
       text?'اتحفظت الملاحظة مؤقتًا في جلسة القراءة.':'اتمسحت الملاحظة المؤقتة.');
   }
   function changeInkFor(targetPage:number,strokes:QuranInkStroke[]) {
-    if(!privateSave.canEdit)return;
+    if(!privateSave.canEditPage(targetPage))return;
     if(privateSave.enabled)privateSave.strokeDiff(targetPage,inkByPage[targetPage]??[],strokes);
     setInkByPage(prev=>({...prev,[targetPage]:strokes}));
     setRedoByPage(prev=>({...prev,[targetPage]:[]}));
@@ -246,7 +246,7 @@ export function MadinahReader() {
     setShowAside(false);
   }
   function chooseTool(tool:InkMode) {
-    if(!privateSave.canEdit){setSavedNotice('جارٍ تحميل العلامات المحفوظة؛ انتظر التحميل أولًا.');return;}
+    if(!privateSave.canEdit){setSavedNotice(privateSave.status==='failed'?'تعذّر الحفظ؛ أعد المحاولة أولًا.':'جارٍ تحميل العلامات المحفوظة؛ انتظر التحميل أولًا.');return;}
     lastVerseTap.current=null;
     setInkMode(tool);setHideChrome(false);setShowAside(false);
     setInkPaletteOpen(tool!=='off');
@@ -350,7 +350,7 @@ export function MadinahReader() {
                 const dx=end.clientX-start.x,dy=end.clientY-start.y;
                 if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.6)go(page+(dx>0?1:-1));
               }}>
-              <ReaderPrintedPage page={leaf} color={color} inkMode={privateSave.canEdit?inkMode:'off'}
+              <ReaderPrintedPage page={leaf} color={color} inkMode={privateSave.canEditPage(leaf)?inkMode:'off'}
                 strokes={inkByPage[leaf]??[]} onInkChange={changeInkFor}
                 selectedKey={audioVerse ? quranAudioKey(audioVerse) : selectedKey} noteKeys={noteByKey}
                 onSelect={handleVerseTap} onOpenNote={selectTarget}/>
@@ -432,7 +432,7 @@ export function MadinahReader() {
             </button>
             {bookmarks.map(n=><button type="button" key={n} onClick={()=>{go(n);setShowAside(false);}}>صفحة {n}</button>)}
           </div>:<div className={css.noteList}>
-            {visible.length===0?<p>لا توجد ملاحظات في هذه الجلسة.</p>:
+            {visible.length===0?<p>{privateSave.enabled?'لا توجد ملاحظات محفوظة في الحساب.':'لا توجد ملاحظات في هذه الجلسة.'}</p>:
               visible.map(n=><button key={n.id} className={css.noteJump} type="button"
                 onClick={()=>{go(n.target.page,n.target.surah+':'+n.target.ayah);setMode('ayah');}}>
                 {targetKey(n.target)} · ص {n.target.page} — {n.text}</button>)}
