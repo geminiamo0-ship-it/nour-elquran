@@ -1,6 +1,6 @@
 # ADR 0002: LiveKit Cloud + interactive two-way Quran classroom
 
-**Provider selection superseded on 2026-10-29 by [ADR 0004](0004-cloudflare-only-platform.md), owner Cloudflare-only adoption #104.** Shared-mushaf interaction/archive/privacy/no-recording requirements below remain approved. This historical ADR does not authorize a new LiveKit integration.
+**Historical sequence:** initial LiveKit choice was superseded by [ADR 0004](0004-cloudflare-only-platform.md), then **reselected for media only** by the later [ADR 0007](0007-livekit-media-exception.md) following owner classroom discussions. Shared-mushaf interaction/archive/privacy/no-recording requirements remained approved throughout. This ADR alone is not implementation or LiveKit provisioning evidence.
 
 
 Date: 2026-10-28
