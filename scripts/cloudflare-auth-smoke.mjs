@@ -270,10 +270,7 @@ assert.equal(ownerPlan.data.plan.revision,1);
 assert.equal((await call('/v1/me/learners/invalid-other-owner/plan',{cookie:cookieA})).response.status,404);
 
  // #173: Worker + session + D1 publish to real owner Training, no synthetic browser.
-const assignmentEdition='hafs-kfqc:v1.1.1';
-for(let ayah=2;ayah<=7;ayah++) sql(
-  "INSERT INTO quran_ayah_anchors(edition_id,surah,ayah,page,word_count) VALUES('"+
-  assignmentEdition+"',1,"+ayah+",1,7)");
+const assignmentEdition='hafs-kfqc:v1.1.1'; // canonical 1:1 fixture already seeded earlier
 const teacherTaskPath='/v1/teacher/learners/'+learner+'/assignments';
 const ownerTaskPath='/v1/me/learners/'+learner+'/assignments';
 const emptyTasks=await call(ownerTaskPath,{cookie:cookieA});
@@ -282,10 +279,10 @@ assert.deepEqual(emptyTasks.data.assignments,[]);
 assert.equal((await call(ownerTaskPath,{cookie:cookieB})).response.status,404);
 const catalog=await call('/v1/teacher/assignment-catalog',{cookie:cookieB});
 assert.equal(catalog.response.status,200,JSON.stringify(catalog.data));
-assert(catalog.data.surahs.some(v=>v.editionId===assignmentEdition&&v.surah===1&&v.ayahCount===7));
+assert(catalog.data.surahs.some(v=>v.editionId===assignmentEdition&&v.surah===1&&v.ayahCount===1));
 assert.equal((await call('/v1/teacher/assignment-catalog',{cookie:cookieA})).response.status,403);
 const publish={operationId:randomUUID(),kind:'memorization',editionId:assignmentEdition,
- surah:1,fromAyah:1,toAyah:7,dueAtMs:Date.now()+86400000,instructions:'Synthetic assigned memorization'};
+ surah:1,fromAyah:1,toAyah:1,dueAtMs:Date.now()+86400000,instructions:'Synthetic assigned memorization'};
 assert.equal((await call(teacherTaskPath,{method:'POST',cookie:cookieA,body:publish})).response.status,404);
 assert.equal((await call(teacherTaskPath,{method:'POST',cookie:cookieB,body:{...publish,teacherId:'forged'}})).response.status,400);
 assert.equal((await call(teacherTaskPath,{method:'POST',cookie:cookieB,origin:'https://evil.invalid',body:publish})).response.status,403);
@@ -303,7 +300,7 @@ const tasks=await call(ownerTaskPath,{cookie:cookieA});
 assert.equal(tasks.response.status,200);
 assert.equal(tasks.data.assignments.length,1);
 assert.equal(tasks.data.assignments[0].id,published.data.assignmentId);
-assert.equal(tasks.data.assignments[0].toAyah,7);
+assert.equal(tasks.data.assignments[0].toAyah,1);
 assert.equal((await call(teacherTaskPath,{cookie:cookieB})).data.assignments.length,1);
 console.log('Native assignment publish: verified Quran anchors, current teacher, owner readback, owner isolation, replay and CSRF PASS');
 
