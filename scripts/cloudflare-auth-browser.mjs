@@ -56,6 +56,32 @@ try {
     await browser.screenshot('artifacts/auth-browser/dashboard-'+width+'.png');
   }
   await browser.go('/student/account/');await present('#create-learner-form');
+  // #160: mobile selector must remain legible and open menu below the dynamic header.
+  for(const [width,height] of [[360,667],[390,844],[768,1024],[1280,900],[1440,900]]){
+    await browser.send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<768});
+    const layout=await browser.evaluate(`(()=>{
+      const select=document.querySelector('#learner-switch');
+      const header=document.querySelector('header');
+      const name=header?.querySelector('[title="Fixture Learner A"]');
+      return {scroll:document.documentElement.scrollWidth,viewport:innerWidth,
+        selectWidth:Math.round(select.getBoundingClientRect().width),
+        visibleName:Boolean(name && getComputedStyle(name).display!=='none')};
+    })()`);
+    assert(layout.scroll<=layout.viewport,'Account header overflow at '+width);
+    if(width<=390){assert(layout.selectWidth>=200,'Selected learner too narrow at '+width);}
+    await browser.screenshot('artifacts/auth-browser/account-header-'+width+'.png');
+  }
+  await browser.send('Emulation.setDeviceMetricsOverride',{width:360,height:667,deviceScaleFactor:1,mobile:true});
+  await browser.evaluate("document.querySelector('[aria-controls=student-navigation-mobile]').click()");
+  await present('#student-navigation-mobile');
+  const menu=await browser.evaluate(`(()=>{
+    const header=document.querySelector('header').getBoundingClientRect();
+    const nav=document.querySelector('#student-navigation-mobile').getBoundingClientRect();
+    return {menuTop:nav.top,headerBottom:header.bottom};
+  })()`);
+  assert(menu.menuTop>=menu.headerBottom-2,'Mobile menu covers signed-in account header');
+  await browser.evaluate("document.querySelector('[aria-controls=student-navigation-mobile]').click()");
+
   await fill({name:'Fixture Learner A2',learnerType:'child'},'#create-learner-form');
   await waitFor(async()=> (await profileNames()).length===2,'second owner profile');
 
