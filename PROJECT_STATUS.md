@@ -1,8 +1,8 @@
 # PROJECT_STATUS — verified handoff state
 
-## PUBLIC STAGING PREVIEW #118 — implementation branch (not yet deployed)
-- Owner requested open, passwordless preview of the existing `noor-site-staging` site. Site Worker allows unauthenticated **GET/HEAD pages/assets only** when `NOOR_PUBLIC_PREVIEW=true`. Account, readiness and learner APIs plus all mutation methods still require stage Basic credentials and native account/session authorization.
-- Companion Santoreno provisioning workflow must build `NEXT_PUBLIC_ACCOUNT_UI=false` (labeled synthetic demo profiles), configure public preview flag and verify real Cloudflare 200 site/asset + 401 private API, followed by private synthetic registration/session/ownership smoke. **No remote public rollout verified yet.**
+## OPEN DEV STAGING #118 — implementation branch (not yet deployed)
+- Owner requested open, passwordless preview of the existing `noor-site-staging` site. Site Worker offers `NOOR_DEV_OPEN=true` specifically for the developer staging Worker: no extra Basic password for pages or API. Normal Better Auth password/session and owner-level learner authorization remain enforced.
+- Companion Santoreno provisioning workflow must build `NEXT_PUBLIC_ACCOUNT_UI=true` (account-enabled developer UI), configure open-dev flag and verify real Cloudflare 200 pages/assets, app-level anonymous 401, synthetic registration/session/ownership smoke. **No remote public rollout verified yet.**
 - Existing account data and D1 stay private. Public phone registration is prohibited until provider verification/guardian authorization; OTP remains deferred. See [runbook](docs/NOOR_STAGING_RUNBOOK.md). Track #118; follow-up #46/#56 remain.
 
 ## STAGING #114 — VERIFIED remote Cloudflare staging, 2026-10-29
