@@ -1,3 +1,9 @@
+## Private Quran personal persistence (#144; opt-in)
+
+The D1 migration `0007_private_mushaf.sql` adds immutable per-learner operation events and versioned projection with canonical edition/ayah metadata. Better Auth owner's `GET /v1/me/learners/:learnerId/mushaf?page=1..604` and `?index=1`; `POST` exact `{operationId,action,itemId,kind,page,expectedVersion,payload}` supports private pen/marker/highlight/note/bookmark/position, hide/restore with CAS+replay. No direct teacher read, no public BLOB URL.
+
+**Do not enable real reader** without independently verified canonical edition `hafs-kfqc:v1.1.1` and complete `quran_ayah_anchors` import in isolated staging; local CI uses a disposable synthetic fixture only. UI feature is build-gated by BOTH `NEXT_PUBLIC_ACCOUNT_UI=true` and `NEXT_PUBLIC_QURAN_PERSISTENCE_ENABLED=true`; OFF by default. No remote D1 mutations, offline durability guarantee or production roll-out. Full risks: [docs/PRIVATE_QURAN_PERSISTENCE_CONTRACT.md](../../docs/PRIVATE_QURAN_PERSISTENCE_CONTRACT.md).
+
 ## B3 — authenticated staff primary assignment and 40-minute bookings (#140)
 
 - `POST /v1/staff/schedule-actions` accepts EXACT allowlisted action-specific JSON with `operationId` UUID and `reason` (8–500 chars). Actions:

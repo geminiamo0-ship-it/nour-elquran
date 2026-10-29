@@ -1,0 +1,28 @@
+# P0-1 — private Quran pen, marker, highlight and note persistence (Cloudflare D1)
+
+**Tracking:** #144 (implementation), #142 (master), #87 (annotation synchronization). **Implementation scope:** only student-private personal mushaf, **not** LiveKit classroom, shared teacher ink, published reports, audio, notebook or realtime sync. Build-flag OFF by default.
+
+## Current code boundary
+
+- `workers/api/migrations/0007_private_mushaf.sql`: `private_mushaf_events` append-only idempotent operation journal and `private_mushaf_items` versioned current projection. Atomic D1 INSERT fires authorization, canonical edition/ayah and expected-version checks; UPDATE or DELETE of events rejected.
+- `workers/api/src/private-mushaf.ts`: payload validation for pen/marker normalized `1000×1594` coordinate path, note/highlight target, bookmark and position. A stroke has max 2500 points and bounded width, page 1–604; notes max 500 characters. Schema is bounded, no caller-provided actor or arbitrary SQL.
+- `GET /v1/me/learners/:learnerId/mushaf?page=N`: visible pen, marker, note and highlighted ayah records for this specific page. `?index=1`: currently visible note/highlight/bookmark/position records. Maximum 300 records per query; fail with explicit 409 instead of silently truncating. Pagination and larger dataset testing needed before broad enablement.
+- `POST /v1/me/learners/:learnerId/mushaf`: exact JSON `operationId,action,itemId,kind,page,expectedVersion,payload`; `put` makes/edits, `hide` tombstones, `restore` revives. 409 for stale versions, invalid anchor, unknown edition and operation conflict; matching opId replay is 200. `actor_auth_subject` derived ONLY from database-verified Better Auth cookie and validated owner/active learner in Worker + D1 trigger. No teacher or substitute access to private data.
+- `apps/web/src/features/student/usePrivateMushafSave.ts` & `private-mushaf-client.ts`: same-origin client adapter, hydrate index/page on selected learner and navigation, acknowledge write before displaying saved state, serialized retryable per-component queue, maintain operationId and optimistic UI with clear error/pending state. Local original reader remains unchanged in demo.
+- Reader opt-in ONLY when `NEXT_PUBLIC_ACCOUNT_UI=true` **and** `NEXT_PUBLIC_QURAN_PERSISTENCE_ENABLED=true` at build, for non-demo student profile. Both OFF by default. Page switch prevented while unacknowledged changes exist. Account/learner switch remounts reader to prevent cross-child UI cache reuse; cross-account access server-side rejected.
+- Existing `quran_editions` and `quran_ayah_anchors` are the canonical authority. This patch intentionally does **NOT** fabricate or import manifest SHA/word count/page maps. **Before enabling**, independently import and verify the actual R2 `hafs-kfqc:v1.1.1` manifest hash and every required ayah anchor in isolated Staging D1. Without the edition row every write fails closed; notes/highlights also need exact ayah/word metadata. CI uses an explicitly synthetic disposable edition/anchor for tests, never a real data seed.
+- The feature is NOT yet durable for process crashes *before server ACK* or full offline work: pending operations currently exist in memory only; status warns of unsaved work and `beforeunload` prompts in supported browsers. Reliable across-browser-closure local encrypted retry and a safe multi-tab/session policy are distinct gates under #142. Do not claim zero-loss offline or production readiness from this PR.
+
+## Verification checklist
+
+1. Full SQLite migrations test owner/foreign denial, sibling row independence, invalid/missing edition and wrong page/word, op replay and stale version, append-only events, pen/marker hide/restore, positioning and immutable note.
+2. Native Wrangler local D1 / Worker / Better Auth test two independent account sessions, private page/index GET, POST pen+marker+note+highlight+bookmark+position, reload, hide/restore, unauthorized cross-owner/CSRF and spoofed actor rejection. CI's synthetic Quran seed does NOT establish actual content metadata.
+3. TypeScript strict validation and session-less or fake data blocked; lint, production build, browser responsive smoke. Later **isolated remote** staging must prove canonical seed, actual flag-enabled Chrome input/reload, cross-device, S Pen, large annotation volumes, network-drop/retry and capacity; separate verified migration deployment and backup/restore rehearsal before activating for real students.
+4. No report, teacher private note, A/V recording, public R2 URL or real phone verification is enabled here.
+
+## Rollout & recovery
+
+- Apply additive `0007_private_mushaf.sql` on **isolated Noor staging** only after identity/data-boundary review and backup. Verify foreign keys, table constraints and independent canonical edition dataset.
+- Deploy API with feature flag OFF, test synthetic identities end-to-end, then build staging UI with flags ON only for selected authorized tester. Never publish a production flag on the strength of local fixture tests.
+- A Worker failure must leave the last acknowledged event untouched. Client clearly shows pending/failure until server ACK. Source code revert can disable new API/UI; DO NOT drop live audit tables or assume deleting a migration undoes data.
+- Do not force real users onto this version before offline failure policy, capacity pagination and staging data import are solved.

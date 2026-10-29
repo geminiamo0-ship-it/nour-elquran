@@ -1,3 +1,9 @@
+## Quran private persistence workstream #144 (source, opt-in)
+
+- [Private Quran contract](PRIVATE_QURAN_PERSISTENCE_CONTRACT.md) documents the new additive `0007_private_mushaf.sql`, owner-bound API `/v1/me/learners/:id/mushaf`, `put/hide/restore` opId/version, private pen/marker/highlight/note/bookmark/position, and build-time double flag OFF.
+- **Before considering enabled:** import actual edition manifest+ayah metadata into isolated D1, test real multi-device save/reload/erase/undo/retry, network failure and browser/S Pen. Repo contains only synthetic fixture metadata for *local CI*; user content must never save against fabricated mapping. No student/teacher shared LessonDO yet.
+- Current offline queue lives in memory (not durable on tab crash) and query caps 300; must address before broad rollout. Do not call this production deployment or full #142 completion.
+
 ## PERSISTENCE HANDOFF — #142 / master inventory (2026-10-29)
 
 - Read [docs/PERSISTENCE_AND_LESSON_RECOVERY_MASTER_PLAN.md](PERSISTENCE_AND_LESSON_RECOVERY_MASTER_PLAN.md) **before** any Quran ink/notes, LessonDO, teacher report, audio homework, Notebook, backup, session or mobile sync implementation. This is a proposed implementation plan, not a new deployed service; owner-approved behaviors retain priority.
