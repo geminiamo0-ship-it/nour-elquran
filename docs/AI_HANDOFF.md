@@ -1,3 +1,8 @@
+## Non-Classroom #155 / Profile Phase 01A #157 (2026-10-29; draft)
+- Owner-approved non-classroom closure starts with authenticated learner rename/archive. `feat/157-versioned-learner-profiles` adds 0008 D1 audit+revision, `/v1/me/learners/:id/profile-actions` owner-only route, frontend edit/archive and synthetic SQLite/TS tests. No Classroom changes.
+- Exact-head CI, migration/native Worker, Staging connected multi-account/browser and responsive acceptance are **not proven** merely from GitHub source commits. `noor-core-staging` requires explicit migration before the revisioned GET projection can run.
+- Next: create/review PR and Verify; test revoked/archived owner, archive linked history, replay/race, selected sibling and failed ACK; update acceptance matrix. #157 and #155 remain open. Do not modify Production.
+
 ## #149 — private reader write readiness follow-up (2026-10-29; draft)
 
 - Branch `fix/149-private-reader-hydration-write-guard`: a page-specific readiness function blocks connected pen/marker/erase/note/highlight/bookmark writes until index and active page belong to the selected learner, and blocks new edits after a failed save. This closes the stale-page window between React navigation and its async page-load effect. Demo preview stays editable. New Vitest tests exercise stale page, sibling switch and failure.
