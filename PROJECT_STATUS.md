@@ -1,5 +1,10 @@
 # PROJECT_STATUS — verified handoff state
 
+## PUBLIC STAGING PREVIEW #118 — implementation branch (not yet deployed)
+- Owner requested open, passwordless preview of the existing `noor-site-staging` site. Site Worker allows unauthenticated **GET/HEAD pages/assets only** when `NOOR_PUBLIC_PREVIEW=true`. Account, readiness and learner APIs plus all mutation methods still require stage Basic credentials and native account/session authorization.
+- Companion Santoreno provisioning workflow must build `NEXT_PUBLIC_ACCOUNT_UI=false` (labeled synthetic demo profiles), configure public preview flag and verify real Cloudflare 200 site/asset + 401 private API, followed by private synthetic registration/session/ownership smoke. **No remote public rollout verified yet.**
+- Existing account data and D1 stay private. Public phone registration is prohibited until provider verification/guardian authorization; OTP remains deferred. See [runbook](docs/NOOR_STAGING_RUNBOOK.md). Track #118; follow-up #46/#56 remain.
+
 ## STAGING #114 — VERIFIED remote Cloudflare staging, 2026-10-29
 - Frontend account UI #112 merged as [PR #113](https://github.com/geminiamo0-ship-it/nour-elquran/pull/113), main `64eaaa2`, postmerge Verify [40807730642](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40807730642) SUCCESS. Stage-only access guard [PR #115](https://github.com/geminiamo0-ship-it/nour-elquran/pull/115) merged as `dff83b382b3774a7476ae8dee64b7454fd09859c`; postmerge Verify [40808432004](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40808432004) SUCCESS (all four).
 - Cloudflare-only remote staging **DEPLOYED and VERIFIED**, using isolated D1 `noor-core-staging` plus Worker `noor-site-staging`, same-origin static Next assets/API, `assets.run_worker_first=true`, server-only Basic access gate, and account/auth secrets. No production Worker/D1 or Santo product resource was changed.
