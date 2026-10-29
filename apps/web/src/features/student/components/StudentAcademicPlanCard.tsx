@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useState} from 'react';
-import {academicPlanClient,planMessage,type AcademicPlan} from '../shared/index';
+import {academicPlanClient,planMessage,type AcademicPlan} from '../../shared/index';
 import styles from '../StudentPortal.module.css';
 
 type Reading={status:'loading'}|{status:'loaded';plan:AcademicPlan|null}|
