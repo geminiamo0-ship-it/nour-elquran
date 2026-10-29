@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { QURAN_EDITION, QURAN_VERSION } from './quranSource';
 import type { PublishedReport, LocalStudyNote } from './domain';
 import type { QuranAnnotation } from './quranAnnotations';
+import { getMockNotebookRevisions, DEMO_PROFILES } from './mock-adapter';
 import {
   structurallyValidNotebookScope, scopeContainsAnnotation, latestPublishedNotebook,
-  publishedLessonAnnotations, personalLessonNotes, latestLessonReport,
+  publishedLessonAnnotations, personalLessonNotes, latestLessonReport, pageKeysForNotebookScope,
   type NotebookQuranScope, type PublishedNotebookRevision,
 } from './notebookContracts';
 
@@ -30,6 +31,29 @@ function revision(n: number): PublishedNotebookRevision {
     approvedAnnotations: [annotation], archive: 'unavailable' };
 }
 describe('notebook publication and learner isolation contracts (#102)', () => {
+  it('verifies each visible page against publisher verse regions, including exact boundary anchors', () => {
+    const regions = [
+      { surah: 112, ayah: 2, polygon: 'M0 0 L1 1 Z' },
+      { surah: 112, ayah: 3, polygon: 'M0 0 L1 1 Z' },
+      { surah: 113, ayah: 1, polygon: 'M0 0 L1 1 Z' },
+      { surah: 114, ayah: 2, polygon: 'M0 0 L1 1 Z' },
+      { surah: 114, ayah: 3, polygon: 'M0 0 L1 1 Z' },
+    ];
+    expect([...pageKeysForNotebookScope(scope, 604, regions)!]).toEqual([
+      '112:3', '113:1', '114:2',
+    ]);
+    expect(pageKeysForNotebookScope(scope, 603, regions)).toBeNull();
+    expect(pageKeysForNotebookScope(scope, 604, regions.filter((r) => r.ayah !== 3))).toBeNull();
+    expect(pageKeysForNotebookScope(scope, 604, regions.filter((r) => r.surah !== 114))).toBeNull();
+    expect(pageKeysForNotebookScope(scope, 604, [])).toBeNull();
+  });
+  it('does not leak a synthetic published teacher mark to other learners', () => {
+    const active = DEMO_PROFILES.find((profile) => profile.id === 'demo-active')!;
+    const revisions = getMockNotebookRevisions(active);
+    expect(latestPublishedNotebook(revisions, active.id, 'l-active-3')?.approvedAnnotations).toHaveLength(1);
+    expect(latestPublishedNotebook(revisions, 'demo-new', 'l-active-3')).toBeNull();
+    expect(getMockNotebookRevisions(DEMO_PROFILES[0]!)).toEqual([]);
+  });
   it('supports cross-surah lesson ranges but rejects reversed, invalid-page or wrong-edition scopes', () => {
     expect(structurallyValidNotebookScope(scope)).toBe(true);
     expect(structurallyValidNotebookScope({ ...scope, end: { surah: 111, ayah: 1, page: 604 } })).toBe(false);
