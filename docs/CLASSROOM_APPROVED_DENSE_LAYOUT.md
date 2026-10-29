@@ -27,3 +27,16 @@
 ## Implementation acceptance criterion
 
 The changes are accepted when the staging browser visibly matches the approved *density and hierarchy* on teacher desktop and student mobile, with all core actions accessible and all existing semantic/security tests green. They do not need to reproduce nonsensical buttons or artificial participant/video state from a concept rendering.
+
+
+## Actual screenshot regression and corrected sizing (2026-10-29)
+
+The owner supplied **real current staging screenshots** after the previously green #132 rollout and reported **no material change**: student phone displayed a tiny Quran despite large unused space, and teacher desktop still showed blank panel gaps. The old browser test checked sheet containment only and completely missed the content being too small. Repeated CSS additions in `Classroom.module.css` accumulated contradictory height/width overrides; the generic canonical Quran page also enforced a `calc((100dvh - 140px) * 345 / 550)` mobile width rule, and classroom page added a second aspect+height restriction.
+
+Corrective architecture in `fix/classroom-real-viewport-layout`:
+- Replaced the entire additive 30KB classroom CSS cascade with one viewport grid/flex design, using narrow header/status/toolbars and a real flex remainder for the Quran.
+- Added optional `viewportFit` to the canonical `ReaderPrintedPage` → `SmoothMadinahPage`; the classroom alone sizes the verified Quran image using **container query height `100cqh`**, a 345:550 ratio and min of actual width/height. The student Quran component's generic mobile width subtraction no longer caps a classroom-sized page.
+- When student view is selected, remove the empty third desktop column entirely. On phone give the Sheikh video a compact *fixed reserved* hero section, the Quran all remaining height, and move ancillary controls aside. No fake LiveKit connection or fabricated synced event handling.
+- Remove the waiting-room banner over the Quran art; waiting is already explicit in the authenticated prejoin band. Keep teacher-only End and nav permissions and all other backend obligations intact.
+- **Critical new acceptance:** Chrome at **360x667, 390x844, 1280x900, 1440x900** must report computed Quran bounding widths, video bounds and page aspect ratios. Minimum visible Quran widths: >=205px on short 360px student phone, >=245px on 390px student phone, >=395px on desktop; preserve 345:550 ratio, no outer scroll, student video before Quran. A passing test of containment alone is no longer acceptable.
+- Both device screenshots uploaded as action artifacts. Inspect user-facing screenshots rather than claiming success from HTTP 200.

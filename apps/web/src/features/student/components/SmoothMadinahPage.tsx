@@ -71,7 +71,7 @@ export function preloadNeighborPages(page: number, radius: number): void {
   advance();
 }
 
-export function SmoothMadinahPage({ page, overlay }: { page: number; overlay?: ReactNode }) {
+export function SmoothMadinahPage({ page, overlay, viewportFit = false }: { page: number; overlay?: ReactNode; viewportFit?: boolean }) {
   const [shown, setShown] = useState<{ page: number; url: string } | null>(null);
   const [pending, setPending] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -94,7 +94,7 @@ export function SmoothMadinahPage({ page, overlay }: { page: number; overlay?: R
     return () => { active = false; };
   }, [page]);
 
-  return <div className={css.frame} aria-busy={pending}>
+  return <div className={[css.frame, viewportFit ? css.viewportFrame : ''].join(' ')} aria-busy={pending}>
     <div className={css.sheet} role="group" aria-label={'مصحف المدينة، الصفحة ' + page}>
       {shown && <div key={shown.page} data-rendered-quran-page={shown.page} className={[css.artwork,shown.page<=2?css.opening:''].join(' ')}>
         <img className={css.image} src={shown.url}

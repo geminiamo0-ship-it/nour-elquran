@@ -33,17 +33,18 @@ export function ClassroomPreview(){
   const mode=room.phase==='live'&&drawingAvailable?inkMode:'off';
   return <div ref={rootRef} className={[css.root,focusMode?css.focusMode:'',panelOpen?css.panelExpanded:'',compactToolbar?css.toolbarCollapsed:''].filter(Boolean).join(' ')}
     data-view-role={role} data-focus={focusMode?'on':'off'}>
-    <div className={css.pageTop}><Link href="/teacher">العودة إلى بوابة الشيخ</Link>
-      <span>الفصل التجريبي · مسار مستقل عن جلسات الطلاب الحقيقية</span></div>
-    <div className={css.workspaceActions}>
-      <span className={css.workspaceIdentity}>وضع تدريس بدون تشتيت · {role==='student'?'أولوية كاميرا الشيخ والمصحف':'المصحف وأدوات الشيخ أمامك'}</span>
-      <button type="button" className={css.focusButton} aria-pressed={focusMode} onClick={()=>void toggleFocus()}>
-        {focusMode?'الخروج من وضع الحصة':'⛶ وضع الحصة'}
-      </button>
-      <button type="button" className={css.panelToggle} aria-expanded={panelOpen} aria-controls="lesson-notes"
-        onClick={()=>setPanelOpen(v=>!v)}>{panelOpen?'إخفاء لوحة الأدوات':'الأخطاء والتقييم'}</button>
-      <button type="button" className={css.toolbarToggle} aria-expanded={!compactToolbar}
-        onClick={()=>setCompactToolbar(v=>!v)}>{compactToolbar?'إظهار أدوات إضافية':'إخفاء الأدوات الإضافية'}</button>
+    <div className={css.pageTop}>
+      <Link href="/teacher">العودة إلى بوابة الشيخ</Link>
+      <span className={css.previewDisclosure}>معاينة تجريبية · دون بث أو بيانات طلاب</span>
+      <div className={css.workspaceActions}>
+        <button type="button" className={css.focusButton} aria-pressed={focusMode} onClick={()=>void toggleFocus()}>
+          {focusMode?'الخروج من وضع الحصة':'⛶ وضع الحصة'}
+        </button>
+        <button type="button" className={css.panelToggle} aria-expanded={panelOpen} aria-controls="lesson-notes"
+          onClick={()=>setPanelOpen(v=>!v)}>{panelOpen?'إخفاء لوحة الأدوات':'الأخطاء والتقييم'}</button>
+        <button type="button" className={css.toolbarToggle} aria-expanded={!compactToolbar}
+          onClick={()=>setCompactToolbar(v=>!v)}>{compactToolbar?'إظهار أدوات إضافية':'إخفاء الأدوات الإضافية'}</button>
+      </div>
     </div>
     <ClassroomControls model={model}/>
     <div className={css.workspace}>
@@ -54,11 +55,11 @@ export function ClassroomPreview(){
             <h2>المصحف المشترك</h2></div>
           <span className={css.quranStatus}>{role==='teacher'?'التنقل بإذن الشيخ':'لا يحق للطالب تغيير الصفحة'}</span>
         </header>
-        <div className={css.quranViewport}>
+        <div className={css.quranViewport} data-quran-layout="viewport-fit">
           <button type="button" className={css.pageEdgePrev} title="الصفحة السابقة" aria-label="الصفحة السابقة"
             disabled={role!=='teacher'||room.phase!=='live'||room.currentPage<=1}
             onClick={()=>setPage(room.currentPage-1)}>‹</button>
-          <ReaderPrintedPage page={room.currentPage} inkMode={mode} color={inkColor}
+          <ReaderPrintedPage page={room.currentPage} viewportFit inkMode={mode} color={inkColor}
             strokes={pageStrokes} selectedKey={target?targetKey(target):null} noteKeys={keys}
             onSelect={setTarget} onOpenNote={setTarget}
             onInkChange={updateInk}/>
@@ -70,7 +71,7 @@ export function ClassroomPreview(){
           <span>الصفحة {room.currentPage} من ٦٠٤ · التحديد والتظليل فوق طبقة منفصلة عن نص المصحف</span>
           {target&&<span>الآية المحددة: {target.surah}:{target.ayah}</span>}
         </footer>
-        {room.phase==='waiting'&&<div className={css.stageNotice}>في انتظار وجود الشيخ والطالب، ثم يضغط الشيخ «بدء الحصة». لا يبدأ الفصل تلقائيًا.</div>}
+
         {room.phase==='ended'&&<div className={css.stageNotice}>
           انتهى الفصل يدويًا في المعاينة. تظل التصحيحات والتقييمات هنا محلية؛ التقرير الحقيقي يحتاج مراجعة الشيخ واعتماده.
           <Link href="/teacher/reports">فتح صفحة تقارير الشيخ</Link>
