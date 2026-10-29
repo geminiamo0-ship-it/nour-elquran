@@ -1,6 +1,6 @@
 # Noor private Cloudflare staging runbook — #114
 
-**State:** implementation staged in PR only until a real remote Cloudflare run is linked; this file is not deployment evidence. Source of truth: [status](../PROJECT_STATUS.md), [Cloudflare ADR](adr/0004-cloudflare-only-platform.md), [backup plan](CLOUDFLARE_BACKUP_AND_RESTORE.md).
+**State:** remote staging was deployed and verified 2026-10-29: [Santoreno run 40810303172](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40810303172) SUCCESS against Noor main SHA `dff83b382b3774a7476ae8dee64b7454fd09859c`. Remote synthetic account acceptance is complete; human QA and restore rehearsal remain separate. Source of truth: [status](../PROJECT_STATUS.md), [Cloudflare ADR](adr/0004-cloudflare-only-platform.md), [backup plan](CLOUDFLARE_BACKUP_AND_RESTORE.md).
 
 ## Isolation contract
 - Dedicated D1: `noor-core-staging` with migrations 0001_core.sql and 0002_auth.sql from the Noor repository. No production UUID or databases (including Santo) may be used. Confirm real UUID by API; local sample all-zero UUID is prohibited.
