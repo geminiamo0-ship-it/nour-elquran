@@ -2,7 +2,7 @@
 
 ## Current continuation — #46 native local D1 gate (2026-10-29, branch-only)
 - Main baseline `dc3da3e041c57e9e6af8734fc2bb323885f9be60`, merged #108; #104 closed, #46 open. This branch introduces `scripts/cloudflare-local-smoke.sh` and a separate `cloudflare-local-d1` Verify job.
-- Disposable local Wrangler 4.45.0 only: apply migration twice, run real Worker with same local D1 persistence, probe /health, /ready, /v1 and forged identity. Never use --remote or deploy. Check exact-head Actions before claiming success.
+- Disposable local Wrangler 4.45.0 only: apply migration twice, run real Worker with same local D1 persistence, probe /health, /ready, /v1 and forged identity. Never use --remote or deploy. PR #109 code head `c098fad5476ee276e17887e3a32c8cdca4f52fb9` passed all four jobs in [Verify 40795971889](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40795971889), including native local D1 migration replay and Worker HTTP. This is **local only**, not cloud staging; recheck the newest docs-only commit's exact-head CI before merge.
 - This does NOT implement auth, provision D1, run remote migrations or accept real child records. Next: resolve native CI errors if any; integrate maintained Workers-hosted auth and verified learner ownership in #46, while #102 remains an independent frontend-only task.
 
 
