@@ -1,3 +1,10 @@
+## Connected account learner lifecycle — #157 (Dev verified)
+- `workers/api/migrations/0008_learner_profiles.sql`: additive profile revision and immutable D1 event + before/after audit; rejects archival with scheduled/live lessons.
+- `workers/api/src/learner-profile-actions.ts`, `auth/routes.ts`, `owner-learners.ts`: verified Better Auth owner-only rename/archive command with operation UUID/CAS, active-only learner reads; no destructive delete.
+- `apps/web/src/features/account/{api.ts,AccountProvider.tsx,AccountProfiles.tsx}`: runtime-checked revision DTO and connected ACK-only edit/archive actions; the normal student shell retains private selected learner. `scripts/cloudflare-auth-browser.mjs` and `scripts/cloudflare-auth-smoke.mjs` verify native account/sibling flow.
+- [Noor main Verify 40958071853](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40958071853) and [Santoreno remote Dev 40958341460](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40958341460) PASS; five real remote Chrome viewport screenshots in artifact ID 12934533154.
+- Scope is staging/synthetic accounts only. Guardian OTP/consent, password recovery, and teacher portal remain pending. Visual follow-up #160, connected teacher #159.
+
 ## #149 private Quran connected-page readiness
 
 - `apps/web/src/features/student/private-mushaf-readiness.ts`: pure, fail-closed selected learner + active page hydration guard for connected writes; `private-mushaf-readiness.test.ts` covers page/learner/failure/demo cases.

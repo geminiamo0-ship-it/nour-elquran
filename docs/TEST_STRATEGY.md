@@ -1,3 +1,9 @@
+## Profile lifecycle #157 — proved on dedicated Cloudflare Dev
+- Additive D1 migration `0008_learner_profiles.sql` and native SQLite tests: atomic owner/subject/CAS, replay, no-edit, immutable old/new audit, archive preserved history, reject schedule/live class archive.
+- Better Auth/Worker native synthetic smoke: owner A/B, `POST /v1/me/learners/:id/profile-actions`, 401/403/404/409, UUID replay, refresh; connected Chrome tests edit/archive and five responsive RTL viewports.
+- [Noor exact main push Verify 40958071853](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40958071853) SUCCESS; [Santoreno real Cloudflare Dev run 40958341460](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40958341460) SUCCESS using `noor-site-staging` and `noor-core-staging`. Remote browser screenshots artifact `noor-profile-remote-browser` ID 12934533154; tested 360×667, 390×844, 768×1024, 1280×900, 1440×900 with no horizontal overflow.
+- Real phone ownership, guardian consent and recovery are **not tested**; production is not enabled. Treat local and remote test success only as Phase 01A functional acceptance, not complete Phase 01. #160 tracks narrow mobile visual clipping.
+
 ## Private Quran #149 hydration guard
 
 - `private-mushaf-readiness.test.ts` checks that connected writes are allowed only when index and page are hydrated for the selected learner and active page, and denied after failure or during a page/learner switch; local demo remains editable. Run with `pnpm --filter @noor/web test` and strict typecheck in Verify.
