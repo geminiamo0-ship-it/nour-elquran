@@ -1,8 +1,9 @@
-## NON-CLASSROOM PHASE 01A #157 — DRAFT IMPLEMENTATION BRANCH (2026-10-29)
-- Issue [#157](https://github.com/geminiamo0-ship-it/nour-elquran/issues/157), parent #155. Branch `feat/157-versioned-learner-profiles` adds additive D1 0008 learner revision/immutable event audit, session-derived owner rename/archive API, strict action DTO/CAS/replay and connected `/student/account` edit/archive controls.
-- **NOT YET ACCEPTED:** exact-head CI, native Cloudflare D1/browser, remote staging migration/deployment, two-sibling/owner B account isolation and archive after reload remain gates; no production deployment or verified OTP/guardian consent. Existing 0001–0007 data stays unchanged until a separately authorized D1 migration.
-- Rollback: do not migrate remote before exact-head CI; after additive migration, prefer disabling the new profile-actions endpoint/UI via code rollback rather than dropping version/audit tables. No hard deletes.
-- Next: inspect exact-head Verify and fix regressions; complete synthetic native and same existing `noor-site-staging` E2E; keep #157 open until evidence.
+## NON-CLASSROOM PHASE 01A #157 — VERIFIED LOCAL IMPLEMENTATION, REMOTE PENDING
+- GitHub [PR #158](https://github.com/geminiamo0-ship-it/nour-elquran/pull/158), issue #157 / parent #155. Additive D1 0008 includes versioned rename/archive CAS, immutable before/after audit and SQL guard against archive with any scheduled/live lesson. No hard deletion; previous Quran items and completed lessons remain.
+- On earlier code head `78ae89b94601437806d0fbadcf2f63d502730c2c`, [Verify 40956372887](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40956372887) passed 4/4 including local Chrome rename/archive/refresh and 5 RTL viewports. Later code adds booked-lesson guard and Noor-only remote-browser origin allowlist; **new exact-head CI must be checked before merge**.
+- [Santoreno issue #242](https://github.com/geminiamo0-ship-it/santoreno/issues/242) / PR #243 prepares remote synthetic D1+Chrome acceptance on the existing `noor-site-staging`; that companion PR is not evidence of actual deployment until its main run finishes successfully.
+- NOT DONE: verified provider-backed phone/guardian/recovery, remote Staging migration and end-to-end connected account proof, human S Pen checks, production launch. `noor-core-staging` 0008 must be applied **before** deploying the new revision-dependent GET endpoints. Do not touch production.
+- Next: exact-head Noor Verify; merge code with issue left OPEN, verify main push, trigger existing Santoreno staging pipeline; review browser screenshots/404/CAS/restore evidence and only then consider closing the 01A slice. Rollback by reverting only staging Worker/UI, not destructive D1 schema removal.
 
 ## PRIVATE QURAN #149 — fail-closed current-page hydration (draft PR; 2026-10-29)
 
