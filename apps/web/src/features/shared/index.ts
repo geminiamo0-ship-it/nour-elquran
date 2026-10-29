@@ -3,3 +3,6 @@ export type {AcademicPlan,AcademicPlanInput} from './academic-plan-client';
 
 export {assignmentClient,assignmentMessage,AssignmentError,parsePublishedTasks} from './published-assignment-client';
 export type {PublishedAssignment,AssignmentDraft,AssignmentSource} from './published-assignment-client';
+
+export {assignmentAttemptClient,parseAttempts} from './assignment-attempt-client';
+export type {AssignmentAttempt} from './assignment-attempt-client';
