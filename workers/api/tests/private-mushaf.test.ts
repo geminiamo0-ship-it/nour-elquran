@@ -2,8 +2,8 @@ import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
 import {parsePrivateMushafOp,PRIVATE_EDITION,applyPrivateMushaf,readPrivateMushaf} from '../src/private-mushaf.ts';
 import type {CoreDatabase} from '../src/bindings.ts';
-const valid={operationId:'00000000-0000-4000-8000-000000000001',action:'put',
-  itemId:'ink-1',kind:'pen',page:12,expectedVersion:0,
+const valid={operationId:'00000000-0000-4000-8000-000000000001',action:'put' as const,
+  itemId:'ink-1',kind:'pen' as const,page:12,expectedVersion:0,
   payload:{points:[{x:1,y:2},{x:123,y:1594}],color:'#f6cd46',width:3}};
 test('allowlisted private operation validates precise bounds and no caller role',()=>{
  assert.deepEqual(parsePrivateMushafOp(valid),valid);
