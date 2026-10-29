@@ -1,3 +1,8 @@
+## CI FAST PATH #171 — IMPLEMENTATION BRANCH (2026-10-30)
+- Owner requested stopping unneeded heavy repeated Chrome workflows. `chore/171-fast-ci-browser-on-demand` removes two automatic Chrome journeys and second browser-specific Next build from default Verify. Critical lint/TS/unit/HTTP/native D1 migration and Better Auth local authorization tests remain mandatory.
+- New explicit workflow `Browser QA (on demand)` allows `static`, `account`, or `all` test scopes and synthetic screenshots. Run it before approving substantial UI changes or a release. Do not claim visual acceptance solely from default Verify.
+- **Not yet validated/merged:** exact-head GitHub Verify + policy/YAML, PR merge and postmerge evidence required. No runtime service, Classroom or Cloudflare production change.
+
 ## TEACHER VERIFIED / PREVIEW SPLIT — #169 (DRAFT BRANCH ONLY)
 - `feat/169-authenticated-teacher-mode` makes connected Sheikh mode contingent on BOTH explicit build feature and verified Better Auth account state: signed-in -> existing teacher-only D1 adapter (403/404 for invalid roles), signed-out -> clearly labeled public fixture preview, checking/error -> no fake learner data. Default build flag remains OFF.
 - Pure state tests cover no authenticated fallback to previews; no teacher self-enrollment, staff grant or classroom access. This does NOT yet turn on connected mode in existing Staging; source PR CI and dedicated Chrome Dev synthetic teacher rollout must pass before closing #169.

@@ -1,3 +1,10 @@
+## CI policy from #171 — fast security checks + optional browser QA (2026-10-30)
+- Owner requested less redundant CI overhead. Default `.github/workflows/verify.yml` keeps repository policy, governance, ESLint/architecture rules, TS checks, unit/integration tests, production build, HTTP smoke, isolated real Cloudflare-local D1 migration/readiness and Better Auth session/owner API tests. **These run on every PR and main push.**
+- The prior *two* full Chrome journeys (static responsive screenshot and authenticated same-origin account Chrome) and a redundant connected-account Next rebuild are **not** in default Verify anymore. A green fast Verify proves code/native D1/auth gates only, **not** browser appearance, keyboard interactions or deployed E2E.
+- `.github/workflows/browser-qa.yml` → GitHub Actions → **Browser QA (on demand)** → Run workflow, choose `static`, `account`, or `all`. It uses the exact selected Git ref, synthetic local credentials and output screenshots retained for 14 days. This optional manual check is required for visual/UI-heavy change acceptance, actual auth/teacher-state browser flows or pre-release, but **is not a required check for every commit**.
+- Cloudflare Dev remote Chrome and role/owner acceptance remain targeted *staging release gates* on the existing worker; they are not a substitute for default fast auth/data tests. A manual browser test must be run and linked before closing an issue whose acceptance explicitly depends on visual/full-browser verification.
+- No real minors, phone delivery, payment or Production data in any suite. If a browser suite fails, don't treat static build success as a passing visual acceptance.
+
 ## Profile lifecycle #157 — proved on dedicated Cloudflare Dev
 - Additive D1 migration `0008_learner_profiles.sql` and native SQLite tests: atomic owner/subject/CAS, replay, no-edit, immutable old/new audit, archive preserved history, reject schedule/live class archive.
 - Better Auth/Worker native synthetic smoke: owner A/B, `POST /v1/me/learners/:id/profile-actions`, 401/403/404/409, UUID replay, refresh; connected Chrome tests edit/archive and five responsive RTL viewports.

@@ -74,19 +74,6 @@ jobs:
       - name: Smoke
         if: steps.app.outputs.exists == 'true'
         run: pnpm smoke
-      - name: Browser RTL and responsive smoke
-        if: steps.app.outputs.exists == 'true'
-        run: |
-          command -v google-chrome
-          pnpm browser:smoke
-      - name: Upload browser screenshots for human review
-        if: always() && steps.app.outputs.exists == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: noor-bootstrap-browser-screenshots
-          path: artifacts/browser-smoke/*.png
-          if-no-files-found: warn
-
   cloudflare-local-d1:
     name: cloudflare-local-d1
     runs-on: ubuntu-latest
@@ -105,14 +92,3 @@ jobs:
         run: bash scripts/cloudflare-local-smoke.sh
       - name: Native local Better Auth session and learner ownership smoke
         run: bash scripts/cloudflare-auth-smoke.sh
-      - name: Build opt-in account UI for isolated browser acceptance
-        run: NEXT_PUBLIC_ACCOUNT_UI=true pnpm --filter @noor/web build
-      - name: Native same-origin Chrome account and learner journey
-        run: bash scripts/cloudflare-auth-browser.sh
-      - name: Upload synthetic account browser screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: noor-auth-browser-screenshots
-          path: artifacts/auth-browser/*.png
-          if-no-files-found: warn

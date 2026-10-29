@@ -1,0 +1,62 @@
+# Expensive real-Chrome acceptance is deliberately opt-in. Default Verify
+# remains fast and retains DB/auth/security tests on every PR and main push.
+name: Browser QA (on demand)
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: "Which local synthetic Chrome acceptance journey?"
+        required: true
+        type: choice
+        default: all
+        options:
+          - all
+          - static
+          - account
+
+permissions:
+  contents: read
+
+concurrency:
+  group: noor-browser-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install pinned dependencies once
+        run: |
+          corepack enable
+          corepack prepare "$(node -p 'require("./package.json").packageManager')" --activate
+          pnpm install --frozen-lockfile
+      - name: Verify installed Chrome
+        run: command -v google-chrome
+      - name: Build standalone static Noor preview
+        if: inputs.suite == 'all' || inputs.suite == 'static'
+        run: pnpm --filter @noor/web build
+      - name: Static RTL and responsive Chrome smoke
+        if: inputs.suite == 'all' || inputs.suite == 'static'
+        run: pnpm browser:smoke
+      - name: Build isolated synthetic connected account UI
+        if: inputs.suite == 'all' || inputs.suite == 'account'
+        run: NEXT_PUBLIC_ACCOUNT_UI=true pnpm --filter @noor/web build
+      - name: Real local Worker, D1, Better Auth and browser account journey
+        if: inputs.suite == 'all' || inputs.suite == 'account'
+        run: bash scripts/cloudflare-auth-browser.sh
+      - name: Upload synthetic Chrome screenshots for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: noor-optional-browser-qa
+          path: |
+            artifacts/browser-smoke/*.png
+            artifacts/auth-browser/*.png
+          if-no-files-found: ignore
+          retention-days: 14

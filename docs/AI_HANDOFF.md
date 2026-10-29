@@ -1,3 +1,8 @@
+## #171 fast default CI / on-demand browser QA
+- Owner preference (2026-10-30): prioritize quick CI; Chrome full E2E should NOT run with every PR/main push. Branch `chore/171-fast-ci-browser-on-demand` keeps core lint, typecheck, unit/integration, build, HTTP plus native local Wrangler D1 and Better Auth session/ownership smoke in Verify.
+- Manual `.github/workflows/browser-qa.yml` choice static/account/all covers the exact local synthetic Chrome journeys and screenshots when needed for material UI/role work or pre-release. Staging remote browser is an independent explicitly invoked acceptance step; do not conflate green Verify with UI acceptance.
+- Pending: new workflow YAML/policy tests, exact-head Verify, issue #171 PR and postmerge check. No production deploy. Teacher connected Dev rollout #169/#248 is independent and must still satisfy its authorized role requirements.
+
 ## #169 Noor teacher session-aware public preview + real mode (draft)
 - New role boundary `resolveTeacherPortalMode`: when opt-in build flag true, authenticated sessions show real teacher read adapter (D1 verifies role); signed-out visitors see clearly identified demo; while session checking/error show no fixtures. Role denial 403 never falls back to demo.
 - No change to connected API, D1, lesson DO or payments. Feature flag stays off by default until dedicated Noor Stage build enables `NEXT_PUBLIC_TEACHER_READONLY_ENABLED=true` and role-provisioned browser acceptance. Existing public preview must remain reachable to visitors.

@@ -15,8 +15,10 @@ AGENTS.md → PROJECT_STATUS.md → NOOR_MASTER_PLAN.md → docs/ENGINEERING_GUA
 9. Merge only after required checks, reviewer approval where required and acceptance; prefer squash merge with traceable final message.
 10. Post-merge verify main and record actual merge/deploy state. Close Issue only after stated acceptance is really fulfilled.
 
-## Mandatory test classes once app exists
-lint; strict TypeScript; unit tests; integration API/auth/state; Playwright mobile+desktop E2E; accessibility and Arabic RTL; security/profile isolation; relevant concurrency/idempotency; production build. A failure is not a pass. See docs/TEST_STRATEGY.md.
+## Required test classes, risk-based execution
+Every PR/main commit runs repository policy, lint, strict TypeScript, unit/API/auth/state integration tests, native isolated D1 + Worker/Better Auth smoke, security/profile isolation and a production build. Relevant concurrency/idempotency checks stay in the fast suites.
+
+Full browser E2E (mobile/desktop, Arabic RTL, keyboard/UX) runs through the explicit **Browser QA (on demand)** workflow for UI-critical changes and before final release approval; it is **not** rerun for every documentation or unrelated backend commit. The corresponding Issue still requires its stated browser/staging acceptance evidence before closure. See docs/TEST_STRATEGY.md. A failure is not a pass.
 
 ## Handoff / evidence
 Never write "done" merely because code was pushed; separate coded/tested/merged/deployed/production-verified. If blocked, leave Issue OPEN with exact failing check, stack trace/reference, likely owner and next action.
