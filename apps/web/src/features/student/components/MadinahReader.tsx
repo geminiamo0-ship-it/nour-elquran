@@ -445,12 +445,16 @@ export function MadinahReader() {
               <button type="button" className={css.smallButton} onClick={()=>openRecitation('ayah',selectedTarget)}>
                 <ReaderIcon name="play" /> استمع لهذه الآية
               </button>
-              <button type="button" className={css.smallButton} onClick={()=>setMarked(prev=>({
-                ...prev,[targetKey(selectedTarget)]:color
-              }))}>تظليل هذا الموضع</button>
-              <button type="button" className={css.smallButton} onClick={()=>setMarked(prev=>{
-                const next={...prev};delete next[targetKey(selectedTarget)];return next;
-              })}>إزالة التظليل</button>
+              <button type="button" className={css.smallButton} onClick={()=>{
+                 if(!privateSave.canEdit)return;
+                 if(privateSave.enabled)privateSave.highlight(selectedTarget,color);
+                 setMarked(prev=>({...prev,[targetKey(selectedTarget)]:color}));
+               }}>تظليل هذا الموضع</button>
+              <button type="button" className={css.smallButton} onClick={()=>{
+                 if(!privateSave.canEdit)return;
+                 if(privateSave.enabled)privateSave.highlight(selectedTarget,null);
+                 setMarked(prev=>{const next={...prev};delete next[targetKey(selectedTarget)];return next;});
+               }}>إزالة التظليل</button>
             </div>
             <label htmlFor="quran-note">ملاحظة على الموضع المحدد (حتى 500 حرف)</label>
             <textarea id="quran-note" maxLength={500} rows={4} value={draft}
