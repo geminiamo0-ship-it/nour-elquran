@@ -1,3 +1,10 @@
+## PERSISTENCE HANDOFF — #142 / master inventory (2026-10-29)
+
+- Read [docs/PERSISTENCE_AND_LESSON_RECOVERY_MASTER_PLAN.md](PERSISTENCE_AND_LESSON_RECOVERY_MASTER_PLAN.md) **before** any Quran ink/notes, LessonDO, teacher report, audio homework, Notebook, backup, session or mobile sync implementation. This is a proposed implementation plan, not a new deployed service; owner-approved behaviors retain priority.
+- Current reader `MadinahReader` personal notes, strokes and undo/redo are React state; `QuranInk` eraser removes local strokes; `StudentContext` notebook/training drafts remain memory-local, `TeacherContext` reports are mock, `useClassroomPreview` shared drawing is simulated. D1 `personal_annotations` lacks authenticated CRUD, and live LessonDO/report publication/R2 archive do not yet work.
+- Strict minimum: verified subject/learner scope, opId + durable ACK, no cross-child leakage, tombstones/undo + correct Quran coordinates/edition, distinction pending/saved/published, author-scoped shared ink, immutable report revisions, outbox recovery, synthetic native Cloudflare staging + restore proof.
+- Parent [#142](https://github.com/geminiamo0-ship-it/nour-elquran/issues/142); related #87, #102, #120, #51, #52. Do not confuse docs-only plan with done tasks.
+
 ## TEACHER BACKEND B3 #140 — audited staff assignments & 40m booking
 
 - `0006_staff_schedule.sql`: append-only staff scheduling commands and atomic D1 audit triggers for `assign,revoke,book,cancel`. Rechecks roles.manage, active qualified teacher, active owner/learner, full-interval primary assignment, overlap/40m, 6h normal cancellation, and no orphaned upcoming lessons. No room Start/End mutations.
