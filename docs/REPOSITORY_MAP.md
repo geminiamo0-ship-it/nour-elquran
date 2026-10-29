@@ -235,3 +235,10 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `workers/api/migrations/0004_classroom_lifecycle.sql`: additive append-only D1 teacher Start/End event ledger (unique per lesson, actor check, order and restore-friendly).
 - `workers/api/tests/classroom-lifecycle.test.ts` and `test_classroom_lifecycle_ledger.py`: role, presence, time boundary, event-order, actor, immutability and restore regression.
 - **Not a running classroom**: verified Worker/DO presence, atomic lifecycle service API, video provider and UI remain separate build slices.
+
+
+## Verified teacher and learner lesson calendar (PR from #120)
+
+- `workers/api/src/lesson-calendar.ts`: explicit D1 teacher/learner calendar SQL with active teacher qualification, assignment/consent grant checks, and account+learner scoped reads. No private content.
+- `workers/api/src/auth/routes.ts`: new authenticated `GET /v1/teacher/lessons` before ownerAccount (avoids synthetic owner account creation for teacher), and `GET /v1/me/learners/:id/lessons` after verified profile ownership.
+- `workers/api/tests/test_lesson_calendar_queries.py`: actual SQLite execution of queries extracted from TS, with cross-account, revoked grant, substitute consent and archive exclusions. No media token or teacher Start/End routes in this slice.
