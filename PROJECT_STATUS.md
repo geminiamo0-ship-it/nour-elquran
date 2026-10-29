@@ -1,5 +1,11 @@
 # PROJECT_STATUS — verified handoff state
 
+## STAGING #114 — private Cloudflare staging gate (branch, no remote deployment)
+- Source: AUTH-02 PR #113, currently pending exact-head CI; #114 branch contains a fail-closed staging-only Worker gate for all static and API routes, synthetic access tests, and [runbook](docs/NOOR_STAGING_RUNBOOK.md).
+- Stage design: dedicated `noor-core-staging` D1, `noor-site-staging` Worker, all-asset Worker-first execution, HTTPS same-origin with `AUTH_ENABLED=true`, Basic stage gate and no OTP messages. A real D1 and Worker are **NOT yet provisioned or deployed**.
+- Validation: PR #114 exact-head CI pending, merge only after #113 native browser is fully green. Next: obtain native PR CI, then create a separate Santoreno-backed scoped deployment workflow using its existing encrypted Cloudflare secrets. Do not publish private credentials or accept real children data.
+
+
 ## AUTH-02 #112 — same-origin account UI (branch; pending CI)
 - Baseline main #111 `14e73efde6e406dff34603ef053b2f17e789984c` passed all four jobs in [postmerge Verify 40803047786](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40803047786). #110 closed; #43/#46 remain open.
 - `feat/112-account-ui` adds a typed/runtime-validated same-origin client, opt-in signup/login/logout/session and owner-profile UI. Connected learner data never uses demo fixtures; raw session tokens/passwords/contact are never persisted by application browser storage. Interrupted registration can recover the existing account/profile.

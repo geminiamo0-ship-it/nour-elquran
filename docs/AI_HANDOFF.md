@@ -1,5 +1,11 @@
 # AI agent handoff contract
 
+## STAGING #114 — current planned private remote gate
+- Branch `feat/114-private-staging` based on AUTH-02 #113. Adds `workers/site/src/staging-access.ts` plus worker entrypoint pre-route guard and `tests/staging-access.test.mjs` to protect **assets and API** on dedicated staging hostname; production has no change. See [runbook](NOOR_STAGING_RUNBOOK.md).
+- Runtime staging must set `assets.run_worker_first=true`, `NOOR_ENVIRONMENT=staging` and a strong server-only `STAGING_ACCESS_PASSWORD`; otherwise the Worker returns 503 on staging. Do not deploy with an unguarded public workers.dev website, nor import actual student data.
+- No Cloudflare remote resource or billing change has occurred from this branch. Current next steps: finish #113 CI/merge, pass #114 PR checks, then dedicated GH Actions workflow in santoreno to provision/verify stage using authorized Cloudflare secrets. OTP deferred as owner approved.
+
+
 ## AUTH-02 #112 — current branch continuation
 - Read main #111 acceptance: merge `14e73efde6e406dff34603ef053b2f17e789984c`, all four postmerge Verify jobs in 40803047786 SUCCESS. #43/#46 remain open.
 - Branch `feat/112-account-ui` connects account UI to maintained backend contracts behind default-OFF NEXT_PUBLIC_ACCOUNT_UI. AccountProvider verifies session in D1, loads only owner profiles, guards stale async results and clears private views on logout/error/401. Connected StudentProvider has empty learning data and never reads demo storage/fixtures.
