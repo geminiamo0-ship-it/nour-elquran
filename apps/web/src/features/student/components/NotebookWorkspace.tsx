@@ -5,7 +5,13 @@ import styles from '../StudentPortal.module.css';
 import { latestLessonReport, personalLessonNotes } from '../notebookContracts';
 import { NotebookReportCard } from './NotebookReportCard';
 
+/** Keying the local form by learner discards drafts and selection before a sibling's UI renders. */
 export function NotebookWorkspace() {
+  const { selected } = useStudent();
+  return <LearnerNotebookWorkspace key={selected.profile.id} />;
+}
+
+function LearnerNotebookWorkspace() {
   const { selected, notes, addNote, removeNote } = useStudent();
   const completed = selected.lessons.filter((lesson) => lesson.status === 'completed');
   const [picked, setPicked] = useState('');
