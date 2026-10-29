@@ -268,3 +268,11 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `features/student/index.ts`: exports canonical reader / ink types / page helpers for reuse by classroom without cross-feature internal imports.
 - `features/teacher/TeacherShell.tsx` and `TeacherPreparation.tsx`: demo-only link to classroom; authenticated live Start remains disabled.
 - `docs/CLASSROOM_UI_BACKEND_CONTRACT.md`: future authorized per-lesson Worker/D1/DO and LiveKit token interfaces, 30/40 timing, replay, audit and privacy test matrix. No claims of real video, saving or room access.
+
+
+## Classroom session access-only Worker API (#50)
+
+- `workers/api/src/classroom-access.ts`: D1 SQL + typed response fields to prove an authenticated acting teacher or selected owned child can view the particular scheduled/live classroom appointment. No presence/room/media permission is issued; no private notes, phone or raw audio selected.
+- `workers/api/src/auth/routes.ts`: routes `GET /v1/teacher/lessons/:id/access` before owner account creation and `GET /v1/me/learners/:childId/lessons/:id/access` through verified owner context. Both deny unknown/canceled/ended lessons with 404.
+- `workers/api/tests/test_classroom_access.py`: exact SQL extraction and real SQLite migration lineage tests, with revoked/substitute consent, disabled teacher/owner, cross-child and terminal-state denials.
+- **Still absent:** per-lesson DO membership/replay, verified real-time presence, teacher Start/End write endpoint, LiveKit tokens and video. See `docs/CLASSROOM_UI_BACKEND_CONTRACT.md`.
