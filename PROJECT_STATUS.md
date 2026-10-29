@@ -1,5 +1,12 @@
 # PROJECT_STATUS — verified handoff state
 
+## STU S11 #102 — read-only Quran lesson projection (PR #116, branch only)
+- Continued the existing draft PR with `LessonQuranViewer`, reusing `ReaderPrintedPage` and the canonical page sidecar. Per-page anchors are checked against publisher metadata before the lesson range/teacher marks are displayed; invalid or unavailable metadata fails closed with an honest message.
+- One explicitly synthetic demo-active completed lesson has a scoped 112:1–4 example on page 604 with a sample teacher mark; it is not a server record, private student data or real teacher assessment. New and connected learners receive no fake published lesson.
+- Navigation is bounded to the published lesson pages; teacher annotations are read-only, personal notebook notes stay separate. No ink mutation, archive/share/export, backend lesson API or deployment is claimed.
+- New tests cover boundary anchor mismatch, empty metadata, scope/page restrictions and sibling-safe demo filtering. **Exact-head CI and Chrome lesson interaction remain to verify**; physical S Pen, multi-page visual QA and end-to-end publication are pending. Keep #102 and PR #116 OPEN.
+
+
 ## STU S11 #102 — notebook contract/report slice (draft PR, not full F0)
 - Branch `feat/102-notebook-contracts-reports` adds strict learner/lesson-scoped published revision and Quran scope contracts, teacher-approved annotation filtering, and independent private-note filtering. Cross-surah/page ranges are structurally checked against the pinned edition, **not** claimed verified against publisher page metadata.
 - The existing notebook now selects the newest valid published report, displays each nullable /10 grade independently and says clearly when report, approved Quran layers, sharing, PDF or archive are unavailable. Keyed learner remount discards unsent draft/selection on sibling switch.
