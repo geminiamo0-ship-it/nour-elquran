@@ -1,3 +1,8 @@
+## #102 verified multi-page browser code checkpoint — 2026-10-29
+- PR #116 code head `eaa22ca77d4574025adbfbe1405ed21fe5495294` passed [Verify 40831141757](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40831141757), all four jobs. Real Chrome tests page 1→2→1 using publisher sidecars, per-page mark isolation and 390/768/1440 overflow. The `noor-bootstrap-browser-screenshots` artifact ID 12878433906 was downloaded and three page-2 images visually inspected: Quran artwork and verse highlights are visible at all widths without obvious horizontal clipping.
+- First green run 40830894384 had desktop/tablet screenshots of header only; the follow-up test scrolls page 2 into viewport and asserts visibility before capture. The code-head evidence is valid; final documentation-only head still needs CI.
+- Next: inspect final PR SHA/CI, preserve Draft pending human review and real Android S Pen QA. No real report API, PDF, sharing, live classroom or production rollout. #1 branch protection request unchanged.
+
 ## #102 multi-page Chrome continuation — 2026-10-29
 - Branch `feat/102-notebook-contracts-reports`, draft PR #116 / Issue #102. Added demo-only completed lesson `l-active-4` and publication across Quran page 1→2; first/second page marks are distinct. Existing `l-active-3` page-604 fixture remains.
 - New Chrome assertions select the fixture, use real Quran publisher sidecars, check allowed SVG ayah keys, page 1→2→1 navigation, page-specific teacher marks, 390/768/1440 overflow and page-2 screenshots. Unit test asserts cross-lesson and sibling isolation. No server state or recording.
