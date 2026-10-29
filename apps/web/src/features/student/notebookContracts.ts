@@ -1,6 +1,6 @@
 import { validatePublishedReport, type LocalStudyNote, type PublishedReport } from './domain';
 import { validTarget, type QuranAnnotation } from './quranAnnotations';
-import { QURAN_EDITION, QURAN_VERSION, QURAN_PAGE_COUNT, isQuranReference } from './quranSource';
+import { QURAN_EDITION, QURAN_VERSION, QURAN_PAGE_COUNT, isQuranReference, type QuranAyahRegion } from './quranSource';
 
 /** These are *structural* anchors, not a substitute for verifying publisher page metadata. */
 export type NotebookAnchor = Readonly<{ surah: number; ayah: number; page: number }>;
@@ -86,4 +86,24 @@ export function latestLessonReport(
     typeof report.id === 'string' && report.id.length > 0 &&
     validatePublishedReport(report) && Number.isFinite(Date.parse(report.publishedAt))
   ).sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))[0] ?? null;
+}
+
+/**
+ * Confirm the visible lesson verses against this page's actual publisher sidecar.
+ * Boundary anchors must occur on their declared pages. Never guess verse positions.
+ * A null result means the page must not display a claimed teacher-approved range.
+ */
+export function pageKeysForNotebookScope(
+  scope: NotebookQuranScope, page: number, regions: readonly QuranAyahRegion[],
+): ReadonlySet<string> | null {
+  if (!structurallyValidNotebookScope(scope) || !Number.isInteger(page) ||
+      page < scope.start.page || page > scope.end.page || !Array.isArray(regions)) return null;
+  const valid = regions.filter((region) => isQuranReference(region) && region.ayah <= 286);
+  const matches = (region: QuranAyahRegion, anchor: NotebookAnchor) =>
+    region.surah === anchor.surah && region.ayah === anchor.ayah;
+  if (page === scope.start.page && !valid.some((region) => matches(region, scope.start))) return null;
+  if (page === scope.end.page && !valid.some((region) => matches(region, scope.end))) return null;
+  const included = valid.filter((region) =>
+    compareVerse(region, scope.start) >= 0 && compareVerse(region, scope.end) <= 0);
+  return included.length ? new Set(included.map((region) => region.surah + ':' + region.ayah)) : null;
 }
