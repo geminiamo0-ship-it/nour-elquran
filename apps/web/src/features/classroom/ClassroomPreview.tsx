@@ -54,7 +54,7 @@ export function ClassroomPreview(){
             <h2>المصحف المشترك</h2></div>
           <span className={css.quranStatus}>{role==='teacher'?'التنقل بإذن الشيخ':'لا يحق للطالب تغيير الصفحة'}</span>
         </header>
-        <div className={css.quranViewport}>
+        <div className={css.quranViewport} data-quran-layout="viewport-fit">
           <button type="button" className={css.pageEdgePrev} title="الصفحة السابقة" aria-label="الصفحة السابقة"
             disabled={role!=='teacher'||room.phase!=='live'||room.currentPage<=1}
             onClick={()=>setPage(room.currentPage-1)}>‹</button>
