@@ -1,3 +1,7 @@
+## #169 Sheikh Dev connected routing — detected/patch pending (2026-10-30)
+- Santoreno [run #40968034708](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40968034708) failed ONLY at targeted teacher Chrome acceptance. Failure screenshot artifact #12938892414 revealed connected account was routed to generic non-backend page because exported `/teacher/students/` didn't equal strict `/teacher/students` in `TeacherReadOnlyView`.
+- `fix/169-teacher-static-trailing-slash` normalizes the slash for actual teacher routes with pure regression tests. **Branch only, not verified/deployed.** After merge and postmerge Verify, rerun isolated Santoreno teacher Dev acceptance; leave #169/#248 OPEN on failure. Production remains unchanged. Do not run unrelated Chrome suites.
+
 ## CI FAST PATH #171 — IMPLEMENTATION BRANCH (2026-10-30)
 - Owner requested stopping unneeded heavy repeated Chrome workflows. `chore/171-fast-ci-browser-on-demand` removes two automatic Chrome journeys and second browser-specific Next build from default Verify. Critical lint/TS/unit/HTTP/native D1 migration and Better Auth local authorization tests remain mandatory.
 - New explicit workflow `Browser QA (on demand)` allows `static`, `account`, or `all` test scopes and synthetic screenshots. Run it before approving substantial UI changes or a release. Do not claim visual acceptance solely from default Verify.
