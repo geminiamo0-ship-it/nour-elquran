@@ -101,6 +101,28 @@ const bookmark=mushafOp('bookmark-1','bookmark');
 assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:bookmark})).response.status,201);
 assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,
  body:mushafOp('position','position')})).response.status,201);
+// Regression #146: a hidden stable-ID note/bookmark must retain CAS version after reload.
+const noteHidden=await call(mushafPath,{method:'POST',cookie:cookieA,
+ body:mushafOp('note-1-1-0','note','hide',1)});
+assert.equal(noteHidden.response.status,201,JSON.stringify(noteHidden.data));
+assert.equal(noteHidden.data.item.version,2);
+const indexWithHiddenNote=await call(mushafPath+'?index=1',{cookie:cookieA});
+assert.equal(indexWithHiddenNote.data.items.find(x=>x.itemId==='note-1-1-0')?.visible,false);
+assert.equal(indexWithHiddenNote.data.items.find(x=>x.itemId==='note-1-1-0')?.version,2);
+const noteRestored=await call(mushafPath,{method:'POST',cookie:cookieA,
+ body:mushafOp('note-1-1-0','note','put',2,note.payload)});
+assert.equal(noteRestored.response.status,201,JSON.stringify(noteRestored.data));
+assert.equal(noteRestored.data.item.visible,true);
+const bookmarkHidden=await call(mushafPath,{method:'POST',cookie:cookieA,
+ body:mushafOp('bookmark-1','bookmark','hide',1)});
+assert.equal(bookmarkHidden.response.status,201);
+const hiddenBookmarkIndex=await call(mushafPath+'?index=1',{cookie:cookieA});
+assert.equal(hiddenBookmarkIndex.data.items.find(x=>x.itemId==='bookmark-1')?.version,2);
+assert.equal(hiddenBookmarkIndex.data.items.find(x=>x.itemId==='bookmark-1')?.visible,false);
+const bookmarkRestored=await call(mushafPath,{method:'POST',cookie:cookieA,
+ body:mushafOp('bookmark-1','bookmark','put',2)});
+assert.equal(bookmarkRestored.response.status,201,JSON.stringify(bookmarkRestored.data));
+assert.equal(bookmarkRestored.data.item.visible,true);
 const pageBeforeHide=await call(mushafPath+'?page=1',{cookie:cookieA});
 assert.equal(pageBeforeHide.data.items.filter(x=>x.kind==='pen'||x.kind==='marker').length,2);
 assert.equal((await call(mushafPath+'?index=1',{cookie:cookieA})).data.items.length,4);
