@@ -1,3 +1,7 @@
+## #149 QA target host pin — 2026-10-30 (draft, not yet verified)
+- Found that the synthetic QA target check accepted `noor-site-staging` under **any** Cloudflare account, despite its claim to be an exact allowlist. Pinned it to the already-approved `https://noor-site-staging.geminiamo0.workers.dev` origin and added lookalike-account rejection tests. This only changes the branch-scoped test harness, not live site/API or D1 schema.
+- Verify the exact new PR #154 head in GitHub Actions and re-run synthetic Dev Chrome only if the existing development site is still approved. Keep #149 open for failure/retry, page-fetch race, two-device and S Pen checks; no Production.
+
 ## PRIVATE QURAN #149 — developer-host synthetic Chrome QA runner (draft; 2026-10-29)
 
 - Added a **branch-scoped one-off** GitHub Actions synthetic Chrome/D1 QA workflow on `test/149-quran-dev-qa-target` (plus manual dispatch); it targets only the existing development Worker, uses no Cloudflare credentials, and does not deploy. Santoreno main [run 40948945588](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40948945588) independently verified the existing Dev API with canonical anchors and synthetic Quran save/reload. Browser QA is a **separate unverified gate** until this workflow actually completes.
