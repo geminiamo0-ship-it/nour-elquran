@@ -1,8 +1,8 @@
-## PRIVATE QURAN #144 — hidden annotation reload correction (2026-10-29; Draft PR #145)
+## PRIVATE QURAN #144 — hidden annotation reload correction (2026-10-29; PR #146)
 
 - Found and corrected a real persistence regression: after hiding a stable-ID bookmark/note/highlight, the old visible-only GET omitted its version; reopening the reader then attempted a new version-0 PUT and D1 correctly rejected it. GET now returns hidden stable-ID tombstone/version metadata to the authenticated owner; UI filters hidden content from rendering, preserving correct versioned restoration. Erased freehand strokes remain excluded from page hydration to avoid wasting the 300-record page cap.
 - Updated Worker TS regression and contract. No D1 schema change, remote migration, staging or production deployment. **Exact-head CI for this follow-up must be inspected before merge.** Current per-component in-memory pending queue remains vulnerable to browser crash before ACK; offline zero-loss and pagination remain unfulfilled gates.
-- Next: verify exact-head Verify for PR #145, review client pending/error/undo behavior, test synthetic refresh and native Cloudflare auth, then stage only with separately verified canonical Quran edition+anchors and approval.
+- Next: verify exact-head Verify for PR #146, review client pending/error/undo behavior, test synthetic refresh and native Cloudflare auth, then stage only with separately verified canonical Quran edition+anchors and approval.
 
 ## PRIVATE QURAN P0-1 #144 (code PR #145; gated, no remote rollout)
 

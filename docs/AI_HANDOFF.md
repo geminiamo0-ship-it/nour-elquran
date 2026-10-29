@@ -1,6 +1,6 @@
 ## Private Quran #144 follow-up — reload of hidden notes/bookmarks (2026-10-29)
 
-- On draft PR #145 branch `feat/private-quran-persistence-p0`, patched `readPrivateMushaf` to hydrate hidden stable-ID note/highlight/bookmark versions. Previously a hidden item disappeared from visible-only GET and re-adding after refresh produced stale version 0 / 409. The UI now renders only visible bookmarks/highlights while retaining hidden versions for safe restore/edit. Erased pen/marker strokes are not hydrated (new strokes use fresh IDs).
+- On follow-up PR #146 branch `fix/144-private-mushaf-tombstone-reload`, patched `readPrivateMushaf` to hydrate hidden stable-ID note/highlight/bookmark versions. Previously a hidden item disappeared from visible-only GET and re-adding after refresh produced stale version 0 / 409. The UI now renders only visible bookmarks/highlights while retaining hidden versions for safe restore/edit. Erased pen/marker strokes are not hydrated (new strokes use fresh IDs).
 - Updated TS regression and `docs/PRIVATE_QURAN_PERSISTENCE_CONTRACT.md`. No migration or cloud changes. Verify the **latest exact branch SHA** in GitHub Actions; do not reuse prior successful SHA evidence. Keep PR Draft and #144 OPEN pending remote synthetic staging, actual canonical edition import, offline loss policy, capacity and independent privacy review.
 
 ## Quran private persistence workstream #144 (source, opt-in)
