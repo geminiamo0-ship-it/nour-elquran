@@ -67,8 +67,16 @@ try{
   assert(paths>=2,'pen and marker must be visible after page reload');
   await evalJs('document.querySelector("button[title=\'الملاحظات\']").click()');
   await waitFor(()=>evalJs("document.body.textContent.includes('Synthetic Quran QA note')"),'note restored after page reload');
+  // Capture the note proof separately; mobile reader screenshots must show the Quran,
+  // not a drawer obscuring most of the page.
+  await browser.screenshot('artifacts/quran-qa/notes-1280.png');
+  await evalJs('document.querySelector("button[aria-label=\'إغلاق لوحة الملاحظات\']").click()');
+  await waitFor(()=>evalJs('!document.querySelector("aside[aria-label=\'قائمة المصحف\']")'),'notes drawer closed');
   for(const width of [360,390,1280]){
     await browser.send('Emulation.setDeviceMetricsOverride',{width,height:width===360?667:width===390?844:900,deviceScaleFactor:1,mobile:width<600});
+    const layout=await evalJs('({viewport:innerWidth,scroll:document.documentElement.scrollWidth,canvas:Boolean(document.querySelector("svg[data-ink-mode]"))})');
+    assert.equal(layout.scroll>layout.viewport+1,false,'Quran reader document overflow at '+width+': '+JSON.stringify(layout));
+    assert.equal(layout.canvas,true,'Quran ink canvas absent at '+width);
     await browser.screenshot('artifacts/quran-qa/reader-'+width+'.png');
   }
   let xhide=await api(resource,'POST',op('note','note-1-1-0',{},1,'hide'));
