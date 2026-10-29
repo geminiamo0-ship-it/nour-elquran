@@ -1,3 +1,7 @@
+## #149 synthetic QA target hardening — 2026-10-30 (unverified branch update)
+- PR #154 branch `test/149-quran-dev-qa-target`: restrict `assertNoorDevQaTarget` to the one approved `noor-site-staging.geminiamo0.workers.dev` hostname, rather than a permissive `noor-site-staging.<any-account>.workers.dev` regex. Node regression denies two lookalike accounts.
+- Next exact action: inspect new head Verify and branch-scoped Quran Dev Synthetic Browser QA for the same commit; do not claim tests pass before evidence. This does not close #149 or validate offline crash, failed POST/Retry, two browsers or S Pen.
+
 ## #149 — existing development host Quran QA harness (2026-10-29; draft)
 
 - Santoreno PR #241 has now merged; its [main Dev deployment run 40948945588](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40948945588) succeeded, with log evidence for 6236 anchors and synthetic API save/reload/owner denial. Noor `quran-dev-qa.yml` now runs branch-scoped Chrome QA automatically on its initial push; do not call that run passed until inspected. It does not deploy or access Cloudflare credentials.
