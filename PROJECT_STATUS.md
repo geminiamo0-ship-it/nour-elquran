@@ -219,3 +219,10 @@ After verified and merged 40-minute calendar PR #121, implement a small separate
 ## 2026-10-29 — Real teacher/learner scoped lesson timetable API (#120)
 
 Proposed follow-on PR after #121/#122 adds read-only authenticated Worker timetable routes for teacher and selected learner. Teacher role is resolved from BetterAuth session subject and active qualified D1 teacher row, with assignment or accepted substitute grant for each lesson. Student is limited to the selected learner of an owned account. SQL query tests execute against actual SQLite migration lineage and prevent cross-learner listing. No lesson booking endpoint, verified DO presence, LiveKit media room, actual lesson Start/End HTTP call, or staging deployment is included. Pending CI/merge.
+
+
+## 2026-10-29 — First teacher portal implementation (feature PR, not yet merged) #45
+
+Owner directs: finish the **complete Sheikh UX first**, then start dedicated classroom UI, designing all teacher states to be implementable in backend. Branch `feat/teacher-portal-full-ux-126` adds responsive RTL Next.js/React teacher routes: home, schedule, students, preparation, reports, assignments and recitations, notifications, attendance/incidents. Uses existing ivory/olive/gold design tokens, typed domain, intentionally **synthetic** academic fixtures and scenario simulations (empty teacher, student/teacher late, disconnect, overtime, consented substitute). Buttons for real live room and audio are disabled; demo-only draft report publish, plan edit, task creation, retry review and provisional no-show are **local memory**, clearly disclosed. Nothing is sent to students, WhatsApp or R2.
+
+Backend wiring guidance is `docs/TEACHER_PORTAL_BACKEND_CONTRACT.md`, with per-screen API, role ACL and state acceptance matrix. Existing read-only `/v1/teacher/lessons` is a separate merged backend capability, **not** connected to this mock UI yet. Need exact-head CI, browser screenshots and PR review before merge. LiveKit keys not needed for building this preview. Next after teacher: classroom UI around existing Quran renderer, then verified DO/LiveKit integration.
