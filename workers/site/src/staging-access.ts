@@ -22,6 +22,14 @@ export function stagingAccessGuard(request: Request, env: StagingEnv): Response 
   // for any route or HTTP method. App-level Better Auth and owner checks stay.
   if (env.NOOR_DEV_OPEN === 'true') return null;
 
+  const path = new URL(request.url).pathname;
+  const api = path === '/api' || path.startsWith('/api/') ||
+    path === '/v1' || path.startsWith('/v1/') ||
+    path === '/internal-auth' || path.startsWith('/internal-auth/') ||
+    ['/health','/healthz','/ready','/readyz'].includes(path);
+  if (env.NOOR_PUBLIC_PREVIEW === 'true' &&
+      (request.method === 'GET' || request.method === 'HEAD') && !api) return null;
+
   const password = env.STAGING_ACCESS_PASSWORD;
   if (!password || password.length < 32) return new Response('Staging access is not configured', {
     status: 503,
