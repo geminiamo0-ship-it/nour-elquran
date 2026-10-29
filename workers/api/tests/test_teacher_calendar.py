@@ -139,6 +139,50 @@ class TeacherCalendarConstraints(unittest.TestCase):
             lesson(old, "invalid-new", learner="learner-b", start=T + SLOT_MS,
                    duration=30 * 60_000)
 
+    def test_new_booking_requires_active_qualified_teacher(self):
+        self.db.execute("UPDATE teachers SET qualified=0 WHERE id='teacher-b'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "active qualified teacher"):
+            lesson(self.db, "unqualified", teacher="teacher-b", learner="learner-b")
+        self.db.execute("UPDATE teachers SET qualified=1, status='disabled' WHERE id='teacher-b'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "active qualified teacher"):
+            lesson(self.db, "disabled", teacher="teacher-b", learner="learner-b")
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM lessons").fetchone()[0], 0)
+        self.db.execute("UPDATE teachers SET status='active' WHERE id='teacher-b'")
+        lesson(self.db, "eligible", teacher="teacher-b", learner="learner-b")
+
+    def test_cancelled_slot_cannot_reactivate_under_ineligible_teacher(self):
+        lesson(self.db, "cancelled", teacher="teacher-b", learner="learner-b",
+               status="cancelled")
+        self.db.execute("UPDATE teachers SET qualified=0 WHERE id='teacher-b'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "active qualified teacher"):
+            self.db.execute("UPDATE lessons SET status='scheduled' WHERE id='cancelled'")
+        self.assertEqual(
+            self.db.execute("SELECT status FROM lessons WHERE id='cancelled'").fetchone()[0],
+            "cancelled",
+        )
+        self.db.execute("UPDATE teachers SET qualified=1 WHERE id='teacher-b'")
+        self.db.execute("UPDATE lessons SET status='scheduled' WHERE id='cancelled'")
+
+    def test_teacher_reassignment_is_atomic_and_completed_history_is_preserved(self):
+        lesson(self.db, "booked")
+        self.db.execute("UPDATE teachers SET status='disabled' WHERE id='teacher-b'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "active qualified teacher"):
+            self.db.execute(
+                "UPDATE lessons SET actual_teacher_id='teacher-b' WHERE id='booked'"
+            )
+        self.assertEqual(
+            self.db.execute("SELECT actual_teacher_id FROM lessons WHERE id='booked'")
+            .fetchone()[0], "teacher-a",
+        )
+        # Disabling a teacher after a valid reservation does not erase history
+        # or prevent a separate authorized lifecycle from recording completion.
+        self.db.execute("UPDATE teachers SET status='disabled' WHERE id='teacher-a'")
+        self.db.execute("UPDATE lessons SET status='completed' WHERE id='booked'")
+        self.assertEqual(
+            self.db.execute("SELECT status FROM lessons WHERE id='booked'").fetchone()[0],
+            "completed",
+        )
+
     def test_core_readiness_version_unchanged_and_schedule_migration_recorded(self):
         self.assertEqual(
             self.db.execute("SELECT version FROM noor_schema_meta WHERE component='core'")
