@@ -2,7 +2,7 @@ import type {QuranAnnotation,QuranInkStroke,QuranTarget} from './quranAnnotation
 import {QURAN_EDITION,QURAN_VERSION} from './quranSource';
 
 export const PRIVATE_MUSHAF_EDITION=`${QURAN_EDITION}:${QURAN_VERSION}`;
-export type PrivateItemKind='pen'|'marker'|'note'|'bookmark'|'position';
+export type PrivateItemKind='pen'|'marker'|'note'|'highlight'|'bookmark'|'position';
 export type PrivateAction='put'|'hide'|'restore';
 export type PrivateItem=Readonly<{
  itemId:string;kind:PrivateItemKind;page:number;version:number;visible:boolean;
@@ -22,7 +22,7 @@ function object(raw:unknown):Record<string,unknown>{
 function parseItem(raw:unknown):PrivateItem{
  const item=object(raw);
  if(typeof item.itemId!=='string'||!/^[A-Za-z0-9_:.-]{1,128}$/.test(item.itemId)||
-  !['pen','marker','note','bookmark','position'].includes(String(item.kind))||
+  !['pen','marker','note','highlight','bookmark','position'].includes(String(item.kind))||
   !Number.isInteger(item.page)||Number(item.page)<1||Number(item.page)>604||
   !Number.isInteger(item.version)||Number(item.version)<1||
   typeof item.visible!=='boolean')throw new MushafSaveError('INVALID_RESPONSE',0);

@@ -1,7 +1,7 @@
 import type {CoreDatabase} from './bindings.ts';
 
 export const PRIVATE_EDITION='hafs-kfqc:v1.1.1';
-export type PrivateKind='pen'|'marker'|'note'|'bookmark'|'position';
+export type PrivateKind='pen'|'marker'|'note'|'highlight'|'bookmark'|'position';
 export type PrivateAction='put'|'hide'|'restore';
 export type PrivateMushafOp=Readonly<{
  operationId:string;action:PrivateAction;itemId:string;kind:PrivateKind;
@@ -14,7 +14,7 @@ export type PrivateMushafItem=Readonly<{
 const ID=/^[A-Za-z0-9_:.-]{1,128}$/;
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const HEX=/^#[0-9a-fA-F]{6}$/;
-const KIND=['pen','marker','note','bookmark','position'] as const;
+const KIND=['pen','marker','note','highlight','bookmark','position'] as const;
 const ACTION=['put','hide','restore'] as const;
 const plain=(value:unknown):value is Record<string,unknown> =>
  !!value && typeof value==='object' && !Array.isArray(value);
@@ -31,9 +31,10 @@ function safePayload(kind:PrivateKind,data:Record<string,unknown>):boolean {
   return data.points.every((p:unknown)=>plain(p)&&exact(p,['x','y'])&&
     bounded(p.x,1000)&&bounded(p.y,1594));
  }
- if(kind==='note'){
-  if(!exact(data,['target','text','color'])||typeof data.text!=='string'||
-    data.text.trim().length<1||data.text.length>500||!HEX.test(String(data.color))||
+ if(kind==='note'||kind==='highlight'){
+  if(!exact(data,kind==='note'?['target','text','color']:['target','color'])||
+    (kind==='note'&&(typeof data.text!=='string'||
+    data.text.trim().length<1||data.text.length>500))||!HEX.test(String(data.color))||
     !plain(data.target)||!exact(data.target,['surah','ayah','wordIndex']))return false;
   const t=data.target;
   return Number.isInteger(t.surah)&&Number(t.surah)>=1&&Number(t.surah)<=114&&
@@ -54,6 +55,7 @@ export function parsePrivateMushafOp(value:unknown):PrivateMushafOp|null {
  if(kind==='position'&&value.itemId!=='position')return null;
  if(kind==='bookmark'&&value.itemId!=='bookmark-'+value.page)return null;
  if(kind==='note'&&!value.itemId.startsWith('note-'))return null;
+ if(kind==='highlight'&&!value.itemId.startsWith('highlight-'))return null;
  if(action!=='put'&&(!exact(value.payload,[])||Number(value.expectedVersion)===0))return null;
  if(action==='put'&&!safePayload(kind,value.payload))return null;
  if(kind==='position'&&action!=='put')return null;
@@ -109,11 +111,11 @@ export async function applyPrivateMushaf(
 }
 const PAGE_SQL=`SELECT item_id AS itemId,kind,page,version,visible,payload_json AS payloadJson
  FROM private_mushaf_items WHERE learner_id=? AND edition_id=?
-   AND page=? AND kind IN ('pen','marker','note') AND visible=1
+   AND page=? AND kind IN ('pen','marker','note','highlight') AND visible=1
  ORDER BY updated_at_ms ASC,item_id ASC LIMIT 301`;
 const INDEX_SQL=`SELECT item_id AS itemId,kind,page,version,visible,payload_json AS payloadJson
  FROM private_mushaf_items WHERE learner_id=? AND edition_id=?
-   AND kind IN ('note','bookmark','position') AND visible=1
+   AND kind IN ('note','highlight','bookmark','position') AND visible=1
  ORDER BY updated_at_ms ASC,item_id ASC LIMIT 301`;
 export async function readPrivateMushaf(db:CoreDatabase,learnerId:string,selectedPage:number|null):
  Promise<{status:number;code:string;items?:PrivateMushafItem[]}>{

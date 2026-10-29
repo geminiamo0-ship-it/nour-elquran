@@ -86,7 +86,7 @@ export function MadinahReader() {
     process.env.NEXT_PUBLIC_ACCOUNT_UI==='true' && !selected.profile.demo;
   const privateSave=usePrivateMushafSave({
     learnerId:selected.profile.id,enabled:privateEnabled,page,
-    setPage,setPageEntry,setNotes,setInkByPage,setBookmarks,
+    setPage,setPageEntry,setNotes,setInkByPage,setBookmarks,setMarked,
   });
 
   useEffect(()=>{

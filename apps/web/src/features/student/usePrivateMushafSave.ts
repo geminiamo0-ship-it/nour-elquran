@@ -14,6 +14,7 @@ type Props={
  setNotes:Dispatch<SetStateAction<QuranAnnotation[]>>;
  setInkByPage:Dispatch<SetStateAction<Record<number,QuranInkStroke[]>>>;
  setBookmarks:Dispatch<SetStateAction<number[]>>;
+ setMarked:Dispatch<SetStateAction<Record<string,string>>>;
 };
 export function usePrivateMushafSave({
  learnerId,enabled,page,setPage,setPageEntry,setNotes,setInkByPage,setBookmarks,
@@ -41,6 +42,14 @@ export function usePrivateMushafSave({
    setNotes(items.map(item=>asPrivateNote(item,learnerId)).filter(
      (note):note is QuranAnnotation=>note!==null));
    setBookmarks(items.filter(i=>i.kind==='bookmark').map(i=>i.page).sort((a,b)=>a-b));
+   setMarked(Object.fromEntries(items.filter(i=>i.kind==='highlight').flatMap(item=>{
+    const target=item.payload.target;
+    if(!target||typeof target!=='object'||typeof item.payload.color!=='string')return [];
+    const t=target as {surah?:unknown;ayah?:unknown;wordIndex?:unknown};
+    if(typeof t.surah!=='number'||typeof t.ayah!=='number')return [];
+    const key=t.surah+':'+t.ayah+(typeof t.wordIndex==='number'?':w'+t.wordIndex:'');
+    return [[key,item.payload.color]];
+   })));
    const position=items.find(i=>i.kind==='position');
    if(position){setPage(position.page);setPageEntry(String(position.page));}
    setIndexReady(true);
@@ -48,7 +57,7 @@ export function usePrivateMushafSave({
    if(!controller.signal.aborted){setStatus('failed');setError('تعذر تحميل بيانات المصحف المحفوظة. لا نسمح بالكتابة فوقها قبل إعادة التحميل.');}
   });
   return ()=>controller.abort();
- },[enabled,learnerId,setBookmarks,setInkByPage,setNotes,setPage,setPageEntry]);
+ },[enabled,learnerId,setBookmarks,setInkByPage,setNotes,setPage,setPageEntry,setMarked]);
 
  useEffect(()=>{
   if(!enabled)return;
@@ -138,6 +147,13 @@ export function usePrivateMushafSave({
   });
   else if(versions.current[itemId])enqueue('hide',itemId,'note',target.page,{});
  }
+ function highlight(target:QuranTarget,color:string|null){
+  const itemId='highlight-'+target.surah+'-'+target.ayah+'-'+(target.wordIndex??0);
+  if(color)enqueue('put',itemId,'highlight',target.page,{
+   target:{surah:target.surah,ayah:target.ayah,wordIndex:target.wordIndex},color,
+  });
+  else if(versions.current[itemId])enqueue('hide',itemId,'highlight',target.page,{});
+ }
  function bookmark(targetPage:number,exists:boolean){
   const itemId='bookmark-'+targetPage;
   enqueue(exists?'hide':versions.current[itemId]?'restore':'put',
@@ -156,6 +172,6 @@ export function usePrivateMushafSave({
  return {
   enabled,status,error,canEdit:!enabled||(indexReady&&pageReady),
   canNavigate:!enabled||queue.current.length===0,
-  retry,strokeDiff,note,bookmark,
+  retry,strokeDiff,note,highlight,bookmark,
  };
 }

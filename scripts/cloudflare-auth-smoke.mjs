@@ -93,13 +93,17 @@ const wrongAnchor=mushafOp('note-wrong','note','put',0,{
  color:'#aabbcc',text:'Forged unverified page',target:{surah:1,ayah:1,wordIndex:null},
 },2);
 assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:wrongAnchor})).response.status,409);
+const highlight=mushafOp('highlight-1-1-0','highlight','put',0,{
+ color:'#ffff00',target:{surah:1,ayah:1,wordIndex:null},
+});
+assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:highlight})).response.status,201);
 const bookmark=mushafOp('bookmark-1','bookmark');
 assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:bookmark})).response.status,201);
 assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,
  body:mushafOp('position','position')})).response.status,201);
 const pageBeforeHide=await call(mushafPath+'?page=1',{cookie:cookieA});
 assert.equal(pageBeforeHide.data.items.filter(x=>x.kind==='pen'||x.kind==='marker').length,2);
-assert.equal((await call(mushafPath+'?index=1',{cookie:cookieA})).data.items.length,3);
+assert.equal((await call(mushafPath+'?index=1',{cookie:cookieA})).data.items.length,4);
 const hide=mushafOp('stroke-1','pen','hide',1);
 assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:hide})).data.item.visible,false);
 assert.equal((await call(mushafPath+'?page=1',{cookie:cookieA})).data.items.some(x=>x.itemId==='stroke-1'),false);

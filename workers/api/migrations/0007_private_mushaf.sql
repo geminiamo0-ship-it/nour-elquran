@@ -4,7 +4,7 @@
 CREATE TABLE private_mushaf_items (
  learner_id TEXT NOT NULL REFERENCES learners(id) ON DELETE RESTRICT,
  item_id TEXT NOT NULL CHECK(length(item_id) BETWEEN 1 AND 128),
- kind TEXT NOT NULL CHECK(kind IN ('pen','marker','note','bookmark','position')),
+ kind TEXT NOT NULL CHECK(kind IN ('pen','marker','note','highlight','bookmark','position')),
  edition_id TEXT NOT NULL REFERENCES quran_editions(id) ON DELETE RESTRICT,
  page INTEGER NOT NULL CHECK(page BETWEEN 1 AND 604),
  payload_json TEXT NOT NULL CHECK(json_valid(payload_json) AND length(payload_json)<=110000),
@@ -23,7 +23,7 @@ CREATE TABLE private_mushaf_events (
  operation_id TEXT NOT NULL CHECK(length(operation_id) BETWEEN 8 AND 128),
  action TEXT NOT NULL CHECK(action IN ('put','hide','restore')),
  item_id TEXT NOT NULL CHECK(length(item_id) BETWEEN 1 AND 128),
- kind TEXT NOT NULL CHECK(kind IN ('pen','marker','note','bookmark','position')),
+ kind TEXT NOT NULL CHECK(kind IN ('pen','marker','note','highlight','bookmark','position')),
  edition_id TEXT NOT NULL REFERENCES quran_editions(id) ON DELETE RESTRICT,
  page INTEGER NOT NULL CHECK(page BETWEEN 1 AND 604),
  expected_version INTEGER NOT NULL CHECK(expected_version>=0),
@@ -46,7 +46,7 @@ BEGIN
   WHERE edition.id=NEW.edition_id AND edition.riwayah='hafs' AND edition.page_count=604
  );
  SELECT RAISE(ABORT,'Quran note anchor unavailable') WHERE NEW.action='put'
-   AND NEW.kind='note' AND NOT EXISTS(
+   AND NEW.kind IN ('note','highlight') AND NOT EXISTS(
    SELECT 1 FROM quran_ayah_anchors a WHERE a.edition_id=NEW.edition_id
      AND a.page=NEW.page
      AND a.surah=json_extract(NEW.payload_json,'$.target.surah')
