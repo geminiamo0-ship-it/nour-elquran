@@ -1,3 +1,7 @@
+## Phase 05A #173 current source handoff
+- Branch `feat/173-published-assignments-main` supersedes conflicting draft branch `feat/173-published-assignments` after Noor teacher static route #169 merged. Worker `published-assignments.ts`, migration 0010, shared client and Student Training/Teacher Assignments UI are source-only.
+- Next fast Verify must cover sqlite native migration/Better Auth teacher publish + owner read, no automatic Chrome. After merge and success, targeted Dev publish/reload/role checks; audio uploads and grading are separate Phase 05B/06. Keep #173 open until remote acceptance.
+
 ## Active blocker #169 — connected teacher route trailing slash
 - The scoped Dev build and D1/owner lifecycle checks succeeded, but the targeted teacher browser screenshot in Santoreno run 40968034708 showed generic "هذا القسم قيد ربط الـBackend" with banner "بوابة الشيخ المتصلة". Root cause: static URL `/teacher/students/` vs strict unsuffixed check in `TeacherReadOnlyView`.
 - On branch `fix/169-teacher-static-trailing-slash`, normalization plus unit test covers Students, Schedule, Assignments, root and preservation of non-teacher paths. Validate PR CI, merge, postmerge Verify and rerun existing Santoreno #248 via workflow dispatch (not default Chrome). Do not claim remote teacher UI ready until actual screenshot and role denial pass.

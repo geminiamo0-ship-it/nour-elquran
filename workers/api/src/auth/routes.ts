@@ -9,6 +9,7 @@ import {applyPrivateMushaf,parsePrivateMushafOp,readPrivateMushaf} from '../priv
 import { listOwnedLearnerLessons, listVerifiedTeacherLessons } from '../lesson-calendar.ts';
 import { listVerifiedTeacherLearners } from '../teacher-roster.ts';
 import {readOwnerPlan,readTeacherPlan,writeTeacherPlan,parsePlanAction} from '../academic-plans.ts';
+import {readOwnerAssignments,readTeacherAssignments,getAssignmentCatalog,publishAssignment,parsePublishAssignment} from '../published-assignments.ts';
 import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '../staff-teachers.ts';
 import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts';
 import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '../classroom-access.ts';
@@ -87,6 +88,16 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
     const input=parseLearnerProfileAction(await readObject(request));
     if(!input)return reply(400,{code:'INVALID_PROFILE_ACTION'},requestId);
     const result=await applyLearnerProfileAction(db,accountId,authSubject,profileMatch[1]!,input);
+    const {status,...body}=result;
+    return reply(status,body,requestId);
+  }
+  const ownedAssignmentsMatch=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/assignments$/.exec(path);
+  if(ownedAssignmentsMatch){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const version=await db.prepare("SELECT version FROM noor_schema_meta WHERE component='assignments'")
+      .first<{version:number}>();
+    if(version?.version!==1)return reply(503,{code:'ASSIGNMENT_SCHEMA_NOT_READY'},requestId);
+    const result=await readOwnerAssignments(db,authSubject,ownedAssignmentsMatch[1]!);
     const {status,...body}=result;
     return reply(status,body,requestId);
   }
@@ -208,6 +219,34 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     const output=await issueTeacherRoleAction(env.DB,session.user.id,input);
     const {status,...data}=output;
     return reply(status,data,requestId);
+  }
+  if(path==='/v1/teacher/assignment-catalog'){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const version=await env.DB.prepare("SELECT version FROM noor_schema_meta WHERE component='assignments'")
+     .first<{version:number}>();
+    if(version?.version!==1)return reply(503,{code:'ASSIGNMENT_SCHEMA_NOT_READY'},requestId);
+    const result=await getAssignmentCatalog(env.DB,session.user.id);
+    const {status,...body}=result;
+    return reply(status,body,requestId);
+  }
+  const teacherAssignmentsMatch=/^\/v1\/teacher\/learners\/([a-zA-Z0-9-]{1,128})\/assignments$/.exec(path);
+  if(teacherAssignmentsMatch){
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const version=await env.DB.prepare("SELECT version FROM noor_schema_meta WHERE component='assignments'")
+     .first<{version:number}>();
+    if(version?.version!==1)return reply(503,{code:'ASSIGNMENT_SCHEMA_NOT_READY'},requestId);
+    const learnerId=teacherAssignmentsMatch[1]!;
+    if(request.method==='GET'){
+      const result=await readTeacherAssignments(env.DB,session.user.id,learnerId);
+      const {status,...body}=result;
+      return reply(status,body,requestId);
+    }
+    const command=parsePublishAssignment(await readObject(request));
+    if(!command)return reply(400,{code:'INVALID_ASSIGNMENT'},requestId);
+    const result=await publishAssignment(env.DB,session.user.id,learnerId,command);
+    const {status,...body}=result;
+    return reply(status,body,requestId);
   }
   const teacherPlanMatch=/^\/v1\/teacher\/learners\/([a-zA-Z0-9-]{1,128})\/(plan|plan-actions)$/.exec(path);
   if(teacherPlanMatch){
