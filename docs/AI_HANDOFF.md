@@ -1,3 +1,8 @@
+## CLASSROOM #120 / PR #121 — booking eligibility follow-up (2026-10-29, branch only)
+- Continue draft PR #121 on `feat/noor-classroom-40m-booking-guard`: `0003_teacher_schedule.sql` adds active learner + active owner account guards to new/reactivated scheduled lessons and rechecks teacher/learner/owner when rescheduling. `test_teacher_calendar.py` adds four synthetic SQLite cases for archive, disable, reactivation, reschedule and preserved history.
+- Not an authenticated classroom endpoint, two-person presence check, teacher-only Start/End, production D1 migration or deployment. No real children or provider secrets.
+- Inspect newest exact-head Verify jobs before merge. Next engineering slice in #120: role-authenticated Start/End only after durable presence of BOTH teacher and learner; require atomic recheck, idempotent operations and explicit teacher End. Reconcile conflicting media provider text in #120 against accepted ADR 0004 before any media implementation.
+
 # AI agent handoff contract
 
 ## OPEN DEV STAGING #118 — current implementation
