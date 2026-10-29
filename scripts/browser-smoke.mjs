@@ -800,6 +800,11 @@ try {
         const page=document.querySelector('[aria-label^="مصحف المدينة، الصفحة"]');
         const sheet=page?.getBoundingClientRect();
         const toolbar=document.querySelector('[role="toolbar"][aria-label="أدوات المصحف المشترك"]');
+        const rail=toolbar?.querySelector('[class*="inkPalette"]')?.getBoundingClientRect();
+        const quran=page?.closest('[class*="quranStage"]');
+        const docked=innerWidth<1101 || (quran?.contains(toolbar) &&
+          getComputedStyle(toolbar).position==='absolute' && rail && sheet &&
+          rail.left>=sheet.right-4);
         const colors=[...toolbar.querySelectorAll('button[aria-label^="اختر لون"]')];
         const reachable=colors.every(color=>{
           if(getComputedStyle(color).display==='none'||color.getBoundingClientRect().width<10)return false;
@@ -807,7 +812,7 @@ try {
           const c=color.getBoundingClientRect(),t=toolbar.getBoundingClientRect();
           return c.left>=t.left-2&&c.right<=t.right+2;
         });
-        return {width:sheet?.width,height:sheet?.height,colors:colors.length,reachable,
+        return {width:sheet?.width,height:sheet?.height,colors:colors.length,reachable,docked,
           noScroll:document.documentElement.scrollHeight<=innerHeight+2&&document.documentElement.scrollWidth<=innerWidth+2,
           noStudentEnd:!document.querySelector('[data-view-role="student"] button[class*="end"]'),
           videoFirst:innerWidth>720||document.querySelector('[aria-label="لوحة فيديو المشاركين"]')?.getBoundingClientRect().top<
@@ -818,6 +823,7 @@ try {
     const live=liveBounds.result?.value;
     assert(live?.width>=values.pageWidth-2,
       'Live Quran shrank below waiting size: '+JSON.stringify({viewport,values,live}));
+    assert(live?.docked,'Quran-side desktop palette overlaps printed page: '+JSON.stringify(live));
     assert(live?.colors===5&&live.reachable,
       'All five colors must remain reachable on the mobile toolbar: '+JSON.stringify(live));
     assert(live?.noScroll&&live.videoFirst,
