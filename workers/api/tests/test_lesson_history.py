@@ -64,9 +64,11 @@ class LessonHistoryIntegrityTests(unittest.TestCase):
             (START + 90_000,),
         )
 
-    def assert_rejected_without_mutation(self, sql, args=()):
+    def assert_rejected_without_mutation(
+        self, sql, args=(), expected="history immutable"
+    ):
         before = state(self.db)
-        with self.assertRaisesRegex(sqlite3.IntegrityError, "history immutable"):
+        with self.assertRaisesRegex(sqlite3.IntegrityError, expected):
             self.db.execute(sql, args)
         self.assertEqual(state(self.db), before)
 
@@ -89,7 +91,9 @@ class LessonHistoryIntegrityTests(unittest.TestCase):
             "UPDATE lessons SET kind='makeup' WHERE id='lesson'"
         )
         self.assert_rejected_without_mutation(
-            "UPDATE lessons SET ended_at_ms=? WHERE id='lesson'", (START + 1000,)
+            "UPDATE lessons SET ended_at_ms=? WHERE id='lesson'",
+            (START + 1000,),
+            expected="End must be recorded at completion",
         )
         self.assertEqual(state(self.db)[1], "live")
 
