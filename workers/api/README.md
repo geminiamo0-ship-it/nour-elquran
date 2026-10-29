@@ -70,3 +70,10 @@ The core `0001_core.sql` already prohibits changing a lesson's `learner_id`, eve
 
 ## Classroom #120 — draft D1 lifecycle boundary
 The unmerged `0003_teacher_schedule.sql` rejects direct creation of `live`/`completed` lessons, direct `scheduled -> completed`, and `cancelled -> live/completed`. A canceled reservation must reactivate as `scheduled` (eligibility and conflict rechecked) before a Start. Historical rows are preserved. **Do not expose raw SQL status changes to clients:** authenticated teacher-only Start/End, verified two-party lobby presence, durable idempotency, and end-time audit are not yet implemented. Tests: `python3 -m unittest discover -s workers/api/tests -p 'test_*.py'` plus exact-head GitHub Verify.
+
+
+## Classroom lifecycle contract and audit (#120; pending PR)
+
+`src/classroom/lifecycle.ts` defines **server-input-only**, strict teacher-only start/end authorization decisions. Start requires BOTH the verified teacher AND learner to be present in the same authorized lesson room. The teacher may choose to start after 15+ minutes of learner lateness. End is only possible by the acting teacher; the 30-minute teaching target and 40-minute reserved slot only cause display alerts, NEVER automatic media termination. The functions are **not wired to a public HTTP endpoint** and cannot be treated as live presence or authentication by themselves.
+
+`migrations/0004_classroom_lifecycle.sql` adds an append-only, teacher-scoped D1 action ledger with unique per-lesson start/end events, immutable actor and timestamp history, and database constraints for ordering. See `tests/classroom-lifecycle.test.ts` and `tests/test_classroom_lifecycle_ledger.py`. Actual authenticated Worker/DO room presence and atomic D1 action+audit mutations will be wired as the next implementation phase; do not permit callers to supply `VerifiedRoomPresence` directly from request JSON. No deployed classroom or automatic timer end is introduced.

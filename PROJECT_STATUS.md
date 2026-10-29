@@ -209,3 +209,8 @@ Date / Issue / PR / exact head SHA; changed paths; tests and exact Actions URL; 
 ## 2026-10-29 — Classroom implementation begins: 40-minute booking guard (#120 / PR #121)
 
 Owner authorized execution of the full classroom implementation plan #120. A focused **draft/unmerged** PR #121 proposes `0003_teacher_schedule.sql` to enforce 40-minute teacher+learner bookings and no overlaps, with SQLite regression tests. Preserve 30-minute instructional entitlement, manual teacher-only Start/End, and 40-minute calendar interval as distinct concepts. No actual classroom media/sync, scheduler HTTP endpoint, remote migration, or production deployment is claimed. Next: exact-head CI, migration compatibility, then a separate teacher/learner presence and Start/End lifecycle issue/PR; reconcile LiveKit Cloud versus RealtimeKit ADR before media integration.
+
+
+## 2026-10-29 — Classroom lifecycle policy + audit next PR (#120)
+
+After verified and merged 40-minute calendar PR #121, implement a small separate Worker's **server-input-only** policy module for Sheikh Start/End and both-person connected presence; 30/40 minute alerts never auto-stop the class. Add immutable D1 lesson Start/End ledger and tests; avoid claiming that the pure policy is already a deployed live room. Worker/DO presence enforcement, session-bound teacher API and atomic journal projection are required next. See #7, #18 and #120.
