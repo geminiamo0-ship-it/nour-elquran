@@ -1,3 +1,7 @@
+## #173 strict publish DTO hardening (2026-10-30; branch only)
+- On `feat/173-published-assignments-main`, reject arrays/objects masquerading as valid `operationId`, `kind` or `editionId` through JavaScript string coercion. Connected assignment task responses also reject an array masquerading as `kind`. Regression cases added to backend Node and frontend Vitest suites.
+- Source commits exist; exact-head PR Verify and isolated Cloudflare Dev acceptance are still required. Do not treat these guards as deployed. No real learner data or Production changes.
+
 ## PHASE 05A #173 published assignments (source branch; not yet accepted)
 - Additive D1 0010 immutable publish journal, current primary-teacher-only operations, Quran canonical ayah FK, single-learner assignment publish and owner list. Connected teacher Assignments and student My Training read real server state; voice/audio, submission, feedback and cancellation not connected.
 - Branch `feat/173-published-assignments-main` is a rebase/reconciliation of the earlier draft onto merged teacher URL fix #169. **No Verify, merge or remote stage proof yet.** Exact-head fast CI, main push Verify, then targeted existing Noor Dev Worker/D1 acceptance required. No Production/real minors.

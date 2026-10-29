@@ -1,3 +1,7 @@
+## #173 exact next action — strict DTO parser hardening
+- `feat/173-published-assignments-main` now includes server and client tests for JSON arrays masquerading as valid string fields (operation UUID, edition, assignment kind). Reject before any D1 bind or UI display; no permissive `String(...)` coercion for protected fields.
+- Next: inspect draft PR exact-head fast Verify (Node/TS/Vitest/native D1 and Better Auth); if green and review accepted, merge with postmerge Verify and run scoped Noor Dev D1 publish/reload/role acceptance. Do not close #173 until that evidence exists; no audio/Production.
+
 ## Phase 05A #173 current source handoff
 - Branch `feat/173-published-assignments-main` supersedes conflicting draft branch `feat/173-published-assignments` after Noor teacher static route #169 merged. Worker `published-assignments.ts`, migration 0010, shared client and Student Training/Teacher Assignments UI are source-only.
 - Next fast Verify must cover sqlite native migration/Better Auth teacher publish + owner read, no automatic Chrome. After merge and success, targeted Dev publish/reload/role checks; audio uploads and grading are separate Phase 05B/06. Keep #173 open until remote acceptance.

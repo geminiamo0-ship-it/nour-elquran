@@ -10,6 +10,7 @@ describe('live student assignment contract',()=>{
   expect(parsePublishedTasks([task])).toHaveLength(1);
   expect(parsePublishedTasks([])).toEqual([]);
   expect(()=>parsePublishedTasks([{...task,surah:115}])).toThrow();
+  expect(()=>parsePublishedTasks([{...task,kind:['memorization']}])).toThrow();
   expect(()=>parsePublishedTasks([{...task,endPage:0}])).toThrow();
   expect(()=>parsePublishedTasks(null)).toThrow();
  });
