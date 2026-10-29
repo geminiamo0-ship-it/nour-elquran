@@ -24,7 +24,11 @@ class CoreMigrationTests(unittest.TestCase):
         self.db.execute("INSERT INTO teachers VALUES ('t','teacher-subject',1,'active')")
         # Booked intervals are 40 minutes even when teaching ended earlier.
         # Keep the two synthetic teacher reservations sequential, not overlapping.
-        self.db.execute("INSERT INTO lessons VALUES ('l1','la','t','trial','completed',1000,2401000,2000)")
+        # Fixture must follow the same legal lifecycle as a real lesson:
+        # reserve -> Start -> explicit End; no direct completed INSERT.
+        self.db.execute("INSERT INTO lessons VALUES ('l1','la','t','trial','scheduled',1000,2401000,NULL)")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='l1'")
+        self.db.execute("UPDATE lessons SET status='completed',ended_at_ms=2000 WHERE id='l1'")
         self.db.execute("INSERT INTO lessons VALUES ('l2','lb','t','standard','scheduled',2403000,4803000,NULL)")
         self.db.execute("INSERT INTO quran_editions VALUES ('fixture','hafs',604,?)", ("0"*64,))
         self.db.execute("INSERT INTO quran_ayah_anchors VALUES ('fixture',1,1,1,4)")
