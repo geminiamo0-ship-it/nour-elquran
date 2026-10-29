@@ -37,6 +37,7 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
  if(!learners.length)return <section className={css.card}><h1>الواجبات والتسميعات</h1>
   <p>لا يوجد طلاب مسندون حاليًا. لا يمكن إصدار واجب من حساب غير مخول.</p></section>;
  const catalog=state.status==='loaded'?state.catalog:[];
+ const assignments=state.status==='loaded'?state.assignments:[];
  const unique=Array.from(new Set(catalog.map(x=>x.editionId)));
  const editionId=unique[0]??'';
  const editionSurahs=catalog.filter(x=>x.editionId===editionId);
@@ -93,7 +94,7 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
      <button type="button" onClick={()=>{setRetry(x=>x+1);setUncertain(false);}} disabled={saving}>تحديث الواجبات</button>
     </div>
    </form><h2>السجل المنشور</h2>
-   {state.assignments.length?<div className={css.list}>{state.assignments.map(t=><article key={t.id} className={css.row}>
+   {assignments.length?<div className={css.list}>{assignments.map(t=><article key={t.id} className={css.row}>
      <strong>{kinds[t.kind]} · سورة {t.surah} ({t.fromAyah}–{t.toAyah})</strong>
      <small>الموعد {new Date(t.dueAtMs).toLocaleDateString('ar-EG')} · منشور للخادم</small>
      <p>{t.instructions}</p>
