@@ -1,3 +1,8 @@
+## CLASSROOM #134 / PR #135 — 1101px rail overlap prevention (2026-10-29)
+- CSS side rails are limited to >=1200px width (>=560px height), because the 1101px three-column workspace can leave less than 88px of clearance between the printed Quran and the palette. At narrower desktop widths the toolbar remains horizontal, not overlaid on the page.
+- `scripts/browser-smoke.mjs` now tests 1101x900 and 1200x900 alongside existing mobile/tablet/desktop live and focus states; the rail assertion requires static toolbar below 1200 and an actual nonoverlapping side rail at/above 1200.
+- **Check exact-head Verify before claiming success.** PR #135 remains Draft; review screenshots and physical-device/staging requirements before merging. No cloud resources, child data or production deploy changed.
+
 ## Latest #134 handoff — measured Chrome evidence (2026-10-29)
 - PR [#135](https://github.com/geminiamo0-ship-it/nour-elquran/pull/135), issue [#134](https://github.com/geminiamo0-ship-it/nour-elquran/issues/134). Code head `b24005ab30e44ab010290cafd328cbd7b76b0c12` passed all four jobs in [Verify 40912922621](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40912922621); documentation follow-up needs exact-head rerun.
 - Measured page widths: 360×667 **262px**, 390×844 **365px**, 1280/1440×900 **474px** (earlier recorded 227/330/418). Chrome also checked 844×390 student landscape, 768×1024 teacher tablet, waiting/live/focus, no page scroll, all five colors, role restrictions, and Escape focus. [Screenshots artifact](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40912922621/artifacts/12914517738) visually inspected for portrait/landscape/tablet/desktop.
