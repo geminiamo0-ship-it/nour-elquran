@@ -26,7 +26,7 @@ export function useClassroomPreview(){
   const [audit,setAudit]=useState<ClassroomAuditEntry[]>([]);
   const [target,setTarget]=useState<QuranTarget|null>(null);
   const [inkMode,setInkMode]=useState<ClassroomTool>('off');
-  const [inkColor,setInkColor]=useState('#d4ab4c');
+  const [inkColor,setInkColor]=useState('#d0a94c');
   const [teacherMic,setTeacherMic]=useState(true);
   const [studentMicOn,setStudentMicOn]=useState(false);
   const [teacherCamera,setTeacherCamera]=useState(true);
