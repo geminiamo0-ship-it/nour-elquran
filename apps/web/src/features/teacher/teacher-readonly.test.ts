@@ -26,9 +26,9 @@ describe('read-only teacher client contracts',()=>{
     expect(parseTeacherLessons({lessons:[lesson]})).toEqual([lesson]);
   });
   it('uses only fixed same-origin GETs with cookies and no cache',async()=>{
-    const transport=vi.fn(async(path:string,_init?:RequestInit)=>new Response(JSON.stringify(
+    const transport=vi.fn(async(path:string,init?:RequestInit)=>{expect(init?.method).toBe('GET');return new Response(JSON.stringify(
       path.endsWith('/learners')?{learners:[student]}:{lessons:[lesson]}
-    ),{status:200}));
+    ),{status:200});});
     const client=createTeacherReadClient(transport as unknown as typeof fetch);
     await client.roster();await client.lessons();
     expect(transport.mock.calls.length).toBe(2);
