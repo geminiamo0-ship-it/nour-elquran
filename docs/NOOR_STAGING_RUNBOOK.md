@@ -31,3 +31,9 @@ For the public demo, visitors do not need any Cloudflare Basic password; the pri
 - The Worker allows only GET/HEAD site pages and static assets without Basic credentials. `/api/*`, `/v1*`, `/internal-auth/*`, `/health*`, `/ready*` and any write method remain behind staging Basic Auth; downstream Better Auth/D1 owner authorization still applies.
 - Retain `STAGING_ACCESS_PASSWORD` in the Worker **only to protect the API**; do not ask public visitors for it. Staging has `assets.run_worker_first=true` so no static routing bypass.
 - Real public beta account registration is not authorized: phone ownership, guardian/child permissions and abuse protection are incomplete. No real user information or OTP. Revert to private preview instantly by setting `NOOR_PUBLIC_PREVIEW=false` and redeploying.
+
+## Owner development mode — latest decision (#118)
+- Set `NOOR_DEV_OPEN=true` on the **staging Worker only**, and build with `NEXT_PUBLIC_ACCOUNT_UI=true`. This removes the extra site-wide staging password from **all routes** so the developer can use the real login and API directly.
+- The normal Better Auth session, password verification, rate limits and per-owner D1 access controls remain enforced; this flag does not grant an application session.
+- The deployment and synthetic account tests are maintained in Santoreno issue #227. This is a developer environment, not an approved public student launch. Phone OTP remains deferred and phone numbers unverified. Only fake learner records should be used.
+- Set `NOOR_DEV_OPEN=false` to restore the stage-wide gate. No change to production Worker resources or Santo data.
