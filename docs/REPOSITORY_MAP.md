@@ -227,3 +227,11 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `workers/api/migrations/0003_teacher_schedule.sql`: additive 40-minute lesson occupancy constraint; D1 triggers reject same-teacher or same-learner overlapping bookings even on cancellation/reactivation/rescheduling, and keep legacy bookings untouched.
 - `workers/api/tests/test_teacher_calendar.py`: SQLite regression coverage for adjacency, collisions, status changes, scheduling edits, legacy migration and `core` readiness metadata.
 - This slice does not introduce media, live pen sync, teacher or learner booking HTTP routes. Next implementation should use authoritative D1 with authenticated actors and layer on classroom LessonDO; see #7/#120.
+
+
+## Classroom lifecycle contract / immutable ledger (implementation #120)
+
+- `workers/api/src/classroom/lifecycle.ts`: portable teacher-only Start/End policy with verified room presence input, no auto-close, 30m instructional / 40m reservation display-only thresholds.
+- `workers/api/migrations/0004_classroom_lifecycle.sql`: additive append-only D1 teacher Start/End event ledger (unique per lesson, actor check, order and restore-friendly).
+- `workers/api/tests/classroom-lifecycle.test.ts` and `test_classroom_lifecycle_ledger.py`: role, presence, time boundary, event-order, actor, immutability and restore regression.
+- **Not a running classroom**: verified Worker/DO presence, atomic lifecycle service API, video provider and UI remain separate build slices.
