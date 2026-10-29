@@ -686,6 +686,70 @@ try {
   }
   console.log('Immersive no-scroll classroom and student-first Sheikh video Chrome checks passed');
 
+
+  // Regression: previously all tests passed while the page was visibly tiny,
+  // because they only checked that the Quran FIT, not how much room it USED.
+  // Check real SHORT mobile viewport and normal desktop, with width + height.
+  for(const viewport of [
+    {width:360,height:667,role:'student',minimumWidth:205,minimumVideoHeight:75},
+    {width:390,height:844,role:'student',minimumWidth:245,minimumVideoHeight:80},
+    {width:1280,height:900,role:'teacher',minimumWidth:395,minimumVideoHeight:180},
+    {width:1440,height:900,role:'teacher',minimumWidth:395,minimumVideoHeight:180},
+  ]){
+    await socket.send('Emulation.setDeviceMetricsOverride',{
+      width:viewport.width,height:viewport.height,deviceScaleFactor:1,mobile:false,
+    });
+    await socket.send('Page.navigate',{url:url+'classroom'});
+    await waitFor(async()=>{
+      const r=await socket.send('Runtime.evaluate',{
+        expression:"(()=>{const el=document.querySelector('select[aria-label=\\\"تبديل منظور المعاينة\\\"]');return !!el&&Object.keys(el).some(k=>k.startsWith('__reactProps'));})()",
+        returnByValue:true,
+      });
+      return r.result?.value===true;
+    },'Quran physical-size readiness '+viewport.width+'x'+viewport.height);
+    if(viewport.role==='student'){
+      await socket.send('Runtime.evaluate',{
+        expression:"(()=>{const e=document.querySelector('select[aria-label=\\\"تبديل منظور المعاينة\\\"]');e.value='student';e.dispatchEvent(new Event('change',{bubbles:true}));return true;})()",
+        returnByValue:true,
+      });
+      await sleep(220);
+    }
+    const r=await socket.send('Runtime.evaluate',{
+      expression:`(()=>{
+        const stage=document.querySelector('[aria-label="المصحف المشترك داخل الفصل"]');
+        const viewport=stage?.querySelector('[class*="quranViewport"]');
+        const page=document.querySelector('[aria-label^="مصحف المدينة، الصفحة"]');
+        const video=document.querySelector('[aria-label="لوحة فيديو المشاركين"]');
+        const p=page?.getBoundingClientRect();
+        const v=video?.getBoundingClientRect();
+        const q=stage?.getBoundingClientRect();
+        const vp=viewport?.getBoundingClientRect();
+        return {pageWidth:p?.width,pageHeight:p?.height,stageHeight:q?.height,
+          viewportHeight:vp?.height,videoHeight:v?.height,
+          videoFirst:!v||!q||v.top<q.top,
+          documentHeight:document.documentElement.scrollHeight,
+          innerHeight:innerHeight,documentWidth:document.documentElement.scrollWidth,
+          innerWidth:innerWidth,ratio:p?Number((p.width/p.height).toFixed(3)):null};
+      })()`,
+      returnByValue:true,
+    });
+    const values=r.result?.value;
+    assert(values?.pageWidth>=viewport.minimumWidth,
+      'Quran still TINY '+viewport.width+'x'+viewport.height+': '+JSON.stringify(values));
+    assert(values?.videoHeight>=viewport.minimumVideoHeight,
+      'Remote video under-allocated at '+viewport.width+'x'+viewport.height+': '+JSON.stringify(values));
+    assert(Math.abs(values.ratio-(345/550))<0.012,
+      'Canonical page aspect distorted: '+JSON.stringify(values));
+    assert(values.documentHeight<=viewport.height+2 && values.documentWidth<=viewport.width+2,
+      'Classroom outer document overflow: '+JSON.stringify(values));
+    if(viewport.role==='student')assert(values.videoFirst,
+      'Sheikh camera must be BEFORE Quran on student phone: '+JSON.stringify(values));
+    const shot=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    const png=Buffer.from(shot.data,'base64');
+    fs.writeFileSync(path.join(screenshots,'classroom-size-'+viewport.role+'-'+viewport.width+'x'+viewport.height+'.png'),png);
+    console.log('Physical Quran/video bounds '+viewport.width+'x'+viewport.height+': '+JSON.stringify(values));
+  }
+
   console.log('Classroom reader, waiting room, teacher-only controls and 360/390/1440 Chrome smoke passed');
 
 } finally {
