@@ -47,6 +47,27 @@ describe('notebook publication and learner isolation contracts (#102)', () => {
     expect(pageKeysForNotebookScope(scope, 604, regions.filter((r) => r.surah !== 114))).toBeNull();
     expect(pageKeysForNotebookScope(scope, 604, [])).toBeNull();
   });
+  it('projects two consecutive printed pages without leaking verses outside either boundary', () => {
+    // Synthetic publisher polygons; these references match the Fatiha/Baqarah page boundary.
+    // Structural unit gate only, not a full 604-page publisher sidecar audit.
+    const multiPage: NotebookQuranScope = {
+      edition: QURAN_EDITION, version: QURAN_VERSION,
+      start: { surah: 1, ayah: 6, page: 1 },
+      end: { surah: 2, ayah: 2, page: 2 },
+    };
+    const pageOne = [1, 6, 7].map((ayah) => ({
+      surah: 1, ayah, polygon: 'M0 0 L1 1 Z',
+    }));
+    const pageTwo = [1, 2, 3].map((ayah) => ({
+      surah: 2, ayah, polygon: 'M0 0 L1 1 Z',
+    }));
+    expect([...pageKeysForNotebookScope(multiPage, 1, pageOne)!]).toEqual(['1:6', '1:7']);
+    expect([...pageKeysForNotebookScope(multiPage, 2, pageTwo)!]).toEqual(['2:1', '2:2']);
+    expect(pageKeysForNotebookScope(multiPage, 1, pageTwo)).toBeNull();
+    expect(pageKeysForNotebookScope(multiPage, 2, pageOne)).toBeNull();
+    expect(pageKeysForNotebookScope(multiPage, 2, pageTwo.slice(0, 1))).toBeNull();
+    expect(pageKeysForNotebookScope(multiPage, 3, pageTwo)).toBeNull();
+  });
   it('does not leak a synthetic published teacher mark to other learners', () => {
     const active = DEMO_PROFILES.find((profile) => profile.id === 'demo-active')!;
     const revisions = getMockNotebookRevisions(active);

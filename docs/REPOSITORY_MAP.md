@@ -1,5 +1,10 @@
 # Repository map and file ownership
 
+## #102 lesson Quran source consistency (PR #116, unmerged)
+- `LessonQuranViewer.tsx` verifies the active page's publisher metadata and passes its exact parsed regions to `ReaderPrintedPage.tsx` via optional `verifiedRegions`. The shared printed reader keeps its existing fetch behavior for other features. No duplicate sidecar/fallback source divergence for lesson overlays.
+- `notebookContracts.test.ts` adds a synthetic two-page boundary regression; physical S Pen and real multi-page browser evidence remain outstanding.
+
+
 
 ## #102 private lesson drawing continuation (draft PR #116)
 - apps/web/src/features/student/components/LessonQuranViewer.tsx and .module.css: same verified printed Quran page, immutable published teacher layer toggle, and bounded ephemeral per-page private pen/marker/eraser strokes with undo/clear. Page/scope verification prevents stale page rendering; no server write.

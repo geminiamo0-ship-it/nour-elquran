@@ -1,5 +1,11 @@
 # AI agent handoff contract
 
+## #102 notebook sidecar consistency — unmerged continuation (2026-10-29)
+- PR #116 now passes publisher-verified page regions directly into `ReaderPrintedPage`; the lesson scope gate and the rendered Quran polygons use **one identical metadata response**. Previously two independent fetches could disagree (primary vs fallback), and duplicate metadata requests. Other reader callers retain their own fetch path.
+- Added a synthetic two-page Fatiha/Baqarah boundary regression (page 1→2), including wrong-page and missing end-anchor rejection. This is not yet a real multi-page Chrome fixture or a full Quran source audit.
+- Changes are on the existing #102 draft branch only. Exact-head GitHub Verify **pending**; no remote deploy, real learners, permanent private ink or PDF. Next: inspect all four jobs and multi-page visual/device evidence before review.
+
+
 
 ## #102 — current unmerged personal ink continuation
 

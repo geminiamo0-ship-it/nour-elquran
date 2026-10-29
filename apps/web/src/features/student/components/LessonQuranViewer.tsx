@@ -12,7 +12,7 @@ import css from './LessonQuranViewer.module.css';
 
 type PageState =
   | { status: 'loading' | 'invalid'; page: number; scope: NotebookQuranScope | null; keys: null }
-  | { status: 'ready'; page: number; scope: NotebookQuranScope; keys: ReadonlySet<string> };
+  | { status: 'ready'; page: number; scope: NotebookQuranScope; keys: ReadonlySet<string>; regions: ReturnType<typeof parseQuranAyahRegions> };
 
 async function loadPageRegions(page: number, signal: AbortSignal) {
   let data: unknown;
@@ -54,7 +54,7 @@ export function LessonQuranViewer({ revision }: { revision: PublishedNotebookRev
       if (controller.signal.aborted) return;
       const keys = pageKeysForNotebookScope(scope, page, regions);
       setState(keys
-        ? { status: 'ready', page, scope, keys }
+        ? { status: 'ready', page, scope, keys, regions }
         : { status: 'invalid', page, scope, keys: null });
     }).catch(() => {
       if (!controller.signal.aborted) setState({ status: 'invalid', page, scope, keys: null });
@@ -126,7 +126,8 @@ export function LessonQuranViewer({ revision }: { revision: PublishedNotebookRev
       استخدم «قراءة الآيات» للعودة لتحديد الآيات بدل الرسم.
     </p>}
     {ready && <div className={css.page}>
-      <ReaderPrintedPage page={page} inkMode={inkMode} color="#AD8028" strokes={strokes}
+      <ReaderPrintedPage page={page} verifiedRegions={state.status === 'ready' ? state.regions : undefined}
+        inkMode={inkMode} color="#AD8028" strokes={strokes}
         selectedKey={selectedKey} noteKeys={noteKeys} allowedKeys={state.keys ?? undefined}
         onSelect={select} onOpenNote={select} onInkChange={updatePrivateInk} />
     </div>}
