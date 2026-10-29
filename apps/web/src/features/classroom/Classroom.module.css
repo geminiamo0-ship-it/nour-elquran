@@ -338,8 +338,6 @@
  .pageEdgePrev,.pageEdgeNext{display:none;}
  .floatingVideo{top:45px;right:5px;width:min(220px,65vw);max-height:28dvh;}
  .root[data-view-role="student"] .toolbar{min-height:30px;}
- .root[data-view-role="student"] .toolbar .colors{display:none;}
- .root[data-view-role="student"] .toolbar .toolGroup:last-child button{display:none;}
  .root[data-view-role="student"] .toolGroup>span{font-size:10px;}
  .focusMode .pageTop{display:flex;}
  .focusMode .demoTag{display:none;}
