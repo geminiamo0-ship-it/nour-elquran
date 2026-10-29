@@ -176,6 +176,10 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 
 
 
+## Classroom eligibility continuation — PR #121 (2026-10-29)
+- Issue #120: booking guard must deny an inactive/unqualified acting teacher for **new scheduled** reservations, status reactivation and reassignment. Added SQL triggers in `0003_teacher_schedule.sql` and three SQLite regressions in `test_teacher_calendar.py`. Do not treat this as authorization for teacher Start/End, presence, media or a verified teacher assignment; those are later use cases.
+- Code/test commit `f957c31f0e425b44b93cd28e86e4267ec859cee0`. Recheck latest HEAD CI after docs and record exact SHA and workflow results in #120/PR #121; leave Draft until review. No cloud D1 migration, child data, payment or production deploy.
+
 ## Handoff — Classroom calendar SQL-first PR #121 (2026-10-29)
 
 Plan: #120 and parent roadmap #38. Branch `feat/noor-classroom-40m-booking-guard`; draft PR #121. New files: `workers/api/migrations/0003_teacher_schedule.sql` and `workers/api/tests/test_teacher_calendar.py`. New bookings must occupy exactly 40 minutes; reject overlapping teacher or learner intervals transactionally, both on new insert and changes; canceled bookings free capacity and historical 30-minute rows are not rewritten. Keep 30m as prior instructional target; timing does NOT close a room. Existing `lessons` and `noor_schema_meta.core=1` remain. Review CI/local D1 migrations BEFORE merge, no remote/staging production mutation. After this slice, implement verified teacher/student waiting room and explicit teacher Start/End with atomic state and DO replay. Audio/video provider decision remains conflicting: ADR 0004 RealtimeKit vs owner-discussed LiveKit Cloud; resolve in a dedicated ADR update BEFORE media coding. No secrets in repo or chat.
