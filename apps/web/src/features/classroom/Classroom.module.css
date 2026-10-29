@@ -24,7 +24,7 @@
 .pageTop .previewDisclosure{opacity:.75;margin-inline-end:auto;font-size:9px;white-space:nowrap;}
 .workspaceActions{
   display:flex;align-items:center;gap:6px;flex:0 0 auto;
-  min-height:28px;margin:0;padding:0;}
+  min-height:28px;margin:0;padding:0;
 }
 .workspaceIdentity{margin-inline-end:auto;color:#657f6b;font-size:10px;font-weight:700;}
 .focusButton,.panelToggle,.toolbarToggle{
