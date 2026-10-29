@@ -323,6 +323,8 @@ const suspension=await call('/v1/staff/teacher-actions',{
 });
 assert.equal(suspension.response.status,200,JSON.stringify(suspension.data));
 assert.equal((await call('/v1/teacher/learners',{cookie:cookieB})).response.status,403);
+assert.equal((await call(planWrite,{method:'POST',cookie:cookieB,body:planCommand})).response.status,404,
+  'Revoked teacher must not replay a previously saved academic plan');
 sql("UPDATE staff_grants SET revoked_at_ms=1000 WHERE auth_subject='"+teacherActor+"'");
 const afterRevocation=await call('/v1/staff/teacher-actions',{
   method:'POST',cookie:cookieA,body:teacherCommand('activate'),
