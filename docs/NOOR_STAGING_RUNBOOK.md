@@ -24,6 +24,8 @@
 
 
 ## Public preview option — #118 (pending rollout)
+
+For the public demo, visitors do not need any Cloudflare Basic password; the private API credential is for automated synthetic verification only.
 - Owner requests a publicly viewable URL without site-wide passwords. Enable `NOOR_PUBLIC_PREVIEW=true` on `noor-site-staging` **only** after Noor #118 and the companion Santoreno workflow pass CI and real remote smoke.
 - Build the public site with `NEXT_PUBLIC_ACCOUNT_UI=false`: existing learner/student screens show labeled **mock examples**, not real account signup or records.
 - The Worker allows only GET/HEAD site pages and static assets without Basic credentials. `/api/*`, `/v1*`, `/internal-auth/*`, `/health*`, `/ready*` and any write method remain behind staging Basic Auth; downstream Better Auth/D1 owner authorization still applies.
