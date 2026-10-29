@@ -2,6 +2,6 @@
  * to an unrelated empty page because the URL is canonicalized.
  */
 export function teacherRoute(pathname:string){
-  if(!pathname.startsWith('/teacher'))return pathname;
+  if(pathname!=='/teacher'&&!pathname.startsWith('/teacher/'))return pathname;
   return pathname.replace(/\/+$/,'')||'/';
 }
