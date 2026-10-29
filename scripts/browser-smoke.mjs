@@ -748,6 +748,90 @@ try {
     const png=Buffer.from(shot.data,'base64');
     fs.writeFileSync(path.join(screenshots,'classroom-size-'+viewport.role+'-'+viewport.width+'x'+viewport.height+'.png'),png);
     console.log('Physical Quran/video bounds '+viewport.width+'x'+viewport.height+': '+JSON.stringify(values));
+
+    // #134: measure LIVE and focus mode, not just the initial waiting-room screenshot.
+    const active=await socket.send('Runtime.evaluate',{
+      expression:`(async()=>{
+        const pause=()=>new Promise(resolve=>setTimeout(resolve,160));
+        const role=document.querySelector('select[aria-label="تبديل منظور المعاينة"]');
+        if(role.value!=='teacher'){
+          role.value='teacher';role.dispatchEvent(new Event('change',{bubbles:true}));await pause();
+        }
+        const people=[...document.querySelectorAll('input[type=checkbox]')];
+        if(!people[0].checked)people[0].click();
+        if(!people[1].checked)people[1].click();
+        await pause();
+        const start=[...document.querySelectorAll('button')].find(button=>button.textContent.trim()==='بدء الحصة');
+        if(start?.disabled)return {error:'Start unavailable despite both synthetic presences'};
+        start?.click();await pause();
+        if(!document.querySelector('[data-phase="live"]'))return {error:'Start did not enter live'};
+        return {live:true};
+      })()`,
+      awaitPromise:true,returnByValue:true,
+    });
+    assert(active.result?.value?.live===true,
+      'Could not enter simulated live class: '+JSON.stringify(active.result?.value));
+    if(viewport.role==='student'){
+      await socket.send('Runtime.evaluate',{
+        expression:"(()=>{const role=document.querySelector('select[aria-label=\"تبديل منظور المعاينة\"]');role.value='student';role.dispatchEvent(new Event('change',{bubbles:true}));})()",
+        returnByValue:true,
+      });
+      await sleep(180);
+    }
+    const liveBounds=await socket.send('Runtime.evaluate',{
+      expression:`(()=>{
+        const page=document.querySelector('[aria-label^="مصحف المدينة، الصفحة"]');
+        const sheet=page?.getBoundingClientRect();
+        const toolbar=document.querySelector('[role="toolbar"][aria-label="أدوات المصحف المشترك"]');
+        const colors=[...toolbar.querySelectorAll('button[aria-label^="اختر لون"]')];
+        const reachable=colors.every(color=>{
+          if(getComputedStyle(color).display==='none'||color.getBoundingClientRect().width<10)return false;
+          color.scrollIntoView({block:'nearest',inline:'nearest'});
+          const c=color.getBoundingClientRect(),t=toolbar.getBoundingClientRect();
+          return c.left>=t.left-2&&c.right<=t.right+2;
+        });
+        return {width:sheet?.width,height:sheet?.height,colors:colors.length,reachable,
+          noScroll:document.documentElement.scrollHeight<=innerHeight+2&&document.documentElement.scrollWidth<=innerWidth+2,
+          noStudentEnd:!document.querySelector('[data-view-role="student"] button[class*="end"]'),
+          videoFirst:innerWidth>720||document.querySelector('[aria-label="لوحة فيديو المشاركين"]')?.getBoundingClientRect().top<
+            document.querySelector('[aria-label="المصحف المشترك داخل الفصل"]')?.getBoundingClientRect().top};
+      })()`,
+      returnByValue:true,
+    });
+    const live=liveBounds.result?.value;
+    assert(live?.width>=values.pageWidth-2,
+      'Live Quran shrank below waiting size: '+JSON.stringify({viewport,values,live}));
+    assert(live?.colors===5&&live.reachable,
+      'All five colors must remain reachable on the mobile toolbar: '+JSON.stringify(live));
+    assert(live?.noScroll&&live.videoFirst,
+      'Live classroom viewport/video order failed: '+JSON.stringify(live));
+    if(viewport.role==='student')assert(live.noStudentEnd,'Learner has an End action');
+    const liveShot=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    fs.writeFileSync(path.join(screenshots,'classroom-live-'+viewport.role+'-'+viewport.width+'x'+viewport.height+'.png'),
+      Buffer.from(liveShot.data,'base64'));
+    await socket.send('Runtime.evaluate',{
+      expression:"(()=>{document.querySelector('button[aria-label=\"وضع الحصة\"]')?.click();})()",
+      returnByValue:true,
+    });
+    await sleep(180);
+    const focus=await socket.send('Runtime.evaluate',{
+      expression:`(()=>{
+        const page=document.querySelector('[aria-label^="مصحف المدينة، الصفحة"]')?.getBoundingClientRect();
+        return {active:document.querySelector('[data-focus]')?.getAttribute('data-focus')==='on',
+          width:page?.width,ratio:page?Number((page.width/page.height).toFixed(3)):null,
+          noScroll:document.documentElement.scrollHeight<=innerHeight+2&&document.documentElement.scrollWidth<=innerWidth+2};
+      })()`,returnByValue:true,
+    });
+    const focused=focus.result?.value;
+    assert(focused?.active&&focused.noScroll&&focused.width>=live.width-2&&
+      Math.abs(focused.ratio-345/550)<0.012,
+      'Focused live Quran geometry failed: '+JSON.stringify({viewport,live,focused}));
+    const focusShot=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    fs.writeFileSync(path.join(screenshots,'classroom-focus-'+viewport.role+'-'+viewport.width+'x'+viewport.height+'.png'),
+      Buffer.from(focusShot.data,'base64'));
+    console.log('Classroom #134 waiting/live/focus geometry '+viewport.width+'x'+viewport.height+
+      ': '+JSON.stringify({waiting:values.pageWidth,live:live.width,focus:focused.width}));
+
   }
 
   console.log('Classroom reader, waiting room, teacher-only controls and 360/390/1440 Chrome smoke passed');
