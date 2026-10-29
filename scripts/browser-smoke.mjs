@@ -566,7 +566,7 @@ try {
       'S11 private/teacher layer separation failed: ' + JSON.stringify(layerResult ?? layers));
 
     if (width === 390) {
-      // Real Chrome pointer drag, not an element.click() or fabricated React handler.
+      // Real Chrome touch drag, not an element.click() or fabricated React handler.
       const box = await socket.send('Runtime.evaluate', {
         expression: "(()=>{const svg=document.querySelector('[aria-label=\\\"مصحف الحصة المنشور للقراءة فقط\\\"] svg[data-ink-mode=\\\"pen\\\"]');svg?.scrollIntoView({block:'center'});const r=svg?.getBoundingClientRect();return r?{x:r.left+r.width*.4,y:r.top+r.height*.4,w:r.width,h:r.height}:null;})()",
         returnByValue: true,
@@ -574,18 +574,19 @@ try {
       const rect = box.result?.value;
       assert(rect && rect.w > 100 && rect.h > 100, 'Notebook pen SVG must have visible geometry');
       const x = rect.x, y = rect.y;
-      await socket.send('Input.dispatchMouseEvent', { type:'mouseMoved', x, y, button:'none' });
-      await socket.send('Input.dispatchMouseEvent', { type:'mousePressed', x, y, button:'left', clickCount:1 });
-      await socket.send('Input.dispatchMouseEvent', { type:'mouseMoved', x:x+18, y:y+14, button:'left', buttons:1 });
-      await socket.send('Input.dispatchMouseEvent', { type:'mouseMoved', x:x+34, y:y+22, button:'left', buttons:1 });
-      await socket.send('Input.dispatchMouseEvent', { type:'mouseReleased', x:x+34, y:y+22, button:'left', clickCount:1 });
+      await socket.send('Emulation.setTouchEmulationEnabled', { enabled:true, maxTouchPoints:1 });
+      await socket.send('Input.dispatchTouchEvent', { type:'touchStart', touchPoints:[{ id:1, x, y }] });
+      await socket.send('Input.dispatchTouchEvent', { type:'touchMove', touchPoints:[{ id:1, x:x+18, y:y+14 }] });
+      await socket.send('Input.dispatchTouchEvent', { type:'touchMove', touchPoints:[{ id:1, x:x+34, y:y+22 }] });
+      await socket.send('Input.dispatchTouchEvent', { type:'touchEnd', touchPoints:[] });
+      await socket.send('Emulation.setTouchEmulationEnabled', { enabled:false });
       await waitFor(async () => {
         const r = await socket.send('Runtime.evaluate', {
           expression: "document.querySelectorAll('[aria-label=\\\"مصحف الحصة المنشور للقراءة فقط\\\"] svg[data-ink-mode=\\\"pen\\\"] path').length > 0",
           returnByValue: true,
         });
         return r.result?.value === true;
-      }, 'real notebook pen stroke');
+      }, 'real notebook touch pen stroke');
       const cleanup = await socket.send('Runtime.evaluate', {
         expression: "(async()=>{const pause=()=>new Promise(r=>setTimeout(r,120));const group=document.querySelector('[aria-label=\\\"طبقات مصحف الحصة\\\"]');const btn=s=>[...group.querySelectorAll('button')].find(b=>b.textContent.includes(s));const count=()=>document.querySelectorAll('[aria-label=\\\"مصحف الحصة المنشور للقراءة فقط\\\"] svg[data-ink-mode] path').length;const drawn=count()===1;btn('تراجع عن آخر خط')?.click();await pause();const undone=count()===0;return {drawn,undone};})()",
         awaitPromise: true, returnByValue: true,
