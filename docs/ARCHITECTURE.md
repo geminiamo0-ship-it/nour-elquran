@@ -12,7 +12,7 @@ Decision: 2026-10-29 Cairo, [#104](https://github.com/geminiamo0-ship-it/nour-el
 | R2 | Canonical public Quran assets separate from private snapshots/audio/exports |
 | Queues/Cron | Outbox-backed duplicate-safe jobs, stale-event rejection and provider reconciliation |
 | RealtimeKit | Cloudflare media target after #49/#50 verification; no default live recording |
-| Frontend Workers hosting | #40 verifies vinext compatibility before cutover; existing Next.js/native components preserved |
+| Frontend Workers hosting | Merged #105 configures static Next.js export + Workers Static Assets; existing native React components preserved. #40 verifies vinext before a future SSR/runtime transition |
 
 ## Source of truth
 Accounts and learners are distinct. Family owner may access authorized learner profiles intentionally; restricted child sessions need server-enforced scope. Canonical Quran is immutable and versioned. One learner Mushaf accumulates current approved lesson layers; notebook filters by lesson and current published revision. Personal notes stay private until deliberate selected sharing.

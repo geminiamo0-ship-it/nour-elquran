@@ -5,11 +5,13 @@ import type { Env } from '../src/bindings.ts';
 
 const request = (path: string, init?: RequestInit) => new Request('https://noor.invalid' + path, init);
 test('liveness identifies the scaffold without pretending authentication exists', async () => {
-  const response = await handleRequest(request('/health'), {});
+  for (const path of ['/health', '/healthz']) {
+  const response = await handleRequest(request(path), {});
   assert.equal(response.status, 200);
   assert.equal((await response.json()).phase, 'foundation');
   assert.equal(response.headers.get('Cache-Control'), 'no-store');
   assert.equal(response.headers.get('X-Content-Type-Options'), 'nosniff');
+  }
 });
 test('unconfigured database is not ready', async () => {
   const response = await handleRequest(request('/ready'), {});
@@ -41,11 +43,13 @@ test('forged identity and authorization headers never unlock protected routes or
   let reads = 0;
   const env = { DB: { prepare: () => { reads++; throw Error('must not read'); } } } as unknown as Env;
   for (const method of ['GET', 'POST', 'PATCH', 'DELETE']) {
-    const response = await handleRequest(request('/v1/learners/other/notebook', {
+    for (const path of ['/v1', '/v1/learners/other/notebook']) {
+    const response = await handleRequest(request(path, {
       method, headers: { 'x-user-id': 'other', authorization: 'Bearer forged', cookie: 'session=forged' },
     }), env);
     assert.equal(response.status, 503);
     assert.equal((await response.json()).code, 'AUTH_NOT_CONFIGURED');
+  }
   }
   assert.equal(reads, 0);
 });

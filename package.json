@@ -17,7 +17,9 @@
     "format": "prettier --write apps/web/src apps/web/*.ts scripts tests",
     "format:check": "prettier --check apps/web/src apps/web/*.ts scripts tests",
     "test:backend": "node --experimental-strip-types --test workers/api/tests/*.test.ts && python3 -m unittest discover -s workers/api/tests -p 'test_*.py' -v",
-    "build:api": "pnpm exec tsc -p workers/api/tsconfig.build.json"
+    "build:api": "pnpm exec tsc -p workers/api/tsconfig.build.json",
+    "backend:typecheck": "pnpm exec tsc -p workers/api/tsconfig.json",
+    "backend:test": "pnpm test:backend"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",

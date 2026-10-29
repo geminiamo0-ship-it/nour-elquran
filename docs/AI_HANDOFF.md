@@ -1,5 +1,7 @@
 # AI agent handoff contract
 
+Current integration baseline: main `df284bcf00e81b6199067d6d9386eb2e10a35997` (merged #105 static Next.js export/Workers assets fix). CF-01 preserves those files. Draft #107 overlaps the foundation and is consolidated in #108 with one migration lineage and the revised #103 plan.
+
 ## Latest handoff — CF-01 #104, 2026-10-29 Cairo
 - Read ADR 0004 and current PROJECT_STATUS. Owner approved Cloudflare-only infrastructure; older Supabase/Postgres/RLS/LiveKit instructions below are superseded. No parent dashboard or Quran/learning-policy change.
 - CF-01: local Worker foundation + strict D1 core migration + pure authorization helpers + 18 Node / 19 SQLite tests. /v1/* fails closed until auth exists; no data endpoint or real login supplied.

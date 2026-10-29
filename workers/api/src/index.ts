@@ -14,14 +14,14 @@ function reply(status: number, body: Record<string, unknown>, requestId: string)
 export async function handleRequest(request: Request, env: Env): Promise<Response> {
   const requestId = crypto.randomUUID();
   const path = new URL(request.url).pathname;
-  if (path === '/health' && request.method === 'GET') {
+  if ((path === '/health' || path === '/healthz') && request.method === 'GET') {
     return reply(200, { service: 'noor-api', phase: 'foundation', status: 'up' }, requestId);
   }
   // No JWT/header/demo identity fallback. Real authentication is the next #46 slice.
-  if (path.startsWith('/v1/')) {
+  if ((path === '/v1' || path.startsWith('/v1/'))) {
     return reply(503, { code: 'AUTH_NOT_CONFIGURED', retryable: false }, requestId);
   }
-  if (path !== '/ready' || request.method !== 'GET') {
+  if ((path !== '/ready' && path !== '/readyz') || request.method !== 'GET') {
     return reply(404, { code: 'NOT_FOUND', retryable: false }, requestId);
   }
   if (!env.DB) {

@@ -1,5 +1,7 @@
 # PROJECT_STATUS — verified handoff state
 
+Current integration baseline: main `df284bcf00e81b6199067d6d9386eb2e10a35997` (merged #105 static Next.js export/Workers assets fix). CF-01 preserves those files. Draft #107 overlaps the foundation and is consolidated in #108 with one migration lineage and the revised #103 plan.
+
 ## Current checkpoint — Cloudflare adoption, 2026-10-29 Cairo (#104)
 Owner approved Cloudflare-only infrastructure. [ADR 0004](docs/adr/0004-cloudflare-only-platform.md) supersedes Supabase Auth/PostgreSQL/RLS and the previous LiveKit provider choice. RealtimeKit and Workers/vinext are targets requiring their own verified integration; no frontend or media cutover occurred here.
 

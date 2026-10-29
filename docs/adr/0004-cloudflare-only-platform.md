@@ -22,7 +22,7 @@ The frontend exists with explicit mock state; there is no Supabase production da
 | Interactive lesson | SQLite-backed Lesson DO, durable operations/replay/outbox; do not create a DO for every table |
 | Quran and private assets | Separate public canonical Quran and private R2 buckets |
 | Background work | Durable outbox, Queues and Cron; duplicate-safe consumers |
-| Frontend hosting | Current React/Next.js retained; Workers/vinext compatibility #40 before any cutover |
+| Frontend hosting | Current Next.js static export + Workers Static Assets configured in merged #105; #40 vinext verification applies before any SSR/runtime switch |
 | Live audio/video | Cloudflare RealtimeKit target; #49/#50 must verify browser/mobile/reconnect and revocation before production |
 | Recovery | D1 Time Travel plus private exports beyond retention; independent R2/DO recovery and reconciliation |
 
@@ -41,6 +41,8 @@ D1 batch is atomic on SQL failure. An UPDATE that affects zero rows is not autom
 - New environments/resources must be Noor-specific and isolated. No secrets copied or unrelated existing resources changed.
 
 ## Verification and rollback
+PR #107 was inspected as overlapping draft foundation work; this continuation consolidates its closed API intent, identity/FK test coverage and probe aliases with the complete notebook plan. Keep one active migration lineage, not both competing 0001 schemas.
+
 CF-01 adds a local-only Worker scaffold, D1 migration and authorization/SQLite tests. Protected endpoints remain unavailable until real authentication; this is not completion of #46.
 Run root lint/typecheck/test/build/smoke and exact-head GitHub Verify. Local SQLite tests prove constraints in SQLite, not Cloudflare runtime, account permissions, PITR or A/V. Add actual D1/Worker staging tests and restore rehearsal before data is accepted.
 No production deployment/restore is included. Application rollback reverts code or disables the affected feature; migrations use expand/contract and no destructive rollback.

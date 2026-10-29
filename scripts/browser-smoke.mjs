@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const web = path.join(root, 'apps/web');
-assert(fs.existsSync(path.join(web, '.next/BUILD_ID')), 'Production build required before browser smoke');
+assert(fs.existsSync(path.join(web, 'out/index.html')), 'Static production build required before browser smoke');
 
 const port = 32000 + Math.floor(Math.random() * 8000);
 const url = 'http://127.0.0.1:' + port + '/';
@@ -61,14 +61,14 @@ async function connect(targetUrl) {
 }
 
 try {
-  const server = launch('node', [path.join(web, 'node_modules/next/dist/bin/next'), 'start', '-p', String(port)], {
+  const server = launch('node', [path.join(root, 'scripts/serve-static.mjs'), String(port)], {
     cwd: web,
     env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
   });
   await waitFor(async () => {
-    if (server.exitCode !== null) throw new Error('Next exited: ' + server.exitCode);
+    if (server.exitCode !== null) throw new Error('Static export server exited: ' + server.exitCode);
     return (await fetch(url, { signal: AbortSignal.timeout(1000) })).ok;
-  }, 'Next production server');
+  }, 'Static export production server');
 
   const debugPort = 40000 + Math.floor(Math.random() * 10000);
   const browser = launch(process.env.CHROME_BIN || 'google-chrome', [
