@@ -568,11 +568,11 @@ try {
     if (width === 390) {
       // Real Chrome touch drag, not an element.click() or fabricated React handler.
       const box = await socket.send('Runtime.evaluate', {
-        expression: "(()=>{const svg=document.querySelector('[aria-label=\\\"مصحف الحصة المنشور للقراءة فقط\\\"] svg[data-ink-mode=\\\"pen\\\"]');svg?.scrollIntoView({block:'center'});const r=svg?.getBoundingClientRect();return r?{x:r.left+r.width*.4,y:r.top+r.height*.4,w:r.width,h:r.height}:null;})()",
+        expression: "(()=>{const svg=document.querySelector('[aria-label=\\\"مصحف الحصة المنشور للقراءة فقط\\\"] svg[data-ink-mode=\\\"pen\\\"]');svg?.scrollIntoView({block:'center'});const r=svg?.getBoundingClientRect();if(!r)return null;const x=r.left+r.width*.4,y=r.top+r.height*.4,hit=document.elementFromPoint(x,y);return {x,y,w:r.width,h:r.height,top:r.top,bottom:r.bottom,viewport:innerHeight,hit:hit?.tagName,inSvg:svg.contains(hit)};})()",
         returnByValue: true,
       });
       const rect = box.result?.value;
-      assert(rect && rect.w > 100 && rect.h > 100, 'Notebook pen SVG must have visible geometry');
+      assert(rect && rect.w > 100 && rect.h > 100 && rect.inSvg, 'Notebook pen SVG must receive actual touch: ' + JSON.stringify(rect));
       const x = rect.x, y = rect.y;
       await socket.send('Emulation.setTouchEmulationEnabled', { enabled:true, maxTouchPoints:1 });
       await socket.send('Input.dispatchTouchEvent', { type:'touchStart', touchPoints:[{ id:1, x, y }] });
