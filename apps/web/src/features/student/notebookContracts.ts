@@ -25,7 +25,7 @@ export type PublishedNotebookRevision = Readonly<{
 function validAnchor(value: unknown): value is NotebookAnchor {
   if (!isQuranReference(value)) return false;
   const anchor = value as NotebookAnchor;
-  return Number.isInteger(anchor.page) && anchor.page >= 1 && anchor.page <= QURAN_PAGE_COUNT;
+  return anchor.ayah <= 286 && Number.isInteger(anchor.page) && anchor.page >= 1 && anchor.page <= QURAN_PAGE_COUNT;
 }
 function compareVerse(a: NotebookAnchor, b: NotebookAnchor): number {
   return a.surah === b.surah ? a.ayah - b.ayah : a.surah - b.surah;
@@ -51,14 +51,15 @@ export function scopeContainsAnnotation(scope: NotebookQuranScope, annotation: Q
 export function latestPublishedNotebook(
   revisions: readonly PublishedNotebookRevision[], learnerId: string, lessonId: string,
 ): PublishedNotebookRevision | null {
-  return revisions.filter((revision) =>
+  const selected = revisions.filter((revision) =>
     revision.learnerId === learnerId && revision.lessonId === lessonId &&
     !!revision.id && Number.isSafeInteger(revision.revision) && revision.revision > 0 &&
     Number.isFinite(Date.parse(revision.publishedAt)) &&
     revision.report.learnerId === learnerId && revision.report.lessonId === lessonId &&
     validatePublishedReport(revision.report) &&
     (revision.scope === null || structurallyValidNotebookScope(revision.scope))
-  ).sort((a, b) => b.revision - a.revision || b.publishedAt.localeCompare(a.publishedAt))[0] ?? null;
+  ).sort((a, b) => b.revision - a.revision || b.publishedAt.localeCompare(a.publishedAt))[0];
+  return selected ? { ...selected, approvedAnnotations: publishedLessonAnnotations(selected) } : null;
 }
 
 /** Read-only approved layer; private/other-lesson marks never enter it. */
