@@ -27,11 +27,11 @@ export function ClassroomControls({model}:{model:ClassroomPreviewModel}){
     <div className={css.toolGroup} role="group" aria-label="التنقل بين صفحات المصحف">
       <button type="button" aria-label="الصفحة السابقة" title="الصفحة السابقة"
         disabled={role!=='teacher'||room.phase!=='live'||room.currentPage<=1}
-        onClick={()=>setPage(room.currentPage-1)}>‹</button>
+        onClick={()=>setPage(room.currentPage-1)}><span aria-hidden="true">‹</span></button>
       <span aria-live="polite">{room.currentPage} / 604</span>
       <button type="button" aria-label="الصفحة التالية" title="الصفحة التالية"
         disabled={role!=='teacher'||room.phase!=='live'||room.currentPage>=604}
-        onClick={()=>setPage(room.currentPage+1)}>›</button>
+        onClick={()=>setPage(room.currentPage+1)}><span aria-hidden="true">›</span></button>
     </div>
   </div>;
 }
