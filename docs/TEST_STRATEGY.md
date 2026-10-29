@@ -1,3 +1,7 @@
+## Classroom #134 — narrow-desktop palette regression (draft PR #135)
+- Chrome viewport matrix includes **1101x900** (must retain a non-absolute horizontal toolbar) and **1200x900** (must dock a palette completely outside the printed Quran rectangle), plus the existing six waiting/live/focus cases. Check five reachable ink colors, no outer scroll, teacher-only actions and canonical page ratio.
+- This guards the side-rail CSS breakpoint at the narrower three-column teacher workspace; CI and screenshot review at the exact PR head are required before calling it verified.
+
 ## Classroom #134 compact session viewport (Chrome code-head `b24005ab`)
 - [Verify 40912922621](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40912922621) passed repository-policy, governance-tests, code-quality and cloudflare-local-d1 on `b24005ab30e44ab010290cafd328cbd7b76b0c12`.
 - Native Chrome exercises mock teacher-only Start/End, Escape-close focus return for preview menu, live/fullscreen layout, all five reachable colors, portrait student camera-first, canonical Quran aspect and no document overflow at 360×667, 390×844, 844×390, 768×1024, 1280×900 and 1440×900. It waits for actual Quran render before screenshots; [artifact 12914517738](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40912922621/artifacts/12914517738) visually inspected.
