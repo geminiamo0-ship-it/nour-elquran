@@ -78,7 +78,7 @@ const penCreated=await call(mushafPath,{method:'POST',cookie:cookieA,body:pen});
 assert.equal(penCreated.response.status,201,JSON.stringify(penCreated.data));
 assert.equal(penCreated.data.item.version,1);
 assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:pen})).data.code,'OPERATION_ALREADY_APPLIED');
-assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:{...pen,action:'hide'}})).response.status,409);
+assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,body:{...pen,action:'hide',payload:{},expectedVersion:1}})).response.status,409);
 const noCAS=await call(mushafPath,{method:'POST',cookie:cookieA,body:{...pen,operationId:randomUUID()}});
 assert.equal(noCAS.response.status,409);
 const marker=mushafOp('marker-1','marker','put',0,{
