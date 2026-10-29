@@ -17,7 +17,8 @@ export function Panel({title,extra,children,compact=false}:{title:string;extra?:
   </section>;
 }
 export function Pill({tone='neutral',children}:{tone?:'neutral'|'good'|'warning'|'danger'|'blue';children:ReactNode}){
-  return <span className={`${styles.pill} ${styles['pill'+tone[0]!.toUpperCase()+tone.slice(1)]}`}>{children}</span>;
+  const tones={neutral:styles.pillNeutral,good:styles.pillGood,warning:styles.pillWarning,danger:styles.pillDanger,blue:styles.pillBlue};
+  return <span className={`${styles.pill} ${tones[tone]}`}>{children}</span>;
 }
 export function Empty({title,description,action}:{title:string;description:string;action?:ReactNode}){
   return <div className={styles.empty}><span aria-hidden="true">۞</span><strong>{title}</strong><p>{description}</p>{action}</div>;
