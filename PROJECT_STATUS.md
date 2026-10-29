@@ -1,3 +1,8 @@
+## #102 multi-page Chrome publisher fixture — draft PR #116, 2026-10-29
+- Added a second **synthetic-only** completed lesson for `demo-active`, with an independent report and Fatiha 1:6 (page 1) → Baqarah 2:2 (page 2) publication; teacher marks on each page are deliberately distinct. Connected/new learners receive neither fixture. The existing Ikhlas example is preserved.
+- `scripts/browser-smoke.mjs` now selects this lesson at 390/768/1440px, checks real publisher sidecar verse overlay boundaries, navigates page 1 → 2 → 1, verifies marks cannot leak across pages, checks horizontal overflow and captures page-2 screenshots. This extends the earlier synthetic two-page unit gate; it is **not** physical S Pen or a full-source audit.
+- Changed mock-adapter, notebookContracts tests and browser smoke on PR #116. CI for this continuation must be inspected on the final exact SHA before calling it verified. No remote deploy, data migration, private data or production change. #102 stays OPEN; human review, physical stylus QA and authorized backend/report/archive/share remain.
+
 # PROJECT_STATUS — verified handoff state
 
 ## #102 notebook sidecar consistency — unmerged continuation (2026-10-29)
