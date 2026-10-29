@@ -127,7 +127,7 @@ export function LessonQuranViewer({ revision }: { revision: PublishedNotebookRev
     </p>}
     {ready && <div className={css.page}>
       <ReaderPrintedPage page={page} inkMode={inkMode} color="#AD8028" strokes={strokes}
-        selectedKey={selectedKey} noteKeys={noteKeys} allowedKeys={state.keys}
+        selectedKey={selectedKey} noteKeys={noteKeys} allowedKeys={state.keys ?? undefined}
         onSelect={select} onOpenNote={select} onInkChange={updatePrivateInk} />
     </div>}
     {ready && <div className={css.marks}>
