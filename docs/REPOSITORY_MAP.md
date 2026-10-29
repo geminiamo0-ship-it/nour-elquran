@@ -242,3 +242,15 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `workers/api/src/lesson-calendar.ts`: explicit D1 teacher/learner calendar SQL with active teacher qualification, assignment/consent grant checks, and account+learner scoped reads. No private content.
 - `workers/api/src/auth/routes.ts`: new authenticated `GET /v1/teacher/lessons` before ownerAccount (avoids synthetic owner account creation for teacher), and `GET /v1/me/learners/:id/lessons` after verified profile ownership.
 - `workers/api/tests/test_lesson_calendar_queries.py`: actual SQLite execution of queries extracted from TS, with cross-account, revoked grant, substitute consent and archive exclusions. No media token or teacher Start/End routes in this slice.
+
+
+## Teacher portal — teacher-first full React preview (#45, #120)
+
+- `apps/web/src/app/teacher/{layout,page}.tsx` and `[section]/page.tsx`: thin Next static-export routes, generated sections for Sheikh workspace.
+- `apps/web/src/features/teacher/index.ts`: only public import surface. `TeacherShell.tsx` + `TeacherPortal.module.css`: RTL ivory/green/gold desktop/mobile navigation, preview disclosure, notifications and scenario picker.
+- `domain.ts` / `fixtures.ts` / `TeacherContext.tsx`: typed classroom-timetable, report, task, case DTOs; synthetic-only preview scenarios; explicit no-send local mutation state and validation. Not an authenticated teacher backend.
+- `TeacherHome.tsx`, `TeacherStudents.tsx`, `TeacherSchedule.tsx`, `TeacherPreparation.tsx`: real modular overview, roster with independent academic plan and substitute brief, 40-minute teacher schedule, pre-lesson preparation.
+- `TeacherReports.tsx`, `TeacherAssignments.tsx`, `TeacherNotifications.tsx`, `TeacherCases.tsx`, `TeacherUI.tsx`, `TeacherSection.tsx`: independently scored editable report/preview/approve **mock**, per-student Quran-range task creation and recitation review **mock**, notifications and attendance/exception previews.
+- `apps/web/src/features/teacher/teacher.test.tsx`: SSR/policy/role/grade/assignment/state tests. `scripts/browser-smoke.mjs`: Arabic RTL teacher route, 360/390/1440px screenshot and empty teacher scenario smoke.
+- `docs/TEACHER_PORTAL_BACKEND_CONTRACT.md`: explicit per-route Worker/D1/DO contract, UI scenario-to-backend acceptance matrix, privacy and role checks, future implementation order.
+- **NOT IMPLEMENTED:** production teacher provisioning, server mutations, LiveKit room, authorized class Start/End HTTP, database report publication, private audio playback, WhatsApp or classroom UI.
