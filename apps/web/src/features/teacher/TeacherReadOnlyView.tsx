@@ -4,6 +4,7 @@ import {useEffect,useState} from 'react';
 import {createTeacherReadClient,TeacherReadError,type TeacherCalendarRow,
   type TeacherRosterRow} from './teacher-read-api';
 import {TeacherConnectedStudents} from './TeacherConnectedStudents';
+import {TeacherConnectedAssignments} from './TeacherConnectedAssignments';
 import css from './TeacherReadOnly.module.css';
 
 /** Build-time opt-in. Default preview route and production are unchanged. */
@@ -68,6 +69,7 @@ export function TeacherReadOnlyView({pathname}:{pathname:string}) {
       <small>{kindLabel[item.kind]} · {statusLabel[item.status]}</small></div>
     <time>{formatTime(item.startsAtMs)} – {formatTime(item.endsAtMs)}</time>
   </div>);
+  if(pathname.replace(/\\/+$/,'')==='/teacher/assignments')return <TeacherConnectedAssignments learners={learners}/>;
   if(pathname==='/teacher/students')return <TeacherConnectedStudents learners={learners} lessons={lessons}/>;
   if(pathname==='/teacher/schedule')return <section className={css.card}>
     <div className={css.heading}><h1>جدولي الفعلي</h1><span>آخر {lessons.length} حصة</span></div>
