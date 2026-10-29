@@ -1,3 +1,9 @@
+## #162 non-Classroom teacher academic plan vertical slice (draft)
+- Issue [#162](https://github.com/geminiamo0-ship-it/nour-elquran/issues/162); branch `feat/162-academic-plan-cas`. 0009 D1 plan projection plus immutable event/audit, verified primary qualified teacher plan GET/write and owner-only plan GET, strict DTO validation and learner-scoped connected teacher/student UI.
+- Teacher notes here are teacher-authored next wird/revision/focus; **no AI Quran text or automatic homework**. Other academic features remain unconnected.
+- **Do not merge/deploy before exact-head GitHub Verify; no authorized remote role provisioning or staging migration has occurred.** This slice needs separate synthetic Cloudflare Dev acceptance and approval of real teacher access; never bootstrap staff grants via a public endpoint.
+- Last known Phase 01A: [Santoreno remote staging 40958341460](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40958341460) passed owner profile/archive D1+Chrome; Phase 01B guardian/OTP/recovery and mobile polish #160 are separate gates. Full master #155 remains open.
+
 ## Non-Classroom #155 — Phase 01A profile lifecycle remote PASS; next Sheikh #159
 - Noor PR #158 squash main `68b218cf99ff436acf34292d39692a8011862c6a`; main push [Verify 40958071853](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40958071853) PASS. Existing Dev D1 migrated 0008; no data reset.
 - Santoreno PR #243 (merge `a0b28bc4af7e95de983c37ff696174ffb9a9797a`) [staging 40958341460](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40958341460) PASS remote synthetic account+Chrome: 5 screenshot widths, owner A/B, siblings, rename after refresh, CAS conflict, archival 404, immutable audit and Quran history preserved. Screenshot artifact ID `12934533154`.
