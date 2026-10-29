@@ -1,5 +1,14 @@
 # Verification and test strategy
 
+## CF-01 backend gates (#104)
+- Root lint covers workers/api; typecheck checks Worker/tests with strict TS; build emits API code; root test runs Node request/policy and Python SQLite migration/ownership/transaction/export-restore cases.
+- Fake identity headers never reach learner data. Cover account/learner scope, private notes, staff limits, accepted substitute lesson, immediate brief expiry and fixed first-publication correction window.
+- SQLite tests prove schema behavior locally. Native D1 batch/races, Workers auth/cookies, DO restart/replay, PITR and RealtimeKit/hosting require separate staging evidence; do not infer them from CI.
+- Whole-platform recovery: [runbook](CLOUDFLARE_BACKUP_AND_RESTORE.md); restore must reconcile D1/R2/DO and external provider effects.
+
+## Historical verification notes
+
+
 ## Foundation (present now)
 - Every PR and main push run Verify repository-policy and governance-tests.
 - Verify required read-first/handoff/policy/template files exist.
@@ -17,8 +26,8 @@
 - Frontend: Playwright mobile 360/390px & desktop, RTL reading order, keyboard navigation, low-network classroom placeholder, stateful mock flow. Screenshot baseline reviewed by humans.
 - Auth/profile: cross-account and sibling isolation, role matrix, guardian delegation and PIN/re-auth protection for payment/account changes.
 - Scheduling: simultaneous overlapping booking attempts, timezone/DST, cancellations/idempotency.
-- DO/Queues: duplicate events, restarts, outages, monotonic versions, Postgres reconciliation.
-- LiveKit: actual browser mobile/audio/video/network recovery; concurrency and bandwidth measurements; microphone permission denial.
+- DO/Queues: duplicate events, restarts, outages, monotonic versions, D1 reconciliation.
+- RealtimeKit: actual browser mobile/audio/video/network recovery; concurrency and bandwidth measurements; microphone permission denial.
 - AI: report-to-JSON schema, Qur'an ayah range and riwayah checks, no inventing verses, teacher acceptance, adversarial data and child safety.
 - Operations: dependency scanning, secrets, rollback plan, observability, live staging acceptance.
 
@@ -34,3 +43,4 @@ No app runtime, browser tests, DO stress tests or LiveKit load tests have been e
 ## CORE-01 / #57 route module boundary regression (unmerged)
 - `tests/architecture.test.mjs` exercises route-to-feature **public index only** imports. Negative fixtures include alias, relative path and dynamic `import()` deep-import bypasses; a positive fixture uses the feature's public index.
 - The AST architecture scanner runs in `pnpm lint`, and these tests run in `pnpm test` on the #39 branch. **Verified** on `51fbde724dac1f9a424f210d953986d47e2f983e` / [Verify 40698369854](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40698369854) (all three jobs success, including architecture tests, production build and Chrome smoke). Recheck later documentation commits separately.
+

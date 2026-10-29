@@ -1,5 +1,8 @@
 # Noor Al-Quran — Student Portal A–Z implementation roadmap
 
+**تحديث المالك 29 أكتوبر 2026 — #104:** اعتماد Cloudflare بالكامل وفق [ADR 0004](adr/0004-cloudflare-only-platform.md). D1 وWorkers مع تفويض خادمي بدل Supabase/PostgreSQL/RLS، وRealtimeKit هدف الحصص بدل LiveKit بعد الاختبار. مرحلة الباك إند بدأت بنواة محلية؛ التسجيل والحفظ والتزامن الحقيقي غير موصولين بعد. قرارات فصل المصحف/تدريباتي/الدفتر وخصوصية الطالب تبقى كما هي. إشارات المزود وتأجيل بدء الباك إند أدناه تاريخية ولا تتغلب على هذا التحديث.
+
+
 **Owner direction:** Finish the student portal before starting teacher or administration frontend.
 **Product authority:** [Approved requirements #3](https://github.com/geminiamo0-ship-it/nour-elquran/issues/3), [student implementation #44](https://github.com/geminiamo0-ship-it/nour-elquran/issues/44), [signup #43](https://github.com/geminiamo0-ship-it/nour-elquran/issues/43), [classroom #7](https://github.com/geminiamo0-ship-it/nour-elquran/issues/7).
 **Baseline:** merged PRs #69 and #70; main `cee86d70`. These are mock React components, not real auth/payment/lesson/recording services.
@@ -53,3 +56,4 @@
 - S01–S03 may use typed mock-only UI where no database exists. S04/S08 canonical Quran/audio require source evidence before genuine media claims. S09 consent/privacy and S12 payments must not simulate successful upload or purchase as real. Production-only flows are explicitly backend-gated.
 - After each PR record: issue, exact head, tests, merge SHA, what is real/mocked, UI screenshot review, remaining blocker and next slice.
 - Next strict task once S01 is merged: S02 attendance counts, register and 7-day appeals. Teacher is authoritative for presence; admin can review and correct, not the student.
+

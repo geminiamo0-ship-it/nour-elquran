@@ -8,14 +8,16 @@
   },
   "scripts": {
     "dev": "pnpm --filter @noor/web dev",
-    "lint": "eslint apps/web/src scripts tests && node scripts/check-architecture.mjs",
-    "typecheck": "pnpm --filter @noor/web typecheck",
-    "test": "node --test tests/*.test.mjs && pnpm --filter @noor/web test",
-    "build": "pnpm --filter @noor/web build",
+    "lint": "eslint apps/web/src scripts tests workers/api/src workers/api/tests && node scripts/check-architecture.mjs",
+    "typecheck": "pnpm --filter @noor/web typecheck && pnpm exec tsc -p workers/api/tsconfig.json",
+    "test": "node --test tests/*.test.mjs && pnpm --filter @noor/web test && pnpm test:backend",
+    "build": "pnpm --filter @noor/web build && pnpm build:api",
     "smoke": "node scripts/smoke.mjs",
     "browser:smoke": "node scripts/browser-smoke.mjs",
     "format": "prettier --write apps/web/src apps/web/*.ts scripts tests",
-    "format:check": "prettier --check apps/web/src apps/web/*.ts scripts tests"
+    "format:check": "prettier --check apps/web/src apps/web/*.ts scripts tests",
+    "test:backend": "node --experimental-strip-types --test workers/api/tests/*.test.ts && python3 -m unittest discover -s workers/api/tests -p 'test_*.py' -v",
+    "build:api": "pnpm exec tsc -p workers/api/tsconfig.build.json"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",

@@ -1,5 +1,16 @@
 # AI agent handoff contract
 
+## Latest handoff — CF-01 #104, 2026-10-29 Cairo
+- Read ADR 0004 and current PROJECT_STATUS. Owner approved Cloudflare-only infrastructure; older Supabase/Postgres/RLS/LiveKit instructions below are superseded. No parent dashboard or Quran/learning-policy change.
+- CF-01: local Worker foundation + strict D1 core migration + pure authorization helpers + 18 Node / 19 SQLite tests. /v1/* fails closed until auth exists; no data endpoint or real login supplied.
+- Native D1/DO/Worker behavior and remote resources are NOT verified. No production SQL, real learner data, secret copying, backup job, deployment or media/provider messages.
+- Next: #46 maintained Workers-hosted auth + D1 session persistence + real staging bindings and native authorization tests, then notebook API integration/#102 and report publishing. First-report deadline/child write-sharing policy remain unresolved at their relevant stage.
+- Use CLOUDFLARE_BACKUP_AND_RESTORE.md: 30d Paid/7d Free Time Travel, longer private exports, R2/DO scope and reconciliation; no destructive restore authorized by architecture adoption.
+- Record exact-head Verify and PR/merge evidence in #104. Preserve old checkpoint evidence only as history; Vercel previews remain disabled.
+
+## Previous handoffs (historical)
+
+
 
 ## Latest handoff — 2026-10-29 Cairo, #101 planning
 - Baseline: main `906a993d0ea350591692045fa878da34995d7c1c`, merged Training PR #100. Notebook is still a local selector/summary/note form.
@@ -130,3 +141,4 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - Issue #99, branch `feat/99-student-training-workspace`. `TrainingWorkspace.tsx` new three-tab accessible nav: Homework, Self practice, Next lesson readiness. `TrainingQuranSession.tsx` shares printed Madinah viewer with only verified assignment surah/ayah scope, uses source text to hide/reveal and includes reciter for selected ayah; `TrainingVoicePractice.tsx` optional local microphone recording with no upload. `quranAssignment.ts` typed structured references, validated and tests.
 - Home dashboard `WirdPanel` remains summary. Notebook remains its own archive UI. Preserve text `لا توجد تكليفات معتمدة` for new learner and no fake deadlines. Mock tasks clearly identified as demo; no production submission. Auth/RLS and sync deferred.
 - Verify lint, TS, Vitest, Next production build, Chrome 390px + 1440px via GitHub CI before merge. No Vercel Preview Deployments due daily limit.
+

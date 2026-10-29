@@ -1,5 +1,17 @@
 # Repository map and file ownership
 
+## Cloudflare foundation (#104)
+- workers/api/src/index.ts + bindings.ts: Workers request boundary; liveness, DB schema probe, all learner routes unavailable until auth integration.
+- workers/api/src/authorization.ts: trusted server-input read/report policy; no HTTP login or client role parsing.
+- workers/api/migrations/0001_core.sql: strict SQLite/D1 core relations, canonical metadata anchors and private-layer ownership constraints.
+- workers/api/tests/: Node request/policy and Python SQLite migration, FK, transaction and SQL export/restore tests.
+- workers/api/{package.json,tsconfig.json,tsconfig.build.json,wrangler.jsonc,README.md}: local module/types/build; local-only zero-ID D1 sample, no remote binding/deployment claim.
+- docs/adr/0004-cloudflare-only-platform.md: owner-approved direction superseding old providers; docs/CLOUDFLARE_BACKUP_AND_RESTORE.md: recovery scopes, unconfigured export policy and rehearsal gates.
+- Root scripts lint/typecheck/test/build now include API checks; .artifacts and .wrangler are local ignored state. Existing UI code/HTML/Quran assets are unchanged.
+
+## Earlier map entries
+
+
 ## Current planning entry — 2026-10-29 (#101)
 - `docs/LESSON_NOTEBOOK_AND_BACKEND_READINESS_PLAN.md`: consolidated Arabic notebook/backend-readiness plan; inspected baseline, shared reader UX, account/learner scope, proposed schema/API/versioning, atomic publication, media/privacy, classroom recovery, issue sequence and future test matrix.
 - Current main includes the native Next.js app and student reader/training described in later entries. Foundation/branch-only descriptions below are historical; read PROJECT_STATUS current checkpoint first.
@@ -164,3 +176,4 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `components/TrainingVoicePractice.tsx`: explicit browser-only mic opt-in and private blob playback, no backend storage.
 - `quranAssignment.ts` + tests: structured surah/from/to/page and demo references; reject scope string guessing, nearest booked lesson.
 - `components/QuranAyahOverlay.tsx` and `components/ReaderPrintedPage.tsx`: optional allowed/focus verse keys for task-specific view; default full Mushaf behaviour unchanged.
+

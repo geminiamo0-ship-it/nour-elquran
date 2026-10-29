@@ -1,38 +1,31 @@
-# Architecture — proposed, not yet implemented
+# Architecture — Cloudflare-only owner-approved target
 
-## Intended components
-Browser (mobile-first Arabic UI) → Next.js on Cloudflare → API Worker → validated Auth + authorization → domain use cases.
+Decision: 2026-10-29 Cairo, [#104](https://github.com/geminiamo0-ship-it/nour-elquran/issues/104), [ADR 0004](adr/0004-cloudflare-only-platform.md). Supersedes prior Supabase/Postgres/RLS and LiveKit provider topology; shared Quran product behavior remains unchanged.
 
-Use-case dependent:
-- StudentDO (keyed by student_profile_id): per learner active training / progress state.
-- LessonDO (keyed by lesson_id): teacher report and lesson lifecycle state.
-- TeacherScheduleDO (keyed by teacher_id): scheduling coordination; Postgres transaction remains final shared conflict guard.
-- Cloudflare Queues / transactional DO outbox: asynchronous synchronization; consumer idempotency.
-- Supabase Auth: account identity; PostgreSQL: shared profiles, schedule, subscriptions and reports.
-- **LiveKit Cloud** (owner-approved provider): managed real-time audio/video independent of Workers/DO; token generation/authorization remains server-side.
-- AI planning service through approved model adapter: produces structured exercises from teacher reports; not real-time Quran/audio authority.
-- Trusted Quran text/authorized recitation API; browser MediaRecorder optional with consent.
+| Boundary | Authority |
+|---|---|
+| Browser / Next.js | Presentation only; no database/admin credentials; no trusted client role or learner ID |
+| Workers API | Real session verification, account/learner/resource/time authorization, validated use cases |
+| Auth library on Workers | Account sessions backed by D1; #46 integration still pending |
+| D1 | Authoritative relational identity, lessons, publication pointers, assignments, permissions and credit ledger |
+| Lesson DO SQLite | Authorized hot lesson state, durable sequence/ACK/replay and outbox; no unrelated DO per CRUD table |
+| R2 | Canonical public Quran assets separate from private snapshots/audio/exports |
+| Queues/Cron | Outbox-backed duplicate-safe jobs, stale-event rejection and provider reconciliation |
+| RealtimeKit | Cloudflare media target after #49/#50 verification; no default live recording |
+| Frontend Workers hosting | #40 verifies vinext compatibility before cutover; existing Next.js/native components preserved |
 
-## Key separation
-Auth user_id can own multiple student_profile_id. Student data must never be keyed only by auth user_id.
-No dedicated Parent Dashboard: account owner switches among learner profiles; adult single-profile path remains simple.
+## Source of truth
+Accounts and learners are distinct. Family owner may access authorized learner profiles intentionally; restricted child sessions need server-enforced scope. Canonical Quran is immutable and versioned. One learner Mushaf accumulates current approved lesson layers; notebook filters by lesson and current published revision. Personal notes stay private until deliberate selected sharing.
 
-## Reads and writes
-- No blanket "every request goes through DO" rule until per-domain performance/consistency needs are measured.
-- Student-local active writes through StudentDO, shared reads through Postgres as appropriate.
-- Financial and double-booking correctness uses Postgres authoritative transactions.
-- Queue dispatch is at-least-once, not exactly-once; outbox and downstream dedup needed.
-- LiveKit tokens are server-signed with lesson/user permissions; never expose API secrets.
-- AI plan is advisory until verified and teacher-approved.
+D1 batch transactions must enforce write invariants through actual SQL failures/conditional guards and affected-row checks. Zero-row UPDATE is not a rollback. No PostgreSQL RLS/GRANT/SELECT FOR UPDATE assumptions. Database bindings are server-only; no raw SQL endpoint. Constraints supplement, not replace, application authorization.
 
-## Pending ADRs / verification
-Frontend deployment adapter selection, ownership and permission matrix, outbox sync boundaries, session recording, audio licensing, payment provider and AI model/provider remain to be decided with owner before product implementation.
+No distributed transaction across D1, DO and R2. Seal/verify snapshot before publication; atomically commit publication pointer/approved layers/outbox in D1. R2 artifacts and notifications are recoverable derivatives. Stateful lesson operations remain durable in DO and reconcile by event/version, not blind copies.
 
-## Approved classroom and annotation boundaries (spec #7)
-- Audio/video transport: **LiveKit Cloud**. No Hetzner VPS is the default. No LiveKit project provisioned yet.
-- Shared mushaf and tools: teacher + learner can both draw, handwrite, highlight and place typed notes on verified Quran page coordinates. Separate author identities and appropriate permissions, with synchronization not dependent on screen-sharing/video frames.
-- Annotation client: React/Konva-style drawing layer is a proposed implementation pending a technical spike. Authoritative Quran text is read-only. Store layout version and/or word/ayah semantic anchors, normalized coordinates, multi-page state, deterministic operation IDs/timestamps and author identity. Exact schemas are pending.
-- Persistence proposal: local interactive updates -> authorized lesson state service/DO, durable recovery and optional event journal -> final structured annotated snapshot + rendered image/PDF in R2 -> student-specific lesson archive indexed in PostgreSQL, with idempotent events where applicable. Distinguish per-stroke temporary delivery from durable state; do not forward every pointer movement to SQL.
-- Classroom aftercare: teacher reports, tagged mistakes and note export usable by later AI plan generator but cannot author Quran verses.
-- Recording policy: **saving marked Quran page(s) ≠ storing audio/video recordings**. No audiovisual recording until explicitly authorized and consent/retention/privacy controls are decided.
-- Pending performance/security tests: 2-person live session, simultaneous drawing, touch/stylus and Arabic notes, zoom/reflow fidelity, reconnect/replay, privacy/authorization and export correctness.
+## Implemented in CF-01 vs future
+CF-01 includes local-only Workers health/fail-closed API boundary, pure read/report permission helpers, strict D1 migration and tests. No functioning auth/registration, native D1/DO runtime proof, remote resources, live lesson, persistent student frontend, payment or WhatsApp is claimed. See [worker README](../workers/api/README.md).
+
+Next exact backend task: #46 maintained auth integration, actual isolated staging bindings, D1 native SQL/authorization tests and session revocation. Existing notebook #102 continues the approved frontend work. #49/#50 and #40 must supply actual media/hosting evidence.
+
+## Recovery / cost
+Use [backup runbook](CLOUDFLARE_BACKUP_AND_RESTORE.md): D1 Time Travel + longer private exports, R2 object recovery and DO replay/reconciliation. Restore is whole-DB and needs operational controls; no restore has run here.
+Workers Paid starts at $5 per account with included usage, not a cap on all services. D1 maximum 10GB/database differs from included storage. Observe actual consumption and acceptance capacity before launch.

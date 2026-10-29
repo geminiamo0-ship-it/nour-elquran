@@ -1,5 +1,12 @@
 # نور القرآن — Product plan and decision register
 
+## Owner-approved platform replacement — 2026-10-29
+[ADR 0004](docs/adr/0004-cloudflare-only-platform.md), #104: Cloudflare Workers + D1 + app authorization + Lesson DO + R2 + Queues/Cron; maintained auth library hosted on Workers. Frontend Workers/vinext (#40) and RealtimeKit media (#49/#50) are adoption targets with verification gates. Supabase/Postgres/RLS and earlier LiveKit provider choice below are **superseded historical decisions**; approved educational UX, report/consent/financial policies remain unchanged.
+CF-01 starts backend foundation; #46 remains open for real auth and deployment verification. Read [revised plan](docs/LESSON_NOTEBOOK_AND_BACKEND_READINESS_PLAN.md), current status and backup runbook. No remote services are claimed operational.
+
+## Historical product register
+
+
 ## Current planning continuation — 2026-10-29 Cairo
 Original foundation discussion below is historical. The owner requested a complete notebook/backend-readiness plan in [#101](https://github.com/geminiamo0-ship-it/nour-elquran/issues/101). Read [the consolidated Arabic plan](docs/LESSON_NOTEBOOK_AND_BACKEND_READINESS_PLAN.md) and current [status](PROJECT_STATUS.md) for scope, schema/API, authorization, publication, privacy, dependencies and measurable acceptance.
 
@@ -70,3 +77,4 @@ Do not auto-create a backlog and start shipping these milestones until owner app
 - No default video/voice recording: saving marked mushaf pages/notes is **not** recording the live audiovisual session.
 
 **Scope:** recording approved product decisions only; **frontend route designs, acceptance sequence and first implementation issue still require owner discussion in #3**.
+
