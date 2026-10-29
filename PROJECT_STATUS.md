@@ -1,3 +1,9 @@
+## PRIVATE QURAN #149 — fail-closed current-page hydration (draft PR; 2026-10-29)
+
+- Connected Quran writing is now permitted only after **both** owner-scoped index and the **same learner + current page** have hydrated; stale previous-page or previous-learner results cannot unlock ink on a new page. A failed save locks further connected edits until Retry. Demo-only local drawing remains unchanged.
+- Added a pure readiness guard with Vitest regressions for page/learner mismatch, failed save and demo mode; reader's ink overlay and callback use the page-specific guard, and the connected note empty-state no longer says "this session".
+- Source branch only: exact-head GitHub Verify, connected synthetic Chrome/D1 QA, real canonical metadata and independent privacy review remain separate gates. **No production deploy, real student data, or cloud migration.** Next: inspect exact PR head CI; stage only in isolated password-protected Quran QA and exercise page-turn-during-load, failed-write retry, reload and second-account denial before enabling real learners.
+
 ## PRIVATE QURAN #144 — hidden annotation reload correction (2026-10-29; PR #146)
 
 - Found and corrected a real persistence regression: after hiding a stable-ID bookmark/note/highlight, the old visible-only GET omitted its version; reopening the reader then attempted a new version-0 PUT and D1 correctly rejected it. GET now returns hidden stable-ID tombstone/version metadata to the authenticated owner; UI filters hidden content from rendering, preserving correct versioned restoration. Erased freehand strokes remain excluded from page hydration to avoid wasting the 300-record page cap.
