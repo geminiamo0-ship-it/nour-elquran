@@ -38,7 +38,7 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
   <p>لا يوجد طلاب مسندون حاليًا. لا يمكن إصدار واجب من حساب غير مخول.</p></section>;
  const catalog=state.status==='loaded'?state.catalog:[];
  const unique=Array.from(new Set(catalog.map(x=>x.editionId)));
- const [editionId,setEditionId]=[unique[0]??'',()=>undefined] as const;
+ const editionId=unique[0]??'';
  const editionSurahs=catalog.filter(x=>x.editionId===editionId);
  const current=editionSurahs.find(x=>x.surah===surah)??editionSurahs[0];
  async function publish(e:FormEvent<HTMLFormElement>){
