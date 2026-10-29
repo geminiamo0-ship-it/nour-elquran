@@ -1,5 +1,10 @@
 # Verification and test strategy
 
+## #46 native Cloudflare-local verification gate (unmerged)
+- Dedicated Verify job `cloudflare-local-d1` uses pinned Wrangler 4.45.0, isolated temporary persistence, applies the D1 migration twice, starts the Worker locally with the same D1 binding, and asserts /health 200, /ready 503 with `database: ready`, forged /v1 503, and unknown route 404.
+- Fail-closed is intentional until real auth exists. This tests native **local** Worker/D1 rather than only Node/Python emulation; it does not establish remote D1, production configuration, cookie/session validation, billing or PITR. Verify exact head and do not count a queued/failed job as a pass.
+
+
 ## CF-01 backend gates (#104)
 - Root lint covers workers/api; typecheck checks Worker/tests with strict TS; build emits API code; root test runs Node request/policy and Python SQLite migration/ownership/transaction/export-restore cases.
 - Fake identity headers never reach learner data. Cover account/learner scope, private notes, staff limits, accepted substitute lesson, immediate brief expiry and fixed first-publication correction window.
