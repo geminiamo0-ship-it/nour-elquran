@@ -1,7 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { ACCOUNT_UI_ENABLED, AccountGate, SessionControls, useAccount } from '@/features/account';
+import type { LearnerProfile } from './domain';
 import { StudentProvider, useStudent } from './StudentContext';
 import styles from './StudentPortal.module.css';
 
@@ -30,7 +32,7 @@ function Frame({ children }: { children: ReactNode }) {
   ));
   const inMushaf = pathname === '/student/mushaf';
   return <div className={inMushaf ? `${styles.root} ${styles.mushafScreen}` : styles.root} id="student-top">
-    <div className={styles.demoBanner} role="note">معاينة تفاعلية للواجهة فقط — لا توجد حسابات أو حصص أو اشتراكات حقيقية</div>
+    <div className={styles.demoBanner} role="note">{selected.profile.demo ? 'معاينة تفاعلية للواجهة فقط — لا توجد حسابات أو حصص أو اشتراكات حقيقية' : 'حسابك متصل — الحصص والتقارير والاشتراكات لم تتوفر بعد'}</div>
     <header className={styles.topBar}>
       <div className={styles.topContent}>
         <Link href="/" className={styles.wordmark} aria-label="نور القرآن، العودة للرئيسية">
@@ -38,6 +40,7 @@ function Frame({ children }: { children: ReactNode }) {
           <span><strong>نور القرآن</strong><small>لِلحِفْظِ وَالْإِتْقَان</small></span>
         </Link>
         <div className={styles.topTools}>
+          {!selected.profile.demo && <SessionControls />}
           <div className={styles.profileGroup}>
             <label htmlFor="learner-switch">ملف الطالب</label>
             <select id="learner-switch" aria-label="اختر ملف الطالب" value={selectedId}
@@ -77,5 +80,15 @@ function Frame({ children }: { children: ReactNode }) {
   </div>;
 }
 export function StudentShell({ children }: { children: ReactNode }) {
-  return <StudentProvider><Frame>{children}</Frame></StudentProvider>;
+  return ACCOUNT_UI_ENABLED ? <ConnectedStudentShell>{children}</ConnectedStudentShell>
+    : <StudentProvider><Frame>{children}</Frame></StudentProvider>;
+}
+
+
+function ConnectedStudentShell({ children }: { children: ReactNode }) {
+  const { state } = useAccount();
+  const profiles = useMemo<readonly LearnerProfile[]>(() => state.status === 'authenticated'
+    ? state.learners.map(row => ({ id: row.id, name: row.name, stage: 'new', demo: false })) : [], [state]);
+  if (state.status !== 'authenticated' || profiles.length === 0) return <AccountGate />;
+  return <StudentProvider key={state.session.user.id} liveLearners={profiles}><Frame>{children}</Frame></StudentProvider>;
 }

@@ -105,3 +105,14 @@ jobs:
         run: bash scripts/cloudflare-local-smoke.sh
       - name: Native local Better Auth session and learner ownership smoke
         run: bash scripts/cloudflare-auth-smoke.sh
+      - name: Build opt-in account UI for isolated browser acceptance
+        run: NEXT_PUBLIC_ACCOUNT_UI=true pnpm --filter @noor/web build
+      - name: Native same-origin Chrome account and learner journey
+        run: bash scripts/cloudflare-auth-browser.sh
+      - name: Upload synthetic account browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: noor-auth-browser-screenshots
+          path: artifacts/auth-browser/*.png
+          if-no-files-found: warn

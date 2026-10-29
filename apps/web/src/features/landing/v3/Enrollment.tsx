@@ -1,8 +1,14 @@
 'use client';
 import { useRef, useState, type FormEvent } from 'react';
 import { useLandingDemo } from './LandingDemoProvider';
+import { ACCOUNT_UI_ENABLED, AccountForm } from '@/features/account';
 
 export function Enrollment() {
+  if (ACCOUNT_UI_ENABLED) return <section className="enroll simplified-enroll" id="enroll"><div className="container"><AccountForm /></div></section>;
+  return <DemoEnrollment />;
+}
+
+function DemoEnrollment() {
   const { openDashboard } = useLandingDemo();
   const [isChild, setIsChild] = useState(true);
   const [siblings, setSiblings] = useState<number[]>([]);
@@ -28,9 +34,10 @@ export function Enrollment() {
           <div className="field" style={{"marginTop":"15px"}}><label>لمن تريد إنشاء ملف طالب؟</label><div className="audience-selector"><label><input type="radio" name="learnerType" value="child" defaultChecked onChange={() => setIsChild(true)} /> لطفلي / لأحد أفراد الأسرة</label><label><input type="radio" name="learnerType" value="self" onChange={() => setIsChild(false)} /> لنفسي</label></div></div>
           <div className="fields"><div className="field"><label id="learnerNameLabel" htmlFor="learnerName">{isChild ? "اسم الطفل الأول" : "اسم الطالب"}</label><input id="learnerName" name="learnerName" required maxLength={50} placeholder="اسم الطالب" /></div><div className="field"><label htmlFor="learnerLevel">المستوى التقريبي</label><select id="learnerLevel" required defaultValue=""><option value="" disabled>اختر المستوى</option><option>يبدأ من الصفر</option><option>يقرأ ويحتاج تصحيحًا</option><option>يحفظ بعض السور</option><option>يريد المراجعة والتثبيت</option></select></div></div>
           <div id="siblingsArea" hidden={!isChild}><div className="sibling-list" id="siblingList">{siblings.map((id) => <div className="sibling-field" key={id}><input name="siblings" aria-label="اسم الطفل الإضافي" placeholder="اسم الطفل الآخر" maxLength={50} /><button type="button" onClick={() => setSiblings((list) => list.filter((value) => value !== id))}>حذف</button></div>)}</div><button type="button" className="add-sibling" id="addSiblingBtn" onClick={() => { const id = nextSibling.current++; setSiblings((list) => [...list, id]); }}>+ إضافة طفل آخر لنفس الحساب</button></div>
-          <button type="submit" className="btn btn-gold" style={{"marginTop":"20px","width":"100%"}}>إنشاء حساب تجريبي وفتح لوحة الطالب ↖</button><p className="form-note">لا توجد كلمة مرور أو رمز تحقق في هذا الـMock. الربط الآمن مع Supabase Auth يأتي في مرحلة الـBackend.</p>
+          <button type="submit" className="btn btn-gold" style={{"marginTop":"20px","width":"100%"}}>إنشاء حساب تجريبي وفتح لوحة الطالب ↖</button><p className="form-note">لا توجد كلمة مرور أو رمز تحقق في هذا الـMock. ربط الحسابات الآمنة قيد التطوير.</p>
         </form>
       </div>
     
   </section>);
 }
+

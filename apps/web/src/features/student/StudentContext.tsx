@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { getMockLearnerSnapshot, DEMO_PROFILES, readSessionDemoProfiles } from './mock-adapter';
-import { MAX_SIBLINGS, sanitizeStudyNote, type LearnerProfile, type LearnerSnapshot, type LocalStudyNote } from './domain';
+import { MAX_SIBLINGS, sanitizeStudyNote, scopedSnapshot, type LearnerProfile, type LearnerSnapshot, type LocalStudyNote } from './domain';
 
 type StudentContextValue = {
   learners: readonly LearnerProfile[]; selectedId: string;
@@ -19,24 +19,27 @@ type StudentContextValue = {
 };
 const Context = createContext<StudentContextValue | null>(null);
 
-export function StudentProvider({ children }: { children: ReactNode }) {
-  const [learners, setLearners] = useState<readonly LearnerProfile[]>(DEMO_PROFILES);
+export function StudentProvider({ children, liveLearners }: { children: ReactNode; liveLearners?: readonly LearnerProfile[] }) {
+  const [demoLearners, setLearners] = useState<readonly LearnerProfile[]>(DEMO_PROFILES);
   const [selectedId, setSelectedId] = useState('demo-new');
   const [completed, setCompleted] = useState<Record<string, string[]>>({});
   const [notesByLearner, setNotesByLearner] = useState<Record<string, LocalStudyNote[]>>({});
   const [draftsByLearner, setDraftsByLearner] = useState<Record<string, Record<string, string>>>({});
   const [preparedByLearner, setPreparedByLearner] = useState<Record<string, string[]>>({});
   const [ayatByLearner, setAyatByLearner] = useState<Record<string, number[]>>({});
+  const learners = liveLearners ?? demoLearners;
   useEffect(() => {
+    if (liveLearners !== undefined) return;
     // Only a name list is accepted from the browser-only landing mock; no phone/email/media.
     const sessionProfiles = readSessionDemoProfiles(window.sessionStorage);
     if (sessionProfiles.length) {
       setLearners([...sessionProfiles, ...DEMO_PROFILES]);
       setSelectedId(sessionProfiles[0]?.id ?? 'demo-new');
     }
-  }, []);
-  const profile = learners.find((item) => item.id === selectedId) ?? learners[0] ?? DEMO_PROFILES[0]!;
-  const selected = useMemo(() => getMockLearnerSnapshot(profile), [profile]);
+  }, [liveLearners]);
+  const profile = learners.find((item) => item.id === selectedId) ?? learners[0];
+  if (!profile) throw new Error('A verified learner is required before mounting the learning workspace');
+  const selected = useMemo(() => profile.demo ? getMockLearnerSnapshot(profile) : scopedSnapshot(profile, [], [], []), [profile]);
   const finished = completed[profile.id] ?? [];
   function selectLearner(id: string) {
     if (learners.some((item) => item.id === id)) setSelectedId(id);
@@ -96,6 +99,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     } catch { /* Memory-only fallback when storage is restricted. */ }
   }
   function createDemoLearner(raw: string): string | null {
+    if (liveLearners !== undefined) return null;
     const name = raw.trim();
     const current = learners.filter((item) => item.id.startsWith('session-learner-'));
     if (!name || name.length > 50 || current.length >= MAX_SIBLINGS ||
@@ -108,6 +112,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     return id;
   }
   function removeDemoLearner(id: string): boolean {
+    if (liveLearners !== undefined) return false;
     if (!learners.some((item) => item.id === id && id.startsWith('session-learner-'))) return false;
     const updated = learners.filter((item) => item.id !== id);
     setLearners(updated);
@@ -131,3 +136,4 @@ export function useStudent(): StudentContextValue {
   if (!context) throw new Error('StudentProvider is required');
   return context;
 }
+

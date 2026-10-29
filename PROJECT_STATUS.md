@@ -1,5 +1,12 @@
 # PROJECT_STATUS — verified handoff state
 
+## AUTH-02 #112 — same-origin account UI (branch; pending CI)
+- Baseline main #111 `14e73efde6e406dff34603ef053b2f17e789984c` passed all four jobs in [postmerge Verify 40803047786](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40803047786). #110 closed; #43/#46 remain open.
+- `feat/112-account-ui` adds a typed/runtime-validated same-origin client, opt-in signup/login/logout/session and owner-profile UI. Connected learner data never uses demo fixtures; raw session tokens/passwords/contact are never persisted by application browser storage. Interrupted registration can recover the existing account/profile.
+- Public `NEXT_PUBLIC_ACCOUNT_UI=true` is a build-time UI switch only, OFF by default; server AUTH_ENABLED/D1/secret/origin remain independent requirements. Root Worker composes API paths with static assets so cookies stay same-origin and existing branded asset/404 behavior is retained. No remote D1 binding or authentication secret is checked in.
+- New native local Chrome gate builds opt-in UI and uses isolated Worker+D1. Covers response loss after profile insertion, reload/session restore, siblings, HttpOnly cookie, logout replay, cross-account separation, wrong password and expiry; 360/390/1440 screenshots. CI outcome is pending, not inferred from existing backend tests.
+- No remote provisioning/deploy, verified phone/recovery, booking/paid/teacher/child login or real-user rollout. Next: pass exact-head CI and review/merge; #46 retains verification/recovery, role policies, staging and operational acceptance.
+
 ## AUTH-01 #110 / PR #111 — 2026-10-29, native implementation verified before final handoff
 - Main includes #109, merge `a8ea58cdc76c25ad89ff02bb1e280bd3b90559e4`; its postmerge [Verify 40800758113](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40800758113) passed. #46 remains open.
 - AUTH-01 implements pinned Better Auth 1.7.14 + Drizzle 0.45.2 on Workers/D1: phone/password registration/login, signed HttpOnly session, D1 revalidation/logout revocation, and owner-scoped learner create/list/read using the existing owner-read SQL boundary. Default OFF until explicitly configured. Phone ownership remains unverified; no OTP/recovery/messages enabled. See [ADR 0005](docs/adr/0005-d1-phone-password-auth.md).
