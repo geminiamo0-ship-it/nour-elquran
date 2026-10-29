@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {useEffect,useState} from 'react';
 import {createTeacherReadClient,TeacherReadError,type TeacherCalendarRow,
   type TeacherRosterRow} from './teacher-read-api';
+import {TeacherAcademicPlanEditor} from './TeacherAcademicPlanEditor';
 import css from './TeacherReadOnly.module.css';
 
 /** Build-time opt-in. Default preview route and production are unchanged. */
@@ -22,6 +23,7 @@ const statusLabel={scheduled:'قادمة',live:'جارية',completed:'منته�
 export function TeacherReadOnlyView({pathname}:{pathname:string}) {
   const [state,setState]=useState<Reading>({status:'loading'});
   const [refreshKey,setRefreshKey]=useState(0);
+  const [selectedLearnerId,setSelectedLearnerId]=useState<string|null>(null);
   useEffect(()=>{
     let controller:AbortController|null=null;
     let alive=true;
@@ -71,8 +73,14 @@ export function TeacherReadOnlyView({pathname}:{pathname:string}) {
     <div className={css.heading}><h1>طلابي المسندون إليّ</h1><span>{learners.length} طالب</span></div>
     <p>الطلاب المرتبطون بتعيين أساسي نشط حاليًا فقط. حساب الشيخ البديل لا يحصل على قائمة دائمة.</p>
     {learners.length?<div className={css.list}>{learners.map(item=><div key={item.id} className={css.row}>
-      <strong>{item.name}</strong><small>{item.learnerType==='child'?'ملف طفل':'ملف متعلم بالغ'} · ملف أكاديمي تفصيلي لم يُربط بعد</small>
+      <div><strong>{item.name}</strong><small>{item.learnerType==='child'?'ملف طفل':'ملف متعلم بالغ'}</small></div>
+      <div className={css.actions}><button type="button" aria-pressed={selectedLearnerId===item.id}
+        onClick={()=>setSelectedLearnerId(item.id)}>{selectedLearnerId===item.id?'عرض الخطة الحالية':'فتح الخطة التعليمية'}</button></div>
     </div>)}</div>:<p className={css.empty}>لا يوجد طلاب مسندون حاليًا لهذا الشيخ.</p>}
+    {selectedLearnerId&&learners.some(item=>item.id===selectedLearnerId)&&
+      <TeacherAcademicPlanEditor key={selectedLearnerId} learnerId={selectedLearnerId}
+        learnerName={learners.find(item=>item.id===selectedLearnerId)!.name}/>}
+    <p>التقارير والتسميعات والواجبات ما زالت بانتظار الربط؛ حفظ الخطة وحده لا ينشر واجبًا.</p>
   </section>;
   if(pathname==='/teacher/schedule')return <section className={css.card}>
     <div className={css.heading}><h1>جدولي الفعلي</h1><span>آخر {lessons.length} حصة</span></div>
