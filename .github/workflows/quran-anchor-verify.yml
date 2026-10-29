@@ -1,0 +1,57 @@
+name: Quran anchors — pinned source verification (no D1 writes)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/noor_quran_anchor_import.py
+      - tests/quran/test_noor_quran_anchor_import.py
+      - .github/workflows/quran-anchor-verify.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/noor_quran_anchor_import.py
+      - tests/quran/test_noor_quran_anchor_import.py
+      - .github/workflows/quran-anchor-verify.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: quran-anchors-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  audit-canonical-edition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test synthetic source corruption fail-closed
+        run: python3 -m unittest discover -s tests/quran -p 'test_*.py' -v
+      - name: Independently reconcile 604 public Quran SVG pages and pinned Hafs word index
+        run: python3 scripts/noor_quran_anchor_import.py --output-dir "$RUNNER_TEMP/quran-anchors"
+      - name: Validate all 6236 prepared SQL entries and word totals in disposable SQLite
+        run: |
+          python3 - "$RUNNER_TEMP/quran-anchors" <<'PY'
+          import json,sqlite3,sys
+          from pathlib import Path
+          root=Path(sys.argv[1])
+          data=json.loads((root/'verified-quran-anchors-evidence.json').read_text())
+          assert data['page_count']==604 and data['ayah_count']==6236 and data['word_total']==77432
+          sql=(root/'verified-quran-anchors.sql').read_text()
+          assert sql.count('INSERT INTO quran_ayah_anchors')==6236
+          db=sqlite3.connect(':memory:')
+          db.executescript('CREATE TABLE quran_editions(id TEXT PRIMARY KEY,riwayah TEXT,page_count INTEGER,manifest_sha256 TEXT); CREATE TABLE quran_ayah_anchors(edition_id TEXT,surah INTEGER,ayah INTEGER,page INTEGER,word_count INTEGER,PRIMARY KEY(edition_id,surah,ayah));')
+          db.executescript(sql)
+          assert db.execute('SELECT count(*),sum(word_count),min(page),max(page),count(distinct page),count(distinct surah) FROM quran_ayah_anchors').fetchone()==(6236,77432,1,604,604,114)
+          print('Generated canonical D1 records are structurally valid and independently reconciled.')
+          PY
+      - name: Save REVIEW-ONLY SQL and source SHA evidence (never deploy)
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-hafs-anchors-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}\u002fquran-anchors/verified-quran-anchors.sql
+            ${{ runner.temp }}\u002fquran-anchors/verified-quran-anchors-evidence.json
+          retention-days: 14
