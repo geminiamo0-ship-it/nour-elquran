@@ -19,6 +19,31 @@ BEGIN
   SELECT RAISE(ABORT, 'lesson booking must reserve 40 minutes');
 END;
 
+-- Booking must not assign an unqualified or disabled teacher. Existing historical
+-- records are left unchanged; status transitions to live/completed are governed
+-- by the later authenticated classroom lifecycle, not this booking constraint.
+CREATE TRIGGER lessons_qualified_teacher_insert
+BEFORE INSERT ON lessons
+WHEN NEW.status = 'scheduled'
+BEGIN
+  SELECT RAISE(ABORT, 'booking requires an active qualified teacher')
+  WHERE NOT EXISTS (
+    SELECT 1 FROM teachers t
+    WHERE t.id = NEW.actual_teacher_id AND t.status = 'active' AND t.qualified = 1
+  );
+END;
+
+CREATE TRIGGER lessons_qualified_teacher_update
+BEFORE UPDATE OF actual_teacher_id, status ON lessons
+WHEN NEW.status = 'scheduled'
+BEGIN
+  SELECT RAISE(ABORT, 'booking requires an active qualified teacher')
+  WHERE NOT EXISTS (
+    SELECT 1 FROM teachers t
+    WHERE t.id = NEW.actual_teacher_id AND t.status = 'active' AND t.qualified = 1
+  );
+END;
+
 -- A canceled appointment releases both teacher and learner calendar capacity.
 -- Completed bookings still occupy their original historical interval.
 CREATE TRIGGER lessons_teacher_conflict_insert
