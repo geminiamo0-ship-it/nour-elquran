@@ -18,3 +18,7 @@ Accounts and learners are different identities. Same-account profile switching i
 Teacher access and report state must be loaded server-side. The substitute correction deadline is fixed from the first publication, not reset by amendments; no first-report grace period is invented when its policy is unspecified. Consent deadline is supplied only by the server's approved scheduling policy.
 
 See [architecture](../../docs/ARCHITECTURE.md), [ADR](../../docs/adr/0004-cloudflare-only-platform.md), [backup runbook](../../docs/CLOUDFLARE_BACKUP_AND_RESTORE.md).
+
+## Native local integration smoke (#46)
+Run `bash scripts/cloudflare-local-smoke.sh` from the repository root (Node 22, npm/npx and network access to install pinned Wrangler 4.45.0 required). The script uses a disposable local D1 state and never invokes `--remote` or `deploy`. GitHub Verify runs it in the `cloudflare-local-d1` job. This verifies migration replay and actual local Worker/D1 binding while authentication remains fail-closed; it is **not** staging or production validation.
+

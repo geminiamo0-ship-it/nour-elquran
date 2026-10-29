@@ -86,3 +86,15 @@ jobs:
           name: noor-bootstrap-browser-screenshots
           path: artifacts/browser-smoke/*.png
           if-no-files-found: warn
+
+  cloudflare-local-d1:
+    name: cloudflare-local-d1
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Native local D1 migration and Worker fail-closed smoke
+        run: bash scripts/cloudflare-local-smoke.sh
