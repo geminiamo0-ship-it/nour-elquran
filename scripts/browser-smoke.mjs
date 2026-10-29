@@ -516,6 +516,45 @@ try {
     'S03 trial booking preview smoke failed: '+JSON.stringify(bookingChecks??bookingResult));
   console.log('S03 trial booking preview (free, no-send), weekly section and sibling isolation passed');
 
+
+  // S11: lesson-only Quran projection, publisher sidecar gate and sibling isolation.
+  for (const width of [390, 768, 1440]) {
+    await socket.send('Emulation.setDeviceMetricsOverride', {
+      width, height: 900, deviceScaleFactor: 1, mobile: false,
+    });
+    await socket.send('Page.navigate', { url: url + 'student/notebook' });
+    await waitFor(async () => {
+      const result = await socket.send('Runtime.evaluate', {
+        expression: "document.getElementById('learner-switch') && Object.keys(document.getElementById('learner-switch')).some(k=>k.includes('reactProps'))",
+        returnByValue: true,
+      });
+      return result.result?.value === true;
+    }, 'hydrated notebook at ' + width);
+    const switched = await socket.send('Runtime.evaluate', {
+      expression: "(() => { const sw=document.getElementById('learner-switch');sw.value='demo-active';sw.dispatchEvent(new Event('change',{bubbles:true}));return true; })()",
+      returnByValue: true,
+    });
+    assert(switched.result?.value, 'Notebook learner switch failed');
+    await waitFor(async () => {
+      const result = await socket.send('Runtime.evaluate', {
+        expression: "Boolean(document.querySelector('[aria-label=\\\"مصحف الحصة المنشور للقراءة فقط\\\"]') && document.querySelector('[data-rendered-quran-page=\\\"604\\\"]') && document.body.textContent.includes('مثال توضيحي لتصحيح الحصة'))",
+        returnByValue: true,
+      });
+      return result.result?.value === true;
+    }, 'publisher-verified notebook demo page at ' + width, 120);
+    const check = await socket.send('Runtime.evaluate', {
+      expression: "(async()=>{const pause=()=>new Promise(r=>setTimeout(r,130));const mark=[...document.querySelectorAll('button')].find(b=>b.textContent.includes('مثال توضيحي لتصحيح الحصة'));const readonly=!!mark&&!document.querySelector('[aria-label=\\\"مصحف الحصة المنشور للقراءة فقط\\\"] [data-ink-mode=\\\"pen\\\"]');mark?.click();await pause();const selected=document.body.textContent.includes('الآية المحددة: 112:2');const draft=document.getElementById('notebook-draft');const setter=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;setter.call(draft,'مسودة خاصة لا تُنقل');draft.dispatchEvent(new Event('input',{bubbles:true}));const sw=document.getElementById('learner-switch');sw.value='demo-new';sw.dispatchEvent(new Event('change',{bubbles:true}));await pause();const isolated=!document.querySelector('[aria-label=\\\"مصحف الحصة المنشور للقراءة فقط\\\"]')&&!document.body.textContent.includes('مثال توضيحي لتصحيح الحصة');sw.value='demo-active';sw.dispatchEvent(new Event('change',{bubbles:true}));await pause();const cleared=document.getElementById('notebook-draft')?.value==='';return {readonly,selected,isolated,cleared,overflow:document.documentElement.scrollWidth>innerWidth};})()",
+      awaitPromise: true, returnByValue: true,
+    });
+    const actual = check.result?.value;
+    assert(actual && actual.readonly && actual.selected && actual.isolated && actual.cleared && !actual.overflow,
+      'S11 notebook Quran viewer/sibling smoke failed: ' + JSON.stringify(actual ?? check));
+    const shot = await socket.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+    fs.writeFileSync(path.join(screenshots, 'student-notebook-' + width + '.png'), Buffer.from(shot.data, 'base64'));
+    console.log('S11 notebook shared Quran read-only and learner isolation passed: ' + width + 'px');
+  }
+
+
 } finally {
   socket?.close();
   for (const child of children.reverse()) child.kill('SIGTERM');
