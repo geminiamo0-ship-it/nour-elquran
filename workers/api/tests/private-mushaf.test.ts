@@ -40,21 +40,22 @@ test('event write binds verified actor/learner and returns D1-acknowledged versi
  assert.deepEqual(calls[1]?.args.slice(1,9),['owned-learner','verified-auth',valid.operationId,
   'put','ink-1','pen',PRIVATE_EDITION,12]);
 });
-test('page and index reads include hidden versions for safe reload and restore',async()=>{
+test('hidden stable-ID metadata survives reload without loading erased strokes',async()=>{
  const queries:string[]=[];
- const hidden={itemId:'bookmark-12',kind:'bookmark',page:12,visible:0,version:2,payloadJson:'{}'};
  const db={prepare:(sql:string)=>({bind:()=>({all:async()=>{
-  queries.push(sql);return {results:[hidden]};
+  queries.push(sql);
+  return {results:[sql.includes('page=?')
+   ?{itemId:'note-1-1-0',kind:'note',page:12,visible:0,version:2,payloadJson:'{}'}
+   :{itemId:'bookmark-12',kind:'bookmark',page:12,visible:0,version:2,payloadJson:'{}'}]};
  }})})} as unknown as CoreDatabase;
- for(const selected of [12,null]){
-  const result=await readPrivateMushaf(db,'owned',selected);
-  assert.equal(result.status,200);
-  assert.deepEqual(result.items?.[0],{
-   itemId:'bookmark-12',kind:'bookmark',page:12,visible:false,version:2,payload:{},
-  });
- }
- assert.equal(queries.length,2);
- assert.ok(queries.every(sql=>!sql.includes('visible=1')));
+ const page=await readPrivateMushaf(db,'owned',12);
+ const index=await readPrivateMushaf(db,'owned',null);
+ assert.equal(page.items?.[0]?.visible,false);
+ assert.equal(page.items?.[0]?.version,2);
+ assert.equal(index.items?.[0]?.visible,false);
+ assert.equal(index.items?.[0]?.version,2);
+ assert.ok(queries[0]?.includes("visible=1 OR kind IN ('note','highlight')"));
+ assert.ok(!queries[1]?.includes('visible=1'));
 });
 test('index read never takes supplied actor or unrelated learner ID',async()=>{
  const args:unknown[][]=[];
