@@ -41,7 +41,7 @@ function LearnerNotebookWorkspace() {
         </select>
         <NotebookReportCard lesson={lesson} report={report} />
         {publication && <p className={styles.infoNote}>معاينة توضيحية بعلامة شيخ افتراضية؛ ليست حصة محفوظة على الخادم.</p>}
-        <LessonQuranViewer key={lessonId} revision={publication} />
+        <LessonQuranViewer key={lessonId + ':' + (publication?.id ?? 'unpublished')} revision={publication} />
         <div className={styles.stack}>
           {personalLessonNotes(notes, selected.profile.id, lessonId).map((note) =>
             <article className={styles.personalNote} key={note.id}>
