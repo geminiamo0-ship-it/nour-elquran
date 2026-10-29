@@ -1,3 +1,7 @@
+## #160 learner header/account responsive follow-up (draft)
+- Remote account data lifecycle #157 passed on Dev, but screenshots revealed a clipped selector at mobile widths. Branch `fix/160-account-mobile-header-ux` groups profile actions and creates full-width mobile selector/anchored menu while retaining pending Quran save/role guards.
+- Next: exact PR head Verify and real screenshots on open `noor-site-staging` 360/390/768/1280/1440; evaluate keyboard and long Arabic names; do not call the UX polished without remote screenshot review. No API/migration included.
+
 ## #162 non-Classroom teacher academic plan vertical slice (draft)
 - Issue [#162](https://github.com/geminiamo0-ship-it/nour-elquran/issues/162); branch `feat/162-academic-plan-cas`. 0009 D1 plan projection plus immutable event/audit, verified primary qualified teacher plan GET/write and owner-only plan GET, strict DTO validation and learner-scoped connected teacher/student UI.
 - Teacher notes here are teacher-authored next wird/revision/focus; **no AI Quran text or automatic homework**. Other academic features remain unconnected.
