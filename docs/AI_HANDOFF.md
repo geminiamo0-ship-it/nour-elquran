@@ -1,5 +1,11 @@
 # AI agent handoff contract
 
+## Active #102 notebook F0 partial slice — verify before continuing
+- Branch `feat/102-notebook-contracts-reports`, linked to existing open Issue #102. New `notebookContracts.ts` validates edition-bound cross-surah structural scopes, revision/learner/lesson isolation and teacher-only published marks; tests use synthetic L1/L2 data. `NotebookReportCard.tsx` displays nullable grades/pending report without pretending an archive exists; learner-keyed workspace resets unsent drafts.
+- This is a **partial** F0 contract/UI change: no lesson Quran renderer, no real published annotation payloads, no share/export/upload or persistence. Structural anchor validation is not proof of publisher verse-to-page mapping. No remote services or data.
+- Next exact action: inspect draft PR exact-head four Verify jobs, repair failures, review; continue #102 with source-verified read-only lesson Quran projection and independent private layer, then browser tests. Do not close #102.
+
+
 ## STAGING #114 — current planned private remote gate
 - Branch `feat/114-private-staging` based on AUTH-02 #113. Adds `workers/site/src/staging-access.ts` plus worker entrypoint pre-route guard and `tests/staging-access.test.mjs` to protect **assets and API** on dedicated staging hostname; production has no change. See [runbook](NOOR_STAGING_RUNBOOK.md).
 - Runtime staging must set `assets.run_worker_first=true`, `NOOR_ENVIRONMENT=staging` and a strong server-only `STAGING_ACCESS_PASSWORD`; otherwise the Worker returns 503 on staging. Do not deploy with an unguarded public workers.dev website, nor import actual student data.
