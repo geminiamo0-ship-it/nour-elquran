@@ -554,7 +554,7 @@ try {
   await socket.send('Page.navigate',{url:url+'teacher'});
   await waitFor(async()=>{
     const res=await socket.send('Runtime.evaluate',{
-      expression:"document.querySelector('#teacher-scenario')?.options?.length>=7",
+      expression:"(() => { const el=document.querySelector('#teacher-scenario'); return !!el && el.options.length>=7 && Object.keys(el).some(key=>key.startsWith('__reactProps')); })()",
       returnByValue:true,
     });
     return res.result?.value===true;
