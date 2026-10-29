@@ -208,3 +208,10 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `quranAssignment.ts` + tests: structured surah/from/to/page and demo references; reject scope string guessing, nearest booked lesson.
 - `components/QuranAyahOverlay.tsx` and `components/ReaderPrintedPage.tsx`: optional allowed/focus verse keys for task-specific view; default full Mushaf behaviour unchanged.
 
+
+
+## Proposed classroom schedule foundation (PR #121, Issue #120)
+
+- `workers/api/migrations/0003_teacher_schedule.sql`: additive 40-minute lesson occupancy constraint; D1 triggers reject same-teacher or same-learner overlapping bookings even on cancellation/reactivation/rescheduling, and keep legacy bookings untouched.
+- `workers/api/tests/test_teacher_calendar.py`: SQLite regression coverage for adjacency, collisions, status changes, scheduling edits, legacy migration and `core` readiness metadata.
+- This slice does not introduce media, live pen sync, teacher or learner booking HTTP routes. Next implementation should use authoritative D1 with authenticated actors and layer on classroom LessonDO; see #7/#120.
