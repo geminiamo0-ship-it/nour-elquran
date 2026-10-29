@@ -4,6 +4,7 @@ import {useEffect,useState} from 'react';
 import {createTeacherReadClient,TeacherReadError,type TeacherCalendarRow,
   type TeacherRosterRow} from './teacher-read-api';
 import {TeacherConnectedStudents} from './TeacherConnectedStudents';
+import {teacherRoute} from './teacher-route';
 import css from './TeacherReadOnly.module.css';
 
 /** Build-time opt-in. Default preview route and production are unchanged. */
@@ -21,6 +22,7 @@ const kindLabel={trial:'تجريبية',standard:'أساسية',makeup:'تعوي
 const statusLabel={scheduled:'قادمة',live:'جارية',completed:'منتهية',cancelled:'ملغاة'};
 
 export function TeacherReadOnlyView({pathname}:{pathname:string}) {
+  const route=teacherRoute(pathname);
   const [state,setState]=useState<Reading>({status:'loading'});
   const [refreshKey,setRefreshKey]=useState(0);
   useEffect(()=>{
@@ -68,13 +70,13 @@ export function TeacherReadOnlyView({pathname}:{pathname:string}) {
       <small>{kindLabel[item.kind]} · {statusLabel[item.status]}</small></div>
     <time>{formatTime(item.startsAtMs)} – {formatTime(item.endsAtMs)}</time>
   </div>);
-  if(pathname==='/teacher/students')return <TeacherConnectedStudents learners={learners} lessons={lessons}/>;
-  if(pathname==='/teacher/schedule')return <section className={css.card}>
+  if(route==='/teacher/students')return <TeacherConnectedStudents learners={learners} lessons={lessons}/>;
+  if(route==='/teacher/schedule')return <section className={css.card}>
     <div className={css.heading}><h1>جدولي الفعلي</h1><span>آخر {lessons.length} حصة</span></div>
     <p>المواعيد المقروءة من D1. لا توجد أزرار بدء أو إنهاء قبل ربط الحضور والتحقق الخادمي.</p>
     {lessons.length?<div className={css.list}>{lessonCards}</div>:<p className={css.empty}>لا توجد حصص مصرح بها حاليًا.</p>}
   </section>;
-  if(pathname==='/teacher') {
+  if(route==='/teacher') {
     const upcoming=lessons.filter(l=>(l.status==='scheduled'||l.status==='live')&&l.endsAtMs>Date.now())
       .sort((a,b)=>a.startsAtMs-b.startsAtMs).slice(0,3);
     return <section className={css.card}>
