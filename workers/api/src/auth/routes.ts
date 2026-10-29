@@ -70,7 +70,7 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
     }
     return reply(201, { learner: { id, name: input.name.trim(), learnerType: input.learnerType } }, requestId);
   }
-  const lessonMatch = /^\\/v1\\/me\\/learners\\/([a-zA-Z0-9-]{1,128})\\/lessons$/.exec(path);
+  const lessonMatch = /^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons$/.exec(path);
   if (lessonMatch && request.method === 'GET') {
     const learnerId = lessonMatch[1]!;
     const owned = await getOwnedLearner(db, { authSubject }, learnerId);
