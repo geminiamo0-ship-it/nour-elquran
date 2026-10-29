@@ -1,3 +1,13 @@
+## B2 — staff-managed teacher identities and immutable D1 role ledger (#138)
+
+**New endpoint:** `POST /v1/staff/teacher-actions` (JSON: `{targetUserId,action,reason,operationId}`), where action is `provision|qualify|activate|suspend|revoke_qualification`. Requires server-verified Better Auth staff session, active owning account, verified phone, explicit unrevoked `staff_grants.roles.manage`; the request cannot grant this permission itself. Strict origin checking, bounded JSON, exact four-key allowlist, UUID operation ID and mandatory reason. Actor/time come only from server.
+
+- **Provision is disabled+unqualified**, never an active Sheikh. `qualify` requires explicit authorized staff decision; `activate` requires prior qualification. Target must already be a verified, active account (phone OTP delivery still unconfigured for real users). `suspend` immediately denies teacher access; `revoke_qualification` disables the teacher and clears qualification. Staff cannot modify own teacher role.
+- `0005_teacher_roles.sql` commits each operation as a single append-only `teacher_role_events` INSERT. D1 triggers re-evaluate staff grant/target eligibility and apply teacher row mutation **atomically**, or reject both. Audit stores actor/target/role/action/time/reason/operation ID, cannot be changed/deleted. Operation replay returns an idempotent response and cannot be reused for a different action.
+- Staff bootstrap `roles.manage` must ONLY be performed manually by trusted operators via restricted D1 tooling after independent identity checks. Never commit real IDs, OTP, passwords, API secrets, or create a public staff enrollment API. Do **not** manually set `phone_number_verified=1` for real users without evidence; native local CI uses only synthetic QA identities. This B2 PR **does not provision any real teacher**.
+- All endpoints use the same-origin Worker and session cookie; public synthetic teacher preview remains unchanged, read-only real mode remains OFF until staging QA. Neither teacher-to-learner assignments nor bookings are created by role provisioning; those require a separate auditable admin API.
+- Tests: Python SQLite applies full production migrations for D1 triggers and role replay/authorization; Node tests parse/resolve staff, plus `cloudflare-auth-smoke.mjs` native local Better Auth/D1 end-to-end with synthetic verified staff/teacher and session guard.
+
 ## Teacher read-only roster backend B1 (#136)
 
 - `GET /v1/teacher/learners` is authenticated with Better Auth session verified by D1 and requires an active qualified teacher `teachers.auth_subject`. An eligible teacher receives `{learners:[{id,name,learnerType}],requestId}` (max 50 primary-assigned active learners); no matches means `learners:[]`.

@@ -68,6 +68,75 @@ assert.equal((await call('/v1/me/learners',{cookie:cookieA})).data.learners.leng
 assert.equal((await call('/v1/me/learners',{method:'POST',cookie:cookieA,body:{name:'Ninth',learnerType:'child'}})).response.status,409);
 assert.equal((await call('/internal-auth/sign-up/email',{method:'POST',body:{email:'not-allowed@example.invalid',password}})).response.status,404);
 
+// B2: native D1/Worker authorizations, with deliberately synthetic identities.
+const teacherActor=a.data.user.id, teacherSubject=b.data.user.id;
+assert.match(teacherActor,/^[a-zA-Z0-9_-]+$/);
+assert.match(teacherSubject,/^[a-zA-Z0-9_-]+$/);
+const teacherCommand=(action,operationId=crypto.randomUUID())=>({
+  targetUserId:teacherSubject,action,reason:'Synthetic qualified staff decision',operationId,
+});
+const beforeGrant=await call('/v1/staff/teacher-actions',{
+  method:'POST',cookie:cookieA,body:teacherCommand('provision'),
+});
+assert.equal(beforeGrant.response.status,403,'No bootstrap roles via normal account session');
+const outsider=await call('/v1/staff/teacher-actions',{
+  method:'POST',cookie:cookieB,body:teacherCommand('provision'),
+});
+assert.equal(outsider.response.status,403);
+sql("UPDATE auth_users SET phone_number_verified=1 WHERE id IN ('"+teacherActor+"','"+teacherSubject+"')");
+sql("INSERT INTO staff_grants(auth_subject,permission) VALUES('"+teacherActor+"','roles.manage')");
+assert.equal((await call('/v1/teacher/learners',{cookie:cookieB})).response.status,403);
+const provisionBody=teacherCommand('provision');
+const provision=await call('/v1/staff/teacher-actions',{
+  method:'POST',cookie:cookieA,body:provisionBody,
+});
+assert.equal(provision.response.status,201,JSON.stringify(provision.data));
+assert.equal(provision.data.state,'disabled');
+assert.equal(provision.data.qualified,false);
+assert.equal((await call('/v1/teacher/learners',{cookie:cookieB})).response.status,403);
+const sameOp=await call('/v1/staff/teacher-actions',{method:'POST',cookie:cookieA,body:provisionBody});
+assert.equal(sameOp.response.status,200);
+assert.equal(sameOp.data.code,'OPERATION_ALREADY_APPLIED');
+const conflictOp=await call('/v1/staff/teacher-actions',{
+  method:'POST',cookie:cookieA,body:{...provisionBody,action:'activate'},
+});
+assert.equal(conflictOp.response.status,409);
+const noQualification=await call('/v1/staff/teacher-actions',{
+  method:'POST',cookie:cookieA,body:teacherCommand('activate'),
+});
+assert.equal(noQualification.response.status,409);
+const qualified=await call('/v1/staff/teacher-actions',{
+  method:'POST',cookie:cookieA,body:teacherCommand('qualify'),
+});
+assert.equal(qualified.response.status,200,JSON.stringify(qualified.data));
+assert.equal(qualified.data.state,'disabled');
+const activated=await call('/v1/staff/teacher-actions',{
+  method:'POST',cookie:cookieA,body:teacherCommand('activate'),
+});
+assert.equal(activated.response.status,200,JSON.stringify(activated.data));
+assert.equal(activated.data.state,'active');
+assert.deepEqual((await call('/v1/teacher/learners',{cookie:cookieB})).data.learners,[]);
+assert.deepEqual((await call('/v1/teacher/lessons',{cookie:cookieB})).data.lessons,[]);
+const unauthorizedMutation=await call('/v1/staff/teacher-actions',{
+  method:'POST',cookie:cookieB,body:teacherCommand('suspend'),
+});
+assert.equal(unauthorizedMutation.response.status,403);
+const badOrigin=await call('/v1/staff/teacher-actions',{
+  method:'POST',cookie:cookieA,origin:'https://attacker.invalid',body:teacherCommand('suspend'),
+});
+assert.equal(badOrigin.response.status,403);
+const suspension=await call('/v1/staff/teacher-actions',{
+  method:'POST',cookie:cookieA,body:teacherCommand('suspend'),
+});
+assert.equal(suspension.response.status,200,JSON.stringify(suspension.data));
+assert.equal((await call('/v1/teacher/learners',{cookie:cookieB})).response.status,403);
+sql("UPDATE staff_grants SET revoked_at_ms=1000 WHERE auth_subject='"+teacherActor+"'");
+const afterRevocation=await call('/v1/staff/teacher-actions',{
+  method:'POST',cookie:cookieA,body:teacherCommand('activate'),
+});
+assert.equal(afterRevocation.response.status,403);
+console.log('Native staff teacher role audit: unauthorized, verified, provision, qualify, activate, replay, suspend and revocation passed');
+
 const logout = await call('/api/auth/logout',{method:'POST',cookie:cookieA});
 assert.equal(logout.response.status,200);
 assert.equal((await call('/v1/me/learners',{cookie:cookieA})).response.status,401,'Revoked cookie must fail immediately');
