@@ -3,6 +3,7 @@ import {useEffect,useRef,useState,type FormEvent} from 'react';
 import {assignmentClient,assignmentMessage,type AssignmentDraft,type AssignmentSource,
  type PublishedAssignment} from '../shared';
 import type {TeacherRosterRow} from './teacher-read-api';
+import {TeacherAssignmentReview} from './TeacherAssignmentReview';
 import css from './TeacherReadOnly.module.css';
 const client=assignmentClient();
 const kinds={memorization:'حفظ',revision:'مراجعة',recitation:'تلاوة'} as const;
@@ -12,6 +13,7 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
  const [learnerId,setLearnerId]=useState(learners[0]?.id??'');
  const [state,setState]=useState<State>({status:'loading'});
  const [retry,setRetry]=useState(0);
+ const [openReview,setOpenReview]=useState<string|null>(null);
  const [kind,setKind]=useState<AssignmentDraft['kind']>('memorization');
  const [surah,setSurah]=useState(1),[from,setFrom]=useState(1),[to,setTo]=useState(1);
  const [due,setDue]=useState(''),[instructions,setInstructions]=useState('');
@@ -21,7 +23,7 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
  const selected=authorized?.id??learners[0]?.id??'';
  useEffect(()=>{
   let active=true;const abort=new AbortController();
-  setState({status:'loading'});setMessage('');setUncertain(false);
+  setState({status:'loading'});setMessage('');setUncertain(false);setOpenReview(null);
   if(!selected){setState({status:'loaded',catalog:[],assignments:[]});return()=>abort.abort();}
   void Promise.all([client.catalog(abort.signal),client.teacher(selected,abort.signal)])
    .then(([catalog,assignments])=>{
@@ -60,7 +62,7 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
  }
  return <section className={css.card} aria-label="الواجبات المنشورة للطلاب">
   <div className={css.heading}><h1>الواجبات والتسميعات</h1><span>تكليف رسمي لكل طالب</span></div>
-  <p>كل واجب ينشر لطالب واحد بعد التحقق من صلاحية الشيخ ونطاق القرآن. التسليم الصوتي والتصحيح لم يُربطا بعد.</p>
+  <p>كل واجب ينشر لطالب واحد بعد التحقق من صلاحية الشيخ ونطاق القرآن. يمكن مراجعة التسليمات المكتوبة واعتمادها أو طلب إعادتها؛ التسجيلات الصوتية لم تُربط بعد.</p>
   <label>اختر الطالب المسند
     <select value={selected} onChange={e=>setLearnerId(e.target.value)}>
       {learners.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}
@@ -98,6 +100,9 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
      <strong>{kinds[t.kind]} · سورة {t.surah} ({t.fromAyah}–{t.toAyah})</strong>
      <small>الموعد {new Date(t.dueAtMs).toLocaleDateString('ar-EG')} · منشور للخادم</small>
      <p>{t.instructions}</p>
+     <button type="button" onClick={()=>setOpenReview(openReview===t.id?null:t.id)}
+      aria-expanded={openReview===t.id}>{openReview===t.id?'إغلاق المراجعة':'فتح محاولات الطالب'}</button>
+     {openReview===t.id&&<TeacherAssignmentReview key={t.id} learnerId={selected} assignmentId={t.id}/>}
    </article>)}</div>:<p className={css.empty}>لا توجد واجبات منشورة لهذا الطالب.</p>}</>}
   {message&&state.status!=='error'&&<p role="status">{message}</p>}
   {uncertain&&<p>نتيجة النشر غير مؤكدة. حدّث السجل قبل أي محاولة جديدة لمنع تكرار التكليف.</p>}
