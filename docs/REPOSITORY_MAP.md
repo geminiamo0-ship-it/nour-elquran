@@ -1,3 +1,12 @@
+## #149 synthetic development Quran QA target
+
+- Evidence: [Dev Chrome/D1 QA 40949693883](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40949693883) SUCCESS with synthetic pen/reload/owner-denial; [Verify 40949707443](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40949707443) SUCCESS on `d807fb19`. Browser screenshots uploaded, visual review and failure/retry/multi-device tests outstanding.
+
+- `.github/workflows/quran-dev-qa.yml`: branch-scoped (or manual) synthetic remote Chrome QA on the existing Noor development Worker, with no secrets or deployment and 3-day synthetic screenshot artifacts. Requires explicit target allowlist; never runs automatically on main.
+
+- `scripts/noor-quran-qa-target.mjs`: exact developer Worker hostname + explicit synthetic-write opt-in guard; `tests/quran-qa-target.test.mjs`: no production/host/path/query bypass tests.
+- `scripts/noor-quran-qa-browser.mjs`: real Chrome/CDP synthetic Quran persistence QA for the existing development host (no Basic gate), conditional signup form mode; **not automatically deployed or executed** by this source change. See #149 and Santoreno PR #241 for the separate deployment decision.
+
 ## #149 private Quran connected-page readiness
 
 - `apps/web/src/features/student/private-mushaf-readiness.ts`: pure, fail-closed selected learner + active page hydration guard for connected writes; `private-mushaf-readiness.test.ts` covers page/learner/failure/demo cases.
