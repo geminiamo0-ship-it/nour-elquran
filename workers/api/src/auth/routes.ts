@@ -76,7 +76,7 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
     }
     return reply(201, { learner: { id, name: input.name.trim(), learnerType: input.learnerType, revision:1 } }, requestId);
   }
-  const profileMatch = /^\\/v1\\/me\\/learners\\/([a-zA-Z0-9-]{1,128})\\/profile-actions$/.exec(path);
+  const profileMatch = /^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/profile-actions$/.exec(path);
   if (profileMatch) {
     if (request.method!=='POST') return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
     const schema=await db.prepare(
