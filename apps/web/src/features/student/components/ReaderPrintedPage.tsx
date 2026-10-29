@@ -9,6 +9,7 @@ import { QuranInk, type InkMode } from './QuranInk';
 
 type Props = {
   page: number;
+  viewportFit?: boolean;
   inkMode: InkMode;
   color: string;
   strokes: readonly QuranInkStroke[];
@@ -22,7 +23,7 @@ type Props = {
 };
 
 /** Every visible printed page owns its own verified polygons, including both sides of a spread. */
-export function ReaderPrintedPage({ page, inkMode, color, strokes, selectedKey, noteKeys, focusKeys, allowedKeys, onSelect, onOpenNote, onInkChange }: Props) {
+export function ReaderPrintedPage({ page, viewportFit = false, inkMode, color, strokes, selectedKey, noteKeys, focusKeys, allowedKeys, onSelect, onOpenNote, onInkChange }: Props) {
   const [regions, setRegions] = useState<QuranAyahRegion[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,7 +49,7 @@ export function ReaderPrintedPage({ page, inkMode, color, strokes, selectedKey, 
     return () => controller.abort();
   }, [page]);
 
-  return <SmoothMadinahPage page={page} overlay={<>
+  return <SmoothMadinahPage page={page} viewportFit={viewportFit} overlay={<>
     <QuranInk page={page} mode={inkMode} color={color} strokes={strokes}
       onChange={next => onInkChange(page, next)} />
     <QuranAyahOverlay page={page} regions={regions} selectedKey={selectedKey}
