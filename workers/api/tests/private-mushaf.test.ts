@@ -40,6 +40,22 @@ test('event write binds verified actor/learner and returns D1-acknowledged versi
  assert.deepEqual(calls[1]?.args.slice(1,9),['owned-learner','verified-auth',valid.operationId,
   'put','ink-1','pen',PRIVATE_EDITION,12]);
 });
+test('page and index reads include hidden versions for safe reload and restore',async()=>{
+ const queries:string[]=[];
+ const hidden={itemId:'bookmark-12',kind:'bookmark',page:12,visible:0,version:2,payloadJson:'{}'};
+ const db={prepare:(sql:string)=>({bind:()=>({all:async()=>{
+  queries.push(sql);return {results:[hidden]};
+ }})})} as unknown as CoreDatabase;
+ for(const selected of [12,null]){
+  const result=await readPrivateMushaf(db,'owned',selected);
+  assert.equal(result.status,200);
+  assert.deepEqual(result.items?.[0],{
+   itemId:'bookmark-12',kind:'bookmark',page:12,visible:false,version:2,payload:{},
+  });
+ }
+ assert.equal(queries.length,2);
+ assert.ok(queries.every(sql=>!sql.includes('visible=1')));
+});
 test('index read never takes supplied actor or unrelated learner ID',async()=>{
  const args:unknown[][]=[];
  const db={prepare:()=>({bind:(...items:unknown[])=>{
