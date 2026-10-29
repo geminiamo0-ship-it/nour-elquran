@@ -58,9 +58,65 @@ try {
   await browser.go('/student/account/');await present('#create-learner-form');
   await fill({name:'Fixture Learner A2',learnerType:'child'},'#create-learner-form');
   await waitFor(async()=> (await profileNames()).length===2,'second owner profile');
+
+  // #157: real native Chrome + Worker/D1 tests the NEW connected edit/archive controls.
+  // These operations must not be considered successful from local React state alone.
+  const secondProfile=await browser.evaluate("fetch('/v1/me/learners',{cache:'no-store'}).then(r=>r.json()).then(d=>d.learners.find(l=>l.name==='Fixture Learner A2'))");
+  assert(secondProfile?.id && secondProfile.revision===1,'Second learner must have an active D1 revision');
+  for(const [width,height] of [[360,667],[390,844],[768,1024],[1280,900],[1440,900]]) {
+    await browser.send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<768});
+    const layout=await browser.evaluate('({dir:document.documentElement.dir,overflow:document.documentElement.scrollWidth>innerWidth})');
+    assert.equal(layout.dir,'rtl');assert.equal(layout.overflow,false,'Profile account overflow at '+width);
+    await browser.screenshot('artifacts/auth-browser/profiles-'+width+'.png');
+  }
+  await browser.evaluate(`(()=>{
+    const item=[...document.querySelectorAll('li')].find(li=>
+      li.querySelector('strong')?.textContent==='Fixture Learner A2' &&
+      [...li.querySelectorAll('button')].some(b=>b.textContent.trim()==='تعديل الاسم'));
+    if(!item)throw Error('Rename UI missing');
+    [...item.querySelectorAll('button')].find(b=>b.textContent.trim()==='تعديل الاسم').click();
+  })()`);
+  await present('form[id^="rename-profile-"] input[name="profileName"]');
+  await browser.evaluate(`(()=>{
+    const form=document.querySelector('form[id^="rename-profile-"]');
+    form.querySelector('input[name="profileName"]').value='Fixture Learner A2 Updated';
+    form.requestSubmit();
+  })()`);
+  await waitFor(async()=> (await profileNames()).includes('Fixture Learner A2 Updated'),'rename server ACK');
+  const renamedProfile=await browser.evaluate(`fetch('/v1/me/learners',{cache:'no-store'})
+    .then(r=>r.json()).then(d=>d.learners.find(l=>l.id===${JSON.stringify(secondProfile.id)}))`);
+  assert.equal(renamedProfile?.name,'Fixture Learner A2 Updated');
+  assert.equal(renamedProfile?.revision,2);
+  const stale=await browser.evaluate(`fetch('/v1/me/learners/${secondProfile.id}/profile-actions',{
+    method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({action:'rename',operationId:crypto.randomUUID(),expectedRevision:1,name:'Stale Chrome Edit'})
+  }).then(r=>r.status)`);
+  assert.equal(stale,409,'Stale editor must never overwrite confirmed rename');
+
   await browser.go('/student/');await dashboard();
+  assert.deepEqual(await profileNames(),['Fixture Learner A','Fixture Learner A2 Updated'],'Rename survives refresh');
   await browser.evaluate("(()=>{const select=document.querySelector('#learner-switch');select.value=select.options[1].value;select.dispatchEvent(new Event('change',{bubbles:true}));})()");
-  await waitFor(()=>browser.evaluate("document.querySelector('h1')?.textContent.includes('Fixture Learner A2')"),'sibling switch');
+  await waitFor(()=>browser.evaluate("document.querySelector('h1')?.textContent.includes('Fixture Learner A2 Updated')"),'sibling switch');
+  await browser.go('/student/account/');await present('#create-learner-form');
+  await browser.evaluate(`(()=>{
+    const item=[...document.querySelectorAll('li')].find(li=>li.querySelector('strong')?.textContent==='Fixture Learner A2 Updated' &&
+      [...li.querySelectorAll('button')].some(b=>b.textContent.trim()==='أرشفة الملف'));
+    if(!item)throw Error('Archive UI missing');
+    [...item.querySelectorAll('button')].find(b=>b.textContent.trim()==='أرشفة الملف').click();
+  })()`);
+  await present('[id^="archive-profile-"] button');
+  await browser.evaluate(`(()=>{
+    const container=document.querySelector('[id^="archive-profile-"]');
+    [...container.querySelectorAll('button')].find(b=>b.textContent.trim()==='تأكيد الأرشفة').click();
+  })()`);
+  await waitFor(async()=> (await profileNames()).length===1,'archive server ACK');
+  assert.deepEqual(await profileNames(),['Fixture Learner A']);
+  const archivedDetail=await browser.evaluate(`fetch('/v1/learners/${secondProfile.id}',{cache:'no-store'}).then(r=>r.status)`);
+  assert.equal(archivedDetail,404,'Archived student detail inaccessible via owner active endpoint');
+  await browser.go('/student/');await dashboard();
+  assert.deepEqual(await profileNames(),['Fixture Learner A'],'Archived learner absent after reload');
+  assert.equal(await browser.evaluate("document.querySelector('h1')?.textContent.includes('Fixture Learner A')"),true);
+  console.log('Native Chrome account: rename, stale edit 409, refresh, current-sibling archive, 404 archived, and responsive RTL PASS');
   assert.equal(await browser.evaluate("document.body.textContent.includes('شيخ تجريبي') || document.body.textContent.includes('DO NOT LOAD DEMO')"),false);
   await browser.evaluate("document.querySelector('#account-logout').click()");await hydrated();
   assert.equal(await browser.evaluate("document.querySelector('#learner-switch')===null"),true);
@@ -81,7 +137,7 @@ try {
   await present('[role="alert"]');
   assert.equal(await browser.evaluate("document.querySelector('#learner-switch')===null"),true);
   await fill({phoneNumber:'+12025550121',password});await dashboard();
-  assert.deepEqual(await profileNames(),['Fixture Learner A','Fixture Learner A2']);
+  assert.deepEqual(await profileNames(),['Fixture Learner A'],'Archived learner must remain hidden on new login');
   assert(process.env.NOOR_BROWSER_CONFIG&&process.env.NOOR_BROWSER_STATE);
   execFileSync('npx',['--yes','wrangler@4.45.0','d1','execute','noor-core-local','--config',process.env.NOOR_BROWSER_CONFIG,
     '--local','--persist-to',process.env.NOOR_BROWSER_STATE,'--command','UPDATE auth_sessions SET expires_at=0'],{stdio:'pipe'});
