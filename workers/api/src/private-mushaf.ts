@@ -11,7 +11,7 @@ export type PrivateMushafItem=Readonly<{
  itemId:string;kind:PrivateKind;page:number;version:number;visible:boolean;
  payload:Record<string,unknown>;
 }>;
-const ID=/^[A-Za-z0-9_:.\-]{1,128}$/;
+const ID=/^[A-Za-z0-9_:.-]{1,128}$/;
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const HEX=/^#[0-9a-fA-F]{6}$/;
 const KIND=['pen','marker','note','bookmark','position'] as const;
