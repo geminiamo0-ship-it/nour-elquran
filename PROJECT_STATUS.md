@@ -1,6 +1,6 @@
 ## #173 strict publish DTO hardening (2026-10-30; branch only)
 - On `feat/173-published-assignments-main`, reject arrays/objects masquerading as valid `operationId`, `kind` or `editionId` through JavaScript string coercion. Connected assignment task responses also reject an array masquerading as `kind`. Regression cases added to backend Node and frontend Vitest suites.
-- Source commits exist; exact-head PR Verify and isolated Cloudflare Dev acceptance are still required. Do not treat these guards as deployed. No real learner data or Production changes.
+- Draft PR #177: first exact-head Verify attempt [40971913516](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40971913516) passed code-quality, governance and native Cloudflare-local D1/Better Auth; repository-policy failed because the original PR event lacked the exact `Refs #173` linkage. PR description has since been corrected; a fresh synchronization/Verify is required. Isolated Cloudflare Dev acceptance remains outstanding. Do not treat these guards as deployed. No real learner data or Production changes.
 
 ## PHASE 05A #173 published assignments (source branch; not yet accepted)
 - Additive D1 0010 immutable publish journal, current primary-teacher-only operations, Quran canonical ayah FK, single-learner assignment publish and owner list. Connected teacher Assignments and student My Training read real server state; voice/audio, submission, feedback and cancellation not connected.
