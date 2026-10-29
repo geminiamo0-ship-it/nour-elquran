@@ -33,7 +33,7 @@ class TeacherSchedulingTests(unittest.TestCase):
   self.counter=0
 
  def action(self,action,resource=None,child="child-a",teacher="id-teacher-a",
-            start=T+SLOT,end=T+SLOT+2*YEAR,kind=None,now=T,actor="staff",op=None):
+            start=T+SLOT,end=T+YEAR,kind=None,now=T,actor="staff",op=None):
   self.counter+=1
   if action=="book":end=start+SLOT
   if action in ("revoke","cancel"):child="";teacher="";start=None;end=None

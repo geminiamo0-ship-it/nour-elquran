@@ -1,3 +1,14 @@
+## B3 — authenticated staff primary assignment and 40-minute bookings (#140)
+
+- `POST /v1/staff/schedule-actions` accepts EXACT allowlisted action-specific JSON with `operationId` UUID and `reason` (8–500 chars). Actions:
+  - `assign`: `learnerId`, `teacherId`, `startsAtMs`, `endsAtMs`; target learner/owner active and teacher qualified+active. Times in UTC epoch ms, interval begins no earlier than server-now and ends within two years. Existing D1 trigger prevents overlapping active primary assignments.
+  - `book`: `learnerId`, `teacherId`, `startsAtMs`, `kind` (`trial|standard|makeup`); server derives `endsAtMs=startsAtMs+2400000` (40min). Current unrevoked primary assignment MUST cover full reserved interval. Existing D1 triggers prevent teacher/learner calendar collisions. Creates only `status=scheduled`, never live, with no automatic start/end.
+  - `cancel`: `resourceId` existing scheduled lesson; only ≥6h before scheduled start (otherwise needs separately approved exception process), never a live/completed lesson. Releases future slot without erasing history.
+  - `revoke`: `resourceId` active primary assignment; denied while linked scheduled/live lessons exist. Cancel/reassign first; keeps history.
+- No public staff bootstrap: valid Better Auth session, current verified `roles.manage` and Origin check are required. `0006_staff_schedule.sql` records **immutable audit event** and performs each assignment/lesson change in one atomic D1 trigger in the same INSERT, revalidating staff/teacher/learner status, assignment coverage, timing and conflicts. Verified staff and clock only from server; operation replay safe (matching request 200, conflicting use 409). No browser-supplied actor or role accepted.
+- Actual `GET /v1/teacher/learners`, `GET /v1/teacher/lessons`, `GET /v1/me/learners/:id/lessons` immediately use the inserted rows; read-only teacher web feature switch remains intentionally OFF until isolated staging role/account acceptance.
+- Native Wrangler smoke creates two isolated synthetic users and D1 verified role flags (local test only), provisions/activates teacher via B2 endpoint, assigns owner learner, books lesson, verifies teacher roster & teacher/owner timetables, denies foreign session, tests overlap, cancellation and revocation. No remote database updates, no actual students or accounts, no room presence or LiveKit.
+
 ## B2 — staff-managed teacher identities and immutable D1 role ledger (#138)
 
 **New endpoint:** `POST /v1/staff/teacher-actions` (JSON: `{targetUserId,action,reason,operationId}`), where action is `provision|qualify|activate|suspend|revoke_qualification`. Requires server-verified Better Auth staff session, active owning account, verified phone, explicit unrevoked `staff_grants.roles.manage`; the request cannot grant this permission itself. Strict origin checking, bounded JSON, exact four-key allowlist, UUID operation ID and mandatory reason. Actor/time come only from server.

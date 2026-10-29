@@ -1,3 +1,10 @@
+## TEACHER BACKEND B3 #140 — audited staff assignments & 40m booking
+
+- `0006_staff_schedule.sql`: append-only staff scheduling commands and atomic D1 audit triggers for `assign,revoke,book,cancel`. Rechecks roles.manage, active qualified teacher, active owner/learner, full-interval primary assignment, overlap/40m, 6h normal cancellation, and no orphaned upcoming lessons. No room Start/End mutations.
+- `src/staff-scheduling.ts` and `auth/routes.ts`: POST `/v1/staff/schedule-actions` behind real Better Auth staff session and current grant, exact allowlisted action DTO and idempotency UUID. Existing teacher roster/timetable and owned learner timetable now have a real staff-only writer.
+- SQLite exact-migration tests and native Wrangler local synthetic staff/teacher/account browser/auth smoke. Real staff/teacher provisioning, OTP verification, remote Staging migration/deployment and real student data still intentionally absent. Default preview unchanged; authenticated teacher read UI feature flag OFF.
+- Next: verify exact-head CI and only then merge; isolated remote synthetic staging role/assignment/booking UI proof, and follow-up teacher learner plans, last published report and class preparation.
+
 ## TEACHER BACKEND B2 #138 — staff-only role provisioning (PR #139)
 
 - D1 migration `0005_teacher_roles.sql`: audited append-only role command ledger with atomic status/qualification transitions using SQLite triggers, actor grant/phone/active account guard and replay constraint. Existing teacher data unchanged.
