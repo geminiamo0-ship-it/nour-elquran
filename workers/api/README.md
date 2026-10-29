@@ -1,3 +1,6 @@
+## Classroom history immutability (#120, draft)
+`migrations/0005_lesson_history.sql` is an additive post-0004 migration. After a room starts, its booked interval and kind cannot be rewritten; a live room cannot independently set `ended_at_ms`, and a completed room cannot edit its final timestamp. Legacy completed rows (including 30-minute reservations and NULL end timestamps) are not changed. Synthetic regressions: `tests/test_lesson_history.py`. These SQL constraints do **not** establish authenticated teacher-only Start/End, simultaneous verified presence, durable request idempotency, or transactional event writes. No remote D1 migration was applied.
+
 ## Classroom terminal-status integrity (#120, draft PR #121)
 The additive `0003_teacher_schedule.sql` now rejects a `live` lesson reverting to scheduled/cancelled and a completed lesson being reopened. This prevents bypass of the single-live guard through status rollback. Same-status updates and pre-start cancellation/reactivation are preserved. Synthetic SQLite tests exercise both denial and allowed transitions. These database triggers do **not** authorize teacher Start/End, verify simultaneous presence or provide request-ID idempotency; only authenticated use cases may change lesson status. No remote migration has been performed.
 
