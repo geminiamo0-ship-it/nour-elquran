@@ -93,6 +93,65 @@ class LessonHistoryIntegrityTests(unittest.TestCase):
         )
         self.assertEqual(state(self.db)[1], "live")
 
+    def test_new_booking_cannot_prepopulate_end_timestamp(self):
+        before = self.db.execute("SELECT count(*) FROM lessons").fetchone()[0]
+        with self.assertRaisesRegex(
+            sqlite3.IntegrityError, "End must be recorded at completion"
+        ):
+            self.db.execute(
+                "INSERT INTO lessons("
+                "id,learner_id,actual_teacher_id,kind,status,"
+                "starts_at_ms,ends_at_ms,ended_at_ms"
+                ") VALUES('forged','learner','teacher','trial','scheduled',?,?,?)",
+                (START + FORTY_MIN, START + 2 * FORTY_MIN,
+                 START + FORTY_MIN + 1000),
+            )
+        self.assertEqual(
+            self.db.execute("SELECT count(*) FROM lessons").fetchone()[0],
+            before,
+        )
+
+    def test_scheduled_or_start_transition_cannot_prepopulate_end(self):
+        before = state(self.db)
+        for sql in (
+            "UPDATE lessons SET ended_at_ms=? WHERE id='lesson'",
+            "UPDATE lessons SET status='live',ended_at_ms=? WHERE id='lesson'",
+        ):
+            with self.assertRaisesRegex(
+                sqlite3.IntegrityError, "End must be recorded at completion"
+            ):
+                self.db.execute(sql, (START + 1000,))
+            self.assertEqual(state(self.db), before)
+        self.start()
+        self.end()
+        self.assertEqual(state(self.db)[1:], (
+            "completed", START, START + FORTY_MIN, START + 90_000
+        ))
+
+    def test_legacy_prepopulated_live_end_cannot_fake_completion(self):
+        old = sqlite3.connect(":memory:")
+        self.addCleanup(old.close)
+        old.execute("PRAGMA foreign_keys=ON")
+        apply_migrations(old, last=4)
+        fixture(old)
+        book(old)
+        # Historical invalid state created before migration 0005 is not
+        # silently rewritten; completion must fail closed for an audited repair.
+        old.execute(
+            "UPDATE lessons SET ended_at_ms=? WHERE id='lesson'",
+            (START + 1000,),
+        )
+        old.execute("UPDATE lessons SET status='live' WHERE id='lesson'")
+        apply_migrations(old, first=5)
+        original = state(old)
+        with self.assertRaisesRegex(
+            sqlite3.IntegrityError, "End requires recorded timestamp"
+        ):
+            old.execute(
+                "UPDATE lessons SET status='completed' WHERE id='lesson'"
+            )
+        self.assertEqual(state(old), original)
+
     def test_new_completion_requires_explicit_end_timestamp(self):
         self.start()
         before = state(self.db)
