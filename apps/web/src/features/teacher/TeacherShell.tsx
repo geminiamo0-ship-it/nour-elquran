@@ -11,6 +11,7 @@ const navigation=[
   {href:'/teacher/schedule',label:'جدولي وحصصي',icon:'▦'},
   {href:'/teacher/students',label:'طلابي',icon:'♧'},
   {href:'/teacher/preparation',label:'تحضير الحصة',icon:'۞'},
+  {href:'/classroom',label:'معاينة الفصل التفاعلي',icon:'▧'},
   {href:'/teacher/assignments',label:'الواجبات والتسميعات',icon:'✎'},
   {href:'/teacher/reports',label:'تقارير الحصص',icon:'▤'},
   {href:'/teacher/notifications',label:'الإشعارات',icon:'♢'},

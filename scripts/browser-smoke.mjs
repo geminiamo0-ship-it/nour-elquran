@@ -568,6 +568,72 @@ try {
     'Teacher empty roster scenario did not re-render: '+JSON.stringify(scenarioCheck.result?.value));
   console.log('Teacher A-Z routes, mobile 360/390/1440 RTL, screenshot and empty state passed');
 
+
+  // CLASSROOM #50: actual Quran reader route, preview permissions and responsive RTL.
+  const classroomResponse=await fetch(url+'classroom');
+  assert.equal(classroomResponse.status,200,'Classroom static preview route missing');
+  assert((await classroomResponse.text()).includes('معاينة الفصل التفاعلي فقط'),
+    'Classroom must clearly disclose nonproduction room state');
+  for(const width of [360,390,1440]){
+    await socket.send('Emulation.setDeviceMetricsOverride',{
+      width,height:900,deviceScaleFactor:1,mobile:false,
+    });
+    await socket.send('Page.navigate',{url:url+'classroom'});
+    const cls=await waitFor(async()=>{
+      const result=await socket.send('Runtime.evaluate',{
+        expression:"(()=>({heading:document.querySelector('h1')?.textContent,rtl:document.documentElement.dir,viewport:innerWidth,scroll:document.documentElement.scrollWidth,quran:!!document.querySelector('[aria-label=\\\"مصحف المدينة، الصفحة 604\\\"]')}))()",
+        returnByValue:true,
+      });
+      const value=result.result?.value;
+      return value?.heading?.includes('الفصل التفاعلي')?value:null;
+    },'classroom preview '+width);
+    assert.equal(cls.rtl,'rtl');
+    assert.equal(cls.viewport,width);
+    assert(cls.scroll<=width,'Classroom overflow at '+width+': '+cls.scroll);
+    assert(cls.quran,'Classroom does not reuse canonical Madinah reader');
+    const snap=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    const image=Buffer.from(snap.data,'base64');
+    assert.equal(image.readUInt32BE(16),width);
+    fs.writeFileSync(path.join(screenshots,'classroom-'+width+'.png'),image);
+  }
+  await socket.send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
+  await socket.send('Page.navigate',{url:url+'classroom'});
+  await waitFor(async()=>{
+    const response=await socket.send('Runtime.evaluate',{
+      expression:"(()=>{const el=document.querySelector('select[aria-label=\\\"تبديل منظور المعاينة\\\"]');return !!el&&Object.keys(el).some(k=>k.startsWith('__reactProps'));})()",
+      returnByValue:true,
+    });
+    return response.result?.value===true;
+  },'hydrated classroom roles');
+  const classroomInteraction=await socket.send('Runtime.evaluate',{
+    expression:`(async()=>{const pause=()=>new Promise(r=>setTimeout(r,190));
+      const buttons=()=>[...document.querySelectorAll('button')];
+      const start=buttons().find(b=>b.textContent.includes('محاكاة «بدء الحصة»'));
+      const before=start?.disabled===true;
+      const people=[...document.querySelectorAll('input[type=checkbox]')];
+      people[1]?.click();await pause();
+      const both=start?.disabled===false;
+      start?.click();await pause();
+      const live=document.body.textContent.includes('حصة تجريبية جارية');
+      const hasQuran=!!document.querySelector('[aria-label^="مصحف المدينة، الصفحة"]');
+      const studentRole=document.querySelector('select[aria-label="تبديل منظور المعاينة"]');
+      studentRole.value='student';studentRole.dispatchEvent(new Event('change',{bubbles:true}));await pause();
+      const endBtn=buttons().find(b=>b.textContent.includes('إنهاء الفصل بيد الشيخ'));
+      const noStudentEnd=endBtn?.disabled===true;
+      const nav=buttons().find(b=>b.textContent.includes('صفحة تالية'));
+      const noStudentNavigation=nav?.disabled===true;
+      const clock=document.querySelector('input[type=range]');
+      clock.value='42';clock.dispatchEvent(new Event('input',{bubbles:true}));clock.dispatchEvent(new Event('change',{bubbles:true}));await pause();
+      const notAutoEnded=document.body.textContent.includes('حصة تجريبية جارية');
+      return {before,both,live,hasQuran,noStudentEnd,noStudentNavigation,notAutoEnded};
+    })()`,
+    awaitPromise:true,returnByValue:true,
+  });
+  const classroomChecks=classroomInteraction.result?.value;
+  assert(classroomChecks&&Object.values(classroomChecks).every(Boolean),
+    'Classroom React safety preview smoke failed: '+JSON.stringify(classroomChecks??classroomInteraction));
+  console.log('Classroom reader, waiting room, teacher-only controls and 360/390/1440 Chrome smoke passed');
+
 } finally {
   socket?.close();
   for (const child of children.reverse()) child.kill('SIGTERM');
