@@ -61,6 +61,8 @@ export async function applyLearnerProfileAction(db:CoreDatabase, accountId:strin
     // Concurrent duplicate requests may race the pre-check; compare their immutable event.
     const concurrent=await findEvent();
     if(concurrent)return replayResult(concurrent)!;
+    if(error instanceof Error && error.message.includes('PROFILE_HAS_OPEN_LESSONS'))
+      return {status:409,code:'PROFILE_OPEN_LESSONS'};
     if(error instanceof Error && /PROFILE_(STALE_OR_FORBIDDEN|NO_CHANGE)/.test(error.message))
       return {status:409,code:'PROFILE_REVISION_CONFLICT'};
     throw error;
