@@ -1,3 +1,8 @@
+## CLASSROOM #120 / PR #121 — concurrent-live D1 guard (2026-10-29, draft branch)
+- On `feat/noor-classroom-40m-booking-guard`, migration `0003_teacher_schedule.sql` adds SQLite/D1 INSERT and UPDATE guards preventing a teacher or learner from belonging to two simultaneously `live` lessons, even if the bookings are adjacent and the first room overruns its 40-minute slot. No timer automatically ends a room.
+- Four new synthetic SQLite regressions cover teacher overrun, same-learner different-teacher overrun, independent concurrent rooms and direct-live-insert bypass; failed transitions must leave the second booking scheduled. Changes are unmerged and CI on the final exact head must be checked.
+- This is a database integrity backstop, **not** authenticated teacher-only Start/End, both-party presence, idempotent state transitions or media integration. No remote D1 migration, production deploy, real learner data or paid provider use. Next: inspect exact-head CI, then build the authenticated/presence-verified lifecycle under #120 after review.
+
 ## CLASSROOM #120 / PR #121 — historical teacher integrity (2026-10-29, draft only)
 - CI exposed an incorrect assumption in an initial test: `0001_core.sql` already makes `lessons.learner_id` immutable, so reassignment is prohibited even for active learners. Corrected the test and removed the redundant proposed eligibility trigger change.
 - Added `lessons_teacher_immutable_after_start` to draft `0003_teacher_schedule.sql`: the acting teacher may change while scheduled, but cannot be silently rewritten when the lesson is live or completed. Two SQLite regressions cover immutable learner identity and teacher identity across scheduled/live/completed.
