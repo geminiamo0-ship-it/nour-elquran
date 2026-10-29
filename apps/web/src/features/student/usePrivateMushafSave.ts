@@ -3,6 +3,7 @@ import {useEffect,useRef,useState,type Dispatch,type SetStateAction} from 'react
 import type {QuranAnnotation,QuranInkStroke,QuranTarget} from './quranAnnotations';
 import {privateMushafClient,asInk,asPrivateNote,type PrivateAction,
   type PrivateItemKind,type PrivateOperation} from './private-mushaf-client';
+import {mayEditPrivateMushafPage} from './private-mushaf-readiness';
 
 type SyncState='off'|'loading'|'saved'|'pending'|'failed';
 type Job=Omit<PrivateOperation,'operationId'|'expectedVersion'> & {
@@ -22,6 +23,8 @@ export function usePrivateMushafSave({
  const [status,setStatus]=useState<SyncState>(enabled?'loading':'off');
  const [indexReady,setIndexReady]=useState(!enabled);
  const [pageReady,setPageReady]=useState(!enabled);
+ const [indexLearnerId,setIndexLearnerId]=useState<string|null>(null);
+ const [pageHydration,setPageHydration]=useState<{learnerId:string;page:number}|null>(null);
  const [error,setError]=useState('');
  const versions=useRef<Record<string,number>>({});
  const queue=useRef<Job[]>([]);
@@ -34,7 +37,7 @@ export function usePrivateMushafSave({
  useEffect(()=>{
   if(!enabled)return;
   versions.current={};queue.current=[];failed.current=false;
-  setIndexReady(false);setStatus('loading');setError('');
+  setIndexReady(false);setIndexLearnerId(null);setStatus('loading');setError('');
   const controller=new AbortController();
   void privateMushafClient.index(learnerId,controller.signal).then(items=>{
    if(controller.signal.aborted)return;
@@ -52,7 +55,7 @@ export function usePrivateMushafSave({
    })));
    const position=items.find(i=>i.kind==='position');
    if(position){setPage(position.page);setPageEntry(String(position.page));}
-   setIndexReady(true);
+   setIndexLearnerId(learnerId);setIndexReady(true);
   }).catch(()=>{
    if(!controller.signal.aborted){setStatus('failed');setError('تعذر تحميل بيانات المصحف المحفوظة. لا نسمح بالكتابة فوقها قبل إعادة التحميل.');}
   });
@@ -61,14 +64,14 @@ export function usePrivateMushafSave({
 
  useEffect(()=>{
   if(!enabled)return;
-  setPageReady(false);
+  setPageReady(false);setPageHydration(null);
   const controller=new AbortController();
   void privateMushafClient.page(learnerId,page,controller.signal).then(items=>{
    if(controller.signal.aborted)return;
    for(const item of items)versions.current[item.itemId]=item.version;
    setInkByPage(prev=>({...prev,[page]:items.map(asInk).filter(
      (ink):ink is QuranInkStroke=>ink!==null)}));
-   setPageReady(true);
+   setPageHydration({learnerId,page});setPageReady(true);
   }).catch(()=>{
    if(!controller.signal.aborted){setStatus('failed');setError('تعذر فتح العلامات المحفوظة لهذه الصفحة؛ الكتابة متوقفة لحماية المحتوى.');}
   });
@@ -76,9 +79,11 @@ export function usePrivateMushafSave({
  },[enabled,learnerId,page,setInkByPage]);
 
  useEffect(()=>{
-  if(!enabled||!indexReady||!pageReady||failed.current||queue.current.length)return;
+  if(!enabled||!indexReady||!pageReady||failed.current||queue.current.length||
+    indexLearnerId!==learnerId||pageHydration?.learnerId!==learnerId||
+    pageHydration.page!==page)return;
   setStatus('saved');
- },[enabled,indexReady,pageReady,page]);
+ },[enabled,indexReady,pageReady,page,learnerId,indexLearnerId,pageHydration]);
  useEffect(()=>{
   if(!enabled)return;
   // Next.js client navigation does not reliably trigger beforeunload.
@@ -102,6 +107,10 @@ export function usePrivateMushafSave({
   return ()=>window.removeEventListener('beforeunload',onUnload);
  },[enabled]);
 
+ function canEditPage(targetPage:number):boolean{
+  return mayEditPrivateMushafPage({enabled,learnerId,activePage:page,
+   indexLearnerId,pageHydration,failed:failed.current||status==='failed'},targetPage);
+ }
  async function drain(){
   if(running.current||failed.current||!enabled)return;
   running.current=true;
@@ -129,7 +138,7 @@ export function usePrivateMushafSave({
  }
  function enqueue(action:PrivateAction,itemId:string,kind:PrivateItemKind,
     itemPage:number,payload:Record<string,unknown>):void{
-  if(!enabled)return;
+  if(!enabled||!canEditPage(itemPage))return;
   queue.current.push({operationId:crypto.randomUUID(),action,itemId,kind,page:itemPage,payload});
   setStatus(failed.current?'failed':'pending');
   void drain();
@@ -173,17 +182,19 @@ export function usePrivateMushafSave({
    itemId,'bookmark',targetPage,{});
  }
  useEffect(()=>{
-  if(!enabled||!indexReady||!pageReady||failed.current||queue.current.length)return;
+  if(!enabled||!indexReady||!pageReady||failed.current||queue.current.length||
+    indexLearnerId!==learnerId||pageHydration?.learnerId!==learnerId||
+    pageHydration.page!==page)return;
   const timer=window.setTimeout(()=>{
    if(queue.current.length||failed.current)return;
    enqueue('put','position','position',page,{});
   },900);
   return ()=>window.clearTimeout(timer);
  // Position is written after each fully loaded page navigation, not pointer movement.
- },[enabled,learnerId,page,indexReady,pageReady]);
+ },[enabled,learnerId,page,indexReady,pageReady,indexLearnerId,pageHydration]);
 
  return {
-  enabled,status,error,canEdit:!enabled||(indexReady&&pageReady),
+  enabled,status,error,canEdit:canEditPage(page),canEditPage,
   canNavigate:!enabled||queue.current.length===0,
   retry,strokeDiff,note,highlight,bookmark,
  };
