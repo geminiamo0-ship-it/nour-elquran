@@ -41,7 +41,7 @@ test('child-restricted session scopes list and detail to its learner only', asyn
   assert.equal(await getOwnedLearner(db, actor, 'learner-b'), null);
   assert.equal(calls.length, 1, 'foreign sibling must not reach database');
   assert.deepEqual(await getOwnedLearner(db, actor, 'learner-a'), {
-    id: 'learner-a', displayName: 'Fixture A', learnerType: 'child',
+    id: 'learner-a', displayName: 'Fixture A', learnerType: 'child', revision: 1,
   });
   assert.deepEqual(calls[1]?.params, ['auth-a', 'learner-a']);
 });
