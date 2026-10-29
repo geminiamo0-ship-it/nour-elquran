@@ -1,3 +1,9 @@
+## Connected Sheikh read slice #159 — source branch
+- Reuses authenticated existing B1/B2/B3 Worker endpoints without changing role assignment rules; `TeacherShell` in opted-in real account mode does NOT construct the fixture `TeacherProvider`.
+- Route-specific real home, roster (name search), and schedule (status filtering) components preserve the original Sheikh shell, RTL and responsive styling. Only authorized D1 rows appear. Other Sheikh sections are honest service-not-connected states until Phase 02+ APIs.
+- `NEXT_PUBLIC_TEACHER_READONLY_ENABLED=true` and `NEXT_PUBLIC_ACCOUNT_UI=true` remain explicit build-time gates; default demo mode is still isolated. Server rejects unrelated teacher, unqualified, suspended, expired and substitute-only roster. No self-promotion; archive/private Quran not exposed.
+- This source branch is **not** evidence of real Staging login/teacher provision and browser proof. Review #159 before marking accepted.
+
 ## B3 — authenticated staff primary assignment and 40-minute bookings (#140)
 
 - `POST /v1/staff/schedule-actions` accepts EXACT allowlisted action-specific JSON with `operationId` UUID and `reason` (8–500 chars). Actions:
