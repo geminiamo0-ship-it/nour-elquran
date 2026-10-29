@@ -625,6 +625,13 @@ try {
       });
       return r.result?.value === true;
     }, 'S11 verified page 2 with bounded Baqarah marks at ' + width, 120);
+    // Keep the *printed page itself* in the screenshot at desktop/tablet widths.
+    // Without this scroll, a passing overlay assertion could capture only the header.
+    const pageInView = await socket.send('Runtime.evaluate', {
+      expression: "(()=>{const p=document.querySelector('[data-rendered-quran-page=\\\"2\\\"]');p?.scrollIntoView({block:'center',behavior:'instant'});const r=p?.getBoundingClientRect();return !!r&&r.bottom>0&&r.top<innerHeight;})()",
+      returnByValue: true,
+    });
+    assert(pageInView.result?.value === true, 'S11 printed page 2 must be visible in screenshot');
     const multiShot = await socket.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
     fs.writeFileSync(path.join(screenshots, 'student-notebook-multipage-' + width + '.png'),
       Buffer.from(multiShot.data, 'base64'));
