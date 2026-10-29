@@ -1,3 +1,8 @@
+## Connected Sheikh Home/Students/Schedule #159 — implementation branch
+- With both `NEXT_PUBLIC_ACCOUNT_UI=true` and `NEXT_PUBLIC_TEACHER_READONLY_ENABLED=true`, authenticated teacher shell renders dedicated verified D1 views and never constructs fixture TeacherProvider. Existing signed-session Worker role checks remain authoritative, substitutes cannot see general roster.
+- Home derives roster and scheduled lesson counts only from bounded real API responses; My Students filters authorized names, Schedule filters real session states and formats Cairo time. Other teacher pages clearly state protected API is not yet connected.
+- Source-only until exact-head CI and real Dev proof with staff-provisioned qualified active teacher and denied unqualified/suspended/other owner. Demo site remains unchanged with flag OFF; no production rollout.
+
 ## B3 — authenticated staff primary assignment and 40-minute bookings (#140)
 
 - `POST /v1/staff/schedule-actions` accepts EXACT allowlisted action-specific JSON with `operationId` UUID and `reason` (8–500 chars). Actions:

@@ -1,3 +1,7 @@
+## Connected Sheikh #159 — focused feature branch, not deployed
+- `feat/159-connected-teacher-home-v2` from current Noor main after Phase 01A acceptance: existing TeacherShell no longer mounts demo fixtures in authenticated connected mode, route-specific D1 Home/My Students/Schedule, responsive RTL, zero-state, denied and retry, no fake publication actions.
+- Next: exact-head Verify, isolated synthetic qualified teacher + unqualified/suspended/foreign accounts smoke, connect existing Dev build flag, real browser 360/390/768/1280/1440. Do not close #159 or #155 without remote acceptance. No live classroom changes.
+
 ## Non-Classroom #155 — Phase 01A profile lifecycle remote PASS; next Sheikh #159
 - Noor PR #158 squash main `68b218cf99ff436acf34292d39692a8011862c6a`; main push [Verify 40958071853](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40958071853) PASS. Existing Dev D1 migrated 0008; no data reset.
 - Santoreno PR #243 (merge `a0b28bc4af7e95de983c37ff696174ffb9a9797a`) [staging 40958341460](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40958341460) PASS remote synthetic account+Chrome: 5 screenshot widths, owner A/B, siblings, rename after refresh, CAS conflict, archival 404, immutable audit and Quran history preserved. Screenshot artifact ID `12934533154`.

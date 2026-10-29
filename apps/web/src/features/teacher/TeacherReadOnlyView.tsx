@@ -4,6 +4,7 @@ import {useEffect,useState} from 'react';
 import {createTeacherReadClient,TeacherReadError,type TeacherCalendarRow,
   type TeacherRosterRow} from './teacher-read-api';
 import css from './TeacherReadOnly.module.css';
+import {TeacherConnectedHome,TeacherConnectedRoster,TeacherConnectedSchedule} from './TeacherConnectedPages';
 
 /** Build-time opt-in. Default preview route and production are unchanged. */
 export const TEACHER_READONLY_ENABLED =
@@ -13,11 +14,6 @@ export const TEACHER_READONLY_ENABLED =
 type Loaded={status:'loaded';learners:readonly TeacherRosterRow[];lessons:readonly TeacherCalendarRow[]};
 type Reading={status:'loading'}|Loaded|{status:'error'|'denied'|'signed-out'};
 const client=createTeacherReadClient();
-const formatTime=(timestamp:number)=>new Intl.DateTimeFormat('ar-EG',{
-  timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short',
-}).format(new Date(timestamp));
-const kindLabel={trial:'تجريبية',standard:'أساسية',makeup:'تعويضية'};
-const statusLabel={scheduled:'قادمة',live:'جارية',completed:'منتهية',cancelled:'ملغاة'};
 
 export function TeacherReadOnlyView({pathname}:{pathname:string}) {
   const [state,setState]=useState<Reading>({status:'loading'});
@@ -61,43 +57,12 @@ export function TeacherReadOnlyView({pathname}:{pathname:string}) {
   </section>;
 
   const {learners,lessons}=state;
-  const names=new Map(learners.map(item=>[item.id,item.name]));
-  const lessonCards=lessons.map(item=><div className={css.row} key={item.id}>
-    <div><strong>{names.get(item.learnerId)??item.learnerName??'طالب مصرح ضمن الحصة فقط'}</strong>
-      <small>{kindLabel[item.kind]} · {statusLabel[item.status]}</small></div>
-    <time>{formatTime(item.startsAtMs)} – {formatTime(item.endsAtMs)}</time>
-  </div>);
-  if(pathname==='/teacher/students')return <section className={css.card}>
-    <div className={css.heading}><h1>طلابي المسندون إليّ</h1><span>{learners.length} طالب</span></div>
-    <p>الطلاب المرتبطون بتعيين أساسي نشط حاليًا فقط. حساب الشيخ البديل لا يحصل على قائمة دائمة.</p>
-    {learners.length?<div className={css.list}>{learners.map(item=><div key={item.id} className={css.row}>
-      <strong>{item.name}</strong><small>{item.learnerType==='child'?'ملف طفل':'ملف متعلم بالغ'} · ملف أكاديمي تفصيلي لم يُربط بعد</small>
-    </div>)}</div>:<p className={css.empty}>لا يوجد طلاب مسندون حاليًا لهذا الشيخ.</p>}
-  </section>;
-  if(pathname==='/teacher/schedule')return <section className={css.card}>
-    <div className={css.heading}><h1>جدولي الفعلي</h1><span>آخر {lessons.length} حصة</span></div>
-    <p>المواعيد المقروءة من D1. لا توجد أزرار بدء أو إنهاء قبل ربط الحضور والتحقق الخادمي.</p>
-    {lessons.length?<div className={css.list}>{lessonCards}</div>:<p className={css.empty}>لا توجد حصص مصرح بها حاليًا.</p>}
-  </section>;
-  if(pathname==='/teacher') {
-    const upcoming=lessons.filter(l=>(l.status==='scheduled'||l.status==='live')&&l.endsAtMs>Date.now())
-      .sort((a,b)=>a.startsAtMs-b.startsAtMs).slice(0,3);
-    return <section className={css.card}>
-      <h1>بوابة الشيخ — بيانات حقيقية للقراءة فقط</h1>
-      <p>مرحبًا بك. هذه البيانات من API محمي بجلسة الحساب؛ لا توجد أرقام تقارير أو تسميعات مُختلَقة.</p>
-      <div className={css.metrics}>
-        <Link href="/teacher/students"><strong>{learners.length}</strong><span>طلابي المسندون حاليًا</span></Link>
-        <Link href="/teacher/schedule"><strong>{lessons.length}</strong><span>الحصص الظاهرة في الجدول</span></Link>
-      </div>
-      <h2>الحصص القادمة</h2>
-      {upcoming.length?<div className={css.list}>{upcoming.map(item=><div key={item.id} className={css.row}>
-        <strong>{names.get(item.learnerId)??item.learnerName??'طالب مصرح ضمن الحصة فقط'}</strong>
-        <time>{formatTime(item.startsAtMs)}</time>
-      </div>)}</div>:<p className={css.empty}>لا توجد حصص قادمة ضمن البيانات المحمّلة.</p>}
-    </section>;
-  }
-  return <section className={css.card}><h1>هذا القسم قيد ربط الـBackend</h1>
+  if(pathname==='/teacher')return <TeacherConnectedHome learners={learners} lessons={lessons}/>;
+  if(pathname==='/teacher/students')return <TeacherConnectedRoster learners={learners}/>;
+  if(pathname==='/teacher/schedule')return <TeacherConnectedSchedule learners={learners} lessons={lessons}/>;
+  return <section className={css.card} role="status"><h1>هذا القسم قيد ربط الخدمة المحمية</h1>
     <p>التقارير والتقييمات والخطط والواجبات والإشعارات لا تعرض بيانات تجريبية في وضع الحساب الحقيقي، ولا يمكن حفظها أو نشرها قبل تفعيل API مؤمّن.</p>
-    <div className={css.actions}><Link href="/teacher/students">طلابي</Link><Link href="/teacher/schedule">جدولي</Link></div>
+    <div className={css.actions}><Link href="/teacher/students">طلابي</Link>
+      <Link href="/teacher/schedule">جدولي</Link></div>
   </section>;
 }
