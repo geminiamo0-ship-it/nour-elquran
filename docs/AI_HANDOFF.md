@@ -1,5 +1,11 @@
 # AI agent handoff contract
 
+## #102 — current draft notebook Quran viewer continuation
+- Work on `feat/102-notebook-contracts-reports` / PR #116. A new `LessonQuranViewer` renders the same `ReaderPrintedPage` in read-only mode, only after publisher JSON verifies the current page's lesson boundary anchors. Teacher marks are filtered by learner/lesson/scope, and unavailable metadata never becomes a claimed verified page.
+- `getMockNotebookRevisions` supplies one explicitly synthetic lesson for demo-active only. Connected learners have no fabricated lesson publication. Local notes remain a separate layer; no real backend sync, media, archive, share or export.
+- Added tests for missing/misplaced boundary verses and sibling isolation. **Next exact action:** inspect PR #116 newest exact-head CI (strict TS, Vitest, Chrome and local D1); fix failures; add real Chrome notebook navigation/mark selection at 360/390/768/1440 and multi-page fixture acceptance. PR remains Draft and #102 remains OPEN. Check merge conflicts with current main before review.
+
+
 ## Active #102 notebook F0 partial slice — verify before continuing
 - Branch `feat/102-notebook-contracts-reports`, linked to existing open Issue #102. New `notebookContracts.ts` validates edition-bound cross-surah structural scopes, revision/learner/lesson isolation and teacher-only published marks; tests use synthetic L1/L2 data. `NotebookReportCard.tsx` displays nullable grades/pending report without pretending an archive exists; learner-keyed workspace resets unsent drafts.
 - This is a **partial** F0 contract/UI change: no lesson Quran renderer, no real published annotation payloads, no share/export/upload or persistence. Structural anchor validation is not proof of publisher verse-to-page mapping. No remote services or data.
