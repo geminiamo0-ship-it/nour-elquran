@@ -84,6 +84,45 @@ BEGIN
   SELECT RAISE(ABORT, 'acting teacher is immutable after start');
 END;
 
+-- Adjacent 40-minute reservations do not permit two simultaneously live rooms.
+-- A teacher overrun must block a second Start until the first is explicitly Ended;
+-- the same learner cannot be live in two rooms either. These are D1 integrity
+-- backstops only, NOT proof of authenticated teacher action or two-party presence.
+-- No clock-driven trigger changes a live lesson to completed.
+CREATE TRIGGER lessons_single_live_insert
+BEFORE INSERT ON lessons
+WHEN NEW.status = 'live'
+BEGIN
+  SELECT RAISE(ABORT, 'teacher already has a live lesson')
+  WHERE EXISTS (
+    SELECT 1 FROM lessons other
+    WHERE other.actual_teacher_id = NEW.actual_teacher_id AND other.status = 'live'
+  );
+  SELECT RAISE(ABORT, 'learner already has a live lesson')
+  WHERE EXISTS (
+    SELECT 1 FROM lessons other
+    WHERE other.learner_id = NEW.learner_id AND other.status = 'live'
+  );
+END;
+
+CREATE TRIGGER lessons_single_live_update
+BEFORE UPDATE OF status, actual_teacher_id, learner_id ON lessons
+WHEN NEW.status = 'live'
+BEGIN
+  SELECT RAISE(ABORT, 'teacher already has a live lesson')
+  WHERE EXISTS (
+    SELECT 1 FROM lessons other
+    WHERE other.id != OLD.id
+      AND other.actual_teacher_id = NEW.actual_teacher_id AND other.status = 'live'
+  );
+  SELECT RAISE(ABORT, 'learner already has a live lesson')
+  WHERE EXISTS (
+    SELECT 1 FROM lessons other
+    WHERE other.id != OLD.id
+      AND other.learner_id = NEW.learner_id AND other.status = 'live'
+  );
+END;
+
 -- A canceled appointment releases both teacher and learner calendar capacity.
 -- Completed bookings still occupy their original historical interval.
 CREATE TRIGGER lessons_teacher_conflict_insert
