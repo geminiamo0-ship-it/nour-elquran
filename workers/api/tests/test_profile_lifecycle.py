@@ -38,6 +38,13 @@ class ProfileLifecycleTests(unittest.TestCase):
         self.assertEqual(self.db.execute("SELECT display_name,status,revision FROM learners WHERE id='a-1'").fetchone(),
                          ('New name','active',2))
         self.assertEqual(self.db.execute("SELECT revision FROM learners WHERE id='a-2'").fetchone(),(1,))
+        self.assertEqual(self.db.execute(
+            "SELECT previous_name,updated_name,previous_status,updated_status,previous_revision,updated_revision "
+            "FROM learner_profile_audit WHERE learner_id='a-1'").fetchone(),
+            ('Old name','New name','active','active',1,2))
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.execute("UPDATE learner_profile_audit SET updated_name='Tampered' WHERE learner_id='a-1'")
+
         with self.assertRaises(sqlite3.IntegrityError): self.issue(event(2,revision=1,name='Race'))
         with self.assertRaises(sqlite3.IntegrityError): self.issue(event(3,revision=2,name='New name'))
         with self.assertRaises(sqlite3.IntegrityError):
@@ -61,6 +68,11 @@ class ProfileLifecycleTests(unittest.TestCase):
         self.issue(event(9,action='archive'))
         self.assertEqual(self.db.execute("SELECT status,revision FROM learners WHERE id='a-1'").fetchone(),('archived',2))
         self.assertEqual(self.db.execute("SELECT learner_id FROM lessons WHERE id='lesson-a'").fetchone(),('a-1',))
+        self.assertEqual(self.db.execute(
+            "SELECT previous_name,updated_name,previous_status,updated_status FROM learner_profile_audit "
+            "WHERE learner_id='a-1'").fetchone(),
+            ('Old name','Old name','active','archived'))
+
         with self.assertRaises(sqlite3.IntegrityError):self.issue(event(10,revision=2))
         with self.assertRaises(sqlite3.IntegrityError):self.issue(event(9,action='archive'))
         self.assertEqual(self.db.execute("SELECT count(*) FROM learner_profile_events").fetchone(),(1,))
