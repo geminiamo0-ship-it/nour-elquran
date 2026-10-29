@@ -47,6 +47,7 @@ END;
 -- New or reactivated reservations require an active learner whose owning account
 -- is also active. This is a relational guard only: the API must still authenticate
 -- the actor and authorize the learner, lesson and teacher before any mutation.
+-- Reassigning a scheduled lesson to another learner must also recheck eligibility.
 -- Archiving a learner or disabling an account never rewrites existing history.
 CREATE TRIGGER lessons_active_learner_insert
 BEFORE INSERT ON lessons
@@ -61,7 +62,7 @@ BEGIN
 END;
 
 CREATE TRIGGER lessons_active_learner_update
-BEFORE UPDATE OF status, starts_at_ms, ends_at_ms, actual_teacher_id ON lessons
+BEFORE UPDATE OF status, starts_at_ms, ends_at_ms, actual_teacher_id, learner_id ON lessons
 WHEN NEW.status = 'scheduled'
 BEGIN
   SELECT RAISE(ABORT, 'booking requires an active learner and account')

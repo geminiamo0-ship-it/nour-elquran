@@ -1,3 +1,8 @@
+## CLASSROOM #120 / PR #121 — scheduled learner reassignment integrity (2026-10-29, draft only)
+- Corrected `lessons_active_learner_update` to include `learner_id` changes, not only status/time/teacher changes. Previously a scheduled lesson could be reassigned to an archived learner or a learner owned by a disabled account without firing the eligibility trigger. Added two SQLite regressions verifying failed changes leave the original learner intact and eligible reassignments succeed.
+- D1 constraint is defense-in-depth, **not** proof of actor authorization. The future API must enforce owner/teacher/resource authorization before changing learner identity; no HTTP booking, teacher-only Start/End or presence validation exists here.
+- No remote migration, staging update, production deployment or real learner data. Exact-head Verify pending for this new commit; PR remains Draft. Next: review CI, then implement authenticated teacher-only Start/End with verified simultaneous presence in a separately reviewed slice.
+
 ## CLASSROOM #120 / PR #121 — booking eligibility continuation (branch only, 2026-10-29)
 - Additive draft D1 migration `0003_teacher_schedule.sql` now rejects new/reactivated scheduled bookings when learner is archived or owning account disabled, and rechecks learner, owner and teacher eligibility on schedule changes. Existing completed history remains intact. Four synthetic SQLite regression cases added to `test_teacher_calendar.py`.
 - This is a database integrity guard, **not** authenticated booking/start/end or verified waiting-room presence. No remote D1 migration, deployment, child data or payment action. Exact-head GitHub Verify must be inspected before treating the branch as tested; PR #121 remains draft.

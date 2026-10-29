@@ -1,3 +1,8 @@
+## CLASSROOM #120 / PR #121 — scheduled learner reassignment integrity (2026-10-29, draft only)
+- Corrected `lessons_active_learner_update` to include `learner_id` changes, not only status/time/teacher changes. Previously a scheduled lesson could be reassigned to an archived learner or a learner owned by a disabled account without firing the eligibility trigger. Added two SQLite regressions verifying failed changes leave the original learner intact and eligible reassignments succeed.
+- D1 constraint is defense-in-depth, **not** proof of actor authorization. The future API must enforce owner/teacher/resource authorization before changing learner identity; no HTTP booking, teacher-only Start/End or presence validation exists here.
+- No remote migration, staging update, production deployment or real learner data. Exact-head Verify pending for this new commit; PR remains Draft. Next: review CI, then implement authenticated teacher-only Start/End with verified simultaneous presence in a separately reviewed slice.
+
 ## CLASSROOM #120 / PR #121 — booking eligibility follow-up (2026-10-29, branch only)
 - Continue draft PR #121 on `feat/noor-classroom-40m-booking-guard`: `0003_teacher_schedule.sql` adds active learner + active owner account guards to new/reactivated scheduled lessons and rechecks teacher/learner/owner when rescheduling. `test_teacher_calendar.py` adds four synthetic SQLite cases for archive, disable, reactivation, reschedule and preserved history.
 - Not an authenticated classroom endpoint, two-person presence check, teacher-only Start/End, production D1 migration or deployment. No real children or provider secrets.
