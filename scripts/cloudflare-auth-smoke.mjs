@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
+import {setTimeout as pause} from 'node:timers/promises';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 const base = 'http://127.0.0.1:8795';
@@ -118,6 +119,61 @@ assert.equal(activated.response.status,200,JSON.stringify(activated.data));
 assert.equal(activated.data.state,'active');
 assert.deepEqual((await call('/v1/teacher/learners',{cookie:cookieB})).data.learners,[]);
 assert.deepEqual((await call('/v1/teacher/lessons',{cookie:cookieB})).data.lessons,[]);
+// B3: synthetic staff creates an actual primary assignment and a 40m booked lesson.
+// The read-only teacher endpoints must immediately reflect only this family's data.
+const schedule=(body,cookie=cookieA,origin=base)=>call('/v1/staff/schedule-actions',{
+  method:'POST',cookie,origin,body,
+});
+const learnerBookingStart=Date.now()+8*60*60*1000;
+const assignmentRequest={
+  action:'assign',operationId:randomUUID(),reason:'Synthetic teaching assignment acceptance',
+  learnerId:learner,teacherId:provision.data.teacherId,
+  startsAtMs:Date.now()+2000,endsAtMs:Date.now()+30*24*60*60*1000,
+};
+assert.equal((await schedule(assignmentRequest,cookieB)).response.status,403);
+assert.equal((await schedule({...assignmentRequest,role:'admin'})).response.status,400);
+const assignmentCreated=await schedule(assignmentRequest);
+assert.equal(assignmentCreated.response.status,201,JSON.stringify(assignmentCreated.data));
+assert.equal((await schedule(assignmentRequest)).data.code,'OPERATION_ALREADY_APPLIED');
+// The primary roster is deliberately time-scoped; wait until the new assignment begins.
+await pause(2300);
+const assignedRoster=await call('/v1/teacher/learners',{cookie:cookieB});
+assert.equal(assignedRoster.response.status,200,JSON.stringify(assignedRoster.data));
+assert.equal(assignedRoster.data.learners.length,1);
+assert.equal(assignedRoster.data.learners[0].id,learner);
+const bookRequest={action:'book',operationId:randomUUID(),
+  reason:'Synthetic forty minute lesson booking',learnerId:learner,
+  teacherId:provision.data.teacherId,startsAtMs:learnerBookingStart,kind:'standard'};
+const lessonCreated=await schedule(bookRequest);
+assert.equal(lessonCreated.response.status,201,JSON.stringify(lessonCreated.data));
+const bookingRepeat=await schedule(bookRequest);
+assert.equal(bookingRepeat.data.code,'OPERATION_ALREADY_APPLIED');
+const overlapping=await schedule({...bookRequest,operationId:randomUUID(),startsAtMs:learnerBookingStart+1000});
+assert.equal(overlapping.response.status,409);
+const teacherSchedule=await call('/v1/teacher/lessons',{cookie:cookieB});
+assert.equal(teacherSchedule.response.status,200);
+assert.equal(teacherSchedule.data.lessons.length,1);
+assert.equal(teacherSchedule.data.lessons[0].id,lessonCreated.data.resourceId);
+assert.equal(teacherSchedule.data.lessons[0].endsAtMs-teacherSchedule.data.lessons[0].startsAtMs,2400000);
+const learnerTimetable=await call('/v1/me/learners/'+learner+'/lessons',{cookie:cookieA});
+assert.equal(learnerTimetable.response.status,200);
+assert.equal(learnerTimetable.data.lessons[0].id,lessonCreated.data.resourceId);
+assert.equal((await call('/v1/me/learners/'+learner+'/lessons',{cookie:cookieB})).response.status,404);
+const prematureRevoke=await schedule({action:'revoke',operationId:randomUUID(),
+  reason:'Synthetic schedule reallocation',resourceId:assignmentCreated.data.resourceId});
+assert.equal(prematureRevoke.response.status,409);
+assert.equal((await schedule({action:'cancel',operationId:randomUUID(),
+  reason:'Synthetic booking cancellation',resourceId:lessonCreated.data.resourceId},
+  cookieA,'https://attacker.invalid')).response.status,403);
+const cancelled=await schedule({action:'cancel',operationId:randomUUID(),
+  reason:'Synthetic booking cancellation',resourceId:lessonCreated.data.resourceId});
+assert.equal(cancelled.response.status,200,JSON.stringify(cancelled.data));
+const revoked=await schedule({action:'revoke',operationId:randomUUID(),
+  reason:'Synthetic assignment revocation',resourceId:assignmentCreated.data.resourceId});
+assert.equal(revoked.response.status,200,JSON.stringify(revoked.data));
+assert.deepEqual((await call('/v1/teacher/learners',{cookie:cookieB})).data.learners,[]);
+console.log('Native staff scheduling: assignment, teacher roster, booking, 40m, learner timetable, conflict, cancellation, revocation, no forged role passed');
+
 const unauthorizedMutation=await call('/v1/staff/teacher-actions',{
   method:'POST',cookie:cookieB,body:teacherCommand('suspend'),
 });

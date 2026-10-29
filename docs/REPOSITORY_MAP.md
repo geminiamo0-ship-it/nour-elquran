@@ -1,3 +1,11 @@
+## Staff schedule B3 #140
+
+- `workers/api/migrations/0006_staff_schedule.sql`: atomic immutable D1 staff event ledger for primary teacher assignment, revocation and scheduled 40m class create/cancel; existing 0001/0003 triggers remain authoritative.
+- `workers/api/src/staff-scheduling.ts`: strict action DTO, safe server-now window, verified staff gate and idempotent event execution. No editable academic plans/media.
+- `workers/api/src/auth/routes.ts`: `POST /v1/staff/schedule-actions` under Better Auth/origin and D1 roles.manage.
+- `workers/api/tests/test_staff_schedule.py`, `staff-scheduling.test.ts`: full SQL lineage and D1/TS validation/authorization/replay tests.
+- `scripts/cloudflare-auth-smoke.mjs`: same-origin local Better Auth/D1 B3 two accounts, one teacher, real assignment and booking reading back from teacher/learner APIs, 40m/conflict/cancel/revoke.
+
 ## Teacher Backend B2 #138
 
 - `workers/api/migrations/0005_teacher_roles.sql`: append-only role audit + atomic staff-authorized D1 teacher role transitions; no public self-service grants.
