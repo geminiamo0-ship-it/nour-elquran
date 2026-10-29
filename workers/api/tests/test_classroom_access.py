@@ -90,9 +90,11 @@ class ClassroomAccessTests(unittest.TestCase):
 
     def test_substitute_cannot_bypass_deadline_or_other_lesson_scope(self):
         self.lesson()
-        self.substitute(accepted=START - 100, deadline=START - 200)
+        # Existing D1 CHECK prevents even storing an acceptance after the deadline.
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.substitute(accepted=START - 100, deadline=START - 200)
         self.assertIsNone(self.read_teacher())
-        self.db.execute("UPDATE lesson_access_grants SET consent_deadline_ms=?", (START,))
+        self.substitute(accepted=START - 200, deadline=START)
         self.assertEqual(self.read_teacher()[-1], "substitute")
 
     def test_owner_child_scope_excludes_other_family_and_sibling(self):
