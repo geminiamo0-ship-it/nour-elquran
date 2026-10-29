@@ -1,3 +1,11 @@
+## Classroom #120 — explicit End timestamp guard (draft PR #127)
+- `workers/api/migrations/0005_lesson_history.sql` also rejects **new** live→completed transitions without `ended_at_ms`. Existing completed records with NULL End are retained, not repaired or rewritten.
+- `workers/api/tests/test_lesson_history.py` checks rejection atomicity, valid End and legacy no-op. This is a database guard, not a teacher-authenticated Start/End endpoint or verified DO presence.
+
+## Classroom #120 — immutable lesson history (unmerged)
+- `workers/api/migrations/0005_lesson_history.sql`: additive SQLite/D1 triggers preventing edits to booked interval/lesson kind after Start, independent live End timestamp edits and completed End timestamp tampering. Existing historical records are not rewritten; this is not an authorization boundary.
+- `workers/api/tests/test_lesson_history.py`: synthetic migration and tamper regression tests; native D1 and full CI verification are separate.
+
 ## Classroom #120 — draft booking/lifecycle integrity
 - `workers/api/migrations/0003_teacher_schedule.sql`: additive D1 40-minute booking/eligibility/conflict guards, single-live and terminal-state invariants, and pre-start lifecycle shortcut rejection. No HTTP Start/End authorization or verified presence.
 - `workers/api/tests/test_teacher_calendar.py`: synthetic SQLite migrations and atomic booking/lifecycle regressions. Native local Wrangler and full Chrome/build checks are separate CI gates.

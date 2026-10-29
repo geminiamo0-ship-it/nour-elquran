@@ -1,3 +1,18 @@
+## CLASSROOM #120 / PR #127 — 0005 prefilled End protection (2026-10-29, Draft)
+- Branch `fix/120-lesson-history-immutability` now rejects non-NULL End timestamps before completion (INSERT and UPDATE), and requires a newly supplied End timestamp in the same live→completed UPDATE. The earlier guard only checked for non-NULL, allowing a prefilled/stale timestamp to masquerade as an actual teacher End.
+- `workers/api/tests/test_lesson_history.py` adds synthetic cases for forged booked End, scheduled/Start timestamp injection, and pre-migration stale live state; legacy completed history remains untouched. **Code-head `e9671c8b82b7fcda3f6bd8ed3cced58f95488ff0` passed all four jobs** in [Verify 40906299928](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40906299928). The initial run 40906130115 failed due to the old test's expected error string; the follow-up corrected that assertion. Recheck the newest documentation-only commit separately. Leave Draft PR #127 unmerged pending review.
+- No teacher identity or two-party presence verification, idempotent Start/End API, remote D1 migration, Production or private child records. Next: inspect Verify for current head, record result in #120/PR; proceed with authenticated teacher-only Start/End and LessonDO presence as a separately reviewed implementation.
+
+## 2026-10-29 — #120 / PR #127 End timestamp guard follow-up
+- In existing draft `0005_lesson_history.sql`, added a transition guard: a new live→completed change must write `ended_at_ms` atomically, not just `status`. Legacy completed rows with NULL End remain unchanged; same-status retries remain valid.
+- Synthetic `test_lesson_history.py` now checks rejected NULL End leaves the room live, valid End succeeds and historical completed NULL no-ops remain possible. Check **exact-head** GitHub Verify before describing this as tested. No remote D1/production migration.
+- This does not implement an authenticated teacher-only Start/End route, DO-backed simultaneous presence, transactional audit event or idempotency. Keep PR Draft; next action: check CI and review, then build the authorized lifecycle API.
+
+## 2026-10-29 — Classroom history integrity continuation (#120)
+- Dedicated branch `fix/120-lesson-history-immutability` from main `836c8afc2c27a6c487bc2860ae1a59b7c2e73fbc`. Added additive `workers/api/migrations/0005_lesson_history.sql` and synthetic `workers/api/tests/test_lesson_history.py`.
+- A started/completed room must not have its booked interval or entitlement kind silently rewritten; completed `ended_at_ms` is immutable and a still-live room cannot set it outside the completion transition. No historical data is changed; legacy completed rows with NULL End timestamps remain as they were.
+- Inspect exact branch HEAD, run `python3 -m unittest discover -s workers/api/tests -p 'test_*.py'` and GitHub Verify (four jobs). PR remains Draft until checks/review. This is **not** authenticated Start/End or durable presence/idempotency; #120 still needs Worker/DO integration and transactional event writes. No remote migration or Production deploy.
+
 ## Classroom #120 — lifecycle shortcut hardening (2026-10-29, draft PR #121)
 - On `feat/noor-classroom-40m-booking-guard`, D1 `0003_teacher_schedule.sql` now rejects direct live/completed inserts, scheduled-to-completed skips, and cancelled-to-live/completed shortcuts. Preserve historical rows and normal reactivation; tests use the full scheduled/live/completed path.
 - This is **not** an authenticated Start/End API. DO-backed simultaneous teacher+learner presence, verified acting teacher, durable operation idempotency, ended-at audit and media remain unimplemented. Never expose direct status updates to clients.
