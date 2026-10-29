@@ -68,6 +68,20 @@ describe('notebook publication and learner isolation contracts (#102)', () => {
     expect(pageKeysForNotebookScope(multiPage, 2, pageTwo.slice(0, 1))).toBeNull();
     expect(pageKeysForNotebookScope(multiPage, 3, pageTwo)).toBeNull();
   });
+  it('keeps the two-page browser fixture scoped to its own lesson and learner', () => {
+    const active = DEMO_PROFILES.find((profile) => profile.id === 'demo-active')!;
+    const revisions = getMockNotebookRevisions(active);
+    const multi = latestPublishedNotebook(revisions, active.id, 'l-active-4');
+    const single = latestPublishedNotebook(revisions, active.id, 'l-active-3');
+    expect(multi?.scope?.start).toEqual({ surah: 1, ayah: 6, page: 1 });
+    expect(multi?.scope?.end).toEqual({ surah: 2, ayah: 2, page: 2 });
+    expect(multi?.approvedAnnotations.map((mark) => mark.target.page)).toEqual([1, 2]);
+    expect(single?.approvedAnnotations.map((mark) => mark.id)).toEqual(['demo-teacher-mark']);
+    expect(latestPublishedNotebook(revisions, 'demo-new', 'l-active-4')).toBeNull();
+    expect(latestPublishedNotebook(revisions, active.id, 'l-active-999')).toBeNull();
+    expect(latestLessonReport([multi!.report], active.id, 'l-active-3')).toBeNull();
+    expect(multi?.report.memorization).toBeNull();
+  });
   it('does not leak a synthetic published teacher mark to other learners', () => {
     const active = DEMO_PROFILES.find((profile) => profile.id === 'demo-active')!;
     const revisions = getMockNotebookRevisions(active);
