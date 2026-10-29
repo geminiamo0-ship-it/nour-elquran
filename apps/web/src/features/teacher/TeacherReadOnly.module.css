@@ -1,0 +1,24 @@
+.card{direction:rtl;display:grid;align-content:start;gap:13px;background:#fffdf8;
+ border:1px solid #d9decf;border-radius:14px;padding:clamp(15px,3vw,30px);min-height:250px;
+ color:#284633}
+.card h1{font-size:clamp(19px,2vw,25px);margin:0;font-weight:800}
+.card h2{font-size:18px;margin:12px 0 0}
+.card p{margin:0;color:#647869;line-height:1.8;font-size:13px}
+.heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.heading span{border-radius:100px;background:#ecf2e8;color:#30563e;padding:7px 11px;font-size:12px}
+.list{display:grid;gap:9px;max-height:65dvh;overflow-y:auto;overscroll-behavior:contain}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+ background:#f8f7ef;border:1px solid #e6dfd0;border-radius:9px;padding:13px}
+.row>div{display:grid;gap:6px}
+.row small{color:#66806c;font-size:11px}
+.row time{font-size:12px;color:#476950}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.metrics a{display:grid;gap:8px;padding:15px;border:1px solid #dcd7c9;border-radius:9px;
+ color:#284c36;background:#f5f6ee;text-decoration:none}
+.metrics strong{font-size:28px}
+.metrics span{font-size:12px}
+.empty{border:1px dashed #bfcbbd;padding:18px;border-radius:9px}
+.actions{display:flex;flex-wrap:wrap;gap:9px}
+.actions a,.actions button{background:#315d44;color:#fff;border:0;border-radius:7px;
+ padding:10px 13px;text-decoration:none;font:700 13px inherit;cursor:pointer}
+@media(max-width:480px){.card{padding:12px}.row{align-items:start;flex-direction:column}}

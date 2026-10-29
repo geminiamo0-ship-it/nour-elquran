@@ -1,3 +1,12 @@
+## Teacher Backend B1 #136 (Draft PR #137)
+- `workers/api/src/teacher-roster.ts`: bounded active-primary D1 roster scoped to D1-qualified Better Auth subject. No substitute grant broadens roster.
+- `workers/api/src/auth/routes.ts`: `GET /v1/teacher/learners` authenticated read-only.
+- `workers/api/tests/test_teacher_roster.py` + `teacher-roster.test.ts`: production SQL and qualified-subject gates.
+- `apps/web/src/features/teacher/teacher-read-api.ts`: same-origin typed read adapters and strict DTO validation.
+- `TeacherReadOnlyView.tsx` + `TeacherReadOnly.module.css`: opt-in locked-down teacher home/roster/schedule; no demo fixture fallback, no writing.
+- `TeacherShell.tsx`: mode switch guarded by account UI + teacher readonly build flags. Normal teacher preview untouched.
+- `teacher-readonly.test.ts`: client parsing/denial/network checks. No real student data or production deployment.
+
 ## Classroom #120 — draft booking/lifecycle integrity
 - `workers/api/migrations/0003_teacher_schedule.sql`: additive D1 40-minute booking/eligibility/conflict guards, single-live and terminal-state invariants, and pre-start lifecycle shortcut rejection. No HTTP Start/End authorization or verified presence.
 - `workers/api/tests/test_teacher_calendar.py`: synthetic SQLite migrations and atomic booking/lifecycle regressions. Native local Wrangler and full Chrome/build checks are separate CI gates.

@@ -1,3 +1,10 @@
+## TEACHER BACKEND #136 — initial secured read-only implementation (Draft PR #137)
+
+- Added D1 primary-roster read boundary + protected `GET /v1/teacher/learners`, verified Better Auth qualified teacher only; substitute grants never confer roster access. Exact SQLite migration and Node tests cover future/revoked/expired assignments, archived child, disabled household and query scoping.
+- Connected only an opt-in **read-only** Sheikh home/roster/schedule UI using verified API responses and strict client DTO validation. `NEXT_PUBLIC_TEACHER_READONLY_ENABLED=true` AND `NEXT_PUBLIC_ACCOUNT_UI=true` required at build; disabled by default to preserve staging visual demo. No mock fallback in authorized mode; report/homework/plan pages explicitly unconnected.
+- NOT done: actual Sheikh account provisioning, lesson brief or academic profile API, report publication, real class/LiveKit, live D1 migration or real child records. Do not deploy production or enable real accounts; exact-head Verify and review required.
+- Next: inspect CI, stage with SYNTHETIC D1-qualified teachers after controlled provisioning; implement academic plan/report contracts and subsequent LessonDO handshake in focused follow-ups. See #45/#120.
+
 ## CLASSROOM #120 / PR #121 — persisted Start/End sequence guard (2026-10-29; draft)
 - In additive D1 migration `0003_teacher_schedule.sql`, reject new `live`/`completed` rows, `scheduled -> completed`, and `cancelled -> live/completed`. A canceled reservation must re-enter `scheduled` (rechecking teacher/learner eligibility and conflicts) before Start; completion follows a Start. Existing historical rows are not rewritten.
 - Synthetic SQLite regressions cover direct insertion bypass, canceled shortcut, scheduled direct completion and atomic unchanged status. Updated historical test fixtures to follow `scheduled -> live -> completed` after migration. These are relational state guards, **not verified teacher identity, two-party presence, request-id idempotency or authoritative End timestamps**.
