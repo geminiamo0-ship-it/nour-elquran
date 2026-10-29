@@ -1,3 +1,8 @@
+## CLASSROOM #120 / PR #121 — terminal lesson-state integrity (2026-10-29, draft branch)
+- Added `lessons_terminal_lifecycle_guard` to draft D1 migration `0003_teacher_schedule.sql`: a `live` lesson cannot be rolled back to `scheduled` or `cancelled`, and a `completed` lesson cannot be resurrected. Same-status writes and pre-start cancellation/reactivation remain allowed. This prevents a direct status rollback from evading the existing single-live teacher/learner guard.
+- Three synthetic SQLite tests cover atomic rollback denial, completed-history terminality, allowed no-op transitions and explicit completion before the next room starts. This is NOT actor authorization, presence, or durable request-id idempotency. Exact-head GitHub Verify is pending; PR remains Draft.
+- No remote D1 migration, production deployment, paid services or real learner data. Next: inspect exact-head CI; build authenticated teacher-only Start/End with simultaneous verified teacher+learner presence and request idempotency as a separate reviewed slice.
+
 ## CLASSROOM #120 / PR #121 — concurrent-live D1 guard (2026-10-29, draft branch)
 - On `feat/noor-classroom-40m-booking-guard`, migration `0003_teacher_schedule.sql` adds SQLite/D1 INSERT and UPDATE guards preventing a teacher or learner from belonging to two simultaneously `live` lessons, even if the bookings are adjacent and the first room overruns its 40-minute slot. No timer automatically ends a room.
 - Four new synthetic SQLite regressions cover teacher overrun, same-learner different-teacher overrun, independent concurrent rooms and direct-live-insert bypass; failed transitions must leave the second booking scheduled. Changes are unmerged and CI on the final exact head must be checked.
