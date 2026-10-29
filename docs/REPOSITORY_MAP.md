@@ -1,3 +1,10 @@
+## Phase 05B #178 (source-only; pending verification)
+- `workers/api/migrations/0011_assignment_submissions.sql`: immutable submissions/reviews, current owner/current primary teacher, max five retry attempts, one immutable teacher decision per attempt. Independent of published-task 0010 projection; no editing the published Quran target.
+- `workers/api/src/assignment-submissions.ts`, `auth/routes.ts`: signed-session backed GET/POST student submissions and teacher reviews, operation UUID replays and 409 CAS.
+- `apps/web/src/features/shared/assignment-attempt-client.ts`, `student/components/StudentAssignmentSubmission.tsx`, `teacher/TeacherAssignmentReview.tsx`: strict DTO, explicit submit, lazy teacher review with consent-neutral text only, no voice upload.
+- Native Cloudflare local test `scripts/cloudflare-auth-smoke.mjs`; SQLite `workers/api/tests/test_assignment_submissions.py`; TS parser tests.
+- **Not deployed.** Parent #173 D1 publish API did pass Santoreno Dev #40971275548 but still needs targeted UI visual acceptance; audio/R2 postponed.
+
 ## Connected account learner lifecycle — #157 (Dev verified)
 - `workers/api/migrations/0008_learner_profiles.sql`: additive profile revision and immutable D1 event + before/after audit; rejects archival with scheduled/live lessons.
 - `workers/api/src/learner-profile-actions.ts`, `auth/routes.ts`, `owner-learners.ts`: verified Better Auth owner-only rename/archive command with operation UUID/CAS, active-only learner reads; no destructive delete.
