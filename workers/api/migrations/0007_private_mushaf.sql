@@ -70,7 +70,7 @@ BEGIN
      SELECT 1 FROM private_mushaf_items it WHERE it.learner_id=NEW.learner_id AND it.item_id=NEW.item_id
        AND it.kind=NEW.kind AND it.page=NEW.page AND it.edition_id=NEW.edition_id
        AND it.version=NEW.expected_version
-       AND it.visible=CASE WHEN NEW.action='hide' THEN 1 ELSE 0 END
+       AND it.visible=(NEW.action='hide')
    ));
 END;
 
@@ -85,7 +85,7 @@ BEGIN
    page=excluded.page,payload_json=excluded.payload_json,visible=1,
    version=excluded.version,updated_at_ms=excluded.updated_at_ms;
  UPDATE private_mushaf_items
- SET visible=CASE WHEN NEW.action='restore' THEN 1 ELSE 0 END,
+ SET visible=(NEW.action='restore'),
      version=NEW.expected_version+1,updated_at_ms=NEW.at_ms
  WHERE learner_id=NEW.learner_id AND item_id=NEW.item_id AND NEW.action IN ('hide','restore');
 END;

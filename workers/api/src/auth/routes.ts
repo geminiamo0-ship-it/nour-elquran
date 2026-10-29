@@ -75,7 +75,7 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
     }
     return reply(201, { learner: { id, name: input.name.trim(), learnerType: input.learnerType } }, requestId);
   }
-  const mushafMatch = /^\\/v1\\/me\\/learners\\/([a-zA-Z0-9-]{1,128})\\/mushaf$/.exec(path);
+  const mushafMatch = /^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/mushaf$/.exec(path);
   if(mushafMatch){
     if(request.method!=='GET'&&request.method!=='POST')
       return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
@@ -91,7 +91,7 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
     if(request.method==='GET'){
       const url=new URL(request.url),q=url.searchParams;
       if((q.has('index')&& (q.size!==1||q.get('index')!=='1')) ||
-         (!q.has('index')&&(q.size!==1||!/^([1-9]\\d{0,2})$/.test(q.get('page')??'') ||
+         (!q.has('index')&&(q.size!==1||!/^([1-9]\d{0,2})$/.test(q.get('page')??'') ||
            Number(q.get('page'))>604)))
         return reply(400,{code:'INVALID_MUSHAF_PAGE'},requestId);
       const result=await readPrivateMushaf(db,learnerId,q.has('index')?null:Number(q.get('page')));

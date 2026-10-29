@@ -151,7 +151,6 @@ export function usePrivateMushafSave({
   },900);
   return ()=>window.clearTimeout(timer);
  // Position is written after each fully loaded page navigation, not pointer movement.
- // eslint-disable-next-line react-hooks/exhaustive-deps
  },[enabled,learnerId,page,indexReady,pageReady]);
 
  return {
