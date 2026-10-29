@@ -210,6 +210,10 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 
 
 
+## Classroom teacher-eligibility guard (PR #121, Issue #120)
+- `workers/api/migrations/0003_teacher_schedule.sql` also validates active/qualified acting teacher for newly scheduled reservations and reactivation/reassignment; historical completion remains possible after a teacher is disabled.
+- `workers/api/tests/test_teacher_calendar.py` covers disabled/unqualified insert denial, canceled reactivation, atomic teacher reassignment and historical completion. This is a SQL invariant, not full authenticated scheduling or teacher presence authorization.
+
 ## Proposed classroom schedule foundation (PR #121, Issue #120)
 
 - `workers/api/migrations/0003_teacher_schedule.sql`: additive 40-minute lesson occupancy constraint; D1 triggers reject same-teacher or same-learner overlapping bookings even on cancellation/reactivation/rescheduling, and keep legacy bookings untouched.
