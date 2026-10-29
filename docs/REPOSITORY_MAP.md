@@ -1,5 +1,7 @@
 ## #149 synthetic development Quran QA target
 
+- Evidence: [Dev Chrome/D1 QA 40949693883](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40949693883) SUCCESS with synthetic pen/reload/owner-denial; [Verify 40949707443](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40949707443) SUCCESS on `d807fb19`. Browser screenshots uploaded, visual review and failure/retry/multi-device tests outstanding.
+
 - `.github/workflows/quran-dev-qa.yml`: branch-scoped (or manual) synthetic remote Chrome QA on the existing Noor development Worker, with no secrets or deployment and 3-day synthetic screenshot artifacts. Requires explicit target allowlist; never runs automatically on main.
 
 - `scripts/noor-quran-qa-target.mjs`: exact developer Worker hostname + explicit synthetic-write opt-in guard; `tests/quran-qa-target.test.mjs`: no production/host/path/query bypass tests.

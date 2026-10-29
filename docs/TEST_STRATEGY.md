@@ -1,5 +1,7 @@
 ## #149 developer-only Quran QA target safety
 
+- **Actual remote evidence (2026-10-29):** [Quran Dev Chrome QA 40949693883](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40949693883) passed at `d807fb19`, including real Chrome pen pointer, D1 ACK/reload, note restore and second owner 404; 360/390/1280 screenshots [artifact 12929534783](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40949693883/artifacts/12929534783) uploaded but not visually inspected. [Verify 40949707443](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40949707443) passed all four jobs. Only synthetic Dev D1 records; no production. Still need failed POST/Retry, slow page fetch, multi-device, S Pen and offline crash QA.
+
 - `.github/workflows/quran-dev-qa.yml` is limited to pushes on the dedicated #149 QA branch and manual dispatch. It runs a real Chrome pointer/D1 journey on the existing developer Worker only (not production), and uploads short-lived synthetic screenshots. Its success is a separate gate from normal Verify and the Santoreno API smoke; never infer mobile S Pen hardware or crash-safe offline behavior.
 
 - `node --test tests/quran-qa-target.test.mjs` verifies the synthetic Chrome runner requires `NOOR_QA_RUN_SYNTHETIC=yes` and the exact `https://noor-site-staging.<account>.workers.dev` origin. It rejects the public frontend, legacy QA host, alternate domain, URL path/query, insecure HTTP and missing opt-in.
