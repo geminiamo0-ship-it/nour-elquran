@@ -1,3 +1,8 @@
+## CLASSROOM #120 / PR #127 — 0005 prefilled End protection (2026-10-29, Draft)
+- Branch `fix/120-lesson-history-immutability` now rejects non-NULL End timestamps before completion (INSERT and UPDATE), and requires a newly supplied End timestamp in the same live→completed UPDATE. The earlier guard only checked for non-NULL, allowing a prefilled/stale timestamp to masquerade as an actual teacher End.
+- `workers/api/tests/test_lesson_history.py` adds synthetic cases for forged booked End, scheduled/Start timestamp injection, and pre-migration stale live state; legacy completed history remains untouched. **Exact-head CI pending**; do not claim green from older SHA 4231dc3 or merge Draft PR #127 without review.
+- No teacher identity or two-party presence verification, idempotent Start/End API, remote D1 migration, Production or private child records. Next: inspect Verify for current head, record result in #120/PR; proceed with authenticated teacher-only Start/End and LessonDO presence as a separately reviewed implementation.
+
 ## 2026-10-29 — #120 / PR #127 End timestamp guard follow-up
 - In existing draft `0005_lesson_history.sql`, added a transition guard: a new live→completed change must write `ended_at_ms` atomically, not just `status`. Legacy completed rows with NULL End remain unchanged; same-status retries remain valid.
 - Synthetic `test_lesson_history.py` now checks rejected NULL End leaves the room live, valid End succeeds and historical completed NULL no-ops remain possible. Check **exact-head** GitHub Verify before describing this as tested. No remote D1/production migration.
