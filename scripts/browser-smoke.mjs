@@ -602,6 +602,44 @@ try {
     const shot = await socket.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
     fs.writeFileSync(path.join(screenshots, 'student-notebook-' + width + '.png'), Buffer.from(shot.data, 'base64'));
     console.log('S11 notebook shared Quran read-only and learner isolation passed: ' + width + 'px');
+
+    // S11: exercise REAL publisher sidecars for both printed pages, not synthetic
+    // unit polygons. Keep this mock-only fixture separate from actual learner data.
+    const multiSelect = await socket.send('Runtime.evaluate', {
+      expression: "(()=>{const s=document.getElementById('notebook-lesson');if(!s)return false;s.value='l-active-4';s.dispatchEvent(new Event('change',{bubbles:true}));return s.value==='l-active-4';})()", returnByValue: true,
+    });
+    assert(multiSelect.result?.value === true, 'S11 multi-page fixture lesson selection failed');
+    await waitFor(async () => {
+      const r = await socket.send('Runtime.evaluate', {
+        expression: "(()=>{const v=document.querySelector('[aria-label=\"مصحف الحصة المنشور للقراءة فقط\"]');const labels=[...(v?.querySelectorAll('svg[aria-label=\"اضغط مرة لتحديد الآية ومرتين لفتح ملاحظتها\"] path')??[])].map(x=>x.getAttribute('aria-label'));return !!document.querySelector('[data-rendered-quran-page=\"1\"]')&&labels.includes('تحديد الآية 1:6 واضغط مرتين لفتح ملاحظتها')&&labels.includes('تحديد الآية 1:7 واضغط مرتين لفتح ملاحظتها')&&!labels.includes('تحديد الآية 1:5 واضغط مرتين لفتح ملاحظتها')&&!labels.includes('تحديد الآية 2:1 واضغط مرتين لفتح ملاحظتها')&&!labels.includes('تحديد الآية 2:2 واضغط مرتين لفتح ملاحظتها')&&v.textContent.includes('علامة اصطناعية للصفحة الأولى فقط.')&&!v.textContent.includes('علامة اصطناعية للصفحة الثانية فقط.')&&document.documentElement.scrollWidth<=innerWidth;})()", returnByValue: true,
+      });
+      return r.result?.value === true;
+    }, 'S11 verified page 1 with bounded Fatiha marks at ' + width, 120);
+    const nextPage = await socket.send('Runtime.evaluate', {
+      expression: "(()=>{const v=document.querySelector('[aria-label=\"مصحف الحصة المنشور للقراءة فقط\"]');const b=[...(v?.querySelectorAll('nav button')??[])].find(x=>x.textContent.includes('الصفحة التالية'));if(!b||b.disabled)return false;b.click();return true;})()", returnByValue: true,
+    });
+    assert(nextPage.result?.value === true, 'S11 next lesson page must be enabled');
+    await waitFor(async () => {
+      const r = await socket.send('Runtime.evaluate', {
+        expression: "(()=>{const v=document.querySelector('[aria-label=\"مصحف الحصة المنشور للقراءة فقط\"]');const labels=[...(v?.querySelectorAll('svg[aria-label=\"اضغط مرة لتحديد الآية ومرتين لفتح ملاحظتها\"] path')??[])].map(x=>x.getAttribute('aria-label'));return !!document.querySelector('[data-rendered-quran-page=\"2\"]')&&labels.includes('تحديد الآية 2:1 واضغط مرتين لفتح ملاحظتها')&&labels.includes('تحديد الآية 2:2 واضغط مرتين لفتح ملاحظتها')&&!labels.includes('تحديد الآية 1:6 واضغط مرتين لفتح ملاحظتها')&&!labels.includes('تحديد الآية 1:7 واضغط مرتين لفتح ملاحظتها')&&!labels.includes('تحديد الآية 2:3 واضغط مرتين لفتح ملاحظتها')&&v.textContent.includes('علامة اصطناعية للصفحة الثانية فقط.')&&!v.textContent.includes('علامة اصطناعية للصفحة الأولى فقط.')&&document.documentElement.scrollWidth<=innerWidth;})()", returnByValue: true,
+      });
+      return r.result?.value === true;
+    }, 'S11 verified page 2 with bounded Baqarah marks at ' + width, 120);
+    const multiShot = await socket.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+    fs.writeFileSync(path.join(screenshots, 'student-notebook-multipage-' + width + '.png'),
+      Buffer.from(multiShot.data, 'base64'));
+    const prevPage = await socket.send('Runtime.evaluate', {
+      expression: "(()=>{const v=document.querySelector('[aria-label=\"مصحف الحصة المنشور للقراءة فقط\"]');const b=[...(v?.querySelectorAll('nav button')??[])].find(x=>x.textContent.includes('الصفحة السابقة'));if(!b||b.disabled)return false;b.click();return true;})()", returnByValue: true,
+    });
+    assert(prevPage.result?.value === true, 'S11 previous lesson page must be enabled');
+    await waitFor(async () => {
+      const r = await socket.send('Runtime.evaluate', {
+        expression: "(()=>{const v=document.querySelector('[aria-label=\"مصحف الحصة المنشور للقراءة فقط\"]');const labels=[...(v?.querySelectorAll('svg[aria-label=\"اضغط مرة لتحديد الآية ومرتين لفتح ملاحظتها\"] path')??[])].map(x=>x.getAttribute('aria-label'));return !!document.querySelector('[data-rendered-quran-page=\"1\"]')&&labels.includes('تحديد الآية 1:6 واضغط مرتين لفتح ملاحظتها')&&labels.includes('تحديد الآية 1:7 واضغط مرتين لفتح ملاحظتها')&&!labels.includes('تحديد الآية 1:5 واضغط مرتين لفتح ملاحظتها')&&!labels.includes('تحديد الآية 2:1 واضغط مرتين لفتح ملاحظتها')&&!labels.includes('تحديد الآية 2:2 واضغط مرتين لفتح ملاحظتها')&&v.textContent.includes('علامة اصطناعية للصفحة الأولى فقط.')&&!v.textContent.includes('علامة اصطناعية للصفحة الثانية فقط.')&&document.documentElement.scrollWidth<=innerWidth;})()", returnByValue: true,
+      });
+      return r.result?.value === true;
+    }, 'S11 back-navigation restores page 1 without page 2 marks at ' + width, 120);
+    console.log('S11 real two-page publisher navigation and scoped teacher marks passed: ' + width + 'px');
+
   }
 
 
