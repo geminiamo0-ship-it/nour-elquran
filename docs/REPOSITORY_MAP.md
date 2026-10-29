@@ -235,3 +235,8 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `workers/api/migrations/0004_classroom_lifecycle.sql`: additive append-only D1 teacher Start/End event ledger (unique per lesson, actor check, order and restore-friendly).
 - `workers/api/tests/classroom-lifecycle.test.ts` and `test_classroom_lifecycle_ledger.py`: role, presence, time boundary, event-order, actor, immutability and restore regression.
 - **Not a running classroom**: verified Worker/DO presence, atomic lifecycle service API, video provider and UI remain separate build slices.
+
+## Media provider architecture clarification (#120)
+- `docs/adr/0007-livekit-media-exception.md`: later owner-approved LiveKit Cloud A/V-only provider exception, keeping Cloudflare Workers/D1/DO/R2/Queues as application and data source. Supersedes only the RealtimeKit choice in ADR 0004, not the data stack.
+- `docs/adr/0004-cloudflare-only-platform.md`: still authoritative for Cloudflare-hosted infrastructure, with its media vendor selection superseded per ADR 0007.
+- `docs/adr/0002-livekit-cloud-interactive-mushaf.md`: historical UX origin with explicit provider decision timeline. No media integration or paid room provisioned by documentation.
