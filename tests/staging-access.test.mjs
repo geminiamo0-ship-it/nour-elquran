@@ -34,3 +34,29 @@ test('worker staging hostname fails closed even when env flag is forgotten', () 
 test('production requests do not require staging credentials', () => {
   assert.equal(stagingAccessGuard(new Request('https://noor.example.org/'),{}),null);
 });
+
+test('public demo serves GET/HEAD pages and assets without staging password', () => {
+  const demoEnv = { NOOR_ENVIRONMENT: 'staging', NOOR_PUBLIC_PREVIEW: 'true', STAGING_ACCESS_PASSWORD: password };
+  for (const path of ['', 'student/', 'student/mushaf/', '_next/static/demo.js', 'favicon.ico']) {
+    for (const method of ['GET', 'HEAD']) {
+      assert.equal(stagingAccessGuard(new Request(stage + path, { method }), demoEnv), null);
+    }
+  }
+});
+test('public demo keeps account, readiness, and learner APIs behind Basic Auth', () => {
+  const demoEnv = { NOOR_ENVIRONMENT: 'staging', NOOR_PUBLIC_PREVIEW: 'true', STAGING_ACCESS_PASSWORD: password };
+  for (const path of ['api', 'api/auth/session', 'api/auth/register', 'v1', 'v1/me/learners', 'internal-auth/check', 'health', 'ready']) {
+    const url = stage + path;
+    assert.equal(stagingAccessGuard(new Request(url), demoEnv)?.status, 401);
+    assert.equal(stagingAccessGuard(new Request(url, {headers: {Authorization: auth}}), demoEnv), null);
+  }
+});
+test('public demo never permits write methods without a staging credential', () => {
+  const demoEnv = { NOOR_ENVIRONMENT: 'staging', NOOR_PUBLIC_PREVIEW: 'true', STAGING_ACCESS_PASSWORD: password };
+  for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+    assert.equal(stagingAccessGuard(new Request(stage + 'student/', { method }), demoEnv)?.status, 401);
+  }
+  assert.equal(stagingAccessGuard(new Request(stage + 'api/auth/register'), {NOOR_PUBLIC_PREVIEW:'true'})?.status, 503);
+  // An unconfigured API stays closed even while read-only preview pages work.
+  assert.equal(stagingAccessGuard(new Request(stage), {NOOR_PUBLIC_PREVIEW:'true'}), null);
+});
