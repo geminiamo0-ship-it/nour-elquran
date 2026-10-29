@@ -1,5 +1,5 @@
 'use client';
-import {useState} from 'react';
+import {useEffect,useState} from 'react';
 import type {QuranInkStroke,QuranTarget} from '@/features/student';
 import {clampQuranPage} from '@/features/student';
 import {
@@ -11,6 +11,11 @@ import {
 
 export function useClassroomPreview(){
   const [role,setRole]=useState<ViewRole>('teacher');
+  // Synthetic preview deep links only; never authorize a role from this query parameter.
+  useEffect(()=>{
+    const view=new URLSearchParams(window.location.search).get('view');
+    if(view==='student'||view==='teacher')setRole(view);
+  },[]);
   const [room,setRoom]=useState<ClassroomPreviewState>({
     phase:'waiting',teacherPresent:true,learnerPresent:false,
     studentDrawingAllowed:true,studentMicAllowed:true,currentPage:604,
@@ -21,7 +26,7 @@ export function useClassroomPreview(){
   const [audit,setAudit]=useState<ClassroomAuditEntry[]>([]);
   const [target,setTarget]=useState<QuranTarget|null>(null);
   const [inkMode,setInkMode]=useState<ClassroomTool>('off');
-  const [inkColor,setInkColor]=useState('#d4ab4c');
+  const [inkColor,setInkColor]=useState('#d0a94c');
   const [teacherMic,setTeacherMic]=useState(true);
   const [studentMicOn,setStudentMicOn]=useState(false);
   const [teacherCamera,setTeacherCamera]=useState(true);

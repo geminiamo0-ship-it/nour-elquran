@@ -1,3 +1,9 @@
+## CLASSROOM #134 — compact session controls (Draft PR #135)
+- `apps/web/src/features/classroom/ClassroomSessionHeader.tsx` and `ClassroomSessionHeader.module.css`: single accessible session bar; teacher-only simulated Start/End, mock-only role/presence/time settings and live microphone/drawing menu with Escape handling. Preview role links never authorize backend access.
+- `ClassroomPreview.tsx`: composes header, toolbar, media, Quran and teacher notes in one viewport.
+- `ClassroomControls.tsx`, `Classroom.module.css`: always reachable pen/color/page palette including on student mobile; only toolbar may scroll horizontally.
+- `useClassroomPreview.ts`: synthetic view query initialization; `classroom.test.tsx`: static accessible-controls regression. Actual Chrome/fullscreen geometry and staging remain unverified.
+
 ## Classroom #120 — draft booking/lifecycle integrity
 - `workers/api/migrations/0003_teacher_schedule.sql`: additive D1 40-minute booking/eligibility/conflict guards, single-live and terminal-state invariants, and pre-start lifecycle shortcut rejection. No HTTP Start/End authorization or verified presence.
 - `workers/api/tests/test_teacher_calendar.py`: synthetic SQLite migrations and atomic booking/lifecycle regressions. Native local Wrangler and full Chrome/build checks are separate CI gates.
