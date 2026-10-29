@@ -1,3 +1,8 @@
+## #173 D1 publisher → student My Training vertical slice (source-only)
+- Additive migration 0010 and Worker `published-assignments.ts` provide primary-teacher-only Quran-anchored publish, replay-safe event ledger and owner/teacher list. Shared API boundary `published-assignment-client.ts`; connected teacher Assignments and connected student Training homework panes. Demo unchanged. Audio and submission not connected.
+- Verify the actual fast CI (TS, SQLite foreign keys, real Better Auth/Worker smoke), fix findings. Merge only after exact-head success; postmerge Verify and scoped Noor Dev (existing Worker/D1) then validate owner read/revoke before closing #173.
+- Remote teacher page route issue #169/Noor PR #174 was fixed separately; do not conflate UI route acceptance with assignment publication. No Production/real children or phone provider.
+
 ## #171 fast default CI / on-demand browser QA
 - Owner preference (2026-10-30): prioritize quick CI; Chrome full E2E should NOT run with every PR/main push. Branch `chore/171-fast-ci-browser-on-demand` keeps core lint, typecheck, unit/integration, build, HTTP plus native local Wrangler D1 and Better Auth session/ownership smoke in Verify.
 - Manual `.github/workflows/browser-qa.yml` choice static/account/all covers the exact local synthetic Chrome journeys and screenshots when needed for material UI/role work or pre-release. Staging remote browser is an independent explicitly invoked acceptance step; do not conflate green Verify with UI acceptance.
