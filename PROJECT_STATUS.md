@@ -214,3 +214,8 @@ Owner authorized execution of the full classroom implementation plan #120. A foc
 ## 2026-10-29 — Classroom lifecycle policy + audit next PR (#120)
 
 After verified and merged 40-minute calendar PR #121, implement a small separate Worker's **server-input-only** policy module for Sheikh Start/End and both-person connected presence; 30/40 minute alerts never auto-stop the class. Add immutable D1 lesson Start/End ledger and tests; avoid claiming that the pure policy is already a deployed live room. Worker/DO presence enforcement, session-bound teacher API and atomic journal projection are required next. See #7, #18 and #120.
+
+
+## 2026-10-29 — Real teacher/learner scoped lesson timetable API (#120)
+
+Proposed follow-on PR after #121/#122 adds read-only authenticated Worker timetable routes for teacher and selected learner. Teacher role is resolved from BetterAuth session subject and active qualified D1 teacher row, with assignment or accepted substitute grant for each lesson. Student is limited to the selected learner of an owned account. SQL query tests execute against actual SQLite migration lineage and prevent cross-learner listing. No lesson booking endpoint, verified DO presence, LiveKit media room, actual lesson Start/End HTTP call, or staging deployment is included. Pending CI/merge.
