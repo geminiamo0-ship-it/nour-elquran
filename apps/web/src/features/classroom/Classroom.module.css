@@ -261,7 +261,9 @@
 .root[data-view-role="student"] .mediaPanel{grid-column:2;grid-row:1;}
 /* Desktop: reclaim the previously unused space on both sides of the canonical Quran.
    Rails are anchored to the stage, never laid over printed Quran pixels. */
-@media(min-width:1101px) and (min-height:560px){
+/* Keep the side rails off narrower desktops: their fixed 88px width can cover the
+   canonical Quran when the middle grid column is squeezed by the two side panels. */
+@media(min-width:1200px) and (min-height:560px){
  .quranStage>.toolbar{
    position:absolute;z-index:8;inset:29px 0 18px;height:auto;min-height:0;
    padding:0;margin:0;border:0;border-radius:0;background:transparent;
