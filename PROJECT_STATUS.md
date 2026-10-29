@@ -1,5 +1,11 @@
 # PROJECT_STATUS — verified handoff state
 
+## Active #46 native local runtime gate — 2026-10-29 (unmerged)
+- Baseline main `dc3da3e041c57e9e6af8734fc2bb323885f9be60` is the merged CF-01 #108; [main Verify 40792047893](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40792047893) passed. #104 is CLOSED; #46 and #102 remain OPEN.
+- Branch `test/46-native-local-d1-worker-gate` adds a disposable **Wrangler local** D1 migration replay + Worker HTTP gate to Verify. It checks the actual Worker D1 binding reports `database: ready` while all protected routes stay closed even with forged headers. Uses pinned Wrangler 4.45.0; no cloud account, remote D1, deployment, user data or new runtime dependencies.
+- This is a **pending CI gate**, not yet evidence of passing native D1 or deployed staging. Inspect the exact PR HEAD and all four Verify jobs before reporting results. Next: fix any native runtime/SQL failures; then #46 maintained auth library + verified sessions and isolated Cloudflare staging after appropriate provisioning authorization. #102 frontend notebook can proceed independently.
+
+
 Current integration baseline: main `df284bcf00e81b6199067d6d9386eb2e10a35997` (merged #105 static Next.js export/Workers assets fix). CF-01 preserves those files. Draft #107 overlaps the foundation and is consolidated in #108 with one migration lineage and the revised #103 plan.
 
 ## Current checkpoint — Cloudflare adoption, 2026-10-29 Cairo (#104)
