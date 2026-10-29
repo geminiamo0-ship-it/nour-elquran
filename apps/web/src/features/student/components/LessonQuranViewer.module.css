@@ -11,3 +11,9 @@
 .mark { display: grid; gap: 4px; text-align: start; width: 100%; }
 .notice { margin: 6px 0; }
 @media (max-width: 420px) { .navigation { justify-content: center; } .navigation span { width: 100%; text-align: center; order: -1; } }
+
+.layerControls { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 12px 6px; }
+.layerControls button { border: 1px solid #cbbd9f; background: #fffdf7; border-radius: 6px; color: #253c31; padding: 7px 10px; font: inherit; font-size: 13px; min-height: 42px; cursor: pointer; }
+.layerControls button[aria-pressed="true"] { background: #e7eadb; border-color: #355846; font-weight: 700; }
+.layerControls button:disabled { opacity: .45; cursor: not-allowed; }
+.layerControls button:focus-visible { outline: 3px solid #ad8028; outline-offset: 3px; }
