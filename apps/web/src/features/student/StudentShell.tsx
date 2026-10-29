@@ -64,6 +64,9 @@ function Frame({ children }: { children: ReactNode }) {
             aria-controls="student-navigation-mobile" onClick={() => setMobileOpen((value) => !value)}>☰</button>
         </div>
       </div>
+    {mobileOpen && <nav id="student-navigation-mobile" className={styles.mobileMenu} aria-label="القائمة المختصرة">
+      {navigation(true)}
+    </nav>}
     </header>
     <div className={styles.layout}>
       <aside className={styles.sidebar} aria-label="قائمة الطالب">
@@ -76,9 +79,7 @@ function Frame({ children }: { children: ReactNode }) {
       </aside>
       <main className={styles.main} id="student-main">{children}</main>
     </div>
-    {mobileOpen && <nav id="student-navigation-mobile" className={styles.mobileMenu} aria-label="القائمة المختصرة">
-      {navigation(true)}
-    </nav>}
+
     <nav className={styles.bottomNav} aria-label="التنقل السريع للطالب">
       {studentNavigation.slice(0,5).map((item) =>
         <Link href={item.href} key={item.href} aria-current={selectedNav(item.href) ? 'page' : undefined}
