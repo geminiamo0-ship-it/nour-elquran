@@ -1,5 +1,12 @@
 # Repository map and file ownership
 
+
+## #102 private lesson drawing continuation (draft PR #116)
+- apps/web/src/features/student/components/LessonQuranViewer.tsx and .module.css: same verified printed Quran page, immutable published teacher layer toggle, and bounded ephemeral per-page private pen/marker/eraser strokes with undo/clear. Page/scope verification prevents stale page rendering; no server write.
+- apps/web/src/features/student/components/NotebookWorkspace.tsx: remount viewer when the selected lesson or publication revision changes; parent remounts on learner switch.
+- scripts/browser-smoke.mjs: Chrome responsive layer toggles and real pointer-drag/undo smoke; exact-head CI must be inspected before claiming it passed. No production/staging deploy in this PR.
+
+
 ## STU S11 #102 — partial notebook F0
 - `apps/web/src/features/student/notebookContracts.ts`: versioned structural Quran range, latest published revision/report and learner/lesson layer separation. Does not verify publisher page mapping or persist anything.
 - `apps/web/src/features/student/notebookContracts.test.ts`: synthetic scope/revision/teacher/private isolation and nullable-grade tests.
