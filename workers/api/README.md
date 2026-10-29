@@ -1,3 +1,6 @@
+## Classroom live-room relational guard (#120, draft PR #121)
+The additive `0003_teacher_schedule.sql` now also prevents a second `live` lesson for the same acting teacher or learner, even when their 40-minute booking intervals are adjacent and the first lesson overruns. INSERT and UPDATE paths are guarded; no timer auto-completes a lesson. `test_teacher_calendar.py` uses synthetic SQLite fixtures to cover overrun, unrelated concurrent rooms and direct inserts. This is a D1 data-integrity backstop, **not** teacher role authentication, verified two-party lobby presence, idempotent Start/End, or a deployed media room. Do not migrate remote D1 or expose a classroom mutation endpoint on this basis. Inspect exact-head Verify before merge.
+
 # Noor Workers API
 
 CF-01 / #104 and AUTH-01 / #110 implement the local Workers/D1 foundation and opt-in maintained authentication. Cloud deployment, frontend auth integration, published lessons and uploads remain pending.
