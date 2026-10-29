@@ -12,7 +12,7 @@ type AssignmentRow={id:string;learner_id:string;kind:AssignmentPublish['kind'];
  edition_id:string;surah:number;from_ayah:number;to_ayah:number;due_at_ms:number;
  instructions:string;published_at_ms:number;status:'assigned';revision:number};
 const operationId=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const edition=/^[a-zA-Z0-9_-]{1,80}$/;
+const edition=/^[a-zA-Z0-9_.:-]{1,80}$/;
 const keys=['operationId','kind','editionId','surah','fromAyah','toAyah','dueAtMs','instructions'];
 export function parsePublishAssignment(raw:unknown):AssignmentPublish|null{
  if(!raw||typeof raw!=='object'||Array.isArray(raw))return null;
