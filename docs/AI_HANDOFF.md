@@ -174,3 +174,8 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - Home dashboard `WirdPanel` remains summary. Notebook remains its own archive UI. Preserve text `لا توجد تكليفات معتمدة` for new learner and no fake deadlines. Mock tasks clearly identified as demo; no production submission. Auth/RLS and sync deferred.
 - Verify lint, TS, Vitest, Next production build, Chrome 390px + 1440px via GitHub CI before merge. No Vercel Preview Deployments due daily limit.
 
+
+
+## Handoff — Classroom calendar SQL-first PR #121 (2026-10-29)
+
+Plan: #120 and parent roadmap #38. Branch `feat/noor-classroom-40m-booking-guard`; draft PR #121. New files: `workers/api/migrations/0003_teacher_schedule.sql` and `workers/api/tests/test_teacher_calendar.py`. New bookings must occupy exactly 40 minutes; reject overlapping teacher or learner intervals transactionally, both on new insert and changes; canceled bookings free capacity and historical 30-minute rows are not rewritten. Keep 30m as prior instructional target; timing does NOT close a room. Existing `lessons` and `noor_schema_meta.core=1` remain. Review CI/local D1 migrations BEFORE merge, no remote/staging production mutation. After this slice, implement verified teacher/student waiting room and explicit teacher Start/End with atomic state and DO replay. Audio/video provider decision remains conflicting: ADR 0004 RealtimeKit vs owner-discussed LiveKit Cloud; resolve in a dedicated ADR update BEFORE media coding. No secrets in repo or chat.
