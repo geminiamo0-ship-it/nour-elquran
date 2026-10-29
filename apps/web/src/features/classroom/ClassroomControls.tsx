@@ -16,12 +16,11 @@ export function ClassroomControls({model}:{model:ClassroomPreviewModel}){
   const canBegin=allowStart(room,role);
   const canClose=allowEnd(room,role);
   return <>
-    <div className={css.demoBanner} role="note">
-      <strong>معاينة الفصل التفاعلي فقط</strong> — الدور والحضور هنا للمحاكاة، وليس تصريح دخول أو اتصال LiveKit أو حفظًا سحابيًا.
-    </div>
     <div className={css.topline}>
-      <div><span className={css.overline}>نور القرآن · درس تجريبي</span><h1>الفصل التفاعلي</h1>
-        <p>المصحف المشترك · ٣٠ دقيقة تعليم أساسية · ٤٠ دقيقة محجوزة في الجدول</p></div>
+      <div className={css.lessonTitle}>
+        <h1>الفصل التفاعلي</h1>
+        <span className={css.demoTag} title="هذه بيانات تجريبية ولا يوجد اتصال LiveKit أو حفظ على الخادم">معاينة الفصل التفاعلي فقط</span>
+      </div>
       <div className={css.topControls}>
         <label className={css.roleSwitch}>عرض المعاينة
           <select aria-label="تبديل منظور المعاينة" value={role} onChange={e=>{setRole(e.target.value as 'teacher'|'student');setInkMode('off');}}>
@@ -35,11 +34,26 @@ export function ClassroomControls({model}:{model:ClassroomPreviewModel}){
     </div>
     <div className={css.prejoinCard}>
       <div className={css.prejoinPeople}>
-        <strong>حضور الطرفين في غرفة الانتظار</strong>
+        <strong className={css.presenceHeading}>حضور الطرفين في غرفة الانتظار</strong>
         <label><input type="checkbox" checked={room.teacherPresent}
           onChange={e=>updatePresence('teacher',e.target.checked)}/> الشيخ موجود</label>
         <label><input type="checkbox" checked={room.learnerPresent}
           onChange={e=>updatePresence('student',e.target.checked)}/> الطالب موجود</label>
+      </div>
+      <div className={css.compactClock}>
+        <details className={css.clockDetails}>
+          <summary aria-label="ضبط الوقت التجريبي">◷ {elapsed}:00 <span className={css.clockLabel}>دقيقة تجريبية</span></summary>
+          <div className={css.clockDropdown}>
+            <label>اختبار الوقت: {elapsed} دقيقة
+              <input type="range" min="0" max="60" step="1" value={elapsed}
+                onChange={e=>setElapsed(Number(e.target.value))}/>
+            </label>
+            <small>٣٠ دقيقة تعليم · ٤٠ دقيقة حجز، دون إنهاء تلقائي</small>
+          </div>
+        </details>
+        {alerts.instructionEnded&&<span className={css.warningChip}>انتهاء وقت التعليم</span>}
+        {alerts.reservedSlotEnded&&<span className={css.warningChip}>انتهاء الحجز</span>}
+        {alerts.nextConflict&&<span className={css.dangerChip}>تعارض موعد</span>}
       </div>
       <div className={css.prejoinActions}>
         {room.phase==='waiting'&&<><button className={css.primaryBtn} type="button" disabled={!canBegin}
@@ -56,15 +70,7 @@ export function ClassroomControls({model}:{model:ClassroomPreviewModel}){
         </div>}
       </div>
     </div>
-    <div className={css.timingRow}>
-      <label>اختبار الوقت المنقضي: {elapsed} دقيقة
-        <input type="range" min="0" max="60" step="1" value={elapsed}
-          onChange={e=>setElapsed(Number(e.target.value))}/>
-      </label>
-      {alerts.instructionEnded&&<span className={css.warningChip}>انتهت ٣٠ دقيقة تعليمية — تنبيه فقط</span>}
-      {alerts.reservedSlotEnded&&<span className={css.warningChip}>انتهى حجز الـ٤٠ دقيقة — الشيخ ينهي يدويًا</span>}
-      {alerts.nextConflict&&<span className={css.dangerChip}>تعارض الحصة القادمة · إشعار للإدارة</span>}
-    </div>
+
     <div className={css.toolbar} role="toolbar" aria-label="أدوات المصحف المشترك">
       <div className={css.toolGroup}>
         {tools.map(t=><button key={t.id} type="button" title={t.label}
