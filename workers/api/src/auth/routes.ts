@@ -5,6 +5,7 @@ import { authSettings } from './settings.ts';
 import { ownerAccount } from './accounts.ts';
 import { getOwnedLearner, listOwnedLearners } from '../owner-learners.ts';
 import { listOwnedLearnerLessons, listVerifiedTeacherLessons } from '../lesson-calendar.ts';
+import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '../classroom-access.ts';
 import { normalizePhone, onlyKeys, readObject, validName } from './input.ts';
 
 type Auth = ReturnType<typeof createAuth>;
@@ -70,6 +71,15 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
     }
     return reply(201, { learner: { id, name: input.name.trim(), learnerType: input.learnerType } }, requestId);
   }
+  const learnerAccessMatch = /^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/access$/.exec(path);
+  if (learnerAccessMatch && request.method === 'GET') {
+    const access = await checkOwnedLearnerClassroomAccess(
+      db, accountId, learnerAccessMatch[1]!, learnerAccessMatch[2]!,
+    );
+    return access
+      ? reply(200, { access, roomConnected: false, code: 'CLASSROOM_NOT_CONNECTED' }, requestId)
+      : reply(404, { code: 'NOT_FOUND' }, requestId);
+  }
   const lessonMatch = /^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons$/.exec(path);
   if (lessonMatch && request.method === 'GET') {
     const learnerId = lessonMatch[1]!;
@@ -109,6 +119,13 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // The library re-reads the signed session from D1; cookie cache and unverified token auth are disabled.
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return reply(401, { code: 'UNAUTHENTICATED' }, requestId);
+  const teacherAccessMatch = /^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/access$/.exec(path);
+  if (teacherAccessMatch && request.method === 'GET') {
+    const access = await checkTeacherClassroomAccess(env.DB, session.user.id, teacherAccessMatch[1]!);
+    return access
+      ? reply(200, { access, roomConnected: false, code: 'CLASSROOM_NOT_CONNECTED' }, requestId)
+      : reply(404, { code: 'NOT_FOUND' }, requestId);
+  }
   if (path === '/v1/teacher/lessons' && request.method === 'GET') {
     // Teacher role is resolved from the VERIFIED Better Auth identity in D1.
     const lessons = await listVerifiedTeacherLessons(env.DB, session.user.id);
