@@ -1,3 +1,8 @@
+## #169 Noor teacher session-aware public preview + real mode (draft)
+- New role boundary `resolveTeacherPortalMode`: when opt-in build flag true, authenticated sessions show real teacher read adapter (D1 verifies role); signed-out visitors see clearly identified demo; while session checking/error show no fixtures. Role denial 403 never falls back to demo.
+- No change to connected API, D1, lesson DO or payments. Feature flag stays off by default until dedicated Noor Stage build enables `NEXT_PUBLIC_TEACHER_READONLY_ENABLED=true` and role-provisioned browser acceptance. Existing public preview must remain reachable to visitors.
+- Exact-head CI and remote Dev evidence are next; do not close #169 from module tests alone.
+
 ## #167 connected teacher Students fidelity (draft)
 - Work branch `feat/167-connected-teacher-students-layout`, issue #167. Reuse original `TeacherPortal.module.css` students roster and detail, authorized `TeacherReadOnlyView` verified D1 roster and lessons, and `TeacherAcademicPlanEditor` for non-demo API.
 - Existing public preview remains unchanged with `NEXT_PUBLIC_TEACHER_READONLY_ENABLED` default OFF; never assert browser-ready from this branch. Need CI, stage flag plan preserving public preview, role-provisioned teacher Chrome/screenshots/409/revoke, before closing.
