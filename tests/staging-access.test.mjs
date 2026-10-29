@@ -60,3 +60,9 @@ test('public demo never permits write methods without a staging credential', () 
   // An unconfigured API stays closed even while read-only preview pages work.
   assert.equal(stagingAccessGuard(new Request(stage), {NOOR_PUBLIC_PREVIEW:'true'}), null);
 });
+
+test('developer environment preserves application routing', () => {
+  const configured = { NOOR_ENVIRONMENT: 'staging', NOOR_DEV_OPEN: 'true' };
+  assert.equal(stagingAccessGuard(new Request(stage), configured), null);
+  assert.equal(stagingAccessGuard(new Request(stage + 'api/auth/session'), configured), null);
+});
