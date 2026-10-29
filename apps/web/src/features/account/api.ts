@@ -83,6 +83,7 @@ export function accountErrorMessage(error: unknown): string {
   if (error.status === 429) return 'محاولات كثيرة. انتظر دقيقة ثم حاول مجددًا.';
   if (error.code === 'PROFILE_REVISION_CONFLICT' || error.code === 'OPERATION_CONFLICT') return 'تغير الملف في جلسة أخرى. حدّث القائمة قبل إعادة التعديل.';
   if (error.code === 'PROFILE_SCHEMA_NOT_READY') return 'إدارة الملفات قيد التجهيز على الخادم.';
+  if (error.code === 'PROFILE_OPEN_LESSONS') return 'لا يمكن أرشفة الطالب قبل انتهاء أو إلغاء الحصص المحجوزة والجارية.';
   if (error.status === 404) return 'ملف الطالب لم يعد متاحًا. حدّث القائمة.';
   if (error.code === 'LEARNER_LIMIT') return 'وصلت إلى الحد الأقصى: ثمانية ملفات طلاب.';
   if (error.code === 'NETWORK_ERROR') return 'تعذّر الاتصال. راجع اتصال الإنترنت وحدّث البيانات قبل إعادة المحاولة.';
