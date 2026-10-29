@@ -51,7 +51,8 @@ try {
   assert.equal(await browser.evaluate("document.cookie.includes('session_token')"),false);
   for(const width of [360,390,1440]) {
     await browser.send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});
-    assert.equal(await browser.evaluate('document.documentElement.scrollWidth>innerWidth'),false,'Dashboard overflow at '+width);
+    const dashboardLayout=await browser.evaluate(`(()=>({viewport:innerWidth,scroll:document.documentElement.scrollWidth,offenders:[...document.querySelectorAll('body *')].map(el=>{const r=el.getBoundingClientRect();return {tag:el.tagName,id:el.id,cls:typeof el.className==='string'?el.className.slice(0,100):'',left:Math.round(r.left),right:Math.round(r.right),width:Math.round(r.width)};}).filter(x=>x.width>0&&(x.right>innerWidth+1||x.left < -1)).slice(0,20)}))()`);
+    assert.equal(dashboardLayout.scroll>dashboardLayout.viewport,false,'Dashboard overflow at '+width+': '+JSON.stringify(dashboardLayout));
     await browser.screenshot('artifacts/auth-browser/dashboard-'+width+'.png');
   }
   await browser.go('/student/account/');await present('#create-learner-form');
