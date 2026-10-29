@@ -1,3 +1,7 @@
+## B2 backend implementation status (#138)
+
+Staff-controlled `POST /v1/staff/teacher-actions` (provision dormant, qualify, activate, suspend, revoke qualification) uses verified Better Auth staff session and D1 `roles.manage`, append-only SQLite/D1 trigger-based audit, idempotent `operationId` and strict no-self-escalation checks. Phone-verified existing account required before provision/activate. **No self-service teacher or staff promotions, no real users or production migration.** No UI for management yet; admin portal can consume this private endpoint only after staging acceptance and staff bootstrap. `/teacher` default remains synthetic and authenticated read-only UI requires both build flags.
+
 ## B1 teacher read-only connection (#136, draft PR #137)
 
 - `GET /v1/teacher/learners` uses D1-qualified Better Auth subject and time-bounded, primary-only assignment. The pre-existing `GET /v1/teacher/lessons` is also verified server-side.

@@ -1,3 +1,12 @@
+## Teacher Backend B2 #138
+
+- `workers/api/migrations/0005_teacher_roles.sql`: append-only role audit + atomic staff-authorized D1 teacher role transitions; no public self-service grants.
+- `workers/api/src/staff-teachers.ts`: strict staff action parsing, D1 grant checks, idempotency and fail-closed orchestration.
+- `workers/api/src/auth/routes.ts`: POST `/v1/staff/teacher-actions` after verified Better Auth session / origin checks.
+- `workers/api/tests/test_teacher_roles.py` and `staff-teachers.test.ts`: real migration constraint and TS permission/validation unit tests.
+- `scripts/cloudflare-auth-smoke.mjs`: native local synthetic staff/teacher session, provision/activate/revoke tests, no real accounts.
+- No remote databases, no teacher UI flag change.
+
 ## Teacher Backend B1 #136 (Draft PR #137)
 - `workers/api/src/teacher-roster.ts`: bounded active-primary D1 roster scoped to D1-qualified Better Auth subject. No substitute grant broadens roster.
 - `workers/api/src/auth/routes.ts`: `GET /v1/teacher/learners` authenticated read-only.

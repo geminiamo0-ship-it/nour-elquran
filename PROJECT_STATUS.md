@@ -1,3 +1,10 @@
+## TEACHER BACKEND B2 #138 — staff-only role provisioning (PR #139)
+
+- D1 migration `0005_teacher_roles.sql`: audited append-only role command ledger with atomic status/qualification transitions using SQLite triggers, actor grant/phone/active account guard and replay constraint. Existing teacher data unchanged.
+- New staff-only `POST /v1/staff/teacher-actions`: Better Auth session + unrevoked `roles.manage`, strict JSON, UUID idempotency, server-sourced actor/time. State flow: provision dormant/unqualified → qualify → activate → suspend or revoke qualification. Staff self-promotion forbidden.
+- Native Wrangler local synthetic admin/teacher verification added to `scripts/cloudflare-auth-smoke.mjs`. Strict no real OTP/credentials/teacher grants: bootstrap role/phone flags ONLY in disposable synthetic local D1. No cloud staging/production migration, users, real teacher role or frontend activation.
+- B3 remains: staff assignment + booking, synthetic staging and real teacher account eligibility, then learner plans/preparation and report/assignments. All CI gates and PR verification required before merge.
+
 ## TEACHER BACKEND #136 — initial secured read-only implementation (Draft PR #137)
 
 - Added D1 primary-roster read boundary + protected `GET /v1/teacher/learners`, verified Better Auth qualified teacher only; substitute grants never confer roster access. Exact SQLite migration and Node tests cover future/revoked/expired assignments, archived child, disabled household and query scoping.

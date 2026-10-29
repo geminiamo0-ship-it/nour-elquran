@@ -6,6 +6,7 @@ import { ownerAccount } from './accounts.ts';
 import { getOwnedLearner, listOwnedLearners } from '../owner-learners.ts';
 import { listOwnedLearnerLessons, listVerifiedTeacherLessons } from '../lesson-calendar.ts';
 import { listVerifiedTeacherLearners } from '../teacher-roster.ts';
+import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '../staff-teachers.ts';
 import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '../classroom-access.ts';
 import { normalizePhone, onlyKeys, readObject, validName } from './input.ts';
 
@@ -120,6 +121,22 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // The library re-reads the signed session from D1; cookie cache and unverified token auth are disabled.
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return reply(401, { code: 'UNAUTHENTICATED' }, requestId);
+  if (path === '/v1/staff/teacher-actions') {
+    if (request.method !== 'POST') return reply(405, {code:'METHOD_NOT_ALLOWED'}, requestId);
+    // No public path can mint staff grants. Role is resolved from verified
+    // Better Auth + D1, BEFORE accepting a target identity.
+    if (!await canManageTeachers(env.DB, session.user.id))
+      return reply(403, {code:'STAFF_ACCESS_DENIED'}, requestId);
+    const migration=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='teacher_roles'",
+    ).first<{version:number}>();
+    if(migration?.version!==1)return reply(503, {code:'TEACHER_ROLE_SCHEMA_NOT_READY'}, requestId);
+    const input=parseTeacherAction(await readObject(request));
+    if(!input)return reply(400, {code:'INVALID_TEACHER_ACTION'}, requestId);
+    const output=await issueTeacherRoleAction(env.DB,session.user.id,input);
+    const {status,...data}=output;
+    return reply(status,data,requestId);
+  }
   const teacherAccessMatch = /^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/access$/.exec(path);
   if (teacherAccessMatch && request.method === 'GET') {
     const access = await checkTeacherClassroomAccess(env.DB, session.user.id, teacherAccessMatch[1]!);
