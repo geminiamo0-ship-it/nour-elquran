@@ -1,5 +1,7 @@
 ## #149 developer-only Quran QA target safety
 
+- `.github/workflows/quran-dev-qa.yml` is limited to pushes on the dedicated #149 QA branch and manual dispatch. It runs a real Chrome pointer/D1 journey on the existing developer Worker only (not production), and uploads short-lived synthetic screenshots. Its success is a separate gate from normal Verify and the Santoreno API smoke; never infer mobile S Pen hardware or crash-safe offline behavior.
+
 - `node --test tests/quran-qa-target.test.mjs` verifies the synthetic Chrome runner requires `NOOR_QA_RUN_SYNTHETIC=yes` and the exact `https://noor-site-staging.<account>.workers.dev` origin. It rejects the public frontend, legacy QA host, alternate domain, URL path/query, insecure HTTP and missing opt-in.
 - Once the existing Dev site is independently confirmed deployed with verified canonical D1 anchors and private save enabled, the manual `NOOR_QA_ORIGIN=https://noor-site-staging.<account>.workers.dev NOOR_QA_RUN_SYNTHETIC=yes node scripts/noor-quran-qa-browser.mjs` exercises synthetic accounts/Chrome/D1. It **writes synthetic records** to the isolated development database, so never run it on production. This source-only change does not constitute a remote pass; page-turn-during-fetch, failed POST/Retry and multi-device proof remain separate.
 

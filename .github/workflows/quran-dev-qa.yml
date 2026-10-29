@@ -1,0 +1,49 @@
+name: Quran Dev Synthetic Browser QA
+
+# Narrow one-off development-only QA branch; never runs on main pushes.
+on:
+  push:
+    branches: [test/149-quran-dev-qa-target]
+    paths:
+      - scripts/noor-quran-qa-browser.mjs
+      - scripts/noor-quran-qa-target.mjs
+      - .github/workflows/quran-dev-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: noor-quran-dev-synthetic-qa
+  cancel-in-progress: false
+
+jobs:
+  browser:
+    name: synthetic-dev-chrome-d1
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Fixed existing development Worker only. The runner rejects all other hosts.
+      NOOR_QA_ORIGIN: https://noor-site-staging.geminiamo0.workers.dev
+      NOOR_QA_RUN_SYNTHETIC: 'yes'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check exact synthetic-only target and browser syntax
+        run: |
+          node --test tests/quran-qa-target.test.mjs
+          node --check scripts/noor-quran-qa-browser.mjs
+      - name: Require real headless Chrome
+        run: command -v google-chrome
+      - name: Exercise remote development Better Auth, Quran D1 and Chrome
+        run: node scripts/noor-quran-qa-browser.mjs
+      - name: Upload synthetic-only mobile screenshots for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: noor-quran-dev-synthetic-chrome
+          path: artifacts/quran-qa/*.png
+          if-no-files-found: warn
+          retention-days: 3

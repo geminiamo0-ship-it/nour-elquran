@@ -1,5 +1,7 @@
 ## #149 synthetic development Quran QA target
 
+- `.github/workflows/quran-dev-qa.yml`: branch-scoped (or manual) synthetic remote Chrome QA on the existing Noor development Worker, with no secrets or deployment and 3-day synthetic screenshot artifacts. Requires explicit target allowlist; never runs automatically on main.
+
 - `scripts/noor-quran-qa-target.mjs`: exact developer Worker hostname + explicit synthetic-write opt-in guard; `tests/quran-qa-target.test.mjs`: no production/host/path/query bypass tests.
 - `scripts/noor-quran-qa-browser.mjs`: real Chrome/CDP synthetic Quran persistence QA for the existing development host (no Basic gate), conditional signup form mode; **not automatically deployed or executed** by this source change. See #149 and Santoreno PR #241 for the separate deployment decision.
 
