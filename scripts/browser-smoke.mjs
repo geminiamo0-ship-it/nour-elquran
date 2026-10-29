@@ -516,6 +516,58 @@ try {
     'S03 trial booking preview smoke failed: '+JSON.stringify(bookingChecks??bookingResult));
   console.log('S03 trial booking preview (free, no-send), weekly section and sibling isolation passed');
 
+
+  // TEACHER #45: real production-exported React routes, mobile RTL and states.
+  for (const teacherSection of ['', 'schedule', 'students', 'preparation', 'assignments',
+    'reports', 'notifications', 'cases']) {
+    const pageUrl = url + 'teacher' + (teacherSection ? '/' + teacherSection : '');
+    const response = await fetch(pageUrl);
+    assert.equal(response.status, 200, 'Missing teacher preview route: ' + pageUrl);
+    const body = await response.text();
+    assert(body.includes('معاينة واجهة الشيخ'), 'Teacher route must explicitly disclose mock data');
+  }
+  for (const width of [360,390,1440]) {
+    await socket.send('Emulation.setDeviceMetricsOverride', {
+      width, height: 900, deviceScaleFactor: 1, mobile: false,
+    });
+    await socket.send('Page.navigate', {url:url+'teacher'});
+    const teacherReady = await waitFor(async () => {
+      const result=await socket.send('Runtime.evaluate', {
+        expression: "(() => ({ready:document.readyState,heading:document.querySelector('#teacher-content h1')?.textContent,viewport:innerWidth,scroll:document.documentElement.scrollWidth,rtl:document.documentElement.dir,preview:document.body.textContent.includes('معاينة واجهة الشيخ')}))()",
+        returnByValue:true,
+      });
+      const value=result.result?.value;
+      return value?.ready==='complete'&&value?.heading?.includes('أهلًا بك')?value:null;
+    }, 'teacher preview '+width);
+    assert.equal(teacherReady.rtl,'rtl');
+    assert.equal(teacherReady.viewport,width);
+    assert(teacherReady.scroll<=width,'Teacher horizontal overflow at '+width+': '+teacherReady.scroll);
+    assert(teacherReady.preview,'Teacher mock disclosure absent');
+    const screenshot=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    const png=Buffer.from(screenshot.data,'base64');
+    assert.equal(png.readUInt32BE(16),width);
+    fs.writeFileSync(path.join(screenshots,'teacher-home-'+width+'.png'),png);
+  }
+  await socket.send('Emulation.setDeviceMetricsOverride', {
+    width:1440,height:900,deviceScaleFactor:1,mobile:false,
+  });
+  await socket.send('Page.navigate',{url:url+'teacher'});
+  await waitFor(async()=>{
+    const res=await socket.send('Runtime.evaluate',{
+      expression:"document.querySelector('#teacher-scenario')?.options?.length>=7",
+      returnByValue:true,
+    });
+    return res.result?.value===true;
+  }, 'teacher scenario select');
+  const scenarioCheck=await socket.send('Runtime.evaluate',{
+    expression:"(async()=>{ const sel=document.querySelector('#teacher-scenario'); sel.value='empty'; sel.dispatchEvent(new Event('change',{bubbles:true})); await new Promise(r=>setTimeout(r,220)); return {blank:document.querySelector('#teacher-content')?.textContent.includes('جدولك خالٍ'),mock:document.body.textContent.includes('لا يوجد نشر تقارير')}; })()",
+    returnByValue:true,awaitPromise:true,
+  });
+  assert(scenarioCheck.result?.value?.blank===true &&
+    scenarioCheck.result?.value?.mock===true,
+    'Teacher empty roster scenario did not re-render: '+JSON.stringify(scenarioCheck.result?.value));
+  console.log('Teacher A-Z routes, mobile 360/390/1440 RTL, screenshot and empty state passed');
+
 } finally {
   socket?.close();
   for (const child of children.reverse()) child.kill('SIGTERM');
