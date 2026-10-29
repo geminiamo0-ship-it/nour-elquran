@@ -27,10 +27,20 @@ export async function openLocalChrome(url) {
   child.stderr?.on('data', chunk => { browserErrors = (browserErrors + chunk.toString()).slice(-4000); });
   let socket;
   async function close() {
-    socket?.close(); child.kill('SIGTERM');
-    await Promise.race([new Promise(resolve => child.once('exit',resolve)),sleep(1500)]);
-    if(child.exitCode===null) child.kill('SIGKILL');
-    fs.rmSync(profile,{recursive:true,force:true,maxRetries:5,retryDelay:100});
+    socket?.close();
+    const exited = () => child.exitCode !== null || child.signalCode !== null;
+    if (!exited()) {
+      child.kill('SIGTERM');
+      await Promise.race([new Promise(resolve => child.once('exit',resolve)),sleep(3000)]);
+    }
+    if (!exited()) {
+      child.kill('SIGKILL');
+      await Promise.race([new Promise(resolve => child.once('exit',resolve)),sleep(3000)]);
+    }
+    // The native browser journey must not fail because Chromium briefly keeps
+    // updating cache files during process/profile teardown.
+    try { fs.rmSync(profile,{recursive:true,force:true,maxRetries:12,retryDelay:250}); }
+    catch (error) { console.warn('Chrome profile cleanup warning:', error?.code ?? String(error)); }
   }
   try {
     await waitFor(async()=>{
