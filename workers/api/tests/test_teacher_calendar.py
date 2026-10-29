@@ -253,43 +253,37 @@ class TeacherCalendarConstraints(unittest.TestCase):
             "completed",
         )
 
-    def test_scheduled_learner_reassignment_rejects_archived_profile_atomically(self):
+    def test_core_lesson_learner_identity_remains_immutable(self):
         lesson(self.db, "booked")
         self.db.execute("UPDATE learners SET status='archived' WHERE id='learner-b'")
-        with self.assertRaisesRegex(sqlite3.IntegrityError, "active learner and account"):
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "lesson learner is immutable"):
+            self.db.execute("UPDATE lessons SET learner_id='learner-b' WHERE id='booked'")
+        self.db.execute("UPDATE learners SET status='active' WHERE id='learner-b'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "lesson learner is immutable"):
             self.db.execute("UPDATE lessons SET learner_id='learner-b' WHERE id='booked'")
         self.assertEqual(
             self.db.execute("SELECT learner_id FROM lessons WHERE id='booked'").fetchone()[0],
             "learner-a",
         )
-        self.db.execute("UPDATE learners SET status='active' WHERE id='learner-b'")
-        self.db.execute("UPDATE lessons SET learner_id='learner-b' WHERE id='booked'")
-        self.assertEqual(
-            self.db.execute("SELECT learner_id FROM lessons WHERE id='booked'").fetchone()[0],
-            "learner-b",
-        )
 
-    def test_scheduled_learner_reassignment_rejects_disabled_new_owner(self):
-        self.db.execute(
-            "INSERT INTO accounts(id,auth_subject,status,created_at_ms) "
-            "VALUES('other','other-subject','disabled',0)"
-        )
-        self.db.execute(
-            "INSERT INTO learners(id,account_id,display_name,learner_type,created_at_ms) "
-            "VALUES('learner-c','other','synthetic','child',0)"
-        )
+    def test_acting_teacher_frozen_at_live_and_completed_but_not_scheduled(self):
         lesson(self.db, "booked")
-        with self.assertRaisesRegex(sqlite3.IntegrityError, "active learner and account"):
-            self.db.execute("UPDATE lessons SET learner_id='learner-c' WHERE id='booked'")
+        # Before Start, an authorized scheduling operation may reassign the teacher.
+        self.db.execute("UPDATE lessons SET actual_teacher_id='teacher-b' WHERE id='booked'")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='booked'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "acting teacher is immutable"):
+            self.db.execute("UPDATE lessons SET actual_teacher_id='teacher-a' WHERE id='booked'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "acting teacher is immutable"):
+            self.db.execute(
+                "UPDATE lessons SET status='completed', actual_teacher_id='teacher-a' "
+                "WHERE id='booked'"
+            )
+        self.db.execute("UPDATE lessons SET status='completed' WHERE id='booked'")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "acting teacher is immutable"):
+            self.db.execute("UPDATE lessons SET actual_teacher_id='teacher-a' WHERE id='booked'")
         self.assertEqual(
-            self.db.execute("SELECT learner_id FROM lessons WHERE id='booked'").fetchone()[0],
-            "learner-a",
-        )
-        self.db.execute("UPDATE accounts SET status='active' WHERE id='other'")
-        self.db.execute("UPDATE lessons SET learner_id='learner-c' WHERE id='booked'")
-        self.assertEqual(
-            self.db.execute("SELECT learner_id FROM lessons WHERE id='booked'").fetchone()[0],
-            "learner-c",
+            self.db.execute("SELECT actual_teacher_id FROM lessons WHERE id='booked'").fetchone()[0],
+            "teacher-b",
         )
 
     def test_core_readiness_version_unchanged_and_schedule_migration_recorded(self):
