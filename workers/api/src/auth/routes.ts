@@ -4,6 +4,7 @@ import { createAuth } from './config.ts';
 import { authSettings } from './settings.ts';
 import { ownerAccount } from './accounts.ts';
 import { getOwnedLearner, listOwnedLearners } from '../owner-learners.ts';
+import { applyLearnerProfileAction, parseLearnerProfileAction } from '../learner-profile-actions.ts';
 import {applyPrivateMushaf,parsePrivateMushafOp,readPrivateMushaf} from '../private-mushaf.ts';
 import { listOwnedLearnerLessons, listVerifiedTeacherLessons } from '../lesson-calendar.ts';
 import { listVerifiedTeacherLearners } from '../teacher-roster.ts';
@@ -58,7 +59,7 @@ async function credentials(auth: Auth, db: CoreDatabase, request: Request, path:
 async function profiles(db: CoreDatabase, accountId: string, authSubject: string, request: Request, path: string, requestId: string) {
   if (path === '/v1/me/learners' && request.method === 'GET') {
     const learners = await listOwnedLearners(db, { authSubject });
-    return reply(200, { learners: learners.map(row => ({ id: row.id, name: row.displayName, learnerType: row.learnerType })) }, requestId);
+    return reply(200, { learners: learners.map(row => ({ id: row.id, name: row.displayName, learnerType: row.learnerType, revision:row.revision })) }, requestId);
   }
   if (path === '/v1/me/learners' && request.method === 'POST') {
     const input = await readObject(request);
@@ -73,7 +74,20 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
         return reply(409, { code: 'LEARNER_LIMIT' }, requestId);
       throw error;
     }
-    return reply(201, { learner: { id, name: input.name.trim(), learnerType: input.learnerType } }, requestId);
+    return reply(201, { learner: { id, name: input.name.trim(), learnerType: input.learnerType, revision:1 } }, requestId);
+  }
+  const profileMatch = /^\\/v1\\/me\\/learners\\/([a-zA-Z0-9-]{1,128})\\/profile-actions$/.exec(path);
+  if (profileMatch) {
+    if (request.method!=='POST') return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await db.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='learner_profiles'",
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'PROFILE_SCHEMA_NOT_READY'},requestId);
+    const input=parseLearnerProfileAction(await readObject(request));
+    if(!input)return reply(400,{code:'INVALID_PROFILE_ACTION'},requestId);
+    const result=await applyLearnerProfileAction(db,accountId,authSubject,profileMatch[1]!,input);
+    const {status,...body}=result;
+    return reply(status,body,requestId);
   }
   const mushafMatch = /^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/mushaf$/.exec(path);
   if(mushafMatch){
@@ -124,7 +138,7 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
   const match = /^\/v1\/learners\/([a-zA-Z0-9-]{1,128})$/.exec(path);
   if (match && request.method === 'GET') {
     const row = await getOwnedLearner(db, { authSubject }, match[1]!);
-    return row ? reply(200, { learner: { id: row.id, name: row.displayName, learnerType: row.learnerType } }, requestId)
+    return row ? reply(200, { learner: { id: row.id, name: row.displayName, learnerType: row.learnerType, revision:row.revision } }, requestId)
       : reply(404, { code: 'NOT_FOUND' }, requestId);
   }
   return reply(404, { code: 'NOT_FOUND' }, requestId);
