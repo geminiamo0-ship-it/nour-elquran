@@ -1,0 +1,13 @@
+.viewer { margin-block: 20px; padding: clamp(12px, 2vw, 22px); border: 1px solid #e4d9c0; border-radius: 9px; background: #fffdf7; color: #253c31; }
+.heading { display: grid; gap: 5px; margin-bottom: 14px; }
+.heading small, .notice { color: #526457; font-size: 13px; line-height: 1.8; }
+.navigation { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.navigation button, .mark { border: 1px solid #cbbd9f; background: #f8f5eb; border-radius: 6px; color: #253c31; padding: 8px 12px; font: inherit; cursor: pointer; min-height: 42px; }
+.navigation button:disabled { opacity: .45; cursor: not-allowed; }
+.navigation button:focus-visible, .mark:focus-visible { outline: 3px solid #ad8028; outline-offset: 3px; }
+.navigation span { font-size: 13px; }
+.page { max-width: 450px; margin-inline: auto; min-width: 0; }
+.marks { display: grid; gap: 9px; margin-top: 15px; }
+.mark { display: grid; gap: 4px; text-align: start; width: 100%; }
+.notice { margin: 6px 0; }
+@media (max-width: 420px) { .navigation { justify-content: center; } .navigation span { width: 100%; text-align: center; order: -1; } }
