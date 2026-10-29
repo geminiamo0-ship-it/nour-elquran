@@ -34,12 +34,12 @@ If any of these cannot be read, STOP writing code until the missing context is r
 ## Confirmed product direction (not evidence of implementation)
 - Arabic RTL, polished restrained Azhar-inspired visual language, dark ochre/gold, ivory, deep green; mobile-first and accessible.
 - For all ages, with emphasis on children; **no separate parent dashboard**.
-- One Supabase Auth account may manage several independently scoped student profiles (siblings). The selected student profile drives UI, lessons, tutors and training; switching cannot leak cross-profile data.
+- One authenticated account hosted on Cloudflare may manage several independently scoped student profiles (siblings). The selected student profile drives UI, lessons, tutors and training; switching cannot leak cross-profile data.
 - Teacher-led one-to-one lessons; reports after class lead to structured, interactive practice before the next class.
 - **Approved Landing Page design:** docs/DESIGN_SYSTEM.md is normative for colors, fonts, logo, CTA scroll and guardian-phone signup. CTA to trial goes to signup, then full Student Dashboard, then trial booking inside dashboard; no anonymous pre-signup booking funnel.
-- Frontend-first mock workflows; backend and LiveKit Cloud integration later, with early technical spike permitted when agreed.
+- Frontend-first mock workflows; Cloudflare backend and RealtimeKit integration through ordered issues, with early technical spike permitted when agreed.
 - **Approved classroom spec #7:** teacher AND learner interact with shared Quran mushaf using pen/handwriting, highlight, eraser and typed notes; persisted annotated lesson JSON plus PNG/PDF archive accessible from student profile. No actual audiovisual session recording authorized by this decision.
-- Proposed technology: Next.js/Cloudflare UI; Cloudflare Worker/DO/Queues; Supabase Auth/PostgreSQL; **LiveKit Cloud (approved managed A/V provider)**; optional LLM planner. Frontend deployment adapter and detailed topology still require verification.
+- **Owner-approved platform (2026-10-29):** Cloudflare Workers API + D1 relational data + app-level authorization; maintained auth library hosted on Workers; SQLite Lesson DO + R2 + Queues/Cron. Frontend targets Workers through verified adapter (#40); media target RealtimeKit (#49/#50). Supabase/Postgres/RLS and prior LiveKit provider selection are superseded by docs/adr/0004-cloudflare-only-platform.md. Product UX and no-recording policies remain binding. Integration/deployment require their own actual evidence.
 
 ## Agent quick checklist
 1. Read status and current Issue.
@@ -50,4 +50,5 @@ If any of these cannot be read, STOP writing code until the missing context is r
 6. Document map/decision/status in same PR.
 7. Wait for checks and review; never falsely claim completion.
 
-**Current priority:** Finish Issue #1 governance foundation; then discuss and approve the full product roadmap with the owner. Do NOT start designing/building feature pages without an approved Issue.
+**Current priority:** CF-01 #104 Cloudflare foundation, then #46 real authentication/authorization and #102 notebook UI/contracts. Preserve existing student-first UX sequence. Read current PROJECT_STATUS and ADR 0004; historical foundation/deferral notes do not override the latest owner decision.
+

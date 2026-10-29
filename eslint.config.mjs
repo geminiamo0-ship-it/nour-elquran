@@ -5,6 +5,7 @@ export default tseslint.config(
   {
     ignores: ['**/node_modules/**', '**/.next/**', '**/dist/**', '**/coverage/**', 'pnpm-lock.yaml'],
   },
+  { files: ['workers/api/**/*.ts'], languageOptions: { globals: { Request: 'readonly', Response: 'readonly', URL: 'readonly', crypto: 'readonly' } } },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -25,3 +26,4 @@ export default tseslint.config(
     },
   },
 );
+

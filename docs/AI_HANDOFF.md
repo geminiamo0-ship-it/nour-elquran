@@ -1,5 +1,29 @@
 # AI agent handoff contract
 
+Current integration baseline: main `df284bcf00e81b6199067d6d9386eb2e10a35997` (merged #105 static Next.js export/Workers assets fix). CF-01 preserves those files. Draft #107 overlaps the foundation and is consolidated in #108 with one migration lineage and the revised #103 plan.
+
+## Latest handoff — CF-01 #104, 2026-10-29 Cairo
+- Read ADR 0004 and current PROJECT_STATUS. Owner approved Cloudflare-only infrastructure; older Supabase/Postgres/RLS/LiveKit instructions below are superseded. No parent dashboard or Quran/learning-policy change.
+- CF-01: local Worker foundation + strict D1 core migration + pure authorization helpers + 18 Node / 19 SQLite tests. /v1/* fails closed until auth exists; no data endpoint or real login supplied.
+- Native D1/DO/Worker behavior and remote resources are NOT verified. No production SQL, real learner data, secret copying, backup job, deployment or media/provider messages.
+- Next: #46 maintained Workers-hosted auth + D1 session persistence + real staging bindings and native authorization tests, then notebook API integration/#102 and report publishing. First-report deadline/child write-sharing policy remain unresolved at their relevant stage.
+- Use CLOUDFLARE_BACKUP_AND_RESTORE.md: 30d Paid/7d Free Time Travel, longer private exports, R2/DO scope and reconciliation; no destructive restore authorized by architecture adoption.
+- Record exact-head Verify and PR/merge evidence in #104. Preserve old checkpoint evidence only as history; Vercel previews remain disabled.
+
+## Previous handoffs (historical)
+
+
+
+## Latest handoff — 2026-10-29 Cairo, #101 planning
+- Baseline: main `906a993d0ea350591692045fa878da34995d7c1c`, merged Training PR #100. Notebook is still a local selector/summary/note form.
+- Read [the complete Arabic plan](LESSON_NOTEBOOK_AND_BACKEND_READINESS_PLAN.md). This branch consolidates approved product decisions and proposes contracts/RLS/publication/storage/recovery/delivery tests. No backend, migrations, uploads, messages or deployment.
+- Next exact action: [#102](https://github.com/geminiamo0-ship-it/nour-elquran/issues/102), notebook UI/contracts on shared reader with last published layer, separate private layer, honest share/export states and L1/L2 + learner-switch tests. Backend then starts B0/B1 under #46 before real records.
+- Preserve canonical Mushaf per learner, latest published report only, private notes by default, explicit sharing/submission and substitute brief expiry at lesson end; limited report correction must not restore summary access.
+- Resolve provider/login, child-session powers, retention/revocation and billing edge cases at their stated dependency stages; proposals are not shipped or previously approved facts.
+- Inspect this PR exact-head Verify and record SHA/run URL in #101/PR. Older evidence below belongs to its named commits. Keep Vercel previews disabled.
+
+## Historical handoffs
+
 Every session starts by reading AGENTS.md → PROJECT_STATUS.md → NOOR_MASTER_PLAN.md → guardrails → active issue → GitHub PRs and workflows. Never infer changes from chat alone.
 
 ## Before implementing
@@ -119,3 +143,4 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - Issue #99, branch `feat/99-student-training-workspace`. `TrainingWorkspace.tsx` new three-tab accessible nav: Homework, Self practice, Next lesson readiness. `TrainingQuranSession.tsx` shares printed Madinah viewer with only verified assignment surah/ayah scope, uses source text to hide/reveal and includes reciter for selected ayah; `TrainingVoicePractice.tsx` optional local microphone recording with no upload. `quranAssignment.ts` typed structured references, validated and tests.
 - Home dashboard `WirdPanel` remains summary. Notebook remains its own archive UI. Preserve text `لا توجد تكليفات معتمدة` for new learner and no fake deadlines. Mock tasks clearly identified as demo; no production submission. Auth/RLS and sync deferred.
 - Verify lint, TS, Vitest, Next production build, Chrome 390px + 1440px via GitHub CI before merge. No Vercel Preview Deployments due daily limit.
+

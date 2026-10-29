@@ -1,5 +1,8 @@
 # ADR 0002: LiveKit Cloud + interactive two-way Quran classroom
 
+**Provider selection superseded on 2026-10-29 by [ADR 0004](0004-cloudflare-only-platform.md), owner Cloudflare-only adoption #104.** Shared-mushaf interaction/archive/privacy/no-recording requirements below remain approved. This historical ADR does not authorize a new LiveKit integration.
+
+
 Date: 2026-10-28
 Status: accepted **product direction**, implementation unverified
 Issue: [#7](https://github.com/geminiamo0-ship-it/nour-elquran/issues/7)
@@ -29,3 +32,4 @@ The Classroom UX must allocate main space to the mushaf and writing tools, with 
 
 ## Verification
 No UI/LiveKit or archive implementation exists. To be added through Issue #3-derived implementation slices with E2E mobile+desktop, synchronization and export correctness tests.
+

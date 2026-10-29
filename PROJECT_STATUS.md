@@ -1,5 +1,28 @@
 # PROJECT_STATUS — verified handoff state
 
+Current integration baseline: main `df284bcf00e81b6199067d6d9386eb2e10a35997` (merged #105 static Next.js export/Workers assets fix). CF-01 preserves those files. Draft #107 overlaps the foundation and is consolidated in #108 with one migration lineage and the revised #103 plan.
+
+## Current checkpoint — Cloudflare adoption, 2026-10-29 Cairo (#104)
+Owner approved Cloudflare-only infrastructure. [ADR 0004](docs/adr/0004-cloudflare-only-platform.md) supersedes Supabase Auth/PostgreSQL/RLS and the previous LiveKit provider choice. RealtimeKit and Workers/vinext are targets requiring their own verified integration; no frontend or media cutover occurred here.
+
+CF-01 branch adds a real Worker handler with health/schema checks and fail-closed learner routes, pure server-input authorization helpers, strict D1 migration for account/learner/teacher/lesson/private annotations, and Node/SQLite regression tests. Protected routes remain 503 AUTH_NOT_CONFIGURED. No real auth, remote D1, production SQL, private upload, backup job, A/V, payment or messaging is implemented/provisioned.
+
+Local targeted checks: 18 Node tests and 19 Python SQLite tests pass, including ownership constraints and SQL export/restore roundtrip. Full exact-head GitHub Verify must be linked in #104/PR; local tests are not native Cloudflare evidence. [Runbook](docs/CLOUDFLARE_BACKUP_AND_RESTORE.md) specifies Time Travel and longer export/recovery scope, with no remote restore performed.
+
+Next exact backend action: #46 integrate maintained auth on Workers/D1, actual isolated staging config and native D1/session/authorization verification. #102 notebook frontend remains open and must use real contracts without claiming this foundation saves student data. PR #103's plan is included and revised by this continuation; old plan/backend descriptions below are historical.
+
+## Earlier planning checkpoints
+
+
+## Current checkpoint — 2026-10-29 Cairo, planning issue #101
+- Inspected main at `906a993d0ea350591692045fa878da34995d7c1c`; Training PR [#100](https://github.com/geminiamo0-ship-it/nour-elquran/pull/100) is merged. Native Next.js student frontend and Quran reader exist with explicitly temporary/demo learner state. This supersedes older foundation-only status descriptions below.
+- Owner requested a complete notebook/backend-readiness plan. [Detailed Arabic plan](docs/LESSON_NOTEBOOK_AND_BACKEND_READINESS_PLAN.md) covers notebook UX, schema/API, roles/RLS, immutable publication, Mushaf projection, private media, recovery, operational dependencies, phased delivery and future acceptance tests.
+- This documentation branch `docs/101-notebook-backend-readiness` implements no notebook renderer, backend, migrations, private upload, LiveKit, payment or WhatsApp. No deployment/provisioning or messages.
+- Next frontend task: [#102](https://github.com/geminiamo0-ship-it/nour-elquran/issues/102), filtered Notebook viewer/contracts on the existing renderer. Next backend start: B0/B1 under [#46](https://github.com/geminiamo0-ship-it/nour-elquran/issues/46), identity/account/learner ownership and RLS before real records.
+- Exact-head CI must be inspected and linked in #101; no test result is inferred from a prior PR. One backend integration milestone is delivered through ordered PRs.
+
+## Historical checkpoints — retained for provenance; read current checkpoint first
+
 Last inspected: 2026-10-28. **Distinguish main from unmerged PR branches.**
 
 ## Merged into main (governance, not a deployed application)
@@ -118,3 +141,4 @@ Date / Issue / PR / exact head SHA; changed paths; tests and exact Actions URL; 
 - User approved keeping all three sections distinct: Mushaf cumulative personal book, Training = upcoming teacher-approved homework + self-memorization/review + preparation, Notebook = past lesson with published teacher annotations on same shared viewer. `TrainingWorkspace` replaced old stacked Wird+textarea with three accessible tabs and explicitly demo-only teacher tasks.
 - Teacher demo assignments now have Quran-specific structured range references (surah 112/113 page 604, exact ayah ranges), reused `ReaderPrintedPage` with bounded source hit regions and source text, reveal/hide cards and optional browser-only microphone playback. No server persistence/transmission, no real teacher submission. Original new learner has genuine blank homework and no booked lesson; voluntary practice is clearly independent.
 - Next stage: filtered archival Notebook viewer UI, then remaining student pages; all auth/backend/PostgreSQL remain deferred to final one-shot phase. See `docs/STUDENT_TRAINING_NOTEBOOK_INFORMATION_ARCHITECTURE.md`.
+

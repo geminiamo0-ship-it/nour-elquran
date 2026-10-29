@@ -16,3 +16,9 @@ test-results/
 *.pfx
 *.log
 .DS_Store
+
+
+# Cloudflare local state and emitted backend build
+.wrangler/
+.artifacts/
+__pycache__/
