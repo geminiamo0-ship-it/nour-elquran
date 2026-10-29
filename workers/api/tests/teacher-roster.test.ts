@@ -26,7 +26,7 @@ test('qualified teacher is resolved in D1 before scoped roster query', async () 
   assert.match(calls[0]!.sql, /qualified=1/);
   assert.deepEqual(calls[0]!.bound, ['session-subject']);
   assert.equal(calls[1]!.sql, TEACHER_PRIMARY_ROSTER_SQL);
-  assert.deepEqual(calls[1]!.bound, ['teacher-from-db', 123]);
+  assert.deepEqual(calls[1]!.bound, ['teacher-from-db', 123, 123]);
 });
 
 test('inactive, unqualified or unmapped teacher receives 403 boundary (null)', async () => {

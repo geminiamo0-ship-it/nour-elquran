@@ -26,7 +26,7 @@ describe('read-only teacher client contracts',()=>{
     expect(parseTeacherLessons({lessons:[lesson]})).toEqual([lesson]);
   });
   it('uses only fixed same-origin GETs with cookies and no cache',async()=>{
-    const transport=vi.fn(async(path:string)=>new Response(JSON.stringify(
+    const transport=vi.fn(async(path:string,_init?:RequestInit)=>new Response(JSON.stringify(
       path.endsWith('/learners')?{learners:[student]}:{lessons:[lesson]}
     ),{status:200}));
     const client=createTeacherReadClient(transport as unknown as typeof fetch);
@@ -34,6 +34,8 @@ describe('read-only teacher client contracts',()=>{
     expect(transport.mock.calls.length).toBe(2);
     expect(transport.mock.calls[0]![0]).toBe('/v1/teacher/learners');
     expect(transport.mock.calls[1]![0]).toBe('/v1/teacher/lessons');
+    const init=transport.mock.calls[0]![1] as RequestInit;
+    expect(init).toMatchObject({method:'GET',credentials:'same-origin',cache:'no-store',redirect:'error'});
   });
   it('does not fall back to demonstration on 401, 403, network or malformed 200',async()=>{
     const denied=createTeacherReadClient(async()=>new Response('{}',{status:403}));

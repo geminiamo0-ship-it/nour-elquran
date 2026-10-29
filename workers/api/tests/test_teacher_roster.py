@@ -46,7 +46,7 @@ class TeacherRosterTests(unittest.TestCase):
             (key, learner, teacher, start, end, revoked))
 
     def rows(self, teacher="t-a", now=START):
-        return self.db.execute(roster_sql(), (teacher, now)).fetchall()
+        return self.db.execute(roster_sql(), (teacher, now, now)).fetchall()
 
     def test_only_active_primary_assignments_are_visible(self):
         self.assign("a")
@@ -84,9 +84,9 @@ class TeacherRosterTests(unittest.TestCase):
 
     def test_roster_contract_cannot_select_private_data_or_cross_teacher(self):
         query = roster_sql().lower()
-        self.assertIn("assignment.teacher_id = ?1", query)
+        self.assertIn("assignment.teacher_id = ?", query)
         self.assertIn("assignment.revoked_at_ms is null", query)
-        self.assertIn("assignment.ends_at_ms > ?2", query)
+        self.assertIn("assignment.ends_at_ms > ?", query)
         self.assertIn("limit 50", query)
         for secret in ("auth_sessions", "personal_annotations", "teacher_reports",
                        "phone", "email", "audio", "lesson_access_grants"):

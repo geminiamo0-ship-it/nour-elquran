@@ -20,10 +20,10 @@ export const TEACHER_PRIMARY_ROSTER_SQL = `
     AND EXISTS (
       SELECT 1 FROM teacher_assignments AS assignment
       WHERE assignment.learner_id = learner.id
-        AND assignment.teacher_id = ?1
+        AND assignment.teacher_id = ?
         AND assignment.revoked_at_ms IS NULL
-        AND assignment.starts_at_ms <= ?2
-        AND assignment.ends_at_ms > ?2
+        AND assignment.starts_at_ms <= ?
+        AND assignment.ends_at_ms > ?
     )
   ORDER BY learner.display_name COLLATE NOCASE ASC, learner.id ASC
   LIMIT 50
@@ -41,6 +41,6 @@ export async function listVerifiedTeacherLearners(
   ).bind(verifiedAuthSubject).first<{ id: string }>();
   if (!teacher || !teacher.id) return null;
   const rows = await db.prepare(TEACHER_PRIMARY_ROSTER_SQL)
-    .bind(teacher.id, now).all<TeacherRosterLearner>();
+    .bind(teacher.id, now, now).all<TeacherRosterLearner>();
   return rows.results;
 }
