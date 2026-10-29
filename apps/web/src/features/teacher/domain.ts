@@ -73,6 +73,8 @@ export function validReport(report: LessonReport): boolean {
     && report.scope.length <= 700 && report.strengths.length <= 1000
     && report.corrections.length <= 1000 && report.nextPlan.length <= 1000;
 }
+/** Only preview fixture chapters are selectable; full edition/ayah verification is server-side. */
+const PREVIEW_AYAH_MAX: Readonly<Record<number,number>> = {78:40,87:19,75:40,67:30,1:7};
 export function validAssignment(input: AssignmentInput, permitted: readonly TeacherLearner[]): boolean {
   return !!input.learnerIds.length && input.learnerIds.length <= 30
     && new Set(input.learnerIds).size === input.learnerIds.length
@@ -80,7 +82,7 @@ export function validAssignment(input: AssignmentInput, permitted: readonly Teac
     && Number.isInteger(input.surah) && input.surah >= 1 && input.surah <= 114
     && Number.isInteger(input.fromAyah) && input.fromAyah >= 1
     && Number.isInteger(input.toAyah) && input.toAyah >= input.fromAyah
-    && input.toAyah <= 286 && !!input.surahName.trim()
+    && input.toAyah <= (PREVIEW_AYAH_MAX[input.surah]??0) && !!input.surahName.trim()
     && /^\d{4}-\d{2}-\d{2}$/.test(input.dueDate)
     && ['memorization','revision','recitation','tajweed'].includes(input.kind);
 }
