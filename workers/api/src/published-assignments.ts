@@ -10,7 +10,8 @@ type EventRow={assignment_id:string;learner_id:string;actor_auth_subject:string;
  due_at_ms:number;instructions:string};
 type AssignmentRow={id:string;learner_id:string;kind:AssignmentPublish['kind'];
  edition_id:string;surah:number;from_ayah:number;to_ayah:number;due_at_ms:number;
- instructions:string;published_at_ms:number;status:'assigned';revision:number};
+ instructions:string;published_at_ms:number;status:'assigned';revision:number;
+ start_page:number;end_page:number};
 const operationId=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const edition=/^[a-zA-Z0-9_.:-]{1,80}$/;
 const keys=['operationId','kind','editionId','surah','fromAyah','toAyah','dueAtMs','instructions'];
@@ -49,13 +50,20 @@ function project(row:AssignmentRow){
  return {id:row.id,learnerId:row.learner_id,kind:row.kind,editionId:row.edition_id,
   surah:row.surah,fromAyah:row.from_ayah,toAyah:row.to_ayah,dueAtMs:row.due_at_ms,
   instructions:row.instructions,publishedAtMs:row.published_at_ms,
-  status:row.status,revision:row.revision};
+  status:row.status,revision:row.revision,startPage:row.start_page,endPage:row.end_page};
 }
 async function readRows(db:CoreDatabase,learnerId:string){
- const rows=await db.prepare(`SELECT id,learner_id,kind,edition_id,surah,from_ayah,to_ayah,
- due_at_ms,instructions,published_at_ms,status,revision FROM learner_assignments
- WHERE learner_id=? AND status='assigned'
- ORDER BY published_at_ms DESC,id DESC LIMIT 100`).bind(learnerId).all<AssignmentRow>();
+ const rows=await db.prepare(`SELECT task.id,task.learner_id,task.kind,task.edition_id,
+ task.surah,task.from_ayah,task.to_ayah,task.due_at_ms,task.instructions,
+ task.published_at_ms,task.status,task.revision,
+ first_anchor.page AS start_page,last_anchor.page AS end_page
+ FROM learner_assignments task
+ JOIN quran_ayah_anchors first_anchor ON first_anchor.edition_id=task.edition_id
+  AND first_anchor.surah=task.surah AND first_anchor.ayah=task.from_ayah
+ JOIN quran_ayah_anchors last_anchor ON last_anchor.edition_id=task.edition_id
+  AND last_anchor.surah=task.surah AND last_anchor.ayah=task.to_ayah
+ WHERE task.learner_id=? AND task.status='assigned'
+ ORDER BY task.published_at_ms DESC,task.id DESC LIMIT 100`).bind(learnerId).all<AssignmentRow>();
  return rows.results.map(project);
 }
 export async function readOwnerAssignments(db:CoreDatabase,subject:string,learnerId:string){
