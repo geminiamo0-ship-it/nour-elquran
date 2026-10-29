@@ -196,4 +196,26 @@ BEGIN
   );
 END;
 
+-- Initial records are reservations, never already-live or delivered lessons.
+-- Existing historical rows are untouched when this additive migration is applied.
+-- Actor authorization and two-person presence MUST be enforced in the Worker/DO;
+-- these triggers only reject state-machine shortcuts in the persisted D1 row.
+CREATE TRIGGER lessons_initial_lifecycle_guard
+BEFORE INSERT ON lessons
+WHEN NEW.status IN ('live', 'completed')
+BEGIN
+  SELECT RAISE(ABORT, 'new lesson must begin scheduled or cancelled');
+END;
+
+-- A cancelled reservation must be reactivated and revalidated before Start.
+-- Completion cannot skip a prior explicit Start. This does not itself prove
+-- the Start/End was made by the verified acting teacher.
+CREATE TRIGGER lessons_prestart_lifecycle_guard
+BEFORE UPDATE OF status ON lessons
+WHEN (OLD.status = 'scheduled' AND NEW.status = 'completed')
+  OR (OLD.status = 'cancelled' AND NEW.status IN ('live', 'completed'))
+BEGIN
+  SELECT RAISE(ABORT, 'lesson requires a scheduled Start before completion');
+END;
+
 INSERT INTO noor_schema_meta(component, version) VALUES ('teacher_schedule', 1);

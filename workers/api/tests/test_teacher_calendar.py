@@ -85,6 +85,7 @@ class TeacherCalendarConstraints(unittest.TestCase):
 
     def test_completed_bookings_continue_to_block_history(self):
         lesson(self.db, "original")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='original'")
         self.db.execute("UPDATE lessons SET status='completed' WHERE id='original'")
         with self.assertRaisesRegex(sqlite3.IntegrityError, "conflicting lesson"):
             lesson(self.db, "overlap", learner="learner-b", start=T + 1000)
@@ -134,6 +135,7 @@ class TeacherCalendarConstraints(unittest.TestCase):
         )
         # Old records can still transition in status; only actual date edits
         # have to meet the new reservation policy.
+        old.execute("UPDATE lessons SET status='live' WHERE id='legacy'")
         old.execute("UPDATE lessons SET status='completed' WHERE id='legacy'")
         with self.assertRaisesRegex(sqlite3.IntegrityError, "reserve 40 minutes"):
             lesson(old, "invalid-new", learner="learner-b", start=T + SLOT_MS,
@@ -174,8 +176,9 @@ class TeacherCalendarConstraints(unittest.TestCase):
             self.db.execute("SELECT actual_teacher_id FROM lessons WHERE id='booked'")
             .fetchone()[0], "teacher-a",
         )
-        # Disabling a teacher after a valid reservation does not erase history
-        # or prevent a separate authorized lifecycle from recording completion.
+        # A lesson already started may still be completed after teacher disablement;
+        # teacher eligibility is rechecked for NEW reservations, not history.
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='booked'")
         self.db.execute("UPDATE teachers SET status='disabled' WHERE id='teacher-a'")
         self.db.execute("UPDATE lessons SET status='completed' WHERE id='booked'")
         self.assertEqual(
@@ -245,6 +248,7 @@ class TeacherCalendarConstraints(unittest.TestCase):
 
     def test_archived_learner_history_can_complete_without_rebooking(self):
         lesson(self.db, "booked")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='booked'")
         self.db.execute("UPDATE learners SET status='archived' WHERE id='learner-a'")
         self.db.execute("UPDATE accounts SET status='disabled' WHERE id='acct'")
         self.db.execute("UPDATE lessons SET status='completed' WHERE id='booked'")
@@ -331,16 +335,50 @@ class TeacherCalendarConstraints(unittest.TestCase):
             2,
         )
 
-    def test_direct_live_insert_cannot_bypass_concurrent_room_guard(self):
+    def test_new_rows_cannot_skip_booking_and_arrive_live_or_completed(self):
+        for state in ("live", "completed"):
+            with self.subTest(state=state), self.assertRaisesRegex(
+                sqlite3.IntegrityError, "new lesson must begin scheduled"
+            ):
+                lesson(self.db, "bypass", status=state)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM lessons").fetchone()[0], 0)
+
+    def test_direct_live_insert_rejected_even_with_existing_live_room(self):
         lesson(self.db, "first")
         self.db.execute("UPDATE lessons SET status='live' WHERE id='first'")
-        with self.assertRaisesRegex(sqlite3.IntegrityError, "teacher already has a live lesson"):
-            lesson(self.db, "teacher-bypass", start=T + SLOT_MS,
-                   learner="learner-b", status="live")
-        with self.assertRaisesRegex(sqlite3.IntegrityError, "learner already has a live lesson"):
-            lesson(self.db, "learner-bypass", start=T + SLOT_MS,
-                   teacher="teacher-b", status="live")
+        for teacher, learner in (("teacher-a", "learner-b"), ("teacher-b", "learner-a")):
+            with self.subTest(teacher=teacher), self.assertRaisesRegex(
+                sqlite3.IntegrityError, "new lesson must begin scheduled"
+            ):
+                lesson(self.db, "bypass", start=T + SLOT_MS,
+                       teacher=teacher, learner=learner, status="live")
         self.assertEqual(self.db.execute("SELECT COUNT(*) FROM lessons").fetchone()[0], 1)
+
+    def test_scheduled_booking_cannot_be_completed_without_start(self):
+        lesson(self.db, "booked")
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "requires a scheduled Start"):
+            self.db.execute("UPDATE lessons SET status='completed' WHERE id='booked'")
+        self.assertEqual(
+            self.db.execute("SELECT status FROM lessons WHERE id='booked'").fetchone()[0],
+            "scheduled",
+        )
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='booked'")
+        self.db.execute("UPDATE lessons SET status='completed' WHERE id='booked'")
+
+    def test_cancelled_booking_must_reactivate_before_start(self):
+        lesson(self.db, "cancelled", status="cancelled")
+        for state in ("live", "completed"):
+            with self.subTest(state=state), self.assertRaisesRegex(
+                sqlite3.IntegrityError, "requires a scheduled Start"
+            ):
+                self.db.execute("UPDATE lessons SET status=? WHERE id='cancelled'", (state,))
+        self.assertEqual(
+            self.db.execute("SELECT status FROM lessons WHERE id='cancelled'").fetchone()[0],
+            "cancelled",
+        )
+        self.db.execute("UPDATE lessons SET status='scheduled' WHERE id='cancelled'")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='cancelled'")
+        self.db.execute("UPDATE lessons SET status='completed' WHERE id='cancelled'")
 
     def test_live_lesson_cannot_reopen_slot_by_status_rollback(self):
         lesson(self.db, "first")
@@ -363,6 +401,7 @@ class TeacherCalendarConstraints(unittest.TestCase):
 
     def test_completed_lesson_cannot_be_resurrected(self):
         lesson(self.db, "history")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='history'")
         self.db.execute("UPDATE lessons SET status='completed' WHERE id='history'")
         for attempted in ("scheduled", "cancelled", "live"):
             with self.subTest(attempted=attempted), self.assertRaisesRegex(

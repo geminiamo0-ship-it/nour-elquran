@@ -1,3 +1,8 @@
+## Classroom #120 — lifecycle shortcut hardening (2026-10-29, draft PR #121)
+- On `feat/noor-classroom-40m-booking-guard`, D1 `0003_teacher_schedule.sql` now rejects direct live/completed inserts, scheduled-to-completed skips, and cancelled-to-live/completed shortcuts. Preserve historical rows and normal reactivation; tests use the full scheduled/live/completed path.
+- This is **not** an authenticated Start/End API. DO-backed simultaneous teacher+learner presence, verified acting teacher, durable operation idempotency, ended-at audit and media remain unimplemented. Never expose direct status updates to clients.
+- Check exact-head Verify for this commit, record SHA/run in #120/PR #121; leave PR Draft and unmerged. No cloud migration, production deployment or child data.
+
 ## CLASSROOM #120 / PR #121 — terminal-state guard handoff (2026-10-29)
 - On `feat/noor-classroom-40m-booking-guard`, draft migration `0003_teacher_schedule.sql` now denies `live -> scheduled/cancelled` and `completed -> any other status`. Existing single-live guards cannot be bypassed by simply reopening a live booking. Three new synthetic SQLite regression tests are in `workers/api/tests/test_teacher_calendar.py`.
 - This is only D1 relational integrity; direct SQL `scheduled -> live` remains possible for trusted backend code. **No teacher authentication, both-party presence, Start/End endpoint, durable idempotency or media was implemented.** Never expose status updates directly to a client.

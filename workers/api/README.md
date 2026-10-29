@@ -67,3 +67,6 @@ Booking eligibility follow-up (#120, draft PR #121): new/reactivated scheduled l
 
 ### Historical lesson identities (#120, draft PR #121)
 The core `0001_core.sql` already prohibits changing a lesson's `learner_id`, even if the target learner is active. The additive `0003_teacher_schedule.sql` also prevents rewriting `actual_teacher_id` once a lesson is live or completed, while allowing qualified teacher reassignment during scheduling. These are database-integrity safeguards, not authenticated teacher-only Start/End, two-person presence or substitute consent. No remote migration was applied.
+
+## Classroom #120 — draft D1 lifecycle boundary
+The unmerged `0003_teacher_schedule.sql` rejects direct creation of `live`/`completed` lessons, direct `scheduled -> completed`, and `cancelled -> live/completed`. A canceled reservation must reactivate as `scheduled` (eligibility and conflict rechecked) before a Start. Historical rows are preserved. **Do not expose raw SQL status changes to clients:** authenticated teacher-only Start/End, verified two-party lobby presence, durable idempotency, and end-time audit are not yet implemented. Tests: `python3 -m unittest discover -s workers/api/tests -p 'test_*.py'` plus exact-head GitHub Verify.

@@ -1,3 +1,7 @@
+## Classroom #120 — draft booking/lifecycle integrity
+- `workers/api/migrations/0003_teacher_schedule.sql`: additive D1 40-minute booking/eligibility/conflict guards, single-live and terminal-state invariants, and pre-start lifecycle shortcut rejection. No HTTP Start/End authorization or verified presence.
+- `workers/api/tests/test_teacher_calendar.py`: synthetic SQLite migrations and atomic booking/lifecycle regressions. Native local Wrangler and full Chrome/build checks are separate CI gates.
+
 ## CLASSROOM #120 / PR #121 — draft concurrent-live guard
 - `workers/api/migrations/0003_teacher_schedule.sql`: 40-minute booking, teacher/learner eligibility and conflicts; added INSERT/UPDATE SQLite/D1 guards for at most one live room per teacher and learner, independent of adjacent reserved slots. This does not implement authorized Start/End or presence.
 - `workers/api/tests/test_teacher_calendar.py`: synthetic SQLite regression coverage for live-room overrun, independent concurrent rooms and direct-live-insert bypass. Draft PR only; no remote migration.
