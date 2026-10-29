@@ -591,6 +591,14 @@ try {
     assert.equal(cls.viewport,width);
     assert(cls.scroll<=width,'Classroom overflow at '+width+': '+cls.scroll);
     assert(cls.quran,'Classroom does not reuse canonical Madinah reader');
+    // Screenshot evidence must show rendered canonical Quran content, not a loading skeleton.
+    await waitFor(async()=>{
+      const state=await socket.send('Runtime.evaluate',{
+        expression:"Boolean(document.querySelector('[data-rendered-quran-page]'))",
+        returnByValue:true,
+      });
+      return state.result?.value===true;
+    },'rendered classroom Quran before screenshot '+width);
     const snap=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
     const image=Buffer.from(snap.data,'base64');
     assert.equal(image.readUInt32BE(16),width);
@@ -751,7 +759,7 @@ try {
       'Canonical page aspect distorted: '+JSON.stringify(values));
     assert(values.documentHeight<=viewport.height+2 && values.documentWidth<=viewport.width+2,
       'Classroom outer document overflow: '+JSON.stringify(values));
-    if(viewport.role==='student')assert(values.videoFirst,
+    if(viewport.role==='student'&&viewport.width<=720)assert(values.videoFirst,
       'Sheikh camera must be BEFORE Quran on student phone: '+JSON.stringify(values));
     const shot=await socket.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
     const png=Buffer.from(shot.data,'base64');
