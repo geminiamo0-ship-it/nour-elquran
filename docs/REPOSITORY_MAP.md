@@ -1,5 +1,10 @@
 # Repository map and file ownership
 
+## #46 native local runtime verification (branch-only)
+- `scripts/cloudflare-local-smoke.sh`: disposable local Wrangler 4.45.0 D1 migration replay and Worker HTTP fail-closed smoke; no remote commands or real records.
+- `.github/workflows/verify.yml`: adds independent `cloudflare-local-d1` job. Existing repository-policy, governance-tests and code-quality jobs are unchanged. Native local is not deployed staging.
+
+
 ## Cloudflare foundation (#104)
 - workers/api/src/index.ts + bindings.ts: Workers request boundary; liveness, DB schema probe, all learner routes unavailable until auth integration.
 - workers/api/src/authorization.ts: trusted server-input read/report policy; no HTTP login or client role parsing.
