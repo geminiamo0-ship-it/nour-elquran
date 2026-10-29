@@ -1,3 +1,11 @@
+## Classroom #120 — draft booking/lifecycle integrity
+- `workers/api/migrations/0003_teacher_schedule.sql`: additive D1 40-minute booking/eligibility/conflict guards, single-live and terminal-state invariants, and pre-start lifecycle shortcut rejection. No HTTP Start/End authorization or verified presence.
+- `workers/api/tests/test_teacher_calendar.py`: synthetic SQLite migrations and atomic booking/lifecycle regressions. Native local Wrangler and full Chrome/build checks are separate CI gates.
+
+## CLASSROOM #120 / PR #121 — draft concurrent-live guard
+- `workers/api/migrations/0003_teacher_schedule.sql`: 40-minute booking, teacher/learner eligibility and conflicts; added INSERT/UPDATE SQLite/D1 guards for at most one live room per teacher and learner, independent of adjacent reserved slots. This does not implement authorized Start/End or presence.
+- `workers/api/tests/test_teacher_calendar.py`: synthetic SQLite regression coverage for live-room overrun, independent concurrent rooms and direct-live-insert bypass. Draft PR only; no remote migration.
+
 # Repository map and file ownership
 
 ## STAGING #114
@@ -208,3 +216,14 @@ All functions are browser-local mock only; no sensitive backend credentials, no 
 - `quranAssignment.ts` + tests: structured surah/from/to/page and demo references; reject scope string guessing, nearest booked lesson.
 - `components/QuranAyahOverlay.tsx` and `components/ReaderPrintedPage.tsx`: optional allowed/focus verse keys for task-specific view; default full Mushaf behaviour unchanged.
 
+
+
+## Classroom teacher-eligibility guard (PR #121, Issue #120)
+- `workers/api/migrations/0003_teacher_schedule.sql` also validates active/qualified acting teacher for newly scheduled reservations and reactivation/reassignment; historical completion remains possible after a teacher is disabled.
+- `workers/api/tests/test_teacher_calendar.py` covers disabled/unqualified insert denial, canceled reactivation, atomic teacher reassignment and historical completion. This is a SQL invariant, not full authenticated scheduling or teacher presence authorization.
+
+## Proposed classroom schedule foundation (PR #121, Issue #120)
+
+- `workers/api/migrations/0003_teacher_schedule.sql`: additive 40-minute lesson occupancy constraint; D1 triggers reject same-teacher or same-learner overlapping bookings even on cancellation/reactivation/rescheduling, and keep legacy bookings untouched.
+- `workers/api/tests/test_teacher_calendar.py`: SQLite regression coverage for adjacency, collisions, status changes, scheduling edits, legacy migration and `core` readiness metadata.
+- This slice does not introduce media, live pen sync, teacher or learner booking HTTP routes. Next implementation should use authoritative D1 with authenticated actors and layer on classroom LessonDO; see #7/#120.

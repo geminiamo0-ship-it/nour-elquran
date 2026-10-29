@@ -1,3 +1,9 @@
+## Classroom terminal-status integrity (#120, draft PR #121)
+The additive `0003_teacher_schedule.sql` now rejects a `live` lesson reverting to scheduled/cancelled and a completed lesson being reopened. This prevents bypass of the single-live guard through status rollback. Same-status updates and pre-start cancellation/reactivation are preserved. Synthetic SQLite tests exercise both denial and allowed transitions. These database triggers do **not** authorize teacher Start/End, verify simultaneous presence or provide request-ID idempotency; only authenticated use cases may change lesson status. No remote migration has been performed.
+
+## Classroom live-room relational guard (#120, draft PR #121)
+The additive `0003_teacher_schedule.sql` now also prevents a second `live` lesson for the same acting teacher or learner, even when their 40-minute booking intervals are adjacent and the first lesson overruns. INSERT and UPDATE paths are guarded; no timer auto-completes a lesson. `test_teacher_calendar.py` uses synthetic SQLite fixtures to cover overrun, unrelated concurrent rooms and direct inserts. This is a D1 data-integrity backstop, **not** teacher role authentication, verified two-party lobby presence, idempotent Start/End, or a deployed media room. Do not migrate remote D1 or expose a classroom mutation endpoint on this basis. Inspect exact-head Verify before merge.
+
 # Noor Workers API
 
 CF-01 / #104 and AUTH-01 / #110 implement the local Workers/D1 foundation and opt-in maintained authentication. Cloud deployment, frontend auth integration, published lessons and uploads remain pending.
@@ -49,3 +55,18 @@ Run `bash scripts/cloudflare-auth-smoke.sh` after `pnpm install --frozen-lockfil
 Root Workers configuration now uses `workers/site` to combine the static Next.js export and existing API under the same origin. Static paths/404s pass through ASSETS; API paths delegate to this handler. No remote D1 binding or auth settings were provisioned. Authenticated frontend can be built explicitly with `NEXT_PUBLIC_ACCOUNT_UI=true`; default builds retain the demo and make no account requests. This public switch does not enable backend auth.
 
 After opt-in frontend build, `bash scripts/cloudflare-auth-browser.sh` verifies the full local Chrome/Worker/D1 journey using a generated temporary config/secret and reserved synthetic contacts. The script never deploys or runs remote SQL. Do not turn on real-user rollout until #46 verification/recovery, role policy, staging and operations pass. Root rollback: disable UI/server flags, keep additive tables. See ADR 0006 for same-origin contracts and partial-registration recovery.
+
+
+## Classroom booking guard proposal (#120, PR #121)
+
+`migrations/0003_teacher_schedule.sql` enforces that every **new** lesson reserves one contiguous 40-minute booking for both the learner and acting teacher; adjacent bookings are allowed. D1 triggers reject overlap on inserts, status reactivation and rescheduling; canceled slots release capacity. Old 30-minute records are preserved, not rewritten. The previously approved 30-minute instructional target and teacher-only manual Start/End are **not** auto-enforced by this migration. The 40-minute reservation does not bill or extend any entitlement automatically.
+
+`tests/test_teacher_calendar.py` covers new slots, collisions, simultaneous unrelated lessons, canceled/reactivated slots, historical rows and migrations. Apply `0003` only after `0001` and `0002`; run `pnpm test:backend` and local D1 migration smoke before staging. The migration remains a PR pending CI/review and must not be treated as already live in staging. **Not yet built:** authenticated scheduling REST endpoints, teacher presence/Start/End, media rooms, payments, reporting or compensation decisions.
+
+Booking eligibility follow-up (#120, draft PR #121): new/reactivated scheduled lessons require an active qualified teacher, active learner and active owning account; schedule edits revalidate all three. This is enforced by additive D1 triggers and synthetic SQLite tests, not by a new HTTP API. Historical lessons can still complete after an account/learner is disabled or archived. An authenticated actor/teacher-only Start/End and two-person waiting-room presence remain separate, unimplemented authorization requirements.
+
+### Historical lesson identities (#120, draft PR #121)
+The core `0001_core.sql` already prohibits changing a lesson's `learner_id`, even if the target learner is active. The additive `0003_teacher_schedule.sql` also prevents rewriting `actual_teacher_id` once a lesson is live or completed, while allowing qualified teacher reassignment during scheduling. These are database-integrity safeguards, not authenticated teacher-only Start/End, two-person presence or substitute consent. No remote migration was applied.
+
+## Classroom #120 — draft D1 lifecycle boundary
+The unmerged `0003_teacher_schedule.sql` rejects direct creation of `live`/`completed` lessons, direct `scheduled -> completed`, and `cancelled -> live/completed`. A canceled reservation must reactivate as `scheduled` (eligibility and conflict rechecked) before a Start. Historical rows are preserved. **Do not expose raw SQL status changes to clients:** authenticated teacher-only Start/End, verified two-party lobby presence, durable idempotency, and end-time audit are not yet implemented. Tests: `python3 -m unittest discover -s workers/api/tests -p 'test_*.py'` plus exact-head GitHub Verify.

@@ -1,3 +1,29 @@
+## CLASSROOM #120 / PR #121 — persisted Start/End sequence guard (2026-10-29; draft)
+- In additive D1 migration `0003_teacher_schedule.sql`, reject new `live`/`completed` rows, `scheduled -> completed`, and `cancelled -> live/completed`. A canceled reservation must re-enter `scheduled` (rechecking teacher/learner eligibility and conflicts) before Start; completion follows a Start. Existing historical rows are not rewritten.
+- Synthetic SQLite regressions cover direct insertion bypass, canceled shortcut, scheduled direct completion and atomic unchanged status. Updated historical test fixtures to follow `scheduled -> live -> completed` after migration. These are relational state guards, **not verified teacher identity, two-party presence, request-id idempotency or authoritative End timestamps**.
+- Exact-head CI pending on this commit; do not merge Draft PR #121 until checks/review. No remote D1 migration, production deployment, paid service, private media or real learner data. Next: authenticated teacher-only lifecycle with durable verified lobby presence and idempotency.
+
+## CLASSROOM #120 / PR #121 — terminal lesson-state integrity (2026-10-29, draft branch)
+- Added `lessons_terminal_lifecycle_guard` to draft D1 migration `0003_teacher_schedule.sql`: a `live` lesson cannot be rolled back to `scheduled` or `cancelled`, and a `completed` lesson cannot be resurrected. Same-status writes and pre-start cancellation/reactivation remain allowed. This prevents a direct status rollback from evading the existing single-live teacher/learner guard.
+- Three synthetic SQLite tests cover atomic rollback denial, completed-history terminality, allowed no-op transitions and explicit completion before the next room starts. This is NOT actor authorization, presence, or durable request-id idempotency. Exact-head GitHub Verify is pending; PR remains Draft.
+- No remote D1 migration, production deployment, paid services or real learner data. Next: inspect exact-head CI; build authenticated teacher-only Start/End with simultaneous verified teacher+learner presence and request idempotency as a separate reviewed slice.
+
+## CLASSROOM #120 / PR #121 — concurrent-live D1 guard (2026-10-29, draft branch)
+- On `feat/noor-classroom-40m-booking-guard`, migration `0003_teacher_schedule.sql` adds SQLite/D1 INSERT and UPDATE guards preventing a teacher or learner from belonging to two simultaneously `live` lessons, even if the bookings are adjacent and the first room overruns its 40-minute slot. No timer automatically ends a room.
+- Four new synthetic SQLite regressions cover teacher overrun, same-learner different-teacher overrun, independent concurrent rooms and direct-live-insert bypass; failed transitions must leave the second booking scheduled. Changes are unmerged and CI on the final exact head must be checked.
+- This is a database integrity backstop, **not** authenticated teacher-only Start/End, both-party presence, idempotent state transitions or media integration. No remote D1 migration, production deploy, real learner data or paid provider use. Next: inspect exact-head CI, then build the authenticated/presence-verified lifecycle under #120 after review.
+
+## CLASSROOM #120 / PR #121 — historical teacher integrity (2026-10-29, draft only)
+- CI exposed an incorrect assumption in an initial test: `0001_core.sql` already makes `lessons.learner_id` immutable, so reassignment is prohibited even for active learners. Corrected the test and removed the redundant proposed eligibility trigger change.
+- Added `lessons_teacher_immutable_after_start` to draft `0003_teacher_schedule.sql`: the acting teacher may change while scheduled, but cannot be silently rewritten when the lesson is live or completed. Two SQLite regressions cover immutable learner identity and teacher identity across scheduled/live/completed.
+- These are database integrity rules, **not** role authorization, presence verification, Start/End APIs or live-room lifecycle enforcement. No remote D1 migration, staging/production deployment, or real learner data. New exact-head CI pending; PR remains Draft.
+- Next: check CI; review teacher/substitute lifecycle with #120 before merge, then implement authenticated teacher-only Start/End with verified simultaneous presence and idempotency.
+
+## CLASSROOM #120 / PR #121 — booking eligibility continuation (branch only, 2026-10-29)
+- Additive draft D1 migration `0003_teacher_schedule.sql` now rejects new/reactivated scheduled bookings when learner is archived or owning account disabled, and rechecks learner, owner and teacher eligibility on schedule changes. Existing completed history remains intact. Four synthetic SQLite regression cases added to `test_teacher_calendar.py`.
+- This is a database integrity guard, **not** authenticated booking/start/end or verified waiting-room presence. No remote D1 migration, deployment, child data or payment action. Exact-head GitHub Verify must be inspected before treating the branch as tested; PR #121 remains draft.
+- Next: verify PR #121 exact-head CI and human review; then design separate authenticated teacher-only Start/End with two-party presence and idempotency in #120, without inferring presence from lesson status.
+
 # PROJECT_STATUS — verified handoff state
 
 ## OPEN DEV STAGING #118 — implementation branch (not yet deployed)
@@ -174,3 +200,12 @@ Date / Issue / PR / exact head SHA; changed paths; tests and exact Actions URL; 
 - Teacher demo assignments now have Quran-specific structured range references (surah 112/113 page 604, exact ayah ranges), reused `ReaderPrintedPage` with bounded source hit regions and source text, reveal/hide cards and optional browser-only microphone playback. No server persistence/transmission, no real teacher submission. Original new learner has genuine blank homework and no booked lesson; voluntary practice is clearly independent.
 - Next stage: filtered archival Notebook viewer UI, then remaining student pages; all auth/backend/PostgreSQL remain deferred to final one-shot phase. See `docs/STUDENT_TRAINING_NOTEBOOK_INFORMATION_ARCHITECTURE.md`.
 
+
+
+## 2026-10-29 — Classroom booking eligibility hardening (PR #121)
+- New D1 triggers reject new scheduled bookings and canceled-slot reactivation/reassignment when the acting teacher is disabled or not qualified. Existing completed historical lessons remain unchanged; qualification is not a substitute for runtime role/presence authorization.
+- Added three synthetic SQLite regressions for ineligible insert, canceled reactivation and atomic reassignment/history. Branch commit `f957c31f0e425b44b93cd28e86e4267ec859cee0` contains the code/tests; **exact-head CI remains to be checked** after documentation updates. No remote migration or production changes.
+
+## 2026-10-29 — Classroom implementation begins: 40-minute booking guard (#120 / PR #121)
+
+Owner authorized execution of the full classroom implementation plan #120. A focused **draft/unmerged** PR #121 proposes `0003_teacher_schedule.sql` to enforce 40-minute teacher+learner bookings and no overlaps, with SQLite regression tests. Preserve 30-minute instructional entitlement, manual teacher-only Start/End, and 40-minute calendar interval as distinct concepts. No actual classroom media/sync, scheduler HTTP endpoint, remote migration, or production deployment is claimed. Next: exact-head CI, migration compatibility, then a separate teacher/learner presence and Start/End lifecycle issue/PR; reconcile LiveKit Cloud versus RealtimeKit ADR before media integration.
