@@ -1,3 +1,9 @@
+## #149 private Quran connected-page readiness
+
+- `apps/web/src/features/student/private-mushaf-readiness.ts`: pure, fail-closed selected learner + active page hydration guard for connected writes; `private-mushaf-readiness.test.ts` covers page/learner/failure/demo cases.
+- `usePrivateMushafSave.ts`: tracks the learner identity of the hydrated index and exact page identity; refuses stale-page mutations and post-failure edits. `components/MadinahReader.tsx`: only current hydrated leaf can draw; empty note state distinguishes account from local demo.
+- This is source-only until exact-head CI and isolated QA Worker/D1/browser evidence; no change to live classroom, D1 schema or production.
+
 ## Private learner Quran persistence #144
 
 - `workers/api/migrations/0007_private_mushaf.sql`: immutable, owner-verified D1 per-learner operation journal and current item projections.
