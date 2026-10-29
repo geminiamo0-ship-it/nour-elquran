@@ -17,6 +17,22 @@ CREATE TABLE learner_profile_events (
 ) STRICT;
 CREATE INDEX learner_profile_events_learner ON learner_profile_events(learner_id,at_ms,operation_id);
 
+-- Immutable snapshot of the exact before/after state at application time.
+CREATE TABLE learner_profile_audit (
+  operation_id TEXT NOT NULL PRIMARY KEY REFERENCES learner_profile_events(operation_id) ON DELETE RESTRICT,
+  learner_id TEXT NOT NULL REFERENCES learners(id) ON DELETE RESTRICT,
+  previous_name TEXT NOT NULL,
+  updated_name TEXT NOT NULL,
+  previous_status TEXT NOT NULL CHECK(previous_status='active'),
+  updated_status TEXT NOT NULL CHECK(updated_status IN ('active','archived')),
+  previous_revision INTEGER NOT NULL CHECK(previous_revision>0),
+  updated_revision INTEGER NOT NULL CHECK(updated_revision=previous_revision+1)
+) STRICT;
+CREATE TRIGGER learner_profile_audit_immutable_update BEFORE UPDATE ON learner_profile_audit
+BEGIN SELECT RAISE(ABORT,'PROFILE_AUDIT_IMMUTABLE'); END;
+CREATE TRIGGER learner_profile_audit_immutable_delete BEFORE DELETE ON learner_profile_audit
+BEGIN SELECT RAISE(ABORT,'PROFILE_AUDIT_IMMUTABLE'); END;
+
 -- Recheck ownership, revocation and CAS *inside* the database write transaction.
 CREATE TRIGGER learner_profile_event_validate BEFORE INSERT ON learner_profile_events
 BEGIN
@@ -34,6 +50,13 @@ BEGIN
 END;
 CREATE TRIGGER learner_profile_event_apply AFTER INSERT ON learner_profile_events
 BEGIN
+  INSERT INTO learner_profile_audit
+    (operation_id,learner_id,previous_name,updated_name,previous_status,updated_status,previous_revision,updated_revision)
+  SELECT NEW.operation_id,id,display_name,
+    CASE WHEN NEW.action='rename' THEN trim(NEW.new_name) ELSE display_name END,
+    status,CASE WHEN NEW.action='archive' THEN 'archived' ELSE status END,
+    revision,revision+1
+  FROM learners WHERE id=NEW.learner_id AND account_id=NEW.account_id;
   UPDATE learners
   SET display_name=CASE WHEN NEW.action='rename' THEN trim(NEW.new_name) ELSE display_name END,
       status=CASE WHEN NEW.action='archive' THEN 'archived' ELSE status END,
