@@ -647,29 +647,39 @@ try {
       });
       return x.result?.value===true;
     },'immersive viewport hydration '+width);
-    const result=await socket.send('Runtime.evaluate',{
-      expression:`(async()=>{
-        const select=document.querySelector('select[aria-label="تبديل منظور المعاينة"]');
-        select.value='student';select.dispatchEvent(new Event('change',{bubbles:true}));
-        await new Promise(r=>setTimeout(r,230));
+    await socket.send('Runtime.evaluate',{
+      expression:"(()=>{const sel=document.querySelector('select[aria-label=\\\"تبديل منظور المعاينة\\\"]'); sel.value='student';sel.dispatchEvent(new Event('change',{bubbles:true}));return true;})()",
+      returnByValue:true,
+    });
+    await sleep(300);
+    const geometry=await socket.send('Runtime.evaluate',{
+      expression:`(()=>{
         const quran=document.querySelector('[aria-label="المصحف المشترك داخل الفصل"]');
         const video=document.querySelector('[aria-label="لوحة فيديو المشاركين"]');
         const sheet=document.querySelector('[aria-label^="مصحف المدينة، الصفحة"]');
         const qr=quran?.getBoundingClientRect(),vr=video?.getBoundingClientRect(),
               sr=sheet?.getBoundingClientRect();
-        const noPageScroll=document.documentElement.scrollHeight<=innerHeight+2;
-        const videoFirst=width>760 || (vr&&qr&&vr.top<qr.top&&vr.bottom<=qr.top+3);
-        const sheetFits=!!sr&&!!qr&&sr.top>=qr.top-3&&sr.bottom<=qr.bottom+3;
-        const focus=[...document.querySelectorAll('button')].find(b=>b.textContent.includes('وضع الحصة'));
-        focus?.click();await new Promise(r=>setTimeout(r,130));
-        const focusOn=document.querySelector('[data-focus]')?.getAttribute('data-focus')==='on';
-        return {noPageScroll,videoFirst,sheetFits,focusOn,windowHeight:innerHeight,
-          documentHeight:document.documentElement.scrollHeight,
-          quranTop:qr?.top,videoTop:vr?.top,sheetBottom:sr?.bottom,quranBottom:qr?.bottom};
+        return {
+          noPageScroll:document.documentElement.scrollHeight<=innerHeight+2,
+          videoFirst:innerWidth>760 || (!!vr&&!!qr&&vr.top<qr.top&&vr.bottom<=qr.top+3),
+          sheetFits:!!sr&&!!qr&&sr.top>=qr.top-3&&sr.bottom<=qr.bottom+3,
+          windowHeight:innerHeight,documentHeight:document.documentElement.scrollHeight,
+          quranTop:qr?.top,videoTop:vr?.top,sheetBottom:sr?.bottom,quranBottom:qr?.bottom,
+          role:document.querySelector('[data-view-role]')?.getAttribute('data-view-role')
+        };
       })()`,
-      awaitPromise:true,returnByValue:true,
+      returnByValue:true,
     });
-    const actual=result.result?.value;
+    await socket.send('Runtime.evaluate',{
+      expression:"(()=>{[...document.querySelectorAll('button')].find(b=>b.textContent.includes('وضع الحصة'))?.click();return true;})()",
+      returnByValue:true,
+    });
+    await sleep(160);
+    const focusCheck=await socket.send('Runtime.evaluate',{
+      expression:"document.querySelector('[data-focus]')?.getAttribute('data-focus')==='on'",
+      returnByValue:true,
+    });
+    const actual={...(geometry.result?.value||{}),focusOn:focusCheck.result?.value===true};
     for(const field of ['noPageScroll','videoFirst','sheetFits','focusOn']){
       assert(actual?.[field]===true,'Immersive '+width+'px '+field+' failed: '+JSON.stringify(actual));
     }
