@@ -69,6 +69,10 @@ export function ClassroomSidePanel({model}:{model:ClassroomPreviewModel}){
           {Array.from({length:11},(_,i)=><option key={i} value={i}>{i} / 10</option>)}
         </select>
       </label>)}
+      <label className={css.field}>ملاحظات عامة
+        <textarea rows={3} maxLength={1000} value={notes} disabled={room.phase==='waiting'}
+          onChange={e=>changeNotes(e.target.value)} placeholder="نقاط التحسين للطالب أثناء الحصة..."/>
+      </label>
       {room.phase==='ended'&&<div className={css.successNote}>أنهيت الحصة يدويًا. هذه الدرجات ما زالت مسودة محلية وتحتاج اعتماد تقرير الشيخ على الخادم.</div>}
       <p className={css.hint}>يجب أن يُنشئ الـBackend مسودة تقرير مرتبطة بإصدار أرشيف المصحف، ولا يظهر للطالب إلا أحدث إصدار اعتمده الشيخ.</p>
     </div>}
