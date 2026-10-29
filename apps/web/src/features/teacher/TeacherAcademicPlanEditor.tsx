@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useRef,useState,type FormEvent} from 'react';
-import {academicPlanClient,planMessage,type AcademicPlan,type AcademicPlanInput} from '../shared/academic-plan-client';
+import {academicPlanClient,planMessage,type AcademicPlan,type AcademicPlanInput} from '../shared/index';
 import css from './TeacherReadOnly.module.css';
 
 type Reading={status:'loading'|'error'}|{status:'loaded';plan:AcademicPlan|null};
