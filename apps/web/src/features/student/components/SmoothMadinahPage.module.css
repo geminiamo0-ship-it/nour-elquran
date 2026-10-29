@@ -41,14 +41,16 @@
 }
 .viewportFrame .sheet {
   flex:0 0 auto;
-  width:min(100%, 560px, calc((100cqh - 22px) * 0.6272727273));
+  width:min(100%, 560px, calc(100cqh * 0.6272727273));
   max-width:100%;
   height:auto;
   aspect-ratio:345 / 550;
   min-height:0;
 }
-.viewportFrame .caption{
-  flex:0 0 auto;max-height:20px;line-height:18px;margin-top:2px;font-size:10px;
+.viewportFrame .caption {
+  /* The classroom already supplies a page counter below the Quran. Remove
+     this duplicate so all available height belongs to actual readable art. */
+  display:none;
 }
 @media(max-width:760px){
   .viewportFrame .sheet {
