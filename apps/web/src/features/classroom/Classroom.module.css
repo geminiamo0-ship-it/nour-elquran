@@ -142,3 +142,237 @@
  .quranFooter{display:grid;}
 }
 @media(prefers-reduced-motion:reduce){.root *{transition:none!important;scroll-behavior:auto;}}
+
+
+/* #50: viewport-contained lesson workspace. Document never scrolls; only optional
+ * independent teacher notes can scroll inside their own clearly bounded panel. */
+.root {
+  height:100vh;height:100dvh;min-height:0;max-height:100dvh;
+  overflow:hidden;display:flex;flex-direction:column;padding-bottom:0;
+}
+.root:fullscreen{width:100vw;height:100dvh;max-height:100dvh;background:var(--c-paper);}
+.pageTop,.demoBanner,.topline,.prejoinCard,.timingRow,.toolbar,.mediaControls,.workspaceActions {
+  flex-shrink:0;
+}
+.pageTop{padding:5px clamp(10px,1.1vw,20px);}
+.demoBanner{padding:4px 12px;font-size:10px;}
+.topline{padding:5px clamp(10px,1.1vw,20px);min-height:45px;}
+.topline h1{font-size:23px;line-height:1.18;}
+.topline p{font-size:10px;}
+.workspaceActions{
+  display:flex;align-items:center;justify-content:flex-end;gap:7px;
+  margin:0 clamp(8px,1vw,18px) 5px;min-height:34px;
+}
+.workspaceIdentity{margin-inline-end:auto;color:#64806d;font-size:10px;font-weight:800;white-space:nowrap;}
+.focusButton,.panelToggle,.toolbarToggle{
+  border:1px solid #d4c5a7;border-radius:7px;background:#fffdfa;color:#315640;
+  padding:6px 11px;min-height:33px;font-size:11px;font-weight:800;white-space:nowrap;
+}
+.focusButton{background:#355a42;border-color:#355a42;color:#fffaee;}
+.focusButton[aria-pressed=true]{background:#a57938;border-color:#a57938;}
+.panelToggle{display:none;}
+.prejoinCard{
+  padding:5px 10px;margin:0 clamp(8px,1vw,18px) 5px;
+  min-height:43px;gap:8px;border-radius:8px;
+}
+.prejoinPeople,.prejoinActions{gap:9px;}
+.prejoinPeople>strong,.prejoinPeople label{font-size:10px;}
+.prejoinActions>span{font-size:10px;}
+.prejoinActions button{min-height:31px;padding:5px 9px;}
+.confirmInline{position:absolute;z-index:30;left:24px;top:107px;box-shadow:0 9px 28px #1b312744;}
+.timingRow{
+  padding:3px 8px;margin:0 clamp(8px,1vw,18px) 4px;
+  border-radius:7px;min-height:27px;
+}
+.timingRow>label{font-size:10px;}
+.toolbar{
+  padding:4px 9px;gap:4px;
+  margin:0 clamp(8px,1vw,18px) 4px;min-height:43px;
+}
+.toolGroup button,.mediaControls button{min-height:31px;padding:4px 8px;font-size:10px;}
+.toolGroup button>span{font-size:14px;}
+.color,.selectedColor{width:17px;height:17px;}
+.mediaControls{
+  padding:4px 9px;min-height:33px;
+  margin:0 clamp(8px,1vw,18px) 4px;
+}
+.workspace{
+  flex:1;min-height:0;height:auto;max-height:100%;overflow:hidden;
+  display:grid;grid-template-columns:minmax(175px,18%) minmax(0,1fr) minmax(215px,23%);
+  align-items:stretch;gap:8px;
+  margin:0 clamp(8px,1vw,18px) 7px;
+}
+.mediaPanel,.quranStage,.panelSlot{min-height:0;height:100%;max-height:100%;}
+.mediaPanel{
+  position:relative;top:auto;
+  overflow:hidden;display:flex;flex-direction:column;padding:8px;
+}
+.mediaHead{margin-bottom:4px;}
+.mediaHead strong,.panelHeading strong{font-size:11px;}
+.videoBackdrop{height:clamp(80px,15vh,150px);}
+.videoOffline{min-height:clamp(80px,15vh,150px);}
+.dockedVideo{flex:none;margin-bottom:6px;}
+.selfPreview{margin-top:4px;padding-top:4px;}
+.selfPreview .videoBackdrop{height:clamp(70px,12vh,120px);}
+.selfPreview .videoOffline{min-height:70px;}
+.deviceNotice{font-size:9px;padding:6px;margin-top:auto;line-height:1.5;}
+.panelSlot{min-width:0;overflow:hidden;}
+.panelSlot>.notesPanel{
+  position:static;top:auto;min-height:0;height:100%;max-height:100%;
+  overflow:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;padding:9px;
+}
+.quranStage{
+  display:flex;flex-direction:column;
+  min-width:0;overflow:hidden;padding:6px 10px;
+}
+.quranHead{padding:0 4px 4px;margin-bottom:3px;flex:0 0 auto;}
+.quranHead h2{font-size:21px;line-height:1.1;}
+.quranStatus{font-size:9px;padding:5px;}
+.quranViewport{
+  flex:1;min-height:0;height:100%;max-width:100%;width:100%;
+  margin:0;overflow:hidden;display:flex;align-items:center;justify-content:center;
+}
+/* ReaderPrintedPage renders frame → sheet → immutable verified Quran image.
+ * Size sheet by available stage HEIGHT and original 345:550 aspect ratio.
+ * Do not crop, stretch, or alter Quran artwork or ink coordinates. */
+.quranViewport>div{
+  width:100%;height:100%;min-height:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.quranViewport>div>div:first-child{
+  flex:0 1 auto;height:calc(100% - 24px);width:auto;max-width:100%;
+  max-height:calc(100% - 24px);aspect-ratio:345/550;
+}
+.quranFooter{flex-shrink:0;font-size:9px;padding-top:5px;margin-top:3px;}
+.quranFooter span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.stageNotice{position:absolute;bottom:32px;inset-inline:18px;margin:0;font-size:10px;padding:7px 9px;}
+.quranStage{position:relative;}
+.disclaimer{display:none;}
+.focusMode .pageTop,.focusMode .demoBanner{display:none;}
+.focusMode .topline{min-height:37px;}
+.focusMode .topline p,.focusMode .overline{display:none;}
+.focusMode .topline h1{font-size:19px;}
+.focusMode .workspaceActions{min-height:30px;}
+.focusMode .workspace{margin-bottom:4px;}
+.focusMode .quranHead{margin-bottom:0;}
+.focusMode .deviceNotice{display:none;}
+.focusMode .videoFooter{display:none;}
+.focusMode .mediaControls{min-height:29px;}
+.toolbarCollapsed .timingRow,.toolbarCollapsed .mediaControls{display:none;}
+.toolbarCollapsed .toolbar{min-height:37px;}
+.toolbarCollapsed .toolGroup button{padding:3px 7px;}
+.floatingVideo{position:fixed!important;z-index:60;}
+@media(max-width:1100px){
+ .workspace{grid-template-columns:minmax(145px,18%) minmax(0,1fr) minmax(205px,25%);gap:5px;}
+ .mediaPanel{grid-column:auto;grid-row:auto;display:flex;min-width:0;}
+ .notesPanel{grid-column:auto;grid-row:auto;position:static;}
+ .quranStage{grid-column:auto;grid-row:auto;}
+ .deviceNotice{display:none;}
+ .videoFooter{font-size:9px;}
+ .mediaHead{margin-bottom:4px;}
+ .prejoinPeople>strong{display:none;}
+ .workspaceIdentity{display:none;}
+ .toolGroup button{font-size:9px;padding:3px 5px;}
+}
+@media(max-width:760px){
+ .root{height:100dvh;max-height:100dvh;overflow:hidden;}
+ .pageTop{padding:3px 10px;}
+ .pageTop span{display:none;}
+ .demoBanner{font-size:9px;padding:3px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+ .topline{min-height:38px;margin:0;padding:4px 10px;gap:5px;flex-wrap:nowrap;}
+ .topline h1{font-size:18px;}
+ .topline p,.topline .overline{display:none;}
+ .topControls{gap:5px;}
+ .roleSwitch{font-size:9px;gap:2px;}
+ .roleSwitch select{max-width:122px;padding:3px 6px;min-height:30px;}
+ .stateWaiting,.stateLive,.stateEnded{font-size:9px;padding:6px;}
+ .workspaceActions{margin:0 8px 3px;gap:5px;justify-content:space-between;}
+ .workspaceActions button{font-size:10px;padding:5px 7px;min-height:30px;}
+ .workspaceIdentity{display:none;}
+ .panelToggle{display:inline-flex;align-items:center;}
+ .prejoinCard{
+   display:flex;align-items:center;flex-wrap:nowrap;
+   gap:6px;margin:0 8px 3px;padding:3px 6px;min-height:35px;
+ }
+ .prejoinPeople{flex:none;gap:7px;}
+ .prejoinPeople label{font-size:9px;}
+ .prejoinActions{flex:1;justify-content:flex-end;}
+ .prejoinActions>span{display:none;}
+ .prejoinActions button{font-size:9px;padding:4px 5px;min-height:29px;}
+ .timingRow{margin:0 8px 3px;padding:2px 6px;min-height:25px;gap:5px;}
+ .timingRow>label{min-width:0;font-size:9px;}
+ .timingRow input{width:70px;}
+ .warningChip,.dangerChip{font-size:9px;padding:4px 6px;}
+ .toolbar{margin:0 8px 3px;padding:3px 5px;min-height:35px;gap:2px;justify-content:center;}
+ .toolGroup{gap:2px;}
+ .toolGroup button{font-size:0;min-width:29px;padding:5px;}
+ .toolGroup button>span{font-size:16px;}
+ .toolGroup>span{font-size:10px;padding:0 3px;}
+ .colors{gap:2px;}
+ .color,.selectedColor{height:14px;width:14px;}
+ .mediaControls{margin:0 8px 3px;padding:3px 5px;min-height:30px;gap:3px;justify-content:center;}
+ .mediaControls button{font-size:9px;min-height:29px;padding:3px 7px;}
+ .workspace{flex:1;min-height:0;max-height:100%;width:auto;display:flex;flex-direction:column;gap:5px;margin:0 8px 4px;}
+ /* Student: the teacher's video is pinned FIRST and remains visible next to
+    the largest remaining Quran stage. No tool panel can displace either. */
+ .root[data-view-role="student"] .mediaPanel{
+   order:0;display:flex;flex-direction:column;flex:0 0 auto;
+   height:clamp(96px,20dvh,164px);min-height:96px;max-height:22dvh;
+   padding:4px;overflow:hidden;
+ }
+ .root[data-view-role="student"] .mediaHead{display:none;}
+ .root[data-view-role="student"] .dockedVideo{margin:0;flex:1;min-height:0;display:flex;flex-direction:column;}
+ .root[data-view-role="student"] .videoTitle{padding:2px 5px;touch-action:none;font-size:10px;}
+ .root[data-view-role="student"] .videoCard,.root[data-view-role="student"] .videoOffline{flex:1;min-height:0;overflow:hidden;}
+ .root[data-view-role="student"] .videoBackdrop{height:100%;min-height:50px;}
+ .root[data-view-role="student"] .videoFooter{display:none;}
+ .root[data-view-role="student"] .quranStage{order:1;flex:1;min-height:0;width:100%;padding:5px;}
+ /* Sheikh on mobile: Quran and correction access before self-preview. */
+ .root[data-view-role="teacher"] .quranStage{order:0;flex:1;min-height:0;width:100%;padding:5px;}
+ .root[data-view-role="teacher"] .mediaPanel{
+   order:1;display:flex;width:100%;flex:0 0 auto;min-height:0;
+   height:clamp(73px,12dvh,98px);padding:4px;overflow:hidden;
+ }
+ .root[data-view-role="teacher"] .mediaHead,.root[data-view-role="teacher"] .deviceNotice,
+ .root[data-view-role="teacher"] .selfPreview{display:none;}
+ .root[data-view-role="teacher"] .dockedVideo{flex:1;min-height:0;margin:0;}
+ .root[data-view-role="teacher"] .videoTitle{padding:0 3px;font-size:9px;}
+ .root[data-view-role="teacher"] .videoBackdrop,
+ .root[data-view-role="teacher"] .videoOffline{height:52px;min-height:52px;}
+ .root[data-view-role="teacher"] .videoFooter{display:none;}
+ .quranHead{margin:0 0 2px;padding:0 3px 3px;}
+ .quranHead h2{font-size:18px;}
+ .quranStatus{font-size:9px;padding:2px 5px;}
+ .quranFooter{padding:2px 0;font-size:9px;margin:0;}
+ .quranViewport{flex:1;min-height:0;}
+ .quranViewport>div>div:first-child{
+   height:calc(100% - 18px);max-height:calc(100% - 18px);
+   width:auto;max-width:100%;aspect-ratio:345/550;
+ }
+ .panelSlot{
+   display:none;position:absolute;z-index:40;bottom:7px;left:8px;right:8px;
+   top:auto;height:min(66dvh,570px);max-height:66dvh;min-height:0;
+   border-radius:11px;box-shadow:0 0 0 100vmax #162e2244,0 12px 45px #0003;
+ }
+ .panelExpanded .panelSlot{display:block;}
+ .panelSlot>.notesPanel{height:100%;max-height:100%;overflow:auto;}
+ .root[data-view-role="student"] .panelSlot{display:none;}
+ .root[data-view-role="student"] .panelToggle{display:none;}
+ .floatingVideo{top:65px!important;right:8px!important;width:min(230px,65vw);max-height:30dvh;}
+ .focusMode .topline{min-height:30px;}
+}
+@media(max-width:390px){
+ .toolbarToggle{display:none;}
+ .prejoinPeople{gap:4px;}
+ .prejoinPeople label{font-size:9px;}
+ .root[data-view-role="student"] .mediaPanel{height:clamp(88px,17dvh,136px);}
+ .workspaceActions{justify-content:flex-start;}
+}
+@media(max-height:650px) and (min-width:761px){
+ .root .topline p,.root .overline{display:none;}
+ .mediaControls{display:none;}
+ .workspaceActions{min-height:28px;}
+ .quranHead h2{font-size:17px;}
+ .videoBackdrop{height:80px;}
+}
