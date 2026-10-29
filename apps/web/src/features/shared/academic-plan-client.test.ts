@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {academicPlanClient,parseAcademicPlan,PlanClientError} from './academic-plan-client';
 const learner='48f455f7-65cf-4904-9bc3-fdfb7ba2f620';
-const plan={level:'beginner',nextWird:'الفاتحة',revisionWird:'مراجعة',focus:'النطق',revision:1,updatedAtMs:1000};
+const plan={level:'beginner',nextWird:'الفاتحة',revisionWird:'مراجعة',focus:'النطق',revision:1,updatedAtMs:1000} as const;
 describe('academic plan client',()=>{
  it('parses only fully typed teacher-authored plans',()=>{
   expect(parseAcademicPlan(plan)).toEqual(plan);
