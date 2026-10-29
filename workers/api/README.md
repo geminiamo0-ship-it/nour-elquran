@@ -49,3 +49,10 @@ Run `bash scripts/cloudflare-auth-smoke.sh` after `pnpm install --frozen-lockfil
 Root Workers configuration now uses `workers/site` to combine the static Next.js export and existing API under the same origin. Static paths/404s pass through ASSETS; API paths delegate to this handler. No remote D1 binding or auth settings were provisioned. Authenticated frontend can be built explicitly with `NEXT_PUBLIC_ACCOUNT_UI=true`; default builds retain the demo and make no account requests. This public switch does not enable backend auth.
 
 After opt-in frontend build, `bash scripts/cloudflare-auth-browser.sh` verifies the full local Chrome/Worker/D1 journey using a generated temporary config/secret and reserved synthetic contacts. The script never deploys or runs remote SQL. Do not turn on real-user rollout until #46 verification/recovery, role policy, staging and operations pass. Root rollback: disable UI/server flags, keep additive tables. See ADR 0006 for same-origin contracts and partial-registration recovery.
+
+
+## Classroom booking guard proposal (#120, PR #121)
+
+`migrations/0003_teacher_schedule.sql` enforces that every **new** lesson reserves one contiguous 40-minute booking for both the learner and acting teacher; adjacent bookings are allowed. D1 triggers reject overlap on inserts, status reactivation and rescheduling; canceled slots release capacity. Old 30-minute records are preserved, not rewritten. The previously approved 30-minute instructional target and teacher-only manual Start/End are **not** auto-enforced by this migration. The 40-minute reservation does not bill or extend any entitlement automatically.
+
+`tests/test_teacher_calendar.py` covers new slots, collisions, simultaneous unrelated lessons, canceled/reactivated slots, historical rows and migrations. Apply `0003` only after `0001` and `0002`; run `pnpm test:backend` and local D1 migration smoke before staging. The migration remains a PR pending CI/review and must not be treated as already live in staging. **Not yet built:** authenticated scheduling REST endpoints, teacher presence/Start/End, media rooms, payments, reporting or compensation decisions.
