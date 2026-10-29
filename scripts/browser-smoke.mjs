@@ -710,6 +710,9 @@ try {
     {width:390,height:844,role:'student',minimumWidth:245,minimumVideoHeight:80},
     {width:844,height:390,role:'student',minimumWidth:145,minimumVideoHeight:140},
     {width:768,height:1024,role:'teacher',minimumWidth:300,minimumVideoHeight:180},
+    // CSS rail breakpoint boundary: narrow desktop stays horizontal, wide desktop docks beside the sheet.
+    {width:1101,height:900,role:'teacher',minimumWidth:390,minimumVideoHeight:180},
+    {width:1200,height:900,role:'teacher',minimumWidth:395,minimumVideoHeight:180},
     {width:1280,height:900,role:'teacher',minimumWidth:395,minimumVideoHeight:180},
     {width:1440,height:900,role:'teacher',minimumWidth:395,minimumVideoHeight:180},
   ]){
@@ -802,7 +805,7 @@ try {
         const toolbar=document.querySelector('[role="toolbar"][aria-label="أدوات المصحف المشترك"]');
         const rail=toolbar?.querySelector('[class*="inkPalette"]')?.getBoundingClientRect();
         const quran=page?.closest('[class*="quranStage"]');
-        const docked=innerWidth<1101 || (quran?.contains(toolbar) &&
+        const docked=innerWidth<1200 ? getComputedStyle(toolbar).position!=='absolute' : (quran?.contains(toolbar) &&
           getComputedStyle(toolbar).position==='absolute' && rail && sheet &&
           rail.left>=sheet.right-4);
         const colors=[...toolbar.querySelectorAll('button[aria-label^="اختر لون"]')];
