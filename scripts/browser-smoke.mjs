@@ -594,7 +594,7 @@ try {
         'S11 local ink undo must not mutate published marks: ' + JSON.stringify(cleanup.result?.value));
     }
     await socket.send('Runtime.evaluate', {
-      expression: "document.querySelector('[aria-label=\\\"طبقات مصحف الحصة\\\"] button[aria-pressed=\\\"true\\\"]')?.click()",
+      expression: "[...document.querySelectorAll('[aria-label=\\\"طبقات مصحف الحصة\\\"] button')].find(b=>b.textContent.includes('قراءة الآيات'))?.click()",
       returnByValue: true,
     });
 
