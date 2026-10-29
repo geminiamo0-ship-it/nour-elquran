@@ -628,7 +628,7 @@ try {
     // Keep the *printed page itself* in the screenshot at desktop/tablet widths.
     // Without this scroll, a passing overlay assertion could capture only the header.
     const pageInView = await socket.send('Runtime.evaluate', {
-      expression: "(()=>{const p=document.querySelector('[data-rendered-quran-page=\\\"2\\\"]');p?.scrollIntoView({block:'center',behavior:'instant'});const r=p?.getBoundingClientRect();return !!r&&r.bottom>0&&r.top<innerHeight;})()",
+      expression: "(()=>{const p=[...document.querySelectorAll('[data-rendered-quran-page]')].find(n=>n.getAttribute('data-rendered-quran-page')==='2');p?.scrollIntoView({block:'center',behavior:'instant'});const r=p?.getBoundingClientRect();return !!r&&r.bottom>0&&r.top<innerHeight;})()",
       returnByValue: true,
     });
     assert(pageInView.result?.value === true, 'S11 printed page 2 must be visible in screenshot');
