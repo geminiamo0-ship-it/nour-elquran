@@ -43,7 +43,9 @@ try{
   await available('[data-quran-save-status]');await saved();
   await evalJs('document.querySelector("button[title=\'قلم\']").click()');
   await available('svg[data-ink-mode="pen"]');
-  const rect=await evalJs('(()=>{const r=document.querySelector("svg[data-ink-mode=pen]").getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})()');
+  await evalJs('document.querySelector("svg[data-ink-mode=pen]").scrollIntoView({block:"center"})');
+  const rect=await evalJs('(()=>{const r=document.querySelector("svg[data-ink-mode=pen]").getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,vw:innerWidth,vh:innerHeight}})()');
+  assert(rect.x>=0&&rect.y>=0&&rect.x+rect.w<=rect.vw+2&&rect.y+rect.h*.35<rect.vh,'The drawing canvas is outside the Chrome viewport: '+JSON.stringify(rect));
   assert(rect.w>80&&rect.h>150,'real Quran ink overlay size');
   const x=rect.x+rect.w*.3,y=rect.y+rect.h*.3;
   const drag=(type,xx,yy,buttons)=>browser.send('Input.dispatchMouseEvent',{
