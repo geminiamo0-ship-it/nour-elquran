@@ -1,3 +1,7 @@
+## CLASSROOM #120 / PR #121 — draft concurrent-live guard
+- `workers/api/migrations/0003_teacher_schedule.sql`: 40-minute booking, teacher/learner eligibility and conflicts; added INSERT/UPDATE SQLite/D1 guards for at most one live room per teacher and learner, independent of adjacent reserved slots. This does not implement authorized Start/End or presence.
+- `workers/api/tests/test_teacher_calendar.py`: synthetic SQLite regression coverage for live-room overrun, independent concurrent rooms and direct-live-insert bypass. Draft PR only; no remote migration.
+
 # Repository map and file ownership
 
 ## STAGING #114
