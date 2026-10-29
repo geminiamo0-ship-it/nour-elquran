@@ -1,3 +1,8 @@
+## #149 — private reader write readiness follow-up (2026-10-29; draft)
+
+- Branch `fix/149-private-reader-hydration-write-guard`: a page-specific readiness function blocks connected pen/marker/erase/note/highlight/bookmark writes until index and active page belong to the selected learner, and blocks new edits after a failed save. This closes the stale-page window between React navigation and its async page-load effect. Demo preview stays editable. New Vitest tests exercise stale page, sibling switch and failure.
+- Reader uses `canEditPage(leaf)` both on the ink surface and in `changeInkFor`, and displays an account-specific empty notes message in connected mode. No claim of remote browser QA or durable offline queue. **Verify exact PR head in Actions**, then test protected QA with synthetic identities and page navigation while hydration is pending. Keep #149 and #144 open until remote QA and all gates pass; no production activation.
+
 ## Private Quran #144 follow-up — reload of hidden notes/bookmarks (2026-10-29)
 
 - On follow-up PR #146 branch `fix/144-private-mushaf-tombstone-reload`, patched `readPrivateMushaf` to hydrate hidden stable-ID note/highlight/bookmark versions. Previously a hidden item disappeared from visible-only GET and re-adding after refresh produced stale version 0 / 409. The UI now renders only visible bookmarks/highlights while retaining hidden versions for safe restore/edit. Erased pen/marker strokes are not hydrated (new strokes use fresh IDs).
