@@ -17,7 +17,7 @@ type Props={
  setMarked:Dispatch<SetStateAction<Record<string,string>>>;
 };
 export function usePrivateMushafSave({
- learnerId,enabled,page,setPage,setPageEntry,setNotes,setInkByPage,setBookmarks,
+ learnerId,enabled,page,setPage,setPageEntry,setNotes,setInkByPage,setBookmarks,setMarked,
 }:Props){
  const [status,setStatus]=useState<SyncState>(enabled?'loading':'off');
  const [indexReady,setIndexReady]=useState(!enabled);
