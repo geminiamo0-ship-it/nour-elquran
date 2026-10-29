@@ -1,5 +1,5 @@
 'use client';
-import {useState} from 'react';
+import {useState,type FormEvent} from 'react';
 import {useTeacher} from './TeacherContext';
 import {TASK_LABEL,validAssignment,type AssignmentKind} from './domain';
 import {Empty,Panel,Pill,SectionHeading} from './TeacherUI';
@@ -28,7 +28,7 @@ export function TeacherAssignments(){
   const view=assignments.filter(t=>filter==='all'||t.status===filter);
   const selected=view.find(t=>t.id===selectedId)??view[0]??null;
   const draft={learnerIds,kind,surah,surahName:chosenSurah.name,fromAyah:Number(fromAyah),toAyah:Number(toAyah),dueDate};
-  function submit(e:React.FormEvent<HTMLFormElement>){
+  function submit(e:FormEvent<HTMLFormElement>){
     e.preventDefault();
     if(!validAssignment(draft,allowed)||draft.toAyah>chosenSurah.count){
       setError('اختر طالبًا مصرحًا ونطاق آيات صحيحًا وموعدًا واضحًا.');return;
