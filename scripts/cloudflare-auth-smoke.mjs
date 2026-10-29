@@ -260,6 +260,13 @@ assert.equal(teacherSchedule.data.lessons[0].endsAtMs-teacherSchedule.data.lesso
 const learnerTimetable=await call('/v1/me/learners/'+learner+'/lessons',{cookie:cookieA});
 assert.equal(learnerTimetable.response.status,200);
 assert.equal(learnerTimetable.data.lessons[0].id,lessonCreated.data.resourceId);
+const unsafeArchive=await call(profilePath,{method:'POST',cookie:cookieA,body:{
+  action:'archive',operationId:randomUUID(),expectedRevision:2,
+}});
+assert.equal(unsafeArchive.response.status,409,'Cannot archive a student with a scheduled lesson');
+assert.equal(unsafeArchive.data.code,'PROFILE_OPEN_LESSONS');
+assert.equal((await call('/v1/learners/'+learner,{cookie:cookieA})).data.learner.revision,2);
+
 assert.equal((await call('/v1/me/learners/'+learner+'/lessons',{cookie:cookieB})).response.status,404);
 const prematureRevoke=await schedule({action:'revoke',operationId:randomUUID(),
   reason:'Synthetic schedule reallocation',resourceId:assignmentCreated.data.resourceId});
