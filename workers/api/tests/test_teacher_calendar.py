@@ -342,6 +342,52 @@ class TeacherCalendarConstraints(unittest.TestCase):
                    teacher="teacher-b", status="live")
         self.assertEqual(self.db.execute("SELECT COUNT(*) FROM lessons").fetchone()[0], 1)
 
+    def test_live_lesson_cannot_reopen_slot_by_status_rollback(self):
+        lesson(self.db, "first")
+        lesson(self.db, "next", start=T + SLOT_MS, learner="learner-b")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='first'")
+        for attempted in ("scheduled", "cancelled"):
+            with self.subTest(attempted=attempted), self.assertRaisesRegex(
+                sqlite3.IntegrityError, "cannot be reopened"
+            ):
+                self.db.execute("UPDATE lessons SET status=? WHERE id='first'", (attempted,))
+            self.assertEqual(
+                self.db.execute("SELECT status FROM lessons WHERE id='first'").fetchone()[0],
+                "live",
+            )
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "teacher already has a live lesson"):
+            self.db.execute("UPDATE lessons SET status='live' WHERE id='next'")
+        # Explicit teacher End remains possible, and only then can next Start proceed.
+        self.db.execute("UPDATE lessons SET status='completed' WHERE id='first'")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='next'")
+
+    def test_completed_lesson_cannot_be_resurrected(self):
+        lesson(self.db, "history")
+        self.db.execute("UPDATE lessons SET status='completed' WHERE id='history'")
+        for attempted in ("scheduled", "cancelled", "live"):
+            with self.subTest(attempted=attempted), self.assertRaisesRegex(
+                sqlite3.IntegrityError, "cannot be reopened"
+            ):
+                self.db.execute("UPDATE lessons SET status=? WHERE id='history'", (attempted,))
+            self.assertEqual(
+                self.db.execute("SELECT status FROM lessons WHERE id='history'").fetchone()[0],
+                "completed",
+            )
+
+    def test_status_noop_and_prestart_cancellation_reactivation_remain_possible(self):
+        lesson(self.db, "booked")
+        self.db.execute("UPDATE lessons SET status='scheduled' WHERE id='booked'")
+        self.db.execute("UPDATE lessons SET status='cancelled' WHERE id='booked'")
+        self.db.execute("UPDATE lessons SET status='scheduled' WHERE id='booked'")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='booked'")
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='booked'")
+        self.db.execute("UPDATE lessons SET status='completed' WHERE id='booked'")
+        self.db.execute("UPDATE lessons SET status='completed' WHERE id='booked'")
+        self.assertEqual(
+            self.db.execute("SELECT status FROM lessons WHERE id='booked'").fetchone()[0],
+            "completed",
+        )
+
     def test_core_readiness_version_unchanged_and_schedule_migration_recorded(self):
         self.assertEqual(
             self.db.execute("SELECT version FROM noor_schema_meta WHERE component='core'")
