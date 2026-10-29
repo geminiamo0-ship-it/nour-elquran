@@ -5,11 +5,11 @@ import path from 'node:path';
 import { Buffer } from 'node:buffer';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-export async function waitFor(check, description, attempts = 100) {
+export async function waitFor(check, description, attempts = 120) {
   for (let i=0; i<attempts; i++) {
     const result = await check();
     if (result) return result;
-    await sleep(100);
+    await sleep(250);
   }
   throw Error('Timed out: '+description);
 }
@@ -22,7 +22,9 @@ export async function openLocalChrome(url) {
     '--no-proxy-server','--no-first-run','--no-default-browser-check','--disable-extensions',
     '--disable-background-networking','--remote-debugging-address=127.0.0.1',
     '--remote-debugging-port='+port,'--remote-allow-origins=*','--user-data-dir='+profile,
-  ],{stdio:'ignore'});
+  ],{stdio:['ignore','ignore','pipe']});
+  let browserErrors = '';
+  child.stderr?.on('data', chunk => { browserErrors = (browserErrors + chunk.toString()).slice(-4000); });
   let socket;
   async function close() {
     socket?.close(); child.kill('SIGTERM');
@@ -33,8 +35,8 @@ export async function openLocalChrome(url) {
   try {
     await waitFor(async()=>{
       if(child.exitCode!==null)throw Error('Chrome failed to start');
-      try {return (await fetch('http://127.0.0.1:'+port+'/json/version')).ok;}catch{return false;}
-    },'Chrome startup');
+      try {return (await fetch('http://127.0.0.1:'+port+'/json/version',{signal:AbortSignal.timeout(1000)})).ok;}catch{return false;}
+    },'Chrome startup',240);
     const target=await (await fetch('http://127.0.0.1:'+port+'/json/new?'+encodeURIComponent(url),{method:'PUT'})).json();
     socket=new globalThis.WebSocket(target.webSocketDebuggerUrl);
     await new Promise((resolve,reject)=>{socket.addEventListener('open',resolve,{once:true});socket.addEventListener('error',reject,{once:true});});
@@ -64,5 +66,9 @@ export async function openLocalChrome(url) {
         fs.writeFileSync(destination,Buffer.from(result.data,'base64'));
       },
     };
-  } catch(error) { await close();throw error; }
+  } catch(error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    const diagnosis = 'Chrome exit='+child.exitCode+'; stderr='+browserErrors.slice(-3000);
+    await close();throw Error(detail+'; '+diagnosis);
+  }
 }
