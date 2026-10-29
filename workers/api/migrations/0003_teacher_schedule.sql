@@ -34,13 +34,41 @@ BEGIN
 END;
 
 CREATE TRIGGER lessons_qualified_teacher_update
-BEFORE UPDATE OF actual_teacher_id, status ON lessons
+BEFORE UPDATE OF actual_teacher_id, status, starts_at_ms, ends_at_ms ON lessons
 WHEN NEW.status = 'scheduled'
 BEGIN
   SELECT RAISE(ABORT, 'booking requires an active qualified teacher')
   WHERE NOT EXISTS (
     SELECT 1 FROM teachers t
     WHERE t.id = NEW.actual_teacher_id AND t.status = 'active' AND t.qualified = 1
+  );
+END;
+
+-- New or reactivated reservations require an active learner whose owning account
+-- is also active. This is a relational guard only: the API must still authenticate
+-- the actor and authorize the learner, lesson and teacher before any mutation.
+-- Archiving a learner or disabling an account never rewrites existing history.
+CREATE TRIGGER lessons_active_learner_insert
+BEFORE INSERT ON lessons
+WHEN NEW.status = 'scheduled'
+BEGIN
+  SELECT RAISE(ABORT, 'booking requires an active learner and account')
+  WHERE NOT EXISTS (
+    SELECT 1 FROM learners l
+    JOIN accounts a ON a.id = l.account_id
+    WHERE l.id = NEW.learner_id AND l.status = 'active' AND a.status = 'active'
+  );
+END;
+
+CREATE TRIGGER lessons_active_learner_update
+BEFORE UPDATE OF status, starts_at_ms, ends_at_ms, actual_teacher_id ON lessons
+WHEN NEW.status = 'scheduled'
+BEGIN
+  SELECT RAISE(ABORT, 'booking requires an active learner and account')
+  WHERE NOT EXISTS (
+    SELECT 1 FROM learners l
+    JOIN accounts a ON a.id = l.account_id
+    WHERE l.id = NEW.learner_id AND l.status = 'active' AND a.status = 'active'
   );
 END;
 
