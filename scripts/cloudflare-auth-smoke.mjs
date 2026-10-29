@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
+import {setTimeout as pause} from 'node:timers/promises';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 const base = 'http://127.0.0.1:8795';
@@ -135,7 +136,7 @@ const assignmentCreated=await schedule(assignmentRequest);
 assert.equal(assignmentCreated.response.status,201,JSON.stringify(assignmentCreated.data));
 assert.equal((await schedule(assignmentRequest)).data.code,'OPERATION_ALREADY_APPLIED');
 // The primary roster is deliberately time-scoped; wait until the new assignment begins.
-await new Promise(resolve=>setTimeout(resolve,2300));
+await pause(2300);
 const assignedRoster=await call('/v1/teacher/learners',{cookie:cookieB});
 assert.equal(assignedRoster.response.status,200,JSON.stringify(assignedRoster.data));
 assert.equal(assignedRoster.data.learners.length,1);
