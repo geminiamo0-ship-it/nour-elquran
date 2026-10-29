@@ -31,14 +31,14 @@ describe('academic plan client',()=>{
    return Response.json({code:'PLAN_SAVED',revision:2});
   });
   const operationId='6ae0d302-555e-4ff9-a9f2-d0b1b70b9ebf';
-  await expect(api.save(learner,plan,1,operationId)).resolves.toBe(2);
+  const input={level:plan.level,nextWird:plan.nextWird,revisionWird:plan.revisionWird,focus:plan.focus};
+  await expect(api.save(learner,input,1,operationId)).resolves.toBe(2);
   expect(calls[0]?.opts).toMatchObject({method:'POST',credentials:'same-origin'});
   expect(JSON.parse(String(calls[0]?.opts?.body))).toEqual({
    level:plan.level,nextWird:plan.nextWird,revisionWird:plan.revisionWird,
    focus:plan.focus,expectedRevision:1,operationId,
-   revision:1,updatedAtMs:1000,
   });
-  await expect(api.save('../leak',plan,1,operationId)).rejects.toMatchObject({code:'INVALID_LEARNER_ID'});
+  await expect(api.save('../leak',input,1,operationId)).rejects.toMatchObject({code:'INVALID_LEARNER_ID'});
   expect(calls).toHaveLength(1);
  });
  it('never claims success on wrong revision, missing API or network failure',async()=>{
