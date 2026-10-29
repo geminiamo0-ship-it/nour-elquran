@@ -3,7 +3,7 @@ import {useEffect,useRef,useState,type FormEvent} from 'react';
 import {academicPlanClient,planMessage,type AcademicPlan,type AcademicPlanInput} from '../shared/index';
 import css from './TeacherReadOnly.module.css';
 
-type Reading={status:'loading'|'error'}|{status:'loaded';plan:AcademicPlan|null};
+type Reading={status:'loading'}|{status:'error'}|{status:'loaded';plan:AcademicPlan|null};
 const client=academicPlanClient();
 const empty:AcademicPlanInput={level:'beginner',nextWird:'',revisionWird:'',focus:''};
 const levels={beginner:'مبتدئ',intermediate:'متوسط',advanced:'متقدم'};
