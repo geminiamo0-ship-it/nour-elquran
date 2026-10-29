@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { ACCOUNT_UI_ENABLED } from '@/features/account';
 
 export function Header() {
   const [open, setOpen] = useState(false);
@@ -28,7 +29,7 @@ export function Header() {
         <a href="#interactive-classroom">الفصل التفاعلي</a>
         <a href="#journey">كيف نبدأ؟</a>
         <a href="#questions">الأسئلة الشائعة</a>
-        <a className="primary-mobile" href="#enroll">إنشاء حساب تجريبي</a>
+        <a className="primary-mobile" href="#enroll">{ACCOUNT_UI_ENABLED ? 'إنشاء حساب / دخول' : 'إنشاء حساب تجريبي'}</a>
       </nav>
       <a className="btn btn-gold header-cta" href="#enroll">احجز حصة تجريبية <span aria-hidden="true">↖</span></a>
       <button className="mobile-menu-btn" id="menuBtn" type="button" aria-controls="siteNav" aria-expanded={open} aria-label={open ? "إغلاق القائمة" : "فتح القائمة"} onClick={() => setOpen((value) => !value)}>
@@ -38,3 +39,4 @@ export function Header() {
   
   </header>);
 }
+

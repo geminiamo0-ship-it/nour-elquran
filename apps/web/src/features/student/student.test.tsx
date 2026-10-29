@@ -81,3 +81,17 @@ describe('student portal server rendering', () => {
     expect(mushaf).toContain('نص قرآني موثّق');
   });
 });
+
+
+describe('connected learner isolation', () => {
+  it('never loads demo lessons, teachers, grades or profiles for a real account', () => {
+    const html = renderToStaticMarkup(<StudentProvider liveLearners={[{
+      id: '10b4e832-c325-4da9-8cff-e1f10d209156', name: 'Connected learner', stage: 'new', demo: false,
+    }]}><StudentDashboard /></StudentProvider>);
+    expect(html).toContain('Connected learner');
+    expect(html).toContain('لم يُنشَر أي تقرير');
+    expect(html).not.toContain('شيخ تجريبي');
+    expect(html).not.toContain('طالبة منتظمة');
+    expect(html).not.toContain('8 / 10');
+  });
+});

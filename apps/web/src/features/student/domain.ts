@@ -2,7 +2,7 @@ import type { QuranAssignmentRange } from './quranAssignment';
 export type LearnerStage = 'new' | 'trial_booked' | 'assessed' | 'active' | 'lapsed';
 export type LessonStatus = 'booked' | 'completed' | 'cancelled';
 export type Grade = number | null;
-export type LearnerProfile = Readonly<{ id: string; name: string; stage: LearnerStage; demo: true }>;
+export type LearnerProfile = Readonly<{ id: string; name: string; stage: LearnerStage; demo: boolean }>;
 export type Lesson = Readonly<{
   id: string; learnerId: string; dayOffset: number; time: string; durationMinutes: number;
   teacher: string; topic: string; status: LessonStatus; kind: 'trial' | 'standard';
@@ -28,9 +28,9 @@ export function isLearnerProfile(value: unknown): value is LearnerProfile {
   if (!value || typeof value !== 'object') return false;
   const item = value as Record<string, unknown>;
   return typeof item.id === 'string' && item.id.length > 0 && item.id.length <= 60
-    && typeof item.name === 'string' && item.name.trim().length > 0 && item.name.length <= 50
+    && typeof item.name === 'string' && item.name.trim().length > 0 && item.name.length <= (item.demo === true ? 50 : 80)
     && typeof item.stage === 'string' && stages.has(item.stage as LearnerStage)
-    && item.demo === true;
+    && typeof item.demo === 'boolean';
 }
 export function validateGrade(grade: unknown): grade is Grade {
   return grade === null || (typeof grade === 'number' && Number.isFinite(grade) && grade >= 0 && grade <= 10);
@@ -67,3 +67,4 @@ export function sanitizeStudyNote(value: string): string | null {
   const text = value.trim();
   return text.length > 0 && text.length <= 500 ? text : null;
 }
+

@@ -1,5 +1,11 @@
 # AI agent handoff contract
 
+## AUTH-02 #112 — current branch continuation
+- Read main #111 acceptance: merge `14e73efde6e406dff34603ef053b2f17e789984c`, all four postmerge Verify jobs in 40803047786 SUCCESS. #43/#46 remain open.
+- Branch `feat/112-account-ui` connects account UI to maintained backend contracts behind default-OFF NEXT_PUBLIC_ACCOUNT_UI. AccountProvider verifies session in D1, loads only owner profiles, guards stale async results and clears private views on logout/error/401. Connected StudentProvider has empty learning data and never reads demo storage/fixtures.
+- Root `workers/site` routes same-origin API to existing API handler and retains ASSETS behavior. Backend enablement/secret/D1 are independent of public UI flag; no real bindings/resources created. Local native Chrome fault-injection tests plus existing four-job Verify must pass before merge. Record exact head/run in #112/PR after CI, then verify main.
+- Next after this slice: #46 phone ownership/recovery and real-user rollout prerequisites, explicit child/staff authorization and cloud staging/backup; learning APIs remain separate. No messages or deployment claimed.
+
 ## AUTH-01 #110 / PR #111 — current continuation
 - #109 merged as `a8ea58cdc76c25ad89ff02bb1e280bd3b90559e4`; postmerge Verify 40800758113 succeeded. Earlier entries below are historical.
 - AUTH-01 code head `e1fd72e68a786d7c41497d124b3c91cc332fce5b` passed **all four jobs** in [Verify 40802629650](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40802629650): strict types, unit/build/Chrome and native local auth/session/ownership/rate-limit/logout/disabled/expired acceptance. 26 Node + 22 SQLite backend tests; maintained Better Auth + Drizzle, additive 0002, default-disabled same-origin wrappers. See workers/api/README.md and ADR 0005.

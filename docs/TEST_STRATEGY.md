@@ -1,5 +1,10 @@
 # Verification and test strategy
 
+## AUTH-02 #112 full local account journey
+- Vitest: validate/strip session/profile responses, reject demo/duplicate/malformed identities, fixed same-origin cookie requests, HTTP/offline/invalid-JSON failure and connected snapshots without fixtures. Existing frontend, backend, static build and Chrome checks retained.
+- `bash scripts/cloudflare-auth-browser.sh` after `NEXT_PUBLIC_ACCOUNT_UI=true pnpm --filter @noor/web build`: real Chrome + composed Worker + isolated D1. Drop the first successful profile POST response, recover by reload without duplicate signup/insert; then exercise HttpOnly/SameSite cookies, 360/390/1440 registration/dashboard, add/switch siblings, logout/replay, second account isolation, wrong password and expired sessions. Screenshots contain synthetic fixtures only.
+- Local native gates do not prove remote settings, contact verification/recovery, real consent/adult identity, child/staff scope, lessons or production readiness. Test config/secrets are ephemeral; no remote commands.
+
 ## AUTH-01 #110 native local acceptance
 - `pnpm test:backend`: 26 dependency-free Node tests (including E.164/Egypt normalization, strict HTTPS opt-in and bounded JSON) plus 22 SQLite core tests. These alone do not execute Better Auth.
 - `bash scripts/cloudflare-auth-smoke.sh`: installs no remote resources; runs pinned Wrangler on isolated local D1 with both migrations and a temporary secret. Requires installed root dependencies. Tests real Better Auth signup/phone login, HttpOnly/SameSite cookie, wrong password, account/learner ownership, forged identity rejection, body-key and origin restrictions, profile cap, blocked raw auth routes, logout replay, disabled account and expired session rejection.

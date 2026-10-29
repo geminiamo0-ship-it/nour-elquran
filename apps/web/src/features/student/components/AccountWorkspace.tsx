@@ -3,9 +3,14 @@ import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useStudent } from '../StudentContext';
 import { MAX_SIBLINGS } from '../domain';
+import { ACCOUNT_UI_ENABLED, AccountProfiles } from '@/features/account';
 import styles from '../StudentPortal.module.css';
 
 export function AccountWorkspace() {
+  const { selectedId, selectLearner } = useStudent();
+  return ACCOUNT_UI_ENABLED ? <AccountProfiles selectedId={selectedId} onSelect={selectLearner} /> : <DemoAccountWorkspace />;
+}
+function DemoAccountWorkspace() {
   const { learners, selectedId, selectLearner, createDemoLearner, removeDemoLearner } = useStudent();
   const [name, setName] = useState('');
   const [error, setError] = useState('');
@@ -57,3 +62,4 @@ export function AccountWorkspace() {
     <Link href="/" className={styles.outlineButton}>العودة إلى نور القرآن</Link>
   </div>;
 }
+

@@ -29,13 +29,13 @@ export function StudentDashboard() {
       <span className={styles.headerDecoration} aria-hidden="true">بِسْمِ اللَّهِ</span>
     </div>
     <section className={styles.contextStrip} aria-label="الخطوة التالية">
-      <div><span className={styles.smallOverline}>خطوتك التالية</span><h2>{status.heading}</h2><p>{status.message}</p></div>
+      <div><span className={styles.smallOverline}>خطوتك التالية</span><h2>{status.heading}</h2><p>{profile.demo ? status.message : 'ملف الطالب جاهز. ستظهر هنا مواعيدك وتكليفات الشيخ وتقاريرك عند تفعيل خدمات التعلم.'}</p></div>
       {profile.stage === 'new' ?
         <Link href="/student/lessons#trial-booking" className={styles.goldButton}>استكشف الحجز التجريبي</Link> :
         <Link href="/student/lessons" className={styles.goldButton}>عرض جدول الحصص</Link>}
     </section>
     <section className={styles.metricGrid} aria-label="الملخص الأكاديمي">
-      <Metric label="الحصص القادمة" value={lessons.filter((item) => item.status === 'booked' && item.dayOffset >= 0).length ? String(lessons.filter((item) => item.status === 'booked' && item.dayOffset >= 0).length) : '—'} detail="أمثلة عند وجود حصص" />
+      <Metric label="الحصص القادمة" value={lessons.filter((item) => item.status === 'booked' && item.dayOffset >= 0).length ? String(lessons.filter((item) => item.status === 'booked' && item.dayOffset >= 0).length) : '—'} detail={profile.demo ? 'أمثلة عند وجود حصص' : 'لا توجد مواعيد متاحة بعد'} />
       <Metric label="الورد المعتمد" value={tasks.length ? String(tasks.length) : '—'} detail="مهام اعتمدها الشيخ" />
       <Metric label="تمّ في هذه المعاينة" value={tasks.length ? String(finished.length) + ' / ' + String(tasks.length) : '—'} detail="متابعة محلية غير مُرسلة" />
       <Metric label="آخر تقييم منشور" value={latestReport ? 'متاح' : '—'} detail="ثلاث درجات مستقلة من ١٠" />
@@ -62,3 +62,4 @@ export function StudentDashboard() {
     </div>
   </>;
 }
+

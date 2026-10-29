@@ -1,5 +1,11 @@
 # Repository map and file ownership
 
+## AUTH-02 #112
+- `apps/web/src/features/account/`: same-origin validated API DTO/client, safe public error mapping, lease-guarded session context, signup/login/partial-onboarding recovery, profiles and logout. Public index is the only cross-feature import surface. CSS uses existing ivory/green/gold palette.
+- Root layout hosts the account provider. Landing swaps demo enrollment for opt-in account UI; StudentShell gates connected pages and mounts account-keyed StudentProvider with real profile IDs and empty learning snapshots. Existing demo behavior remains when UI flag is off; no authenticated names/contacts/credentials enter demo session storage.
+- `workers/site/src/index.ts`, `workers/site/tsconfig.json`, root wrangler: compose API + static assets under one origin; unknown pages retain ASSETS 404. Root config contains no remote D1 or auth secret. NEXT_PUBLIC_ACCOUNT_UI enables UI at build; AUTH_ENABLED enables server independently.
+- `scripts/chrome-local.mjs`, `cloudflare-auth-browser.{sh,mjs}`: isolated synthetic browser journey with response-loss fault injection and mobile/desktop screenshots, run in fourth Verify job after opt-in build. No dependency or lock graph changes.
+
 ## AUTH-01 #110
 - `docs/adr/0005-d1-phone-password-auth.md`: maintained-library choice, phone/password integration default, verification/recovery rollout prerequisites and safe rollback.
 - `workers/api/src/auth/{settings,config,schema}.ts`: explicit opt-in configuration, pinned Better Auth + first-party Drizzle D1 adapter and matching SQLite models. No home-grown password hashing or session signing.
