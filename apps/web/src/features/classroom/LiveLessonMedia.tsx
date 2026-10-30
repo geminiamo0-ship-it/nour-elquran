@@ -19,8 +19,8 @@ function mediaMessage(error:unknown):string {
 /** Real Cloud provider media; this is NOT a Start/End or attendance control.
  * Source of truth for teaching/Quran remains the Cloudflare Lesson Durable Object.
  */
-export function LiveLessonMedia({identity,active}:{
- identity:RoomIdentity;active:boolean;
+export function LiveLessonMedia({identity,active,embedded=false}:{
+ identity:RoomIdentity;active:boolean;embedded?:boolean;
 }){
  const room=useRef<Room|null>(null);
  const epoch=useRef(0);
@@ -185,7 +185,7 @@ export function LiveLessonMedia({identity,active}:{
  },[]);
 
  return <section aria-label="الصوت والفيديو المباشر" className={css.mediaRoot}
-  data-media-phase={phase}>
+  data-media-phase={phase} data-embedded={embedded?"true":"false"}>
   <div className={css.mediaTop}>
    <strong>الصوت والفيديو · LiveKit Cloud</strong>
    <span role="status">{phase==='connected'?'متصل بالصوت والفيديو — الأجهزة تحت تحكمك':
