@@ -1,3 +1,33 @@
+## #221 `Room.startAudio()` delayed completion after Stop (2026-10-30)
+- Synthetic Vitest: capture old audio element list before `startAudio()` (which may itself trigger media playback), remove elements on Stop, then resolve/reject deferred SDK call; assert old elements paused once and new room untouched. This is distinct from pending per-element `audio.play()` and subscribed autoplay regressions. Require exact PR-head Verify and targeted real signed two-browser Dev/physical audio + camera/mic indicators before accepting UX; no blanket Chrome, Production or real child data.
+
+## Classroom #221 subscribed audio autoplay race regression (2026-10-30)
+- Four synthetic cases: delayed subscribed `play()` resolution after leave pauses old element; delayed rejection suppresses stale warning and pauses; active autoplay denial still reports blocked; already-disconnected Room never starts playback. This specifically covers `TrackSubscribed` auto-play (distinct from user-triggered `startAudio`). Requires exact-head Verify plus opt-in two-browser Dev/hardware acceptance; CI alone does not prove device indicators or real WebRTC behavior.
+
+## #221 late remote audio play after leave (source regression, 2026-10-30)
+- `media-device-safety.test.ts` now defers `HTMLMediaElement.play()` until after the room becomes stale, verifying the **captured old element** is paused on late resolve and late reject. New-room audio must not be touched. Source tests do not prove browser autoplay behavior; targeted signed two-browser Cloudflare Dev audio silence and Stop/rejoin test is required. Exact-head Verify pending.
+
+## #221 — remote audio/video teardown on Stop and participant disconnect (source candidate, 2026-10-30)
+- Draft PR #226 now explicitly pauses attached remote audio/video, clears their MediaStream references and removes elements on Stop/leave, provider disconnect, participant disconnect and TrackUnsubscribed. DOM removal alone is not relied on to stop playback. Three synthetic cleanup tests cover audio/video, failed pause and failed stream release. **New exact-head CI and two-browser real-device QA required**; no Production, child data or recordings.
+
+- Run targeted signed two-browser Dev acceptance: after explicit media enable, leave/disconnect or remote participant loss must immediately silence remote audio and release media elements; check Chrome media indicators and no playback after rejoin. This is **not** proved by Vitest alone.
+
+## #221 local capture teardown regression (2026-10-30; source candidate)
+- Synthetic Vitest: after unexpected provider disconnect, every local track stop is attempted synchronously even if another stop throws; microphone and camera SDK disables are both attempted even on a dead Room. These tests do not prove hardware capture stopped: targeted signed Cloudflare Dev browser permission/forced-disconnect/indicator acceptance is still required. Exact-head Verify pending.
+
+## #221 unexpected LiveKit disconnect / queued event regression (source candidate, 2026-10-30)
+- Vitest `media-device-safety.test.ts` verifies the Room-generation gate refuses queued old Room track/reconnect events after `room.current` is cleared or a new Room joins, and refuses reused Room references after epoch invalidation. `LiveLessonMedia.tsx` invalidates epoch on actual Disconnected and checks exact Room for all callbacks and post-connect success. Exact-head Verify (lint/strict TS/Vitest/build/D1) pending. Real signed Dev browser and device indicators remain a separate gate; no automatic global Chrome or Production.
+
+## #221 follow-up: guard stale remote audio and Sheikh mute UI (source candidate, 2026-10-30)
+- Draft PR #226 prevents pending old-Room `startAudio()` from playing a **new Room's** audio after Stop/rejoin, suppresses stale remote autoplay failure notices and stale Sheikh mute HTTP result messages, and resets busy state on provider disconnect. Three synthetic deferred/audio-order tests added. Exact-head GitHub Verify and real signed Cloudflare Dev two-browser permission/audio QA remain required; no Production or private recordings.
+
+## #221 follow-up: stale rejected LiveKit device-enable cleanup (source candidate, 2026-10-30)
+- Draft PR #226 adds best-effort `setDeviceWithEpochGuard` cleanup when an enable promise **rejects after the Room becomes stale**, covering SDK failure after partial camera/mic capture. Disable is bound to the captured old Room; preserve original error even if cleanup fails. Three synthetic Vitest regressions: partial capture+rejection, cleanup rejection, and no extra disable for current permission rejection. This is a source candidate: exact-head Verify and real signed browser device/permission QA still required; no Production, no recording, no real children.
+
+## #221 asynchronous LiveKit permission race regression
+- Fast Vitest: active Room toggle succeeds; deferred camera enable after Stop/leave stops its returned video track and calls disable; deferred/stale microphone stops its audio track even if disconnected Room rejects disable; stale cleanup continues if track.stop throws or the SDK returns no publication; stale disable never re-enables; rejected browser permission propagates without false success. Strict TypeScript, lint, build and native D1 checks in exact-head GitHub Verify.
+- Focused manual Dev browser gate: signed synthetic adult Sheikh/learner, real WebRTC on approved 360/390/1280 viewport, open device permission prompt then Stop/leave, grant permission late, confirm camera/microphone indicator OFF and no local track publication. Never run global Chrome per commit; no production, real minors, recording or secrets.
+
 ## CR-02B2 signed mute no-secret Dev PASS (2026-10-30)
 - Noor exact main Verify #41002079116 PASS 4/4, Santoreno real no-secret Dev #41002323938 PASS: Sheikh signed mute 503 with no provider secret, forged unmute/SID 400, learner 404, anon 401, GET 405; CR-01, CR-02A, 07A, 08A, 08B1 regressions PASS. No actual provider ListParticipants, MutePublishedTrack, RemoveParticipant, guardian consent or 2-device media. Provider ACK/ejection and real lesson End still outstanding #206.
 

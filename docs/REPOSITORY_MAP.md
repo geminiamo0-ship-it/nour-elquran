@@ -1,3 +1,18 @@
+## Classroom #221 subscribed audio autoplay guard (2026-10-30)
+- `apps/web/src/features/classroom/media-device-safety.ts`: `playSubscribedAudioIfCurrent` guards SDK `TrackSubscribed` audio autoplay against Stop/leave and stale blocked warnings; `LiveLessonMedia.tsx` calls it; `media-device-safety.test.ts` covers late success/rejection and current/stale cases. Source-only until exact-head CI and signed two-browser Dev.
+
+## #221 late audio play completion fence (source candidate, 2026-10-30)
+- `apps/web/src/features/classroom/media-device-safety.ts`: `resumeRemoteAudioIfCurrent` pauses captured old audio elements after stale asynchronous `play()` completion. `LiveLessonMedia.tsx` passes element-bound play/pause callbacks. `media-device-safety.test.ts` covers late resolution/rejection. PR #226, exact-head CI and real browser acceptance separate.
+
+## #221 — remote audio/video teardown on Stop and participant disconnect (source candidate, 2026-10-30)
+- Draft PR #226 now explicitly pauses attached remote audio/video, clears their MediaStream references and removes elements on Stop/leave, provider disconnect, participant disconnect and TrackUnsubscribed. DOM removal alone is not relied on to stop playback. Three synthetic cleanup tests cover audio/video, failed pause and failed stream release. **New exact-head CI and two-browser real-device QA required**; no Production, child data or recordings.
+
+- `apps/web/src/features/classroom/media-device-safety.ts` exports `stopRemotePlaybackBestEffort`; `LiveLessonMedia.tsx` calls it on all media teardown paths. Synthetic tests in `media-device-safety.test.ts`. No real browser/device acceptance yet.
+
+## #221 LiveKit local device-permission race safety (focused branch)
+- `apps/web/src/features/classroom/media-device-safety.ts`: pure asynchronous device-toggle epoch guard and best-effort stale-track shutdown; `media-device-safety.test.ts`: deferred permission and disconnected-room regression tests.
+- `apps/web/src/features/classroom/LiveLessonMedia.tsx`: existing approved `LiveClassroom` UI retained; camera and microphone toggles now capture Room identity/epoch and refuse late UI state updates. Do not use stale PR #222's alternative `SignedClassroomStage` layout. CI/browser acceptance separate.
+
 ## CR-02B2 write-time wake and mute real Dev evidence
 - `docs/CLASSROOM_CR02B2_WRITE_MUTE_DEV_ACCEPTANCE.md` anchors Noor main Verify #41002079116, Santoreno Cloudflare no-secret Dev #41002323938. Mute track selection is server-only; actual LiveKit Cloud provider unconfigured/untested, #206 stays open.
 

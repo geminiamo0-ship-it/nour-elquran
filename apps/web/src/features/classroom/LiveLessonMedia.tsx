@@ -3,6 +3,7 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {Room} from 'livekit-client';
 import {JoinError,requestMediaTicket,type RoomIdentity} from './media-credentials';
+import {createRoomGenerationGuard,playSubscribedAudioIfCurrent,resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard,stopLocalCaptureBestEffort,stopRemotePlaybackBestEffort} from './media-device-safety';
 import css from './LiveClassroom.module.css';
 
 type Phase='idle'|'connecting'|'connected'|'reconnecting'|'failed';
@@ -16,6 +17,22 @@ function mediaMessage(error:unknown):string {
     return 'المتصفح رفض صلاحية الجهاز. يمكنك الاستمرار بالصوت فقط أو بدون كاميرا.';
   return 'لم يكتمل الاتصال أو تفعيل الجهاز. يمكنك إعادة المحاولة بدون تغيير الحصة.';
 }
+function clearRemotePlayback(video:HTMLDivElement|null,audio:HTMLDivElement|null):void {
+  stopRemotePlaybackBestEffort([
+    ...Array.from(video?.querySelectorAll('video')??[]),
+    ...Array.from(audio?.querySelectorAll('audio')??[]),
+  ]);
+  video?.replaceChildren();
+  audio?.replaceChildren();
+}
+function releaseCapture(old:Room):void {
+  stopLocalCaptureBestEffort(
+    Array.from(old.localParticipant.trackPublications.values(),publication=>publication.track),
+    ()=>old.localParticipant.setMicrophoneEnabled(false),
+    ()=>old.localParticipant.setCameraEnabled(false),
+  );
+}
+
 /** Real Cloud provider media; this is NOT a Start/End or attendance control.
  * Source of truth for teaching/Quran remains the Cloudflare Lesson Durable Object.
  */
@@ -40,12 +57,10 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
    room.current=null;
    if(old){
      old.removeAllListeners();
-     void old.localParticipant.setMicrophoneEnabled(false).catch(()=>{});
-     void old.localParticipant.setCameraEnabled(false).catch(()=>{});
+     releaseCapture(old);
      void old.disconnect();
    }
-   remoteVideo.current?.replaceChildren();
-   remoteAudio.current?.replaceChildren();
+   clearRemotePlayback(remoteVideo.current,remoteAudio.current);
    localVideo.current?.replaceChildren();
    setMic(false);setCamera(false);setAudioBlocked(false);setPhase('idle');setBusy(false);
  },[]);
@@ -67,21 +82,27 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
      pending=new Room({adaptiveStream:true,dynacast:true,stopLocalTrackOnUnpublish:true});
      const media=pending;
      room.current=media;
+     const isCurrentRoom=createRoomGenerationGuard(media,current,()=>room.current,()=>epoch.current);
 
      // Never auto-enable camera or microphone at connection. Devices
      // are enabled only by the participant's explicit local button.
-     media.on(RoomEvent.Reconnecting,()=>{if(current===epoch.current)setPhase('reconnecting');});
-     media.on(RoomEvent.Reconnected,()=>{if(current===epoch.current)setPhase('connected');});
+     media.on(RoomEvent.Reconnecting,()=>{if(isCurrentRoom())setPhase('reconnecting');});
+     media.on(RoomEvent.Reconnected,()=>{if(isCurrentRoom())setPhase('connected');});
      media.on(RoomEvent.Disconnected,()=>{
-       if(current!==epoch.current)return;
+       if(!isCurrentRoom())return;
+       // Invalidate all pending connect/device/audio work and queued SDK events.
+       epoch.current++;
        room.current=null;
-       remoteVideo.current?.replaceChildren();remoteAudio.current?.replaceChildren();
+       media.removeAllListeners();
+       // A dropped provider connection must not leave browser capture active.
+       releaseCapture(media);
+       clearRemotePlayback(remoteVideo.current,remoteAudio.current);
        localVideo.current?.replaceChildren();
-       setMic(false);setCamera(false);setPhase('failed');
+       setMic(false);setCamera(false);setBusy(false);setAudioBlocked(false);setPhase('failed');
        setMessage('انقطع اتصال الوسائط؛ يلزم إعادة تصريح الدخول.');
      });
      media.on(RoomEvent.TrackSubscribed,(track)=>{
-       if(current!==epoch.current)return;
+       if(!isCurrentRoom())return;
        if(track.kind!==Track.Kind.Audio&&track.kind!==Track.Kind.Video)return;
        const element=track.attach();
        // Remote audio autoplay can be blocked on mobile; the user can
@@ -89,7 +110,8 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
        if(track.kind===Track.Kind.Audio){
          if(element instanceof HTMLAudioElement){
            element.autoplay=true;
-           void element.play().catch(()=>setAudioBlocked(true));
+           void playSubscribedAudioIfCurrent(element,isCurrentRoom,
+             ()=>setAudioBlocked(true));
          }
          remoteAudio.current?.appendChild(element);
        }else{
@@ -100,15 +122,16 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
        }
      });
      media.on(RoomEvent.TrackUnsubscribed,track=>{
-       for(const element of track.detach())element.remove();
+       if(!isCurrentRoom())return;
+       stopRemotePlaybackBestEffort(track.detach());
      });
      media.on(RoomEvent.ParticipantDisconnected,()=>{
-       if(current===epoch.current)remoteVideo.current?.replaceChildren();
+       if(isCurrentRoom())clearRemotePlayback(remoteVideo.current,remoteAudio.current);
      });
      await media.connect(ticket.serverUrl,ticket.participantToken,{
        autoSubscribe:true,
      });
-     if(current!==epoch.current){
+     if(!isCurrentRoom()){
        await media.disconnect();return;
      }
      setPhase('connected');
@@ -123,22 +146,37 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
  },[active,busy,identity]);
 
  const toggleMic=useCallback(async()=>{
-   if(!room.current||phase!=='connected'||busy)return;
+   const media=room.current;
+   if(!media||phase!=='connected'||busy)return;
+   const current=epoch.current;
+   const next=!mic;
    setBusy(true);setMessage('');
    try{
-     await room.current.localParticipant.setMicrophoneEnabled(!mic);
-     setMic(!mic);
-   }catch(error){setMessage(mediaMessage(error));}
-   finally{setBusy(false);}
+     const result=await setDeviceWithEpochGuard(next,
+       enabled=>media.localParticipant.setMicrophoneEnabled(enabled),
+       ()=>current===epoch.current&&room.current===media,
+       publication=>publication?.audioTrack?.stop());
+     if(result.current)setMic(next);
+   }catch(error){
+     if(current===epoch.current&&room.current===media)setMessage(mediaMessage(error));
+   }finally{
+     if(current===epoch.current&&room.current===media)setBusy(false);
+   }
  },[mic,phase,busy]);
  const toggleCamera=useCallback(async()=>{
-   if(!room.current||phase!=='connected'||busy)return;
+   const media=room.current;
+   if(!media||phase!=='connected'||busy)return;
+   const current=epoch.current;
+   const next=!camera;
    setBusy(true);setMessage('');
    try{
-     const next=!camera;
-     const publication=await room.current.localParticipant.setCameraEnabled(next);
+     const result=await setDeviceWithEpochGuard(next,
+       enabled=>media.localParticipant.setCameraEnabled(enabled),
+       ()=>current===epoch.current&&room.current===media,
+       publication=>publication?.videoTrack?.stop());
+     if(!result.current)return;
      if(next){
-       const preview=publication?.videoTrack?.attach();
+       const preview=result.value?.videoTrack?.attach();
        if(preview){
          preview.muted=true;
          preview.autoplay=true;
@@ -148,11 +186,17 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
        }
      }else localVideo.current?.replaceChildren();
      setCamera(next);
-   }catch(error){setMessage(mediaMessage(error));}
-   finally{setBusy(false);}
+   }catch(error){
+     if(current===epoch.current&&room.current===media)setMessage(mediaMessage(error));
+   }finally{
+     if(current===epoch.current&&room.current===media)setBusy(false);
+   }
  },[camera,phase,busy]);
  const muteLearner=useCallback(async()=>{
-   if(identity.role!=='teacher'||phase!=='connected'||busy)return;
+   const media=room.current;
+   if(identity.role!=='teacher'||phase!=='connected'||busy||!media)return;
+   const current=epoch.current;
+   const isCurrent=()=>current===epoch.current&&room.current===media;
    setBusy(true);setMessage('');
    try{
      const response=await fetch(
@@ -161,6 +205,7 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
          credentials:'same-origin',cache:'no-store',redirect:'error',
        });
      const body:unknown=await response.json();
+     if(!isCurrent())return;
      if(!response.ok)throw new Error('MUTE_FAILED');
      if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('MUTE_FAILED');
      const code=(body as Record<string,unknown>).code;
@@ -170,18 +215,22 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
        setMessage('الطالب لا يبث صوتًا الآن.');
      else throw new Error('MUTE_FAILED');
    }catch{
-     setMessage('تعذّر تأكيد كتم ميكروفون الطالب. لم نحاول تشغيل أي جهاز عن بُعد.');
-   }finally{setBusy(false);}
+     if(isCurrent())setMessage('تعذّر تأكيد كتم ميكروفون الطالب. لم نحاول تشغيل أي جهاز عن بُعد.');
+   }finally{if(isCurrent())setBusy(false);}
  },[identity,phase,busy]);
  const enableRemoteAudio=useCallback(async()=>{
    const media=room.current;if(!media)return;
+   const current=epoch.current;
+   const isCurrent=()=>current===epoch.current&&room.current===media;
    try{
-     await media.startAudio();
-     for(const child of remoteAudio.current?.children??[]){
-       if(child instanceof HTMLAudioElement)await child.play();
-     }
-     setAudioBlocked(false);
-   }catch{setAudioBlocked(true);}
+     const resumed=await resumeRemoteAudioIfCurrent(
+       ()=>media.startAudio(),isCurrent,
+       ()=>Array.from(remoteAudio.current?.children??[])
+         .filter((child):child is HTMLAudioElement=>child instanceof HTMLAudioElement)
+         .map(child=>({play:()=>child.play(),pause:()=>child.pause()})),
+     );
+     if(resumed&&isCurrent())setAudioBlocked(false);
+   }catch{if(isCurrent())setAudioBlocked(true);}
  },[]);
 
  return <section aria-label="الصوت والفيديو المباشر" className={css.mediaRoot}
