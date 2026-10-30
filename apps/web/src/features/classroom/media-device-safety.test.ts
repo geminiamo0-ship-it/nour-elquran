@@ -43,6 +43,24 @@ describe('LiveKit device permission race safety (#221)',()=>{
     expect(apply.mock.calls.map(call=>call[0])).toEqual([true,false]);
   });
 
+  it('disables stale capture even when the returned track has already been disposed',async()=>{
+    const stop=vi.fn(()=>{throw new Error('track already disposed');});
+    const apply=vi.fn(async(enabled:boolean)=>({enabled}));
+    await expect(setDeviceWithEpochGuard(true,apply,()=>false,stop))
+      .resolves.toEqual({current:false});
+    expect(stop).toHaveBeenCalledOnce();
+    expect(apply.mock.calls.map(call=>call[0])).toEqual([true,false]);
+  });
+
+  it('tries to disable stale capture when the SDK returns no track publication',async()=>{
+    const apply=vi.fn(async(enabled:boolean)=>{void enabled;return undefined;});
+    const stop=vi.fn();
+    await expect(setDeviceWithEpochGuard(true,apply,()=>false,stop))
+      .resolves.toEqual({current:false});
+    expect(stop).toHaveBeenCalledWith(undefined);
+    expect(apply.mock.calls.map(call=>call[0])).toEqual([true,false]);
+  });
+
   it('does not re-enable devices for stale disable operations',async()=>{
     const apply=vi.fn(async(enabled:boolean)=>{void enabled;return undefined;});
     expect(await setDeviceWithEpochGuard(false,apply,()=>false))
