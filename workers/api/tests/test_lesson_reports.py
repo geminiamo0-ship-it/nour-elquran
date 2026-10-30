@@ -86,6 +86,9 @@ class ReportJournal(unittest.TestCase):
   with self.assertRaises(sqlite3.IntegrityError):
    self.event(6,kind='save',expected=1,hifz=11,at=3700)
  def test_substitute_lesson_only_and_24h_limit(self):
+  self.db.execute("UPDATE teacher_assignments SET revoked_at_ms=100 WHERE id='primary'")
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'REPORT_ACCESS_DENIED'):
+   self.event(90)
   self.db.execute("INSERT INTO lesson_access_grants("
                   "id,lesson_id,learner_id,teacher_id,kind,accepted_at_ms,consent_deadline_ms,"
                   "starts_at_ms,ends_at_ms) VALUES('grant','done','a','t','substitute',1100,1300,1000,2401000)")
