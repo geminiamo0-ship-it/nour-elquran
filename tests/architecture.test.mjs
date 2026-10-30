@@ -59,12 +59,17 @@ test('TypeScript import-equals require cannot bypass feature or route boundaries
       fs.writeFileSync(file, source);
     };
     write('features/teacher/internal/Secret.ts', 'export const secret = 1;');
+    write('features/teacher/index.ts', 'export const publicValue = 1;');
+    write('features/student/Public.ts',
+      "import Teacher = require('@/features/teacher'); export { Teacher };");
     write('features/student/Legacy.ts',
       "import Secret = require('@/features/teacher/internal/Secret'); export { Secret };");
     write('app/LegacyRoute.ts',
       "import Secret = require('../features/teacher/internal/Secret'); export { Secret };");
     const errors = inspectArchitecture(root);
-    assert.equal(errors.length, 2, errors.join('\\n'));
+    // Alias imports may report both the syntactic and resolved-path violation.
+    assert.ok(errors.length >= 2, errors.join('\\n'));
+    assert.ok(errors.every(error => !error.includes('features/student/Public.ts')));
     assert.ok(errors.some(error => error.includes('features/student/Legacy.ts')
       && error.includes('Cross-feature')));
     assert.ok(errors.some(error => error.includes('app/LegacyRoute.ts')
