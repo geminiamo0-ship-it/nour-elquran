@@ -9,6 +9,7 @@ import {mediaLessonWindow} from './livekit-token.ts';
 import {evictVerifiedLiveKitActor} from './livekit-admin.ts';
 import {parseVerifiedPageCommand,initialPage,applyPageSet,safePage,type SharedPageRecord} from './quran-page.ts';
 import {parseInkCommand,initialInk,visibleInk,applyInk,type InkPage} from './quran-ink.ts';
+import {parseVerifiedMicCommand,initialMicPolicy,applyMicPolicy,type MicPolicy} from './mic-policy.ts';
 
 export type RoomAction='join'|'heartbeat'|'leave'|'snapshot'|'media-intent';
 export type VerifiedRoomCommand=Readonly<{
@@ -249,6 +250,36 @@ export class LessonRoom {
     return Response.json({code:'ROOM_RECONCILE_QUEUED'},
       {headers:{'cache-control':'no-store'}});
    }catch{return Response.json({code:'ROOM_RECONCILE_UNAVAILABLE'},{status:503});}
+  }
+  if(path==='/internal/learner-microphone-policy'){
+   if(request.method!=='POST')return Response.json({code:'NOT_FOUND'},{status:404});
+   let raw:unknown;
+   try{raw=await request.json();}catch{return Response.json({code:'INVALID_MIC_POLICY_COMMAND'},{status:400});}
+   const cmd=parseVerifiedMicCommand(raw);
+   if(!cmd)return Response.json({code:'INVALID_MIC_POLICY_COMMAND'},{status:400});
+   const now=Date.now();
+   try{
+    return await this.ctx.storage.transaction(async txn=>{
+     const room=await txn.get<RoomRecord>('room');
+     if(!room||room.lessonId!==cmd.lessonId)
+      return Response.json({code:'NOT_JOINED'},{status:404});
+     const lease=room[cmd.role];
+     if(!lease||lease.expiresAtMs<=now||lease.subject!==cmd.actorSubject||
+      lease.learnerId!==cmd.learnerId)
+      return Response.json({code:'NOT_JOINED'},{status:404});
+     const current=await txn.get<MicPolicy>('learnerMicPolicy')??initialMicPolicy();
+     if(cmd.action==='snapshot')
+      return Response.json({code:'MIC_POLICY_SNAPSHOT',policy:current},
+       {headers:{'cache-control':'no-store'}});
+     // Only the current signed teacher can lock or release moderation. Releasing
+     // never unmutes an audio track or starts capture on the learner's device.
+     if(cmd.role!=='teacher')return Response.json({code:'NOT_JOINED'},{status:404});
+     const next=applyMicPolicy(current,cmd.action);
+     if(next!==current)await txn.put('learnerMicPolicy',next);
+     return Response.json({code:cmd.action==='lock'?'MIC_POLICY_LOCKED':'MIC_POLICY_RELEASED',
+      policy:next},{headers:{'cache-control':'no-store'}});
+    });
+   }catch{return Response.json({code:'MIC_POLICY_UNAVAILABLE'},{status:503});}
   }
   if(path==='/internal/quran-ink'){
    if(request.method!=='POST')return Response.json({code:'NOT_FOUND'},{status:404});
