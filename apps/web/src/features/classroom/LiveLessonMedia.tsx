@@ -141,7 +141,7 @@ export function LiveLessonMedia({identity,active}:{
        if(preview){
          preview.muted=true;
          preview.autoplay=true;
-         preview.playsInline=true;
+         if(preview instanceof HTMLVideoElement)preview.playsInline=true;
          preview.style.transform='scaleX(-1)';
          localVideo.current?.replaceChildren(preview);
        }
