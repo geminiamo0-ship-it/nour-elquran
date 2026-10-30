@@ -36,13 +36,22 @@ export async function setDeviceWithEpochGuard<T>(
 export async function resumeRemoteAudioIfCurrent(
   startAudio: () => Promise<void>,
   isCurrent: () => boolean,
-  audioPlays: () => Iterable<() => Promise<unknown>>,
+  audioPlays: () => Iterable<{play: () => Promise<unknown>; pause: () => void}>,
 ): Promise<boolean> {
   await startAudio();
   if (!isCurrent()) return false;
-  for (const play of audioPlays()) {
+  for (const audio of audioPlays()) {
     if (!isCurrent()) return false;
-    await play();
+    try {
+      await audio.play();
+    } finally {
+      // An in-flight HTMLMediaElement.play() can settle after Stop/leave.
+      // The room teardown already paused it, but a late play may resume it.
+      // Pause only the captured old element, never the newly joined room.
+      if (!isCurrent()) {
+        try { audio.pause(); } catch { /* element already detached */ }
+      }
+    }
   }
   return isCurrent();
 }
