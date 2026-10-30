@@ -52,7 +52,7 @@ function content(row:ReportRow|PublishedRow):ReportContent{
  return {scope:row.scope,strengths:row.strengths,corrections:row.corrections,
   nextPlan:row.next_plan,memorization:row.memorization,recitation:row.recitation,tajweed:row.tajweed};
 }
-const teacherScope=[
+// Read authorization must match report_event_guard's full substitute consent and lesson window.\nconst teacherScope=[
  'SELECT 1 AS allowed FROM lessons l',
  'JOIN learners s ON s.id=l.learner_id JOIN accounts owner ON owner.id=s.account_id',
  'JOIN teachers t ON t.id=l.actual_teacher_id',
@@ -65,8 +65,12 @@ const teacherScope=[
  'AND a.teacher_id=t.id AND a.revoked_at_ms IS NULL',
  'AND a.starts_at_ms<=l.starts_at_ms AND a.ends_at_ms>=l.ends_at_ms)',
  "OR EXISTS (SELECT 1 FROM lesson_access_grants grant_check WHERE grant_check.lesson_id=l.id",
- "AND grant_check.teacher_id=t.id AND grant_check.kind='substitute'",
- 'AND grant_check.accepted_at_ms IS NOT NULL AND grant_check.revoked_at_ms IS NULL))',
+ 'AND grant_check.learner_id=l.learner_id AND grant_check.teacher_id=t.id',
+ "AND grant_check.kind='substitute' AND grant_check.revoked_at_ms IS NULL",
+ 'AND grant_check.consent_deadline_ms IS NOT NULL AND grant_check.accepted_at_ms IS NOT NULL',
+ 'AND grant_check.accepted_at_ms<=grant_check.consent_deadline_ms',
+ 'AND grant_check.accepted_at_ms<=l.starts_at_ms',
+ 'AND grant_check.starts_at_ms<=l.starts_at_ms AND grant_check.ends_at_ms>=l.ends_at_ms))',
  "AND NOT EXISTS (SELECT 1 FROM lesson_access_grants g WHERE g.lesson_id=l.id AND g.teacher_id=t.id AND g.kind='substitute'",
  'AND (g.accepted_at_ms IS NULL OR g.revoked_at_ms IS NOT NULL OR',
  '?>COALESCE((SELECT MIN(p.published_at_ms) FROM lesson_report_publications p WHERE p.lesson_id=l.id),l.ended_at_ms)+86400000))',
