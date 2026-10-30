@@ -71,13 +71,16 @@ export function TeacherReadOnlyView({pathname}:{pathname:string}) {
     <div><strong>{names.get(item.learnerId)??item.learnerName??'طالب مصرح ضمن الحصة فقط'}</strong>
       <small>{kindLabel[item.kind]} · {statusLabel[item.status]}</small></div>
     <time>{formatTime(item.startsAtMs)} – {formatTime(item.endsAtMs)}</time>
+    {(item.status==='scheduled'||item.status==='live')&&
+     <Link href={'/classroom/live?role=teacher&lessonId='+encodeURIComponent(item.id)}>
+      فتح غرفة الانتظار</Link>}
   </div>);
   if(route==='/teacher/assignments')return <TeacherConnectedAssignments learners={learners}/>;
   if(route==='/teacher/reports')return <TeacherConnectedReports learners={learners} lessons={lessons}/>;
   if(route==='/teacher/students')return <TeacherConnectedStudents learners={learners} lessons={lessons}/>;
   if(route==='/teacher/schedule')return <section className={css.card}>
     <div className={css.heading}><h1>جدولي الفعلي</h1><span>آخر {lessons.length} حصة</span></div>
-    <p>المواعيد المقروءة من D1. لا توجد أزرار بدء أو إنهاء قبل ربط الحضور والتحقق الخادمي.</p>
+    <p>المواعيد المقروءة من D1. الانضمام لغرفة الانتظار متاح للحصة المصرح بها فقط، ولا يبدأ الدرس أو يشغّل LiveKit.</p>
     {lessons.length?<div className={css.list}>{lessonCards}</div>:<p className={css.empty}>لا توجد حصص مصرح بها حاليًا.</p>}
   </section>;
   if(route==='/teacher') {
