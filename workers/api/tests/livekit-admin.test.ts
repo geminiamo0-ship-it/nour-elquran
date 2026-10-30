@@ -75,3 +75,24 @@ test('unconfigured/failed provider always retries and never declares eviction su
   throw new Error('offline');
  }),'retry');
 });
+
+test('HTTP 2xx without valid Twirp JSON acknowledgement keeps eviction queued',async()=>{
+ const cases=[
+  new Response(null,{status:204}),
+  new Response('<html>upstream proxy</html>',{status:200,
+   headers:{'content-type':'text/html'}}),
+  new Response('not-json',{status:200,
+   headers:{'content-type':'application/json'}}),
+  Response.json([]),
+  Response.json({error:'provider rejected'}),
+  Response.json({code:'permission_denied',msg:'unauthorized'}),
+ ];
+ for(const response of cases){
+  const result=await evictVerifiedLiveKitActor(env,actor,Date.now(),
+   async()=>response);
+  assert.equal(result,'retry');
+ }
+ assert.equal(await evictVerifiedLiveKitActor(env,actor,Date.now(),
+  async()=>new Response('{}',{status:200,
+   headers:{'content-type':'application/json; charset=utf-8'}})),'removed');
+});
