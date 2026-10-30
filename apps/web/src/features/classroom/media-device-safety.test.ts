@@ -108,7 +108,7 @@ describe('LiveKit device permission race safety (#221)',()=>{
   });
 
   it('preserves a late rejected permission and attempts old-room cleanup',async()=>{
-    const apply=vi.fn(async()=>{throw new Error('denied');});
+    const apply=vi.fn(async(enabled:boolean)=>{void enabled;throw new Error('denied');});
     await expect(setDeviceWithEpochGuard(true,apply,()=>false))
       .rejects.toThrow('denied');
     expect(apply.mock.calls.map(call=>call[0])).toEqual([true,false]);
