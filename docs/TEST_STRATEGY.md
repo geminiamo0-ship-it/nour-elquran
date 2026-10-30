@@ -1,3 +1,6 @@
+## #57 TypeScript triple-slash reference-path source regression (2026-10-31)
+- `tests/architecture.test.mjs` creates synthetic TS files with `/// <reference path="..."/>`: forbidden cross-feature private, route private and shared-to-feature, an A↔B cycle, and an allowed route-to-public-index reference. Verify via Node governance tests and exact-head GitHub Actions. This is a static guard, not browser or runtime authorization evidence.
+
 ## Final signed Classroom synthetic Staging E2E PASS — 2026-10-31 / #240
 Classroom Dev accepted in the single synthetic run: https://github.com/geminiamo0-ship-it/santoreno/actions/runs/41140055151
 App commit: 57c59518a544672fa4c213d81b0e49208f5b2b70; test harness: 5875cc18344cc8871102499945ad8dd2cc3fc0f5.
