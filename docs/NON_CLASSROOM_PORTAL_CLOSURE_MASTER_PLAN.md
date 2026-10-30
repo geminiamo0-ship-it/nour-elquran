@@ -1,3 +1,7 @@
+## Owner-approved delivery-order clarification (2026-10-30)
+- Admin Dashboard will be implemented **at the end of the project** (after Student/Sheikh portal and Classroom). It alone owns booking/subscriptions/payments/teacher invitations and staff approval/activation/learner assignment. Previous stages 03/04 describe the complete product's required contracts, **not** work assigned to the current student/Sheikh implementation. Portals retain only read/hand-off APIs and honest unavailable states until Admin exists. See [ADR 0008](adr/0008-admin-last-teacher-onboarding.md).
+- Phase 07A has a source-only implementation branch under [#186](https://github.com/geminiamo0-ship-it/nour-elquran/issues/186) for authenticated completed-lesson draft/save/publish/latest-student and immutable D1 journal. Not verified or accepted on Dev yet. It does not mark Phase 07 CLOSED. Classroom END event still produced only by the separate real Classroom program.
+
 ## Implementation evidence update (2026-10-30; staging only)
 - Phase 02 connected Sheikh/student academic plan: [Santoreno #40968034708 attempt 2](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40968034708) PASS, including five viewports, real D1 roster/plan and non-teacher denial.
 - Phase 05A verified homework publish API: [Santoreno #40971275548](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40971275548) PASS.
