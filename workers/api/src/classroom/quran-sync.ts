@@ -1,4 +1,4 @@
-import type {Env} from '../bindings.ts';
+import type {CoreDatabase,Env} from '../bindings.ts';
 import type {VerifiedPageCommand,SharedPage,VerseSelection} from './quran-page.ts';
 import {LIVE_QURAN_EDITION,LIVE_QURAN_PAGE_COUNT,validVerse} from './quran-page.ts';
 
@@ -24,41 +24,36 @@ export type PageOutcome=Readonly<{
  status:200|400|404|409|503;code:string;quran?:SharedPage;
 }>;
 
-/** The exact same immutable KFQC page sidecar as the visible Quran. The API
- * rejects forged Ayah-to-page mappings; no estimated verse arithmetic.
+/** The authoritative page→Ayah map is the separately audited 6,236 row D1
+ * Quran anchor import, not a Worker-to-Worker HTTP fetch that can 503 or drift.
+ * Verify the pinned Hafs manifest and exact row before accepting a change.
+ * Fail closed when D1 is unavailable. The browser still renders exact polygons.
  */
-export async function verifyPublishedVerse(page:number,verse:VerseSelection,
- transport:typeof fetch=fetch):Promise<boolean|null>{
+export const QURAN_ANCHOR_EDITION='hafs-kfqc:v1.1.1' as const;
+export const QURAN_ANCHOR_MANIFEST='864c5474872876b3db8a328d8c74781be83c004a7cdb168ffb4b7eb57477edd2' as const;
+export async function verifyPublishedVerse(db:CoreDatabase,page:number,
+ verse:VerseSelection):Promise<boolean|null>{
  if(!Number.isInteger(page)||page<1||page>604||!validVerse(verse))return false;
- const name=String(page).padStart(3,'0');
- const url='https://noor-quran-assets.geminiamo0.workers.dev/quran/hafs/v1.1.1/pages/'+name+'.json';
  try{
-  const response=await transport(url,{method:'GET',redirect:'error',
-   signal:AbortSignal.timeout(4500)});
-  if(!response.ok||Number(response.headers.get('content-length'))>1500000)return null;
-  const text=await response.text();
-  if(text.length>1500000)return null;
-  const data:unknown=JSON.parse(text);
-  let visited=0;
-  const scan=(value:unknown):boolean=>{
-   if(++visited>30000||!value||typeof value!=='object')return false;
-   if(Array.isArray(value))return value.some(scan);
-   const obj=value as Record<string,unknown>;
-   if(obj.surahNumber===verse.surah&&obj.ayahNumber===verse.ayah&&
-    typeof obj.polygon==='string'&&obj.polygon.length>2)return true;
-   return Object.values(obj).some(scan);
-  };
-  return scan(data);
+  const result=await db.prepare(`SELECT anchor.page AS page
+   FROM quran_ayah_anchors anchor
+   JOIN quran_editions edition ON edition.id=anchor.edition_id
+   WHERE edition.id=? AND edition.riwayah='hafs' AND edition.page_count=604
+    AND edition.manifest_sha256=? AND anchor.surah=? AND anchor.ayah=?
+   LIMIT 1`)
+   .bind(QURAN_ANCHOR_EDITION,QURAN_ANCHOR_MANIFEST,verse.surah,verse.ayah)
+   .first<{page:number}>();
+  return !!result&&result.page===page;
  }catch{return null;}
 }
 export async function forwardVerifiedPage(env:Env,verified:Readonly<{
  lessonId:string;learnerId:string;actorSubject:string;role:'teacher'|'learner';
-}>,action:PageAction,transport:typeof fetch=fetch):Promise<PageOutcome>{
+}>,action:PageAction):Promise<PageOutcome>{
  if(!env.LESSON_ROOMS)return {status:503,code:'CLASSROOM_ROOM_NOT_CONFIGURED'};
  if(action.action==='set'&&action.verse){
-  // Source must confirm this Ayah is genuinely on this page. On network
-  // failure, fail closed without falsely claiming a successful selection.
-  const hasVerse=await verifyPublishedVerse(action.page,action.verse,transport);
+  // Use pinned, server-verified D1 anchors. Never trust browser page arithmetic.
+  if(!env.DB)return {status:503,code:'QURAN_VERSE_METADATA_UNAVAILABLE'};
+  const hasVerse=await verifyPublishedVerse(env.DB,action.page,action.verse);
   if(hasVerse===false)return {status:400,code:'QURAN_VERSE_PAGE_MISMATCH'};
   if(hasVerse===null)return {status:503,code:'QURAN_VERSE_METADATA_UNAVAILABLE'};
  }
