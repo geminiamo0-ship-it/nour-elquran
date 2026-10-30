@@ -1,3 +1,6 @@
+## CR-02A actual no-secret Cloudflare Dev gate (2026-10-30)
+- Noor main Verify #40996405754 4/4 success; Santoreno #40996681563 synthetic signed two-role DO joins plus media-token POST returned **503 LIVEKIT_NOT_CONFIGURED/no token**, forged identity/room/grants body 400, foreign 404, anonymous 401, GET 405, no-store; 07A/08A/08B1/CR-01 regressions PASS. No provider-level A/V attempt without owner account. This is not proof of LiveKit media quality, connected-user revocation or child consent; keep CR-02B open.
+
 ## Classroom CR-02A media join JWT backend candidate (#200)
 - Node tests verify independent HMAC signature of minted HS256 JWT, 120s TTL/opaque subject, grant whitelist camera/mic only with no roomAdmin/record/data, invalid/absent secrets and URLs, D1 scheduled admission and signed self DO heartbeat. GitHub Verify exact head before merge. Isolated Dev no-secret test must confirm signed clients 503/no token and forbidden 404/401, no LiveKit resources accessed; real two-device A/V and connected-user eviction/guardian consent separate CR-02B. No default heavy Chrome.
 
