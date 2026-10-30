@@ -52,7 +52,8 @@ function content(row:ReportRow|PublishedRow):ReportContent{
  return {scope:row.scope,strengths:row.strengths,corrections:row.corrections,
   nextPlan:row.next_plan,memorization:row.memorization,recitation:row.recitation,tajweed:row.tajweed};
 }
-// Read authorization must match report_event_guard's full substitute consent and lesson window.\nconst teacherScope=[
+// Read authorization must match report_event_guard's full substitute consent and lesson window.
+const teacherScope=[
  'SELECT 1 AS allowed FROM lessons l',
  'JOIN learners s ON s.id=l.learner_id JOIN accounts owner ON owner.id=s.account_id',
  'JOIN teachers t ON t.id=l.actual_teacher_id',
