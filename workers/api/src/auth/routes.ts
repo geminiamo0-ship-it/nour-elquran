@@ -26,6 +26,7 @@ import {createMediaToken,mediaLessonWindow} from '../classroom/livekit-token.ts'
 import {checkLiveKitProvider} from '../classroom/livekit-provider-check.ts';
 import {wakeActingTeacherMedia,wakeLessonMediaReconciliation} from '../classroom/media-enforcement.ts';
 import {muteSignedLearnerMicrophone} from '../classroom/livekit-mute.ts';
+import {forwardVerifiedMicPolicy} from '../classroom/mic-policy.ts';
 import { normalizePhone, onlyKeys, readObject, validName } from './input.ts';
 
 type Auth = ReturnType<typeof createAuth>;
@@ -234,6 +235,16 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
   // Public commands contain ONLY {action}; all actor fields come from auth + D1.
   // CR-02A token request: no browser-provided identity, role, room, grant,
   // scope or arbitrary room/admin settings. Same-origin POST only.
+  const learnerMicPolicy=/^\\/v1\\/me\\/learners\\/([a-zA-Z0-9-]{1,128})\\/lessons\\/([a-zA-Z0-9-]{1,128})\\/microphone-policy$/.exec(path);
+  if(learnerMicPolicy){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const learnerId=learnerMicPolicy[1]!,lessonId=learnerMicPolicy[2]!;
+    const access=await checkOwnedLearnerClassroomAccess(db,accountId,learnerId,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    const result=await forwardVerifiedMicPolicy(env,{lessonId,learnerId,
+      actorSubject:authSubject,role:'learner'},'snapshot');
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
   const learnerMedia=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/media-token$/.exec(path);
   if(learnerMedia){
     if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
@@ -467,6 +478,23 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // Every token requires new Better Auth+D1+LessonDO active lease checks.
   // Authorized Sheikh-only mute. The request cannot assert track SID, room,
   // learner identity, or muted:false; LiveKit RoomService lists exact tracks.
+  const teacherMicPolicy=/^\\/v1\\/teacher\\/lessons\\/([a-zA-Z0-9-]{1,128})\\/microphone-policy$/.exec(path);
+  if(teacherMicPolicy){
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const lessonId=teacherMicPolicy[1]!;
+    const access=await checkTeacherClassroomAccess(env.DB,session.user.id,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    if(request.method==='POST'){
+      const input=await readObject(request);
+      if(!input||Object.keys(input).length!==1||input.action!=='release')
+        return reply(400,{code:'INVALID_MIC_POLICY_COMMAND'},requestId);
+    }
+    const result=await forwardVerifiedMicPolicy(env,{lessonId,learnerId:access.learnerId,
+      actorSubject:session.user.id,role:'teacher'},
+      request.method==='POST'?'release':'snapshot');
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
   const teacherMute=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/mute-learner-microphone$/.exec(path);
   if(teacherMute){
     if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
