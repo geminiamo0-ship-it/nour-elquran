@@ -11,7 +11,7 @@ function base64url(bytes:Uint8Array):string{
  let v='';for(const b of bytes)v+=String.fromCharCode(b);
  return btoa(v).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
-async function adminToken(config:LiveKitConfig,room:string,now:number):Promise<string>{
+export async function liveKitRoomAdminToken(config:LiveKitConfig,room:string,now:number):Promise<string>{
  const epoch=Math.floor(now/1000);
  const header=base64url(new TextEncoder().encode(JSON.stringify({alg:'HS256',typ:'JWT'})));
  const claims=base64url(new TextEncoder().encode(JSON.stringify({
@@ -26,14 +26,14 @@ async function adminToken(config:LiveKitConfig,room:string,now:number):Promise<s
   new TextEncoder().encode(body))));
  return body+'.'+signature;
 }
-export function liveKitRoomServiceURL(config:LiveKitConfig):string{
+export function liveKitRoomServiceURL(config:LiveKitConfig,method:'RemoveParticipant'|'ListParticipants'|'MutePublishedTrack'='RemoveParticipant'):string{
  // validatedLiveKitConfig is the sole source of a LiveKitConfig from Env.
  const u=new URL(config.url);
  if(u.protocol!=='wss:'||!u.hostname.endsWith('.livekit.cloud')||
    !/^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.livekit\.cloud$/.test(u.hostname)||
    u.port||u.username||u.password||u.search||u.hash||u.pathname!=='/')
   throw new Error('INVALID_LIVEKIT_ROOM_SERVICE_HOST');
- return 'https://'+u.hostname+'/twirp/livekit.RoomService/RemoveParticipant';
+ return 'https://'+u.hostname+'/twirp/livekit.RoomService/'+method;
 }
 export async function evictVerifiedLiveKitActor(env:Env,actor:VerifiedMediaActor,
  now=Date.now(),transport:typeof fetch=fetch):Promise<EvictionResult>{
@@ -43,7 +43,7 @@ export async function evictVerifiedLiveKitActor(env:Env,actor:VerifiedMediaActor
  // Neither can be injected by a client, outbox body or user-supplied URL.
  try{
   const {roomName,identity}=await liveKitActorNames(config,actor);
-  const token=await adminToken(config,roomName,now);
+  const token=await liveKitRoomAdminToken(config,roomName,now);
   const url=liveKitRoomServiceURL(config);
   const res=await transport(url,{method:'POST',redirect:'error',
    headers:{'authorization':'Bearer '+token,'content-type':'application/json'},

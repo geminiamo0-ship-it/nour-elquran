@@ -150,6 +150,28 @@ export function LiveLessonMedia({identity,active}:{
    }catch(error){setMessage(mediaMessage(error));}
    finally{setBusy(false);}
  },[camera,phase,busy]);
+ const muteLearner=useCallback(async()=>{
+   if(identity.role!=='teacher'||phase!=='connected'||busy)return;
+   setBusy(true);setMessage('');
+   try{
+     const response=await fetch(
+       '/v1/teacher/lessons/'+encodeURIComponent(identity.lessonId)+'/mute-learner-microphone',{
+         method:'POST',headers:{'content-type':'application/json'},body:'{}',
+         credentials:'same-origin',cache:'no-store',redirect:'error',
+       });
+     const body:unknown=await response.json();
+     if(!response.ok)throw new Error('MUTE_FAILED');
+     if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('MUTE_FAILED');
+     const code=(body as Record<string,unknown>).code;
+     if(code==='LEARNER_MICROPHONE_MUTED')
+       setMessage('تم تأكيد كتم ميكروفون الطالب من الخادم.');
+     else if(code==='NO_LEARNER_MICROPHONE')
+       setMessage('الطالب لا يبث صوتًا الآن.');
+     else throw new Error('MUTE_FAILED');
+   }catch{
+     setMessage('تعذّر تأكيد كتم ميكروفون الطالب. لم نحاول تشغيل أي جهاز عن بُعد.');
+   }finally{setBusy(false);}
+ },[identity,phase,busy]);
  const enableRemoteAudio=useCallback(async()=>{
    const media=room.current;if(!media)return;
    try{
@@ -209,13 +231,17 @@ export function LiveLessonMedia({identity,active}:{
        onClick={()=>void toggleCamera()} aria-pressed={camera}>
        {camera?'إيقاف كاميرتي':'تشغيل كاميرتي'}
      </button>
+     {identity.role==='teacher'&&<button type="button"
+       disabled={phase!=='connected'||busy} onClick={()=>void muteLearner()}>
+       كتم ميكروفون الطالب
+     </button>}
      {audioBlocked&&<button type="button" onClick={()=>void enableRemoteAudio()}>
        تشغيل صوت الطرف الآخر
      </button>}
    </div>
    <p style={{fontSize:12,margin:0,color:'var(--ink-2,#47544a)'}}>
      لا يوجد تسجيل صوت أو فيديو. إيقاف اتصال الوسائط لا يُنهي الحصة التعليمية.
-     لا يُعد هذا الاتصال دليل حضور رسمي. التحكم في كتم الطرف الآخر يتطلب صلاحيات الخادم لاحقًا.
+     لا يُعد هذا الاتصال دليل حضور رسمي. يمكن للشيخ كتم ميكروفون الطالب فقط؛ لا يستطيع تشغيله عن بُعد.
    </p>
  </section>;
 }
