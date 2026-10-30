@@ -17,6 +17,14 @@ function mediaMessage(error:unknown):string {
     return 'المتصفح رفض صلاحية الجهاز. يمكنك الاستمرار بالصوت فقط أو بدون كاميرا.';
   return 'لم يكتمل الاتصال أو تفعيل الجهاز. يمكنك إعادة المحاولة بدون تغيير الحصة.';
 }
+function releaseCapture(old:Room):void {
+  stopLocalCaptureBestEffort(
+    Array.from(old.localParticipant.trackPublications.values(),publication=>publication.track),
+    ()=>old.localParticipant.setMicrophoneEnabled(false),
+    ()=>old.localParticipant.setCameraEnabled(false),
+  );
+}
+
 /** Real Cloud provider media; this is NOT a Start/End or attendance control.
  * Source of truth for teaching/Quran remains the Cloudflare Lesson Durable Object.
  */
@@ -34,14 +42,6 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState('');
  const [audioBlocked,setAudioBlocked]=useState(false);
-
- const releaseCapture=(old:Room)=>{
-   stopLocalCaptureBestEffort(
-     Array.from(old.localParticipant.trackPublications.values(),publication=>publication.track),
-     ()=>old.localParticipant.setMicrophoneEnabled(false),
-     ()=>old.localParticipant.setCameraEnabled(false),
-   );
- };
 
  const stop=useCallback(()=>{
    epoch.current++;
