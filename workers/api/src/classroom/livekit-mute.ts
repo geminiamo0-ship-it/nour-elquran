@@ -2,7 +2,7 @@
  * Browser cannot pass track SID, participant identity or a false/unmute flag.
  * No camera mute, remote unmute, recording or moderation of another lesson.
  */
-import type {Env,CoreDatabase} from '../bindings.ts';
+import type {Env} from '../bindings.ts';
 import {checkTeacherClassroomAccess} from '../classroom-access.ts';
 import {forwardVerifiedPresence} from './presence.ts';
 import {liveKitActorNames,mediaLessonWindow,validatedLiveKitConfig} from './livekit-token.ts';
