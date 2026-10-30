@@ -3,7 +3,7 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {Room} from 'livekit-client';
 import {JoinError,requestMediaTicket,type RoomIdentity} from './media-credentials';
-import {createRoomGenerationGuard,resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard,stopLocalCaptureBestEffort,stopRemotePlaybackBestEffort} from './media-device-safety';
+import {createRoomGenerationGuard,playSubscribedAudioIfCurrent,resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard,stopLocalCaptureBestEffort,stopRemotePlaybackBestEffort} from './media-device-safety';
 import css from './LiveClassroom.module.css';
 
 type Phase='idle'|'connecting'|'connected'|'reconnecting'|'failed';
@@ -110,9 +110,8 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
        if(track.kind===Track.Kind.Audio){
          if(element instanceof HTMLAudioElement){
            element.autoplay=true;
-           void element.play().catch(()=>{
-             if(isCurrentRoom())setAudioBlocked(true);
-           });
+           void playSubscribedAudioIfCurrent(element,isCurrentRoom,
+             ()=>setAudioBlocked(true));
          }
          remoteAudio.current?.appendChild(element);
        }else{
