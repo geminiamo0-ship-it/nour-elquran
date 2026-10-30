@@ -1,5 +1,7 @@
 # P0-1 — private Quran pen, marker, highlight and note persistence (Cloudflare D1)
 
+> **2026-10-31 extension:** [ADR 0009](adr/0009-unified-cumulative-learner-mushaf.md) now requires a single cumulative Quran experience across reader/classroom/homework/Notebook. This file specifies the *existing student-private subset* only, **not the complete learner Mushaf**. Do not broaden the existing private API to teacher reads or share private notes as a shortcut; introduce provenance & verified shared academic events through #251–#253, preserving all existing private items and audit history.
+
 **Tracking:** #144 (implementation), #142 (master), #87 (annotation synchronization). **Implementation scope:** only student-private personal mushaf, **not** LiveKit classroom, shared teacher ink, published reports, audio, notebook or realtime sync. Build-flag OFF by default.
 
 ## Current code boundary
