@@ -3,6 +3,7 @@
 import { Fragment, useId, useMemo, useState } from 'react';
 import { useStudent } from '../StudentContext';
 import { AttendanceWorkspace } from './AttendanceWorkspace';
+import { ConnectedProgressReports } from './ConnectedProgressReports';
 import type { Grade, PublishedReport } from '../domain';
 import { latestPublishedReports, REPORTS_PAGE_SIZE, nextReportCount } from '../reportHistory';
 import styles from '../StudentPortal.module.css';
@@ -38,6 +39,7 @@ export function ProgressWorkspace() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const idPrefix = useId().replaceAll(':', '');
   const visible = reports.slice(0, count);
+  if (!selected.profile.demo) return <ConnectedProgressReports learnerId={selected.profile.id} />;
 
   return <div className={styles.workspace}>
     <section className={styles.panel} aria-labelledby="academic-history-heading">
