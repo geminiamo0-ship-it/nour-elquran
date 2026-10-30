@@ -80,7 +80,8 @@ export interface LessonRoomNamespace {
  get(id:unknown):RoomStub;
 }
 export class LessonRoom {
- constructor(private readonly ctx:LessonRoomContext){}
+ private readonly ctx:LessonRoomContext;
+ constructor(ctx:LessonRoomContext){this.ctx=ctx;}
  async fetch(request:Request):Promise<Response>{
   const path=new URL(request.url).pathname;
   if(path!=='/internal/room-presence'||request.method!=='POST')
