@@ -1,3 +1,6 @@
+## CR-02A exact Dev acceptance evidence
+- `docs/CLASSROOM_LIVEKIT_CR02A_DEV_ACCEPTANCE.md` anchors Noor main Verify #40996405754 and Santoreno isolated real Dev #40996681563. The Dev service deliberately has no LiveKit secrets: valid signed issuer endpoint returns 503 with no token. A/V actual provider integration and already-connected participant eviction remain CR-02B.
+
 ## Classroom CR-02A LiveKit token candidate #200
 - `workers/api/src/classroom/livekit-token.ts`: server-only LiveKit URL/secrets validation, 120s HMAC SHA256 scoped JWT mint, strict no-admin/no-record/no-data grant, D1 lesson schedule and actor-specific DO lease checks. `workers/api/src/auth/routes.ts` adds two signed POST media-token endpoints, `workers/api/src/bindings.ts` adds optional server secrets. `workers/api/tests/livekit-token.test.ts` signs/validates synthetic JWT and rejects forgery/off-room/expired/unconfigured requests. `docs/CLASSROOM_LIVEKIT_CR02A_TOKEN_CONTRACT.md` distinguishes backend scaffold from actual media and revocation.
 
