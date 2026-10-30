@@ -10,3 +10,6 @@ export type { InkMode } from './components/QuranInk';
 export type { QuranInkStroke, QuranTarget } from './quranAnnotations';
 export { targetKey } from './quranAnnotations';
 export { clampQuranPage } from './quranSource';
+
+/** Printed SVG component is shared with the authenticated read-only classroom. */
+export { SmoothMadinahPage } from './components/SmoothMadinahPage';
