@@ -160,3 +160,13 @@
  .root[data-live-role="teacher"] .mediaDock{height:clamp(100px,17dvh,120px);}
 }
 @media(prefers-reduced-motion:reduce){.root *{transition:none!important;}}
+
+/* In the approved compact classroom media dock, video remains dominant on phones. */
+@media(max-width:720px){
+ .mediaRoot[data-embedded="true"] .mediaTop{display:none;}
+ .mediaRoot[data-embedded="true"] .mediaPrivacy{display:none;}
+ .mediaRoot[data-embedded="true"] .mediaActions{flex:0 0 auto;}
+ .mediaRoot[data-embedded="true"] .mediaActions button{font-size:9px;line-height:1.1;min-height:25px;}
+ .mediaRoot[data-embedded="true"] .videoGrid{flex:1 1 auto;min-height:0;}
+ .mediaRoot[data-embedded="true"] .remoteCard{min-height:0;}
+}

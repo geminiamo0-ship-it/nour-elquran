@@ -1,0 +1,34 @@
+/* Connected lesson reuses the approved Classroom.module.css design tokens and grid. */
+.connected .actor{font-size:10px;white-space:nowrap;font-weight:800;color:#a2764c;}
+.connected .actor[data-online="true"]{color:#347649;}
+.connected .status{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ font-size:10px;color:#7a8978;}
+.connected .refresh{border:1px solid #ded4c3;border-radius:6px;background:#f7f5ee;
+ padding:4px 7px;color:#3e5b48;min-height:28px;font-size:10px;font-weight:800;}
+.connected .localTag{font-size:9px;font-weight:800;color:#916d33;white-space:nowrap;}
+.connected .error{flex:0 0 auto;margin:0;padding:4px 8px;border-radius:6px;background:#fff1e9;
+ color:#9b413a;font-size:11px;}
+.connected .mediaPanel>section[aria-label="الصوت والفيديو المباشر"]{flex:1 1 auto;min-height:0;
+ height:auto;}
+.connected .mediaPanel{overflow:hidden;}
+.connected .disclaimer{display:block;flex:0 0 auto;font-size:9px;line-height:1.25;
+ color:#7c806e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ margin:0;padding:0 4px;}
+.boot{direction:rtl;display:grid;gap:10px;place-content:center;min-height:100dvh;
+ padding:20px;text-align:center;background:#f8f5ec;}
+.notesFooter{font-size:10px;color:#738676;margin-top:12px;}
+@media(max-width:1000px){
+ .connected .status,.connected .localTag{display:none;}
+}
+@media(max-width:720px){
+ .connected .mediaPanel{padding:3px;min-height:0;overflow:hidden;}
+ .connected[data-view-role="student"] .mediaPanel{height:clamp(110px,18dvh,145px);}
+ .connected[data-view-role="teacher"] .mediaPanel{height:clamp(83px,13dvh,106px);}
+ .connected .refresh{display:none;}
+ .connected .actor{font-size:9px;}
+ .connected .prejoinPeople{flex:1 1 auto;}
+ .connected .disclaimer{font-size:8px;}
+}
+@media(max-width:390px){
+ .connected[data-view-role="student"] .mediaPanel{height:clamp(108px,19dvh,132px);}
+}
