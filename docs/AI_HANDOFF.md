@@ -1,3 +1,8 @@
+## Current work — private recitation groundwork #182 (2026-10-30)
+- Owner explicitly owns remaining assignment/review **visual** QA (#173/#178); development need not block on screenshots. Do not declare their visual acceptance yourself.
+- New source scope is [Phase 06A1 #182](https://github.com/geminiamo0-ship-it/nour-elquran/issues/182): locked D1 consent/audio metadata, opaque media envelope, owner-only disabled capability read; [contract](PRIVATE_RECITATION_AUDIO_CONTRACT.md). Absolutely no real-child voice upload, public R2 links, approved guardian proof or retention. Parent #180 remains open.
+- **Next exact work after CI**: validate migration on isolated native D1; verify signed owner A vs foreign owner 404 and POST 405 under Better Auth; integrate only after isolated Dev proof. Next engineering phase requires explicit consent verification and retention/deletion approvals before private R2 writes/playback can be enabled.
+
 ## Current handoff — Phase 05A/05B remote-verified APIs (2026-10-30)
 - Noor `main@b0b03c2278325cc63de2b38770cc4eb05781ca46`, PR #179 merged; postmerge [Verify #40974982514](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40974982514) 4/4 passed.
 - Real isolated Cloudflare Dev published-homework contract [Santoreno #40971275548](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40971275548) passed. Real submission/review contract [Santoreno #40975149637](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40975149637) passed: student owner authenticated POST, replay 200, 409 duplicates, Sheikh active GET/retry/replay, second student attempt, teacher accepted, immutable GET history, revoked teacher 404 and synthetic privilege cleanup.
