@@ -1,3 +1,6 @@
+## CR-02B2 signed mute no-secret Dev PASS (2026-10-30)
+- Noor exact main Verify #41002079116 PASS 4/4, Santoreno real no-secret Dev #41002323938 PASS: Sheikh signed mute 503 with no provider secret, forged unmute/SID 400, learner 404, anon 401, GET 405; CR-01, CR-02A, 07A, 08A, 08B1 regressions PASS. No actual provider ListParticipants, MutePublishedTrack, RemoveParticipant, guardian consent or 2-device media. Provider ACK/ejection and real lesson End still outstanding #206.
+
 ## CR-02B2 #206 post-write wake and teacher mute tests (source-only)
 - Unit tests confirm server-only exact role/lesson reconciliation, invalid private DO room, signed Sheikh + fresh DO lease for microphone mute, server-sourced learner identity and MIC track SID only, `muted:true` never remote unmute/camera/screen share, independent RoomService JWT HMAC, no-secret 503, provider failures fail-closed. Existing CR-01/CR-02A/CR-02B1, report, notebook, D1 and Next build must stay green. Real LiveKit Cloud service ACK/participant moderation and actual signed End writes still outstanding; Admin last.
 
