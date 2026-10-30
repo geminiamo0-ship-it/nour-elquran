@@ -30,7 +30,7 @@ class PrivateAudioPrivacy(unittest.TestCase):
         self.db.execute("""INSERT INTO assignment_submission_events
           (operation_id,id,assignment_id,learner_id,actor_auth_subject,attempt,note,submitted_at_ms)
           VALUES(?,?,?,'learner','subject-a',1,'written',200)""",
-          (ident('d',1),self.sub))
+          (ident('d',1),self.sub,self.task))
     def tearDown(self):self.db.close()
     def consent(self,action='grant',actor='subject-a',n=1):
         self.db.execute("""INSERT INTO recitation_consent_events
