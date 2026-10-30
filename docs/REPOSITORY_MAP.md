@@ -1,3 +1,6 @@
+## Phase 07A #186 report-read authorization parity follow-up
+- `workers/api/src/lesson-reports.ts` Sheikh GET predicate mirrors the SQL substitute consent/learner/lesson-window checks in `0013_lesson_reports.sql`; `workers/api/tests/lesson-reports.test.ts` exercises the actual query with synthetic in-memory SQLite. No new public API or migration; isolated Dev authorization acceptance is still pending.
+
 ## Phase 07A report files (#186; source-only until verified)
 - `workers/api/migrations/0013_lesson_reports.sql`: immutable report events, draft projection, published snapshot/last approved pointer and completed lesson/actor/substitute authorization triggers.
 - `workers/api/src/lesson-reports.ts`, `workers/api/src/auth/routes.ts`: validated commands and Better Auth teacher/owner report endpoints.

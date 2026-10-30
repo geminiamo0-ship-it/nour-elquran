@@ -1,3 +1,7 @@
+## #186 report substitute GET authorization regression (2026-10-30)
+- `workers/api/tests/lesson-reports.test.ts` now uses an in-memory Node SQLite adapter to execute the **actual Worker SELECT** used by Sheikh report GET. It must allow an accepted, consent-valid, lesson-bounded substitute and reject late/expired/missing consent, wrong learner, partial lesson coverage, revoked grant, and expired 24h correction window. A valid historical primary assignment must still work; revocation must deny.
+- This is source/CI evidence only. Full D1 trigger parity, signed Better Auth HTTP and remote Dev 0013 migration remain independent #186 acceptance gates. Never treat a passing parser/SQLite test as a deployed endpoint or visual QA.
+
 ## Phase 07A #186 report gates — NOT YET VERIFIED ON DEV
 - Fast Verify must run strict TS and Python SQLite report journal tests. No default Chrome. Validate completed lesson **with real END audit**; draft invisible to student, publish immutable, new draft preserves prior approved, CAS 409, independent 0–10/null scores, unassigned/revoked teacher and substitute +24h denial.
 - The merged-code run or this status text **does not prove** a staged API. After exact-head CI, stage additive 0013 on isolated Dev, exercise signed Better Auth owner/teacher/foreign owner/expired substitute across the two read paths and one mutation path, then obtain targeted 360/390/768/1280/1440 screenshots if accepting UI. Never run with real child data or simulate production attendance.
