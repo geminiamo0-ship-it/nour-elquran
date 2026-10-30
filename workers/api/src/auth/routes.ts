@@ -65,7 +65,7 @@ async function credentials(auth: Auth, db: CoreDatabase, request: Request, path:
   return outgoing;
 }
 
-async function profiles(db: CoreDatabase, accountId: string, authSubject: string, request: Request, path: string, requestId: string) {
+async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubject: string, request: Request, path: string, requestId: string) {
   if (path === '/v1/me/learners' && request.method === 'GET') {
     const learners = await listOwnedLearners(db, { authSubject });
     return reply(200, { learners: learners.map(row => ({ id: row.id, name: row.displayName, learnerType: row.learnerType, revision:row.revision })) }, requestId);
@@ -446,6 +446,6 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   if (path === '/api/auth/session' && request.method === 'GET')
     return reply(200, { user: { id: session.user.id, name: session.user.name },
       phoneVerified: session.user.phoneNumberVerified === true }, requestId);
-  return profiles(env.DB, owner.id, session.user.id, request, path, requestId);
+  return profiles(env, env.DB, owner.id, session.user.id, request, path, requestId);
 }
 
