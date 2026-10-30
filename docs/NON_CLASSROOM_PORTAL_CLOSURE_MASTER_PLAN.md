@@ -1,3 +1,6 @@
+## Classroom CR-01 partial foundation after non-Classroom portals (2026-10-30)
+- #196 starts the **separate Classroom program**: authenticated DO waiting-room leases and UI, not a functional LiveKit or Quran-sync class. Verified booking data/teacher rights from the existing Dev fixture only; no Admin Dashboard brought forward. LiveKit Cloud remains A/V exception only under ADR 0007. See `CLASSROOM_WAITING_ROOM_CR01_CONTRACT.md` for security/Dev rollout gates.
+
 ## Phase 08B1 implementation slice (2026-10-30; source pending verification)
 - #192 prepares read-only immutable canonical Quran lesson archive envelopes/pages/teacher marks tied to published report and END; cannot serve fake layers or write via student/teacher APIs. No actual Classroom DO snapshot producer or PDF/PNG; those remain separate, and Admin Dashboard is still LAST. See `LESSON_QURAN_ARCHIVE_08B1_CONTRACT.md`. The backend notebook notes 08A isolated Dev gate passed in [Santoreno #40988644083](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40988644083); UI visual acceptance remains open.
 
