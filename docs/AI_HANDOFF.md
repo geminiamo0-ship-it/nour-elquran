@@ -1,3 +1,6 @@
+## #221 next verification — local device capture after unexpected disconnect (2026-10-30)
+- Draft PR #226 includes source-only best-effort synchronous track stop and independent SDK disables for explicit Stop and unexpected RoomEvent.Disconnected. Test both disposed track and failed disable. **Run exact-head GitHub Verify 4/4 before claiming pass**, then targeted signed synthetic Cloudflare Dev two-browser permission, provider disconnect and browser camera/mic indicator QA; reviewer approval before merge. No Production or real minors.
+
 ## Current #221 handoff — disconnected Room event race (2026-10-30)
 - Draft PR #226 `fix/221-livekit-permission-race-on-current-main` adds `createRoomGenerationGuard` and invalidates `epoch` when LiveKit unexpectedly disconnects. All SDK event callbacks and post-`media.connect` completion now require the same live Room; old queued track/reconnect events cannot revive stale UI. Two new synthetic tests. **Next: inspect new exact-head Verify on PR #226; fix failures if any, then targeted signed synthetic Cloudflare Dev two-browser leave/rejoin + device permission QA.** Branch may be behind main due to unrelated #87 ink work; reconcile only after checks and review. No merge/Production/child media.
 
