@@ -17,6 +17,10 @@ export function TeacherConnectedReports({learners,lessons}:{
 }){
  const completed=lessons.filter(l=>l.status==='completed').sort((a,b)=>b.startsAtMs-a.startsAtMs);
  const [chosen,setChosen]=useState('');
+ useEffect(()=>{
+  const requested=new URLSearchParams(window.location.search).get('lessonId');
+  if(requested)setChosen(requested);
+ },[]);
  const selected=completed.find(l=>l.id===chosen)??completed[0];
  const lessonId=selected?.id??'';
  const [loading,setLoading]=useState(true);

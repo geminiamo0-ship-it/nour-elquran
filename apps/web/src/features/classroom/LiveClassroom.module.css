@@ -145,7 +145,10 @@
  .videoLabel{font-size:8px;padding:1px 3px;}
  .mediaActions{display:flex;flex-wrap:nowrap;gap:2px;}
  .mediaActions button{padding:3px 4px;font-size:9px;min-height:25px;max-width:46%;}
- .mediaActions .extraAction{display:none;}
+ /* The Sheikh's moderation undo must NEVER disappear on mobile. */
+ .mediaActions{flex-wrap:wrap;}
+ .mediaActions .extraAction{display:block;max-width:none;flex:1 0 100%;min-height:27px;}
+
  .mediaPrivacy{display:none;}
  .disclosure{min-height:12px;font-size:8px;}
  .mediaWaiting{gap:3px;padding:5px;}

@@ -31,6 +31,10 @@ function env(active=true):Env{
    return {async fetch(req){
     const data=await req.json() as Record<string,unknown>;
     assert.equal(data.role,'teacher');assert.equal(data.actorSubject,teacher);
+    if(new URL(req.url).pathname==='/internal/learner-microphone-policy'){
+     assert.equal(data.action,'lock');
+     return Response.json({code:'MIC_POLICY_LOCKED',policy:{locked:true,revision:1}});
+    }
     assert.equal(data.action,'heartbeat');
     return Response.json({code:'ROOM_HEARTBEAT',presence:{
      lessonId,teacherPresent:true,learnerPresent:true,bothPresent:true,
@@ -77,7 +81,8 @@ test('server alone selects learner track SID; only true/mute for verified Sheikh
   return Response.json({track:{sid:'STUDENT_MIC'}});
  };
  const result=await muteSignedLearnerMicrophone(env(),teacher,lessonId,now,transport);
- assert.deepEqual(result,{status:200,code:'LEARNER_MICROPHONE_MUTED',mutedTracks:1});
+ assert.deepEqual(result,{status:200,code:'LEARNER_MICROPHONE_MUTED',mutedTracks:1,
+  policy:{locked:true,revision:1}});
  assert.equal(calls.length,2);
  assert.deepEqual(calls[0]?.body,{room:roomName});
  assert.deepEqual(calls[1]?.body,{room:roomName,identity,
@@ -90,7 +95,8 @@ test('no microphone reports no-op; provider unavailable never claims mute',async
   calls++;return Response.json({participants:[]});
  };
  assert.deepEqual(await muteSignedLearnerMicrophone(env(),teacher,lessonId,now,list),
-  {status:200,code:'NO_LEARNER_MICROPHONE',mutedTracks:0});
+  {status:200,code:'NO_LEARNER_MICROPHONE',mutedTracks:0,
+   policy:{locked:true,revision:1}});
  assert.equal(calls,1);
  const error:typeof fetch=async()=>Response.json({error:'provider down'},{status:503});
  assert.deepEqual(await muteSignedLearnerMicrophone(env(),teacher,lessonId,now,error),
