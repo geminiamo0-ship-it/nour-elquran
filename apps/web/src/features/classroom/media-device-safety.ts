@@ -31,3 +31,18 @@ export async function setDeviceWithEpochGuard<T>(
   }
   return {current: true, value};
 }
+
+/** An old Room's pending startAudio must never play a newly joined Room's tracks. */
+export async function resumeRemoteAudioIfCurrent(
+  startAudio: () => Promise<void>,
+  isCurrent: () => boolean,
+  audioPlays: () => Iterable<() => Promise<unknown>>,
+): Promise<boolean> {
+  await startAudio();
+  if (!isCurrent()) return false;
+  for (const play of audioPlays()) {
+    if (!isCurrent()) return false;
+    await play();
+  }
+  return isCurrent();
+}

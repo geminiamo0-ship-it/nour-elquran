@@ -3,7 +3,7 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {Room} from 'livekit-client';
 import {JoinError,requestMediaTicket,type RoomIdentity} from './media-credentials';
-import {setDeviceWithEpochGuard} from './media-device-safety';
+import {resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard} from './media-device-safety';
 import css from './LiveClassroom.module.css';
 
 type Phase='idle'|'connecting'|'connected'|'reconnecting'|'failed';
@@ -78,7 +78,7 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
        room.current=null;
        remoteVideo.current?.replaceChildren();remoteAudio.current?.replaceChildren();
        localVideo.current?.replaceChildren();
-       setMic(false);setCamera(false);setPhase('failed');
+       setMic(false);setCamera(false);setBusy(false);setPhase('failed');
        setMessage('انقطع اتصال الوسائط؛ يلزم إعادة تصريح الدخول.');
      });
      media.on(RoomEvent.TrackSubscribed,(track)=>{
@@ -90,7 +90,9 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
        if(track.kind===Track.Kind.Audio){
          if(element instanceof HTMLAudioElement){
            element.autoplay=true;
-           void element.play().catch(()=>setAudioBlocked(true));
+           void element.play().catch(()=>{
+             if(current===epoch.current&&room.current===media)setAudioBlocked(true);
+           });
          }
          remoteAudio.current?.appendChild(element);
        }else{
@@ -171,7 +173,10 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
    }
  },[camera,phase,busy]);
  const muteLearner=useCallback(async()=>{
-   if(identity.role!=='teacher'||phase!=='connected'||busy)return;
+   const media=room.current;
+   if(identity.role!=='teacher'||phase!=='connected'||busy||!media)return;
+   const current=epoch.current;
+   const isCurrent=()=>current===epoch.current&&room.current===media;
    setBusy(true);setMessage('');
    try{
      const response=await fetch(
@@ -180,6 +185,7 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
          credentials:'same-origin',cache:'no-store',redirect:'error',
        });
      const body:unknown=await response.json();
+     if(!isCurrent())return;
      if(!response.ok)throw new Error('MUTE_FAILED');
      if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('MUTE_FAILED');
      const code=(body as Record<string,unknown>).code;
@@ -189,18 +195,22 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
        setMessage('الطالب لا يبث صوتًا الآن.');
      else throw new Error('MUTE_FAILED');
    }catch{
-     setMessage('تعذّر تأكيد كتم ميكروفون الطالب. لم نحاول تشغيل أي جهاز عن بُعد.');
-   }finally{setBusy(false);}
+     if(isCurrent())setMessage('تعذّر تأكيد كتم ميكروفون الطالب. لم نحاول تشغيل أي جهاز عن بُعد.');
+   }finally{if(isCurrent())setBusy(false);}
  },[identity,phase,busy]);
  const enableRemoteAudio=useCallback(async()=>{
    const media=room.current;if(!media)return;
+   const current=epoch.current;
+   const isCurrent=()=>current===epoch.current&&room.current===media;
    try{
-     await media.startAudio();
-     for(const child of remoteAudio.current?.children??[]){
-       if(child instanceof HTMLAudioElement)await child.play();
-     }
-     setAudioBlocked(false);
-   }catch{setAudioBlocked(true);}
+     const resumed=await resumeRemoteAudioIfCurrent(
+       ()=>media.startAudio(),isCurrent,
+       ()=>Array.from(remoteAudio.current?.children??[])
+         .filter((child):child is HTMLAudioElement=>child instanceof HTMLAudioElement)
+         .map(child=>()=>child.play()),
+     );
+     if(resumed&&isCurrent())setAudioBlocked(false);
+   }catch{if(isCurrent())setAudioBlocked(true);}
  },[]);
 
  return <section aria-label="الصوت والفيديو المباشر" className={css.mediaRoot}

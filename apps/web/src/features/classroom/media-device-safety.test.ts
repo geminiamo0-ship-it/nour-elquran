@@ -1,5 +1,5 @@
 import {describe,expect,it,vi} from 'vitest';
-import {setDeviceWithEpochGuard} from './media-device-safety';
+import {resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard} from './media-device-safety';
 
 describe('LiveKit device permission race safety (#221)',()=>{
   it('commits a toggle only for the same active room generation',async()=>{
@@ -112,5 +112,36 @@ describe('LiveKit device permission race safety (#221)',()=>{
     await expect(setDeviceWithEpochGuard(true,apply,()=>false))
       .rejects.toThrow('denied');
     expect(apply.mock.calls.map(call=>call[0])).toEqual([true,false]);
+  });
+});
+
+describe('Room-scoped remote audio resume (#221)',()=>{
+  it('never plays new-room audio when an old startAudio finishes after leave',async()=>{
+    let resolveStart!:()=>void;
+    const start=new Promise<void>(resolve=>{resolveStart=resolve;});
+    let current=true;
+    const play=vi.fn(async()=>{});
+    const list=vi.fn(()=>[play]);
+    const pending=resumeRemoteAudioIfCurrent(()=>start,()=>current,list);
+    current=false;
+    resolveStart();
+    await expect(pending).resolves.toBe(false);
+    expect(list).not.toHaveBeenCalled();
+    expect(play).not.toHaveBeenCalled();
+  });
+  it('stops playback sequence when Stop occurs during first play',async()=>{
+    let current=true;
+    const first=vi.fn(async()=>{current=false;});
+    const second=vi.fn(async()=>{});
+    await expect(resumeRemoteAudioIfCurrent(async()=>{},()=>current,()=>[first,second]))
+      .resolves.toBe(false);
+    expect(first).toHaveBeenCalledOnce();
+    expect(second).not.toHaveBeenCalled();
+  });
+  it('resumes explicitly requested audio for the still-current Room',async()=>{
+    const play=vi.fn(async()=>{});
+    await expect(resumeRemoteAudioIfCurrent(async()=>{},()=>true,()=>[play]))
+      .resolves.toBe(true);
+    expect(play).toHaveBeenCalledOnce();
   });
 });

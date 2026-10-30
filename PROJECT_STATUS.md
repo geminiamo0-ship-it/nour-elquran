@@ -1,3 +1,6 @@
+## #221 follow-up: guard stale remote audio and Sheikh mute UI (source candidate, 2026-10-30)
+- Draft PR #226 prevents pending old-Room `startAudio()` from playing a **new Room's** audio after Stop/rejoin, suppresses stale remote autoplay failure notices and stale Sheikh mute HTTP result messages, and resets busy state on provider disconnect. Three synthetic deferred/audio-order tests added. Exact-head GitHub Verify and real signed Cloudflare Dev two-browser permission/audio QA remain required; no Production or private recordings.
+
 ## #221 follow-up: stale rejected LiveKit device-enable cleanup (source candidate, 2026-10-30)
 - Draft PR #226 adds best-effort `setDeviceWithEpochGuard` cleanup when an enable promise **rejects after the Room becomes stale**, covering SDK failure after partial camera/mic capture. Disable is bound to the captured old Room; preserve original error even if cleanup fails. Three synthetic Vitest regressions: partial capture+rejection, cleanup rejection, and no extra disable for current permission rejection. This is a source candidate: exact-head Verify and real signed browser device/permission QA still required; no Production, no recording, no real children.
 
