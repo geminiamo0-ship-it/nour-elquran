@@ -54,10 +54,11 @@ test('LiveKit Cloud URL/credential validation fails closed for fake/custom/insec
   'wss://example-123.livekit.cloud.evil.org','wss://livekit.cloud',
   'wss://localhost:7880','https://example-123.livekit.cloud','javascript:alert(1)'])
   assert.equal(validatedLiveKitConfig({...environment(),LIVEKIT_URL:url}),null,url);
+ for(const absent of ['LIVEKIT_URL','LIVEKIT_API_KEY','LIVEKIT_API_SECRET'] as const){
+  const missing=environment();delete missing[absent];
+  assert.equal(validatedLiveKitConfig(missing),null);
+ }
  for(const env of [
-  {...environment(),LIVEKIT_URL:undefined},
-  {...environment(),LIVEKIT_API_KEY:undefined},
-  {...environment(),LIVEKIT_API_SECRET:undefined},
   {...environment(),LIVEKIT_API_SECRET:'tiny'},
   {...environment(),LIVEKIT_API_KEY:'bad key'},
  ])assert.equal(validatedLiveKitConfig(env),null);
@@ -104,9 +105,11 @@ test('scheduled admission limited to 15 minutes before start, still no automatic
 });
 test('issuer rejects absent config, no DO binding, expired lease and wrong learner/role',async()=>{
  const env=environment();
- assert.deepEqual(await createMediaToken({...env,LIVEKIT_API_SECRET:undefined},actor,lesson,1_050_000),
+ const noSecret=environment();delete noSecret.LIVEKIT_API_SECRET;
+ assert.deepEqual(await createMediaToken(noSecret,actor,lesson,1_050_000),
   {status:503,code:'LIVEKIT_NOT_CONFIGURED'});
- assert.deepEqual(await createMediaToken({...env,LESSON_ROOMS:undefined},actor,lesson,1_050_000),
+ const noRooms=environment();delete noRooms.LESSON_ROOMS;
+ assert.deepEqual(await createMediaToken(noRooms,actor,lesson,1_050_000),
   {status:503,code:'CLASSROOM_ROOM_NOT_CONFIGURED'});
  assert.deepEqual(await createMediaToken(environment(false),actor,lesson,1_050_000),
   {status:404,code:'NOT_JOINED'});
