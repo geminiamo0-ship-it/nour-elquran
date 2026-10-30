@@ -19,6 +19,8 @@ class ReportJournal(unittest.TestCase):
   self.db.execute("INSERT INTO learners(id,account_id,display_name,learner_type,created_at_ms) VALUES('b','foreign','Synthetic B','adult',0)")
   self.db.execute("INSERT INTO teachers(id,auth_subject,qualified) VALUES('t','sheikh',1)")
   self.db.execute("INSERT INTO teachers(id,auth_subject,qualified) VALUES('other','other-teacher',1)")
+  self.db.execute("INSERT INTO teacher_assignments(id,learner_id,teacher_id,starts_at_ms,ends_at_ms)"
+                  " VALUES('primary','a','t',0,999999999)")
   self.db.execute("INSERT INTO lessons(id,learner_id,actual_teacher_id,kind,status,starts_at_ms,ends_at_ms)"
                   " VALUES('done','a','t','standard','scheduled',1000,2401000)")
   self.db.execute("UPDATE lessons SET status='live' WHERE id='done'")
