@@ -5,7 +5,10 @@ export interface D1Statement {
   all<T>(): Promise<{ results: T[] }>;
   run(): Promise<{ success: boolean; meta: { changes: number } }>;
 }
-export interface CoreDatabase { prepare(sql: string): D1Statement; }
+export interface CoreDatabase { prepare(sql: string): D1Statement;
+  /** Cloudflare D1 transactional batch; never emulate as sequential run(). */
+  batch?(statements: D1Statement[]): Promise<Array<{success:boolean;meta:{changes:number}}>>;
+}
 import type {LessonRoomNamespace} from './classroom/lesson-room.ts';
 
 export interface Env {
