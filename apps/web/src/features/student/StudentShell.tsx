@@ -33,7 +33,7 @@ function Frame({ children }: { children: ReactNode }) {
   ));
   const inMushaf = pathname === '/student/mushaf';
   return <div className={inMushaf ? `${styles.root} ${styles.mushafScreen}` : styles.root} id="student-top">
-    <div className={styles.demoBanner} role="note">{selected.profile.demo ? 'معاينة تفاعلية للواجهة فقط — لا توجد حسابات أو حصص أو اشتراكات حقيقية' : 'حسابك متصل — الحصص والتقارير والاشتراكات لم تتوفر بعد'}</div>
+    <div className={styles.demoBanner} role="note">{'حساب الطالب موثّق — السجلات التعليمية تأتي من الخادم، والخدمات غير المفعّلة موضحة داخل أقسامها'}</div>
     <header className={styles.topBar}>
       <div className={styles.topContent}>
         <Link href="/" className={styles.wordmark} aria-label="نور القرآن، العودة للرئيسية">
@@ -57,9 +57,7 @@ function Frame({ children }: { children: ReactNode }) {
             {switchWarning&&<span role="status">{switchWarning}</span>}
           </div>
           {!selected.profile.demo&&<div className={styles.sessionGroup}><SessionControls/></div>}
-          <span className={styles.stageTag}>{selected.profile.stage === 'new' ? 'لم تبدأ الحصص' :
-            selected.profile.stage === 'active' ? 'حالة نشطة · مثال' :
-            selected.profile.stage === 'trial_booked' ? 'حصة تجريبية · مثال' : 'حالة توضيحية'}</span>
+          <span className={styles.stageTag}>{'ملف الطالب موثّق'}</span>
           <button type="button" className={styles.mobileToggle} aria-label="فتح القائمة" aria-expanded={mobileOpen}
             aria-controls="student-navigation-mobile" onClick={() => setMobileOpen((value) => !value)}>☰</button>
         </div>
@@ -91,7 +89,7 @@ function Frame({ children }: { children: ReactNode }) {
 }
 export function StudentShell({ children }: { children: ReactNode }) {
   return ACCOUNT_UI_ENABLED ? <ConnectedStudentShell>{children}</ConnectedStudentShell>
-    : <StudentProvider><Frame>{children}</Frame></StudentProvider>;
+    : <AccountGate/>;
 }
 
 
