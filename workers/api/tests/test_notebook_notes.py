@@ -21,10 +21,10 @@ class NotebookNotesTest(unittest.TestCase):
     " VALUES('lesson','l1','t','standard','scheduled',1000,2401000)")
   self.db.execute("UPDATE lessons SET status='live' WHERE id='lesson'")
   self.db.execute("INSERT INTO lesson_lifecycle_events(id,lesson_id,teacher_id,action,at_ms,operation_id)"
-    " VALUES('event-start','lesson','t','start',1200,'op-start')")
+    " VALUES('event-start','lesson','t','start',1200,'op-start-1')")
   self.db.execute("UPDATE lessons SET status='completed',ended_at_ms=3000 WHERE id='lesson'")
   self.db.execute("INSERT INTO lesson_lifecycle_events(id,lesson_id,teacher_id,action,at_ms,operation_id)"
-    " VALUES('event-end','lesson','t','end',3000,'op-end')")
+    " VALUES('event-end','lesson','t','end',3000,'op-end-1')")
  def tearDown(self):self.db.close()
  def event(self,n,action="put",actor="owner-a",learner="l1",lesson="lesson",
            note=None,version=0,body="Synthetic private student note",at=3100):
