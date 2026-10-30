@@ -6,6 +6,7 @@ import {createTeacherReadClient,TeacherReadError,type TeacherCalendarRow,
 import {TeacherConnectedStudents} from './TeacherConnectedStudents';
 import {TeacherConnectedAssignments} from './TeacherConnectedAssignments';
 import {TeacherConnectedReports} from './TeacherConnectedReports';
+import {TeacherConnectedPreparation} from './TeacherConnectedPreparation';
 import {teacherRoute} from './teacher-route';
 import css from './TeacherReadOnly.module.css';
 
@@ -78,16 +79,17 @@ export function TeacherReadOnlyView({pathname}:{pathname:string}) {
   if(route==='/teacher/assignments')return <TeacherConnectedAssignments learners={learners}/>;
   if(route==='/teacher/reports')return <TeacherConnectedReports learners={learners} lessons={lessons}/>;
   if(route==='/teacher/students')return <TeacherConnectedStudents learners={learners} lessons={lessons}/>;
+  if(route==='/teacher/preparation')return <TeacherConnectedPreparation learners={learners} lessons={lessons}/>;
   if(route==='/teacher/schedule')return <section className={css.card}>
     <div className={css.heading}><h1>جدولي الفعلي</h1><span>آخر {lessons.length} حصة</span></div>
-    <p>المواعيد المقروءة من D1. الانضمام لغرفة الانتظار متاح للحصة المصرح بها فقط، ولا يبدأ الدرس أو يشغّل LiveKit.</p>
+    <p>المواعيد المقروءة من D1. فتح غرفة الانتظار لا يبدأ الحصة أو يشغّل الميكروفون تلقائيًا؛ الشيخ يبدأ الحصة رسميًا من الفصل.</p>
     {lessons.length?<div className={css.list}>{lessonCards}</div>:<p className={css.empty}>لا توجد حصص مصرح بها حاليًا.</p>}
   </section>;
   if(route==='/teacher') {
     const upcoming=lessons.filter(l=>(l.status==='scheduled'||l.status==='live')&&l.endsAtMs>Date.now())
       .sort((a,b)=>a.startsAtMs-b.startsAtMs).slice(0,3);
     return <section className={css.card}>
-      <h1>بوابة الشيخ — بيانات حقيقية للقراءة فقط</h1>
+      <h1>بوابة الشيخ — بيانات موثقة من الخادم</h1>
       <p>مرحبًا بك. هذه البيانات من API محمي بجلسة الحساب؛ لا توجد أرقام تقارير أو تسميعات مُختلَقة.</p>
       <div className={css.metrics}>
         <Link href="/teacher/students"><strong>{learners.length}</strong><span>طلابي المسندون حاليًا</span></Link>
@@ -100,8 +102,13 @@ export function TeacherReadOnlyView({pathname}:{pathname:string}) {
       </div>)}</div>:<p className={css.empty}>لا توجد حصص قادمة ضمن البيانات المحمّلة.</p>}
     </section>;
   }
-  return <section className={css.card}><h1>هذا القسم قيد ربط الـBackend</h1>
-    <p>التقارير والتقييمات والخطط والواجبات والإشعارات لا تعرض بيانات تجريبية في وضع الحساب الحقيقي، ولا يمكن حفظها أو نشرها قبل تفعيل API مؤمّن.</p>
+  return <section className={css.card}><h1>{
+   route==='/teacher/notifications'?'الإشعارات غير متصلة بعد':
+   route==='/teacher/cases'?'الحضور والبلاغات غير متصلة بعد':
+   'هذه الخدمة غير متاحة حاليًا'}</h1>
+    <p>الخدمة المطلوبة لم تُربط بعد بـBackend آمن ومصدر موثّق؛
+     لا تظهر أعداد أو تنبيهات أو حالات حضور افتراضية، ولا يمكن إرسال أو اعتماد
+     طلب قبل تفعيل مسار موثّق على الخادم.</p>
     <div className={css.actions}><Link href="/teacher/students">طلابي</Link><Link href="/teacher/schedule">جدولي</Link></div>
   </section>;
 }
