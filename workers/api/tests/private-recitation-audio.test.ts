@@ -27,6 +27,17 @@ test('private object keys are opaque and canonical; never a public r2.dev URL',(
   assert.equal(privateRecitationObjectKey(learnerId,descriptor),
     `assignment-audio/${learnerId}/${assetId}.webm`);
   assert.throws(()=>privateRecitationObjectKey('../foreign',descriptor));
+  // Runtime boundaries must reject unparsed objects even if a caller casts them
+  // to PrivateAudioDescriptor or a string in TypeScript.
+  assert.throws(()=>privateRecitationObjectKey([learnerId] as never,descriptor),/INVALID_PRIVATE_AUDIO_KEY/);
+  for(const unsafe of [
+    null,
+    {...descriptor,submissionId:'../../foreign'},
+    {...descriptor,byteSize:MAX_RECITATION_BYTES+1},
+    {...descriptor,durationMs:0},
+    {...descriptor,sha256:'A'.repeat(64)},
+    {...descriptor,mediaType:'text/html'},
+  ])assert.throws(()=>privateRecitationObjectKey(learnerId,unsafe as never),/INVALID_PRIVATE_AUDIO_KEY/);
   const ogg=parsePrivateAudioDescriptor({...base,mediaType:'audio/ogg'});
   const mp4=parsePrivateAudioDescriptor({...base,mediaType:'audio/mp4'});
   assert.ok(ogg&&mp4);
@@ -36,6 +47,9 @@ test('private object keys are opaque and canonical; never a public r2.dev URL',(
 test('private playback headers are never cacheable and audio is hard disabled',()=>{
   const h=privateRecitationResponseHeaders('audio/webm');
   assert.match(h.get('cache-control')??'',/no-store/);
+  assert.equal(h.get('content-type'),'audio/webm');
+  for(const unsafe of ['text/html','audio/webm; charset=utf-8','audio/mpeg',null,[]])
+    assert.throws(()=>privateRecitationResponseHeaders(unsafe as never),/INVALID_PRIVATE_AUDIO_MEDIA_TYPE/);
   assert.equal(h.get('x-content-type-options'),'nosniff');
   assert.equal(h.get('referrer-policy'),'no-referrer');
   assert.equal(PRIVATE_RECITATION_UPLOADS_ENABLED,false);
