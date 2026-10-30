@@ -1,5 +1,5 @@
 import {describe,expect,it,vi} from 'vitest';
-import {resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard} from './media-device-safety';
+import {createRoomGenerationGuard,resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard} from './media-device-safety';
 
 describe('LiveKit device permission race safety (#221)',()=>{
   it('commits a toggle only for the same active room generation',async()=>{
@@ -143,5 +143,36 @@ describe('Room-scoped remote audio resume (#221)',()=>{
     await expect(resumeRemoteAudioIfCurrent(async()=>{},()=>true,()=>[play]))
       .resolves.toBe(true);
     expect(play).toHaveBeenCalledOnce();
+  });
+});
+
+describe('LiveKit event identity after disconnect (#221)',()=>{
+  it('rejects queued old-room tracks and reconnect events after disconnect/rejoin',()=>{
+    const oldRoom={id:'old'};
+    const newRoom={id:'new'};
+    let currentRoom:typeof oldRoom|null=oldRoom;
+    let generation=7;
+    const oldEventAllowed=createRoomGenerationGuard(
+      oldRoom,7,()=>currentRoom,()=>generation,
+    );
+    const attached=vi.fn();
+    const onSubscribed=()=>{if(oldEventAllowed())attached();};
+    onSubscribed();
+    expect(attached).toHaveBeenCalledOnce();
+    currentRoom=null; // SDK Disconnected clears the Room ref
+    onSubscribed();
+    currentRoom=newRoom; // a fresh join can happen before queued events run
+    onSubscribed();
+    expect(oldEventAllowed()).toBe(false);
+    expect(attached).toHaveBeenCalledOnce();
+  });
+
+  it('rejects an old generation even if the same Room reference is reused',()=>{
+    const media={id:'room'};
+    let generation=4;
+    const isCurrent=createRoomGenerationGuard(media,4,()=>media,()=>generation);
+    expect(isCurrent()).toBe(true);
+    generation++;
+    expect(isCurrent()).toBe(false);
   });
 });
