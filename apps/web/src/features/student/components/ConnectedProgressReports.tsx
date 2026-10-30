@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useState} from 'react';
+import {Fragment,useEffect,useState} from 'react';
 import {lessonReportsClient,reportErrorMessage,type StudentReport} from '../../shared';
 import styles from '../StudentPortal.module.css';
 import table from './ProgressTable.module.css';
@@ -45,26 +45,26 @@ export function ConnectedProgressReports({learnerId}:{learnerId:string}){
      </tr></thead><tbody>{rows.map(report=>{
       const open=expanded===report.lessonId;
       const detailsId='connected-report-'+report.lessonId;
-      return <tr key={report.lessonId}><td colSpan={5}>
-       <div className={table.scroll}>
-        <table className={table.table}><tbody><tr>
-         <th scope="row">{when(report.publishedAtMs)}
-          <small> · إصدار {report.revision}</small></th>
-         <td>{score(report.memorization)}</td><td>{score(report.recitation)}</td>
-         <td>{score(report.tajweed)}</td><td>
-          <button type="button" className={table.expand} aria-expanded={open}
-           aria-controls={detailsId} onClick={()=>setExpanded(open?null:report.lessonId)}>
-           {open?'إخفاء':'عرض التقرير'}</button></td>
-        </tr></tbody></table>
-       </div>
-       <div id={detailsId} hidden={!open} className={table.details}>
-        <p><strong>الآيات المنجزة:</strong> {report.scope}</p>
-        <p><strong>نقاط القوة:</strong> {report.strengths||'—'}</p>
-        <p><strong>مواضع التصحيح:</strong> {report.corrections||'—'}</p>
-        <p><strong>خطة المراجعة:</strong> {report.nextPlan||'—'}</p>
-        <p className={table.unavailable}>أرشيف المصحف المشروح قيد الربط بالحصة الحقيقية.</p>
-       </div>
-      </td></tr>;
+      return <Fragment key={report.lessonId}>
+       <tr>
+        <th scope="row">{when(report.publishedAtMs)} <small>إصدار {report.revision}</small></th>
+        <td>{score(report.memorization)}</td>
+        <td>{score(report.recitation)}</td>
+        <td>{score(report.tajweed)}</td>
+        <td><button type="button" className={table.expand} aria-expanded={open}
+         aria-controls={detailsId} onClick={()=>setExpanded(open?null:report.lessonId)}>
+         {open?'إخفاء':'عرض التقرير'}</button></td>
+       </tr>
+       <tr hidden={!open}><td colSpan={5} id={detailsId}>
+        <div className={table.details}>
+         <p><strong>الآيات المنجزة:</strong> {report.scope}</p>
+         <p><strong>نقاط القوة:</strong> {report.strengths||'—'}</p>
+         <p><strong>مواضع التصحيح:</strong> {report.corrections||'—'}</p>
+         <p><strong>خطة المراجعة:</strong> {report.nextPlan||'—'}</p>
+         <p className={table.unavailable}>أرشيف المصحف المشروح قيد الربط بالحصة الحقيقية.</p>
+        </div>
+       </td></tr>
+      </Fragment>;
      })}</tbody></table>
     </div>}
   </section>
