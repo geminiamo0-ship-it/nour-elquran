@@ -5,6 +5,7 @@ import {
   timeAlerts,visiblePageStrokes,validateAyahError,type ClassroomPreviewState,type SharedInkRecord,
 } from './domain';
 import {ClassroomPreview} from './ClassroomPreview';
+import {SignedClassroomStage} from './SignedClassroomStage';
 
 const waiting:ClassroomPreviewState={
   phase:'waiting',teacherPresent:true,learnerPresent:false,studentDrawingAllowed:true,
@@ -80,6 +81,20 @@ describe('classroom safety and interaction contract',()=>{
     expect(html).toContain('وضع الحصة');
     expect(html).toContain('الشيخ موجود');
     expect(html).not.toContain('المشاركون 12');
+  });
+  it('signed classroom shows canonical read-only Quran and genuine media, not mock teaching controls',()=>{
+    const learner=renderToStaticMarkup(<SignedClassroomStage
+      identity={{role:'learner',lessonId:'lesson-test',learnerId:'learner-test'}} active/>);
+    const teacher=renderToStaticMarkup(<SignedClassroomStage
+      identity={{role:'teacher',lessonId:'lesson-test'}} active/>);
+    expect(learner).toContain('data-role="learner"');
+    expect(learner).toContain('كاميرا الشيخ');
+    expect(teacher).toContain('كاميرا الطالب');
+    expect(learner).toContain('المصحف · حفص');
+    expect(learner).toContain('الصفحة والرسم لا يتزامنان');
+    expect(learner).toContain('data-media-layout="compact"');
+    expect(learner).not.toContain('محاكاة «بدء الحصة»');
+    expect(learner).not.toContain('تم الاتصال بـLiveKit');
   });
   it('renders original shared Quran with explicit mock-mode and no fake live call',()=>{
     const html=renderToStaticMarkup(<ClassroomPreview/>);
