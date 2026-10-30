@@ -114,6 +114,13 @@ export function importSpecifiers(source) {
       && ts.isStringLiteralLike(node.moduleReference.expression)) {
       requests.push(node.moduleReference.expression.text);
     }
+    // TypeScript's type-only import('module').Type and typeof import('module')
+    // are ImportTypeNodes, not dynamic import calls. They still create dependencies.
+    if (ts.isImportTypeNode(node)
+      && ts.isLiteralTypeNode(node.argument)
+      && ts.isStringLiteralLike(node.argument.literal)) {
+      requests.push(node.argument.literal.text);
+    }
     if (ts.isCallExpression(node) && node.arguments.length === 1
       && ts.isStringLiteralLike(node.arguments[0])
       && (node.expression.kind === ts.SyntaxKind.ImportKeyword

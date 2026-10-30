@@ -1,3 +1,6 @@
+## #57 — AST type-only dependency boundary regression (2026-10-30)
+- `tests/architecture.test.mjs` must fail on `import('feature/private').Type` in cross-feature/route code and on `typeof import('feature')` from shared/UI; allow type imports through a feature public index. The same `inspectArchitecture` graph runs in repository Verify. This is fast Node static testing, not Chrome or Dev media acceptance.
+
 ## #57 import-equals architecture boundary regression (2026-10-30; source candidate)
 - `tests/architecture.test.mjs` adds a synthetic AST fixture for `import Foo = require('...')` from both `features/student` into private `features/teacher` internals and an `app` route via relative path. `scripts/check-architecture.mjs` must reject both in `pnpm test` and `pnpm lint` checks. This test does not exercise runtime media, auth, browser or Cloudflare services; exact-head CI required before accepting.
 

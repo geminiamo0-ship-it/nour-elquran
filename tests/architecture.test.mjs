@@ -106,6 +106,38 @@ test('TypeScript import-equals edges enforce shared isolation and cycle detectio
   }
 });
 
+test('type-only import() dependencies cannot bypass feature or shared boundaries', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'noor-import-type-'));
+  try {
+    const write = (relative, source) => {
+      const file = path.join(root, relative);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, source);
+    };
+    write('features/teacher/internal/Secret.ts', 'export interface Secret { value: string }');
+    write('features/teacher/index.ts', "export type { Secret } from './internal/Secret';");
+    write('features/student/Deep.ts',
+      "export type Secret = import('@/features/teacher/internal/Secret').Secret;");
+    write('features/student/Public.ts',
+      "export type Secret = import('@/features/teacher').Secret;");
+    write('app/Deep.ts',
+      "export type Secret = import('../features/teacher/internal/Secret').Secret;");
+    write('shared/ui/Deep.ts',
+      "export type Secret = typeof import('../../features/teacher');");
+
+    const errors = inspectArchitecture(root);
+    assert.ok(errors.some(error => error.includes('features/student/Deep.ts')
+      && error.includes('Cross-feature')), errors.join('\\n'));
+    assert.ok(errors.some(error => error.includes('app/Deep.ts')
+      && error.includes('public index')), errors.join('\\n'));
+    assert.ok(errors.some(error => error.includes('shared/ui/Deep.ts')
+      && error.includes('Shared modules cannot depend')), errors.join('\\n'));
+    assert.ok(errors.every(error => !error.includes('features/student/Public.ts')), errors.join('\\n'));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('route entrypoints can only consume a feature public API', () => {
   assert.match(boundaryError('app/page.tsx', '@/features/teacher/components/Private'), /public index/);
   assert.equal(boundaryError('app/page.tsx', '@/features/teacher'), null);

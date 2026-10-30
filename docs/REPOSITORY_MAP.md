@@ -1,3 +1,6 @@
+## #57 — type-only import boundary gate
+- `scripts/check-architecture.mjs` includes TypeScript `ImportTypeNode` dependency specifiers in the existing import/cycle graph; `tests/architecture.test.mjs` adds synthetic type-only cross-feature, route, shared/UI and public-index regression fixtures. [Draft PR #230](https://github.com/geminiamo0-ship-it/nour-elquran/pull/230). No runtime changes.
+
 ## #57 AST import-equals boundary check (2026-10-30; source candidate)
 - `scripts/check-architecture.mjs` recognizes TS `ImportEqualsDeclaration` (`import Foo = require('...')`) in addition to ordinary imports, exports, lazy imports and `require()` calls. `tests/architecture.test.mjs` checks deep feature and route bypasses. No new package or runtime dependency; current Next.js/static frontend unchanged. Exact-head Verify pending.
 
