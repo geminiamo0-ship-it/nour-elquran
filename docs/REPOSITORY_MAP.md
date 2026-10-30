@@ -1,3 +1,6 @@
+## CR-02B2 #206 teacher mute reauthorization follow-up
+- `workers/api/src/classroom/livekit-mute.ts`: rechecks D1 teacher role/lesson window and actor-specific LessonDO heartbeat **after** LiveKit ListParticipants to avoid stale in-flight moderation after lease loss. `workers/api/tests/livekit-mute.test.ts`: synthetic lease-loss and expiry-between-provider-calls regressions. No external LiveKit provider success or Production evidence; #206 remains open.
+
 ## CR-02B2 write-time wake and mute real Dev evidence
 - `docs/CLASSROOM_CR02B2_WRITE_MUTE_DEV_ACCEPTANCE.md` anchors Noor main Verify #41002079116, Santoreno Cloudflare no-secret Dev #41002323938. Mute track selection is server-only; actual LiveKit Cloud provider unconfigured/untested, #206 stays open.
 
