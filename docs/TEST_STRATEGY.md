@@ -1,3 +1,6 @@
+## CR-02B1 #204 LiveKit browser SDK test plan (source only)
+- Exact pinned lockfile frozen install, TS/ESLint/Vitest strict media ticket parser and denial responses, Next SSR/build + local D1. Unit tests intentionally use synthetic tokens and **no** real provider credentials or devices. Browser LiveKit capture/reconnect and permission test needs one targeted 360px/390px/desktop QA and real signed two-device Dev. CR-02B2 provider-side eviction of already-connected revoked students/Sheikh mandatory before media credentials injected for real users. Existing CR-01 and 07A/08A/08B1 regression smoke separate; no default Chrome.
+
 ## CR-02A actual no-secret Cloudflare Dev gate (2026-10-30)
 - Noor main Verify #40996405754 4/4 success; Santoreno #40996681563 synthetic signed two-role DO joins plus media-token POST returned **503 LIVEKIT_NOT_CONFIGURED/no token**, forged identity/room/grants body 400, foreign 404, anonymous 401, GET 405, no-store; 07A/08A/08B1/CR-01 regressions PASS. No provider-level A/V attempt without owner account. This is not proof of LiveKit media quality, connected-user revocation or child consent; keep CR-02B open.
 
