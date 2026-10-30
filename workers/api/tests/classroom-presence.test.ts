@@ -1,7 +1,7 @@
 import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
 import {ROOM_LEASE_MS,applyRoomCommand,roomSnapshot,LessonRoom,
- type VerifiedRoomCommand,type RoomRecord} from '../src/classroom/lesson-room.ts';
+ type VerifiedRoomCommand,type RoomRecord,type LessonRoomStorage} from '../src/classroom/lesson-room.ts';
 import {parseClientPresenceAction,forwardVerifiedPresence} from '../src/classroom/presence.ts';
 import type {Env} from '../src/bindings.ts';
 
@@ -74,7 +74,7 @@ test('Room persists leases and never fabricates connected participants after res
  const storage={
   async get<T>(name:string){return store.get(name) as T|undefined;},
   async put<T>(name:string,value:T){writes++;store.set(name,value as RoomRecord);},
-  async transaction<T>(fn:(tx:any)=>Promise<T>){return fn(storage);},
+  async transaction<T>(fn:(tx:Pick<LessonRoomStorage,'get'|'put'>)=>Promise<T>){return fn(storage);},
  };
  const room=new LessonRoom({storage});
  const req=(payload:unknown)=>new Request('https://do.invalid/internal/room-presence',{
