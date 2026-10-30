@@ -68,6 +68,45 @@ describe('LiveKit device permission race safety (#221)',()=>{
     expect(apply.mock.calls.map(call=>call[0])).toEqual([false]);
   });
 
+  it('disables stale capture if the SDK rejects after capture begins',async()=>{
+    let rejectPermission!:(error:Error)=>void;
+    const permission=new Promise<void>((_,reject)=>{rejectPermission=reject;});
+    let current=true;
+    let capturing=false;
+    const apply=vi.fn(async(enabled:boolean)=>{
+      if(enabled){
+        capturing=true;
+        await permission;
+      }else capturing=false;
+      return undefined;
+    });
+    const pending=setDeviceWithEpochGuard(true,apply,()=>current);
+    current=false;
+    rejectPermission(new Error('disconnected during grant'));
+    await expect(pending).rejects.toThrow('disconnected during grant');
+    expect(apply.mock.calls.map(call=>call[0])).toEqual([true,false]);
+    expect(capturing).toBe(false);
+  });
+
+  it('preserves the original stale SDK rejection if cleanup also fails',async()=>{
+    const apply=vi.fn(async(enabled:boolean)=>{
+      throw new Error(enabled?'original enable failure':'cleanup failure');
+    });
+    await expect(setDeviceWithEpochGuard(true,apply,()=>false))
+      .rejects.toThrow('original enable failure');
+    expect(apply.mock.calls.map(call=>call[0])).toEqual([true,false]);
+  });
+
+  it('does not issue an extra disable after a current SDK rejection',async()=>{
+    const apply=vi.fn(async(enabled:boolean)=>{
+      if(enabled)throw new Error('permission denied');
+      return undefined;
+    });
+    await expect(setDeviceWithEpochGuard(true,apply,()=>true))
+      .rejects.toThrow('permission denied');
+    expect(apply.mock.calls.map(call=>call[0])).toEqual([true]);
+  });
+
   it('does not turn a late rejected permission into a successful toggle',async()=>{
     const apply=vi.fn(async()=>{throw new Error('denied');});
     await expect(setDeviceWithEpochGuard(true,apply,()=>false))

@@ -9,7 +9,18 @@ export async function setDeviceWithEpochGuard<T>(
   isCurrent: () => boolean,
   stopLateTrack?: (value: T) => void,
 ): Promise<{current: true; value: T} | {current: false}> {
-  const value = await apply(enabled);
+  let value: T;
+  try {
+    value = await apply(enabled);
+  } catch (error) {
+    // A device can start capturing before the SDK rejects (e.g. disconnect
+    // during an asynchronous permission grant). Never leave that stale Room
+    // with a potentially active device merely because no track was returned.
+    if (enabled && !isCurrent()) {
+      try { await apply(false); } catch { /* old Room may already be gone */ }
+    }
+    throw error;
+  }
   if (!isCurrent()) {
     if (enabled) {
       // A browser permission dialog may have completed after Room.disconnect().
