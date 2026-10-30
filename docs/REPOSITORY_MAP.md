@@ -1,3 +1,7 @@
+## Phase 06A1 verified Dev safety boundary (2026-10-30)
+- [Santoreno PR #255](https://github.com/geminiamo0-ship-it/santoreno/pull/255) adds `scripts/noor_private_staging.py::verify_disabled_recitation_audio` and Python mocked regressions: existing dedicated `noor-core-staging` D1 0012 and both lock triggers, no asset metadata, per-owner sibling disabled GET, foreign 404, anonymous 401, grant POST 405. Actual [Dev remote #40979386785](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40979386785) SUCCESS. These are policy-denial tests, **not** private media upload/playback tests or child privacy approval.
+- Noor server paths and SQL under #182/#184 are now merged and staged only for disabled read; parent #180 remains blocked on guardian identity, policy, private R2 provisioning, retention/delete/export and full media ACL tests.
+
 ## #182 Phase 06A1 locked audio backend groundwork (source only)
 - `workers/api/migrations/0012_recitation_audio_privacy.sql`: immutable consent and asset metadata, current owner/same-submission scope triggers, explicit grant/upload blocker triggers, no real recordings.
 - `workers/api/src/private-recitation-audio.ts`: strict media envelope and opaque private R2 keys, non-cacheable headers, hard-disabled flag. No actual bucket binding or media API.
