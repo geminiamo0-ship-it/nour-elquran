@@ -1,3 +1,6 @@
+## #221 late remote audio play after leave (source regression, 2026-10-30)
+- `media-device-safety.test.ts` now defers `HTMLMediaElement.play()` until after the room becomes stale, verifying the **captured old element** is paused on late resolve and late reject. New-room audio must not be touched. Source tests do not prove browser autoplay behavior; targeted signed two-browser Cloudflare Dev audio silence and Stop/rejoin test is required. Exact-head Verify pending.
+
 ## #221 — remote audio/video teardown on Stop and participant disconnect (source candidate, 2026-10-30)
 - Draft PR #226 now explicitly pauses attached remote audio/video, clears their MediaStream references and removes elements on Stop/leave, provider disconnect, participant disconnect and TrackUnsubscribed. DOM removal alone is not relied on to stop playback. Three synthetic cleanup tests cover audio/video, failed pause and failed stream release. **New exact-head CI and two-browser real-device QA required**; no Production, child data or recordings.
 
