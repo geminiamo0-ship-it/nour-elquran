@@ -1,3 +1,7 @@
+## #221 LiveKit local device-permission race safety (focused branch)
+- `apps/web/src/features/classroom/media-device-safety.ts`: pure asynchronous device-toggle epoch guard and best-effort stale-track shutdown; `media-device-safety.test.ts`: deferred permission and disconnected-room regression tests.
+- `apps/web/src/features/classroom/LiveLessonMedia.tsx`: existing approved `LiveClassroom` UI retained; camera and microphone toggles now capture Room identity/epoch and refuse late UI state updates. Do not use stale PR #222's alternative `SignedClassroomStage` layout. CI/browser acceptance separate.
+
 ## CR-02B2 write-time wake and mute real Dev evidence
 - `docs/CLASSROOM_CR02B2_WRITE_MUTE_DEV_ACCEPTANCE.md` anchors Noor main Verify #41002079116, Santoreno Cloudflare no-secret Dev #41002323938. Mute track selection is server-only; actual LiveKit Cloud provider unconfigured/untested, #206 stays open.
 
