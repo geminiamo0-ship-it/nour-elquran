@@ -51,16 +51,28 @@ test('production, learner and missing secrets never contact provider',async()=>{
   {status:503,code:'LIVEKIT_NOT_CONFIGURED'});
  assert.equal(count,0);
 });
-test('401, 403, 5xx, malformed JSON and network error are sanitized',async()=>{
- for(const status of [401,403,404,500,503]){
-  const x=await checkLiveKitProvider(env,actor,Date.now(),
-    async()=>new Response('private-provider-response',{status}));
-  assert.deepEqual(x,{status:503,code:[401,403].includes(status)?
-   'LIVEKIT_PROVIDER_AUTH_REJECTED':'LIVEKIT_PROVIDER_UNAVAILABLE'});
+test('provider failures report only static safe categories',async()=>{
+ const cases=[
+  [400,'LIVEKIT_PROVIDER_BAD_REQUEST'],[401,'LIVEKIT_PROVIDER_AUTH_REJECTED'],
+  [403,'LIVEKIT_PROVIDER_AUTH_REJECTED'],[404,'LIVEKIT_PROVIDER_HTTP_4XX'],
+  [429,'LIVEKIT_PROVIDER_RATE_LIMITED'],[500,'LIVEKIT_PROVIDER_UPSTREAM_5XX'],
+  [503,'LIVEKIT_PROVIDER_UPSTREAM_5XX'],
+ ] as const;
+ for(const [status,code] of cases){
+  const value=await checkLiveKitProvider(env,actor,Date.now(),
+   async()=>new Response('private-provider-body',{status}));
+  assert.deepEqual(value,{status:503,code});
+  assert.doesNotMatch(JSON.stringify(value),/private-provider-body/);
+ }
+ for(const transport of [
+  async()=>Response.json({rooms:'bad'}),
+  async()=>new Response('not-json',{headers:{'content-type':'text/plain'}}),
+  async()=>new Response('invalid-json',{headers:{'content-type':'application/json'}})
+ ]){
+  assert.deepEqual(await checkLiveKitProvider(env,actor,Date.now(),transport),
+   {status:503,code:'LIVEKIT_PROVIDER_BAD_RESPONSE'});
  }
  assert.deepEqual(await checkLiveKitProvider(env,actor,Date.now(),
-   async()=>Response.json({rooms:'wrong-type'})),
-  {status:503,code:'LIVEKIT_PROVIDER_UNAVAILABLE'});
- assert.deepEqual(await checkLiveKitProvider(env,actor,Date.now(),async()=>{throw Error('never expose secret');}),
-  {status:503,code:'LIVEKIT_PROVIDER_UNAVAILABLE'});
+  async()=>{throw Error('private-error');}),
+  {status:503,code:'LIVEKIT_PROVIDER_NETWORK_ERROR'});
 });
