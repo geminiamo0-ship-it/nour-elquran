@@ -8,6 +8,9 @@ import {forwardVerifiedPresence} from './presence.ts';
 
 export const MEDIA_TOKEN_TTL_SECONDS=120;
 export const MEDIA_EARLY_JOIN_MS=15*60*1000;
+// Token re-admission guard only; this does not terminate an ongoing media session.
+// A stale D1 "live" status must not allow unlimited new LiveKit joins.
+export const MEDIA_LIVE_OVERRUN_MS=60*60*1000;
 export type MediaRole='teacher'|'learner';
 type VerifiedMediaActor=Readonly<{
  lessonId:string;learnerId:string;actorSubject:string;role:MediaRole;
@@ -34,16 +37,17 @@ export function validatedLiveKitConfig(env:Pick<Env,'LIVEKIT_URL'|'LIVEKIT_API_K
  }catch{return null;}
 }
 
-/** No scheduled hour-long credential issuance while a class is far in future.
- * A genuinely live class can overrun the instructional/booking clock: this is
- * only token admission control, never an automatic lesson termination policy.
+/** Bound initial token admission even if a stale D1 lesson remains "live".
+ * This does NOT stop an already-connected class or determine attendance/END.
+ * Rejoining after the overrun window requires an explicit future extension.
  */
 export function mediaLessonWindow(access:ClassroomAccess,now:number):boolean{
  if(!Number.isSafeInteger(now)||!Number.isSafeInteger(access.startsAtMs)||
   !Number.isSafeInteger(access.endsAtMs)||access.endsAtMs<=access.startsAtMs)return false;
- if(access.status==='live')return true;
- return access.status==='scheduled'&&
-  now>=access.startsAtMs-MEDIA_EARLY_JOIN_MS&&now<=access.endsAtMs;
+ const earliest=access.startsAtMs-MEDIA_EARLY_JOIN_MS;
+ if(access.status==='scheduled')return now>=earliest&&now<=access.endsAtMs;
+ return access.status==='live'&&now>=earliest&&
+  now<=access.endsAtMs+MEDIA_LIVE_OVERRUN_MS;
 }
 function toBase64Url(bytes:Uint8Array):string{
  let raw='';
