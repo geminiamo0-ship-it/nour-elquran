@@ -1,3 +1,7 @@
+## Runtime defense-in-depth follow-up (#180, 2026-10-30)
+- The key builder revalidates the complete descriptor and string learner UUID at runtime, rather than trusting a TypeScript annotation. The private playback-header helper rejects unsupported MIME values, including HTML, before creating any headers. This is only a guard against future caller mistakes, not proof of media sniffing or an enabled endpoint.
+- Both the SQL grant/upload locks and `PRIVATE_RECITATION_UPLOADS_ENABLED=false` remain unchanged. No real media is accepted, stored or played; #180 policy and isolated R2 acceptance gates still apply.
+
 # Private assignment recitation — source-only security contract (#182 / #180)
 
 **Status 2026-10-30: SERVER UPLOAD, PLAYBACK, GUARDIAN CONSENT AND R2 ACTIVATION ALL OFF.** This is a guarded migration and typed backend preparation, **not** a working audio feature or approved personal-data handling policy. The existing `TrainingVoicePractice` browser recorder remains local-only and does not transmit recordings.
