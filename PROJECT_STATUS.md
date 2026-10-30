@@ -1,3 +1,6 @@
+## #221 — unexpected LiveKit disconnect capture teardown (source candidate, 2026-10-30)
+- Draft PR #226 now synchronously stops all old Room local tracks on explicit Stop and unexpected provider Disconnected, then best-effort requests independent microphone/camera disable. This closes a privacy gap where a provider drop cleared the UI but might leave a local device capturing. Two synthetic teardown tests added. **CI for this new commit and real signed two-browser Cloudflare Dev device indicators remain unverified**; no merge, Production, child data, or recording.
+
 ## #221 follow-up — stale LiveKit Room event invalidation (source candidate, 2026-10-30)
 - Draft PR #226 now invalidates the Room generation on unexpected provider disconnect and requires both exact Room identity and generation for reconnect, track subscribe/unsubscribe, participant events and post-connect success. Prevents a queued old-Room track or late connect completion from repopulating a new room or falsely reporting connected. Two synthetic room-event gate tests added. **New exact-head Verify and real two-browser Cloudflare Dev permission/rejoin QA still required**; no Production, minors, recording or keys.
 
