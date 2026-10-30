@@ -12,6 +12,7 @@ import {readOwnerPlan,readTeacherPlan,writeTeacherPlan,parsePlanAction} from '..
 import {readOwnerAssignments,readTeacherAssignments,getAssignmentCatalog,publishAssignment,parsePublishAssignment} from '../published-assignments.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
+import {getTeacherReport,getStudentReports,applyTeacherReport,parseReportAction} from '../lesson-reports.ts';
 import {verifiedOwner} from '../published-assignments.ts';
 import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '../staff-teachers.ts';
 import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts';
@@ -139,6 +140,16 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
     const result=await readOwnerAssignments(db,authSubject,ownedAssignmentsMatch[1]!);
     const {status,...body}=result;
     return reply(status,body,requestId);
+  }
+  // Phase 07A: only latest APPROVED report, never the Sheikh's draft.
+  const ownedReports=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/reports$/.exec(path);
+  if(ownedReports){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const version=await db.prepare("SELECT version FROM noor_schema_meta WHERE component='lesson_reports'")
+      .first<{version:number}>();
+    if(version?.version!==1)return reply(503,{code:'REPORT_SCHEMA_NOT_READY'},requestId);
+    const result=await getStudentReports(db,authSubject,ownedReports[1]!);
+    const {status,...body}=result;return reply(status,body,requestId);
   }
   const ownedPlanMatch=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/plan$/.exec(path);
   if(ownedPlanMatch){
@@ -304,6 +315,25 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     const result=await publishAssignment(env.DB,session.user.id,learnerId,command);
     const {status,...body}=result;
     return reply(status,body,requestId);
+  }
+  // Report author is the verified ACTING Sheikh of a completed audited lesson,
+  // including only a narrowly accepted substitute, never a role asserted by UI.
+  const lessonReport=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/(report|report-actions)$/.exec(path);
+  if(lessonReport){
+    const [,lessonId,kind]=lessonReport;
+    if(request.method!==(kind==='report'?'GET':'POST'))
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const version=await env.DB.prepare("SELECT version FROM noor_schema_meta WHERE component='lesson_reports'")
+      .first<{version:number}>();
+    if(version?.version!==1)return reply(503,{code:'REPORT_SCHEMA_NOT_READY'},requestId);
+    const result=kind==='report'
+      ?await getTeacherReport(env.DB,session.user.id,lessonId!)
+      :await (async()=>{
+        const action=parseReportAction(await readObject(request));
+        if(!action)return {status:400,code:'INVALID_REPORT_ACTION'} as const;
+        return applyTeacherReport(env.DB!,session.user.id,lessonId!,action);
+      })();
+    const {status,...body}=result;return reply(status,body,requestId);
   }
   const teacherPlanMatch=/^\/v1\/teacher\/learners\/([a-zA-Z0-9-]{1,128})\/(plan|plan-actions)$/.exec(path);
   if(teacherPlanMatch){

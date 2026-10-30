@@ -6,3 +6,6 @@ export type {PublishedAssignment,AssignmentDraft,AssignmentSource} from './publi
 
 export {assignmentAttemptClient,parseAttempts} from './assignment-attempt-client';
 export type {AssignmentAttempt} from './assignment-attempt-client';
+
+export {lessonReportsClient,blankReport,parseTeacherReport,parseStudentReports,reportErrorMessage,ReportApiError} from './lesson-report-client';
+export type {ReportContent,TeacherReport,StudentReport} from './lesson-report-client';

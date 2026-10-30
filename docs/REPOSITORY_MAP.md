@@ -1,3 +1,10 @@
+## Phase 07A report files (#186; source-only until verified)
+- `workers/api/migrations/0013_lesson_reports.sql`: immutable report events, draft projection, published snapshot/last approved pointer and completed lesson/actor/substitute authorization triggers.
+- `workers/api/src/lesson-reports.ts`, `workers/api/src/auth/routes.ts`: validated commands and Better Auth teacher/owner report endpoints.
+- `workers/api/tests/lesson-reports.test.ts`, `workers/api/tests/test_lesson_reports.py`: DTO and SQL role/CAS/version/END/substitute tests.
+- `apps/web/src/features/shared/lesson-report-client.ts`, `teacher/TeacherConnectedReports.tsx`, `teacher/TeacherReadOnlyView.tsx`, `student/components/ConnectedProgressReports.tsx`, `student/components/ProgressWorkspace.tsx`: connected UI; public demo remains separate.
+- `docs/LESSON_REPORTS_PHASE_07A_CONTRACT.md`: route contract and acceptance gate. `docs/adr/0008-admin-last-teacher-onboarding.md`: final Admin ownership and invitation-only Sheikh lifecycle.
+
 ## Phase 06A1 verified Dev safety boundary (2026-10-30)
 - [Santoreno PR #255](https://github.com/geminiamo0-ship-it/santoreno/pull/255) adds `scripts/noor_private_staging.py::verify_disabled_recitation_audio` and Python mocked regressions: existing dedicated `noor-core-staging` D1 0012 and both lock triggers, no asset metadata, per-owner sibling disabled GET, foreign 404, anonymous 401, grant POST 405. Actual [Dev remote #40979386785](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40979386785) SUCCESS. These are policy-denial tests, **not** private media upload/playback tests or child privacy approval.
 - Noor server paths and SQL under #182/#184 are now merged and staged only for disabled read; parent #180 remains blocked on guardian identity, policy, private R2 provisioning, retention/delete/export and full media ACL tests.
