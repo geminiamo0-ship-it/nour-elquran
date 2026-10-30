@@ -33,7 +33,7 @@ function validPolicy(raw:unknown):raw is MicPolicy{
   Number.isSafeInteger(o.revision)&&Number(o.revision)>=0;
 }
 export async function forwardVerifiedMicPolicy(env:Env,actor:Omit<VerifiedMicCommand,'action'>,
- action:'snapshot'|'lock'|'release'):Promise<{status:200|404|503;code:string;policy?:MicPolicy}>{
+ action:'snapshot'|'lock'|'release'):Promise<{status:200;code:string;policy:MicPolicy}|{status:404|503;code:string}>{
  if(!env.LESSON_ROOMS)return {status:503,code:'CLASSROOM_ROOM_NOT_CONFIGURED'};
  try{
   const stub=env.LESSON_ROOMS.get(env.LESSON_ROOMS.idFromName(actor.lessonId));
