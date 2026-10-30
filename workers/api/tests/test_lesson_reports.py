@@ -98,6 +98,6 @@ class ReportJournal(unittest.TestCase):
    self.event(3,expected=1,at=3200+86400001)
   self.event(4,expected=1,at=3200+86399999)
   self.db.execute("UPDATE lesson_access_grants SET revoked_at_ms=90000000 WHERE id='grant'")
-  with self.assertRaisesRegex(sqlite3.IntegrityError,'REPORT_SUBSTITUTE_DENIED'):
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'REPORT_ACCESS_DENIED'):
    self.event(5,expected=2,at=3500)
 if __name__=='__main__':unittest.main()
