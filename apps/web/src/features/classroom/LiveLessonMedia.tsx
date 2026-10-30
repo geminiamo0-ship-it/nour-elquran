@@ -228,7 +228,7 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
        ()=>media.startAudio(),isCurrent,
        ()=>Array.from(remoteAudio.current?.children??[])
          .filter((child):child is HTMLAudioElement=>child instanceof HTMLAudioElement)
-         .map(child=>()=>child.play()),
+         .map(child=>({play:()=>child.play(),pause:()=>child.pause()})),
      );
      if(resumed&&isCurrent())setAudioBlocked(false);
    }catch{if(isCurrent())setAudioBlocked(true);}
