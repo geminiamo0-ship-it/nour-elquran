@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useStudent } from '../StudentContext';
 import { SchedulePanel } from './SchedulePanel';
+import { ConnectedClassroomLessons } from './ConnectedClassroomLessons';
 import { BookingWorkspace } from './BookingWorkspace';
 import styles from '../StudentPortal.module.css';
 
@@ -15,6 +16,7 @@ export function LessonHub() {
     if (filter === 'completed') return lesson.status === 'completed';
     return true;
   }).slice().sort((a, b) => a.dayOffset - b.dayOffset || a.time.localeCompare(b.time));
+  if(!selected.profile.demo)return <ConnectedClassroomLessons learnerId={selected.profile.id}/>;
   return <div className={styles.workspace}>
     <SchedulePanel detailed />
     <BookingWorkspace />
