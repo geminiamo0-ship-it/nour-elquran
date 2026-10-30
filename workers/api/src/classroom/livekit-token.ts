@@ -9,7 +9,7 @@ import {forwardVerifiedPresence} from './presence.ts';
 export const MEDIA_TOKEN_TTL_SECONDS=120;
 export const MEDIA_EARLY_JOIN_MS=15*60*1000;
 export type MediaRole='teacher'|'learner';
-type VerifiedMediaActor=Readonly<{
+export type VerifiedMediaActor=Readonly<{
  lessonId:string;learnerId:string;actorSubject:string;role:MediaRole;
 }>;
 export type LiveKitConfig=Readonly<{
@@ -61,6 +61,14 @@ async function mac(key:CryptoKey,data:string):Promise<string>{
  return toBase64Url(new Uint8Array(await crypto.subtle.sign('HMAC',key,
   new TextEncoder().encode(data))));
 }
+export async function liveKitActorNames(config:LiveKitConfig,actor:VerifiedMediaActor):
+ Promise<{roomName:string;identity:string}>{
+ const key=await signer(config.secret);
+ const roomName='nq-'+(await mac(key,'noor:room:v1:'+actor.lessonId)).slice(0,32);
+ const identity='nq-'+(await mac(key,['noor:actor:v1',actor.lessonId,actor.learnerId,
+  actor.role,actor.actorSubject].join(':'))).slice(0,32);
+ return {roomName,identity};
+}
 export type IssuedToken=Readonly<{token:string;roomName:string;identity:string;expiresAt:number}>;
 /**
  * Separate per-lesson opaque room and participant names: no legal name,
@@ -70,10 +78,8 @@ export type IssuedToken=Readonly<{token:string;roomName:string;identity:string;e
 export async function mintLiveKitToken(config:LiveKitConfig,actor:VerifiedMediaActor,
  nowMs:number):Promise<IssuedToken>{
  if(!Number.isSafeInteger(nowMs)||nowMs<0)throw Error('INVALID_MEDIA_CLOCK');
+ const {roomName,identity}=await liveKitActorNames(config,actor);
  const key=await signer(config.secret);
- const roomName='nq-'+(await mac(key,'noor:room:v1:'+actor.lessonId)).slice(0,32);
- const identity='nq-'+(await mac(key,['noor:actor:v1',actor.lessonId,actor.learnerId,
-  actor.role,actor.actorSubject].join(':'))).slice(0,32);
  const nbf=Math.floor(nowMs/1000);
  const exp=nbf+MEDIA_TOKEN_TTL_SECONDS;
  const grant={
