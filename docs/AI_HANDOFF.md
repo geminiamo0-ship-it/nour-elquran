@@ -1,3 +1,6 @@
+## Current #221 handoff — disconnected Room event race (2026-10-30)
+- Draft PR #226 `fix/221-livekit-permission-race-on-current-main` adds `createRoomGenerationGuard` and invalidates `epoch` when LiveKit unexpectedly disconnects. All SDK event callbacks and post-`media.connect` completion now require the same live Room; old queued track/reconnect events cannot revive stale UI. Two new synthetic tests. **Next: inspect new exact-head Verify on PR #226; fix failures if any, then targeted signed synthetic Cloudflare Dev two-browser leave/rejoin + device permission QA.** Branch may be behind main due to unrelated #87 ink work; reconcile only after checks and review. No merge/Production/child media.
+
 ## #221 follow-up: guard stale remote audio and Sheikh mute UI (source candidate, 2026-10-30)
 - Draft PR #226 prevents pending old-Room `startAudio()` from playing a **new Room's** audio after Stop/rejoin, suppresses stale remote autoplay failure notices and stale Sheikh mute HTTP result messages, and resets busy state on provider disconnect. Three synthetic deferred/audio-order tests added. Exact-head GitHub Verify and real signed Cloudflare Dev two-browser permission/audio QA remain required; no Production or private recordings.
 
