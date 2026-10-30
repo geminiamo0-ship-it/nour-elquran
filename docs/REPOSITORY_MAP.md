@@ -1,3 +1,9 @@
+## Phase 08A #190 notebook source files
+- `workers/api/migrations/0014_notebook_private_notes.sql` private notes projection and immutable operation journal with completed-lesson authorization guard; not Quran annotations.
+- `workers/api/src/notebook-notes.ts` and `auth/routes.ts` signed owner operations; backend tests `notebook-notes.test.ts`, `test_notebook_notes.py`.
+- `apps/web/src/features/shared/notebook-client.ts`/tests and public `shared/index.ts`: strict same-origin requests; `student/components/ConnectedNotebookWorkspace.tsx` with `NotebookWorkspace.tsx` connected-mode switch.
+- `docs/NOTEBOOK_PHASE_08A_CONTRACT.md` release gates. Source only; no remote D1 or browser accepted before evidence.
+
 ## Phase 07A source→Dev verification evidence (2026-10-30)
 - Noor [PR #187](https://github.com/geminiamo0-ship-it/nour-elquran/pull/187) merged; [main Verify #40986308630](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40986308630) PASS. Santoreno [PR #257](https://github.com/geminiamo0-ship-it/santoreno/pull/257) deployed existing Dev with migration 0013 and signed HTTP [#40986426733](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40986426733) PASS. Report UI files exist but one owner visual QA remains open. Classroom End generator and R2/PDF archive absent. See report contract for exact scope.
 
