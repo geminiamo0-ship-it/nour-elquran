@@ -1,5 +1,5 @@
 import {describe,expect,it,vi} from 'vitest';
-import {createRoomGenerationGuard,resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard} from './media-device-safety';
+import {createRoomGenerationGuard,resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard,stopLocalCaptureBestEffort} from './media-device-safety';
 
 describe('LiveKit device permission race safety (#221)',()=>{
   it('commits a toggle only for the same active room generation',async()=>{
@@ -174,5 +174,26 @@ describe('LiveKit event identity after disconnect (#221)',()=>{
     expect(isCurrent()).toBe(true);
     generation++;
     expect(isCurrent()).toBe(false);
+  });
+});
+
+describe('Local capture teardown on unexpected LiveKit disconnect (#221)',()=>{
+  it('stops every published track synchronously even when one stop throws',()=>{
+    const first=vi.fn(()=>{throw new Error('already disposed');});
+    const second=vi.fn();
+    const disableMic=vi.fn(async()=>{throw new Error('room closed');});
+    const disableCamera=vi.fn(async()=>{throw new Error('room closed');});
+    stopLocalCaptureBestEffort([{stop:first},undefined,{stop:second}],disableMic,disableCamera);
+    expect(first).toHaveBeenCalledOnce();
+    expect(second).toHaveBeenCalledOnce();
+    expect(disableMic).toHaveBeenCalledOnce();
+    expect(disableCamera).toHaveBeenCalledOnce();
+  });
+  it('still requests both SDK disables when one call throws synchronously',()=>{
+    const disableMic=vi.fn(()=>{throw new Error('disconnected');}) as () => Promise<unknown>;
+    const disableCamera=vi.fn(async()=>{});
+    stopLocalCaptureBestEffort([],disableMic,disableCamera);
+    expect(disableMic).toHaveBeenCalledOnce();
+    expect(disableCamera).toHaveBeenCalledOnce();
   });
 });
