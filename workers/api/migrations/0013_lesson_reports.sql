@@ -58,6 +58,13 @@ BEGIN
    AND EXISTS (SELECT 1 FROM lesson_lifecycle_events e
      WHERE e.lesson_id=l.id AND e.teacher_id=t.id AND e.action='end'
       AND e.at_ms=l.ended_at_ms)
+   AND (EXISTS (SELECT 1 FROM teacher_assignments a
+    WHERE a.learner_id=l.learner_id AND a.teacher_id=t.id
+     AND a.starts_at_ms<=l.starts_at_ms AND a.ends_at_ms>l.starts_at_ms
+     AND (a.revoked_at_ms IS NULL OR a.revoked_at_ms>l.starts_at_ms))
+    OR EXISTS (SELECT 1 FROM lesson_access_grants g
+      WHERE g.lesson_id=l.id AND g.teacher_id=t.id AND g.kind='substitute'
+       AND g.accepted_at_ms IS NOT NULL AND g.revoked_at_ms IS NULL))
  );
  -- Approved substitute: only the taught lesson, no unrelated student history.
  -- Initial report requires timely action after END; corrections expire 24h after
