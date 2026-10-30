@@ -12,3 +12,6 @@ export type {ReportContent,TeacherReport,StudentReport} from './lesson-report-cl
 
 export {notebookClient,parseNotebookLessons,parseNotebookNotes,notebookError,NotebookApiError} from './notebook-client';
 export type {LessonRow,PrivateNote} from './notebook-client';
+
+export {fetchPublishedQuranArchive,parsePublishedQuranArchive,archiveStrokes,ArchiveError} from './lesson-archive-client';
+export type {PublishedQuranArchive,ArchiveMark} from './lesson-archive-client';
