@@ -51,6 +51,13 @@
   background:#fffdf7;overflow:hidden;
 }
 .mediaDock{height:100%}
+.mediaDock button{
+  flex:0 0 auto;min-height:26px;padding:3px 5px;font-size:10px;
+  border:1px solid #d4c5a8;border-radius:5px;background:#f8f5eb;color:#30493c;
+}
+.mediaDock [data-media-layout="compact"] [aria-label="صوت الطرف الآخر"]{
+  height:0;min-height:0;overflow:hidden;
+}
 .quranPane{display:flex;flex-direction:column;padding:4px;gap:3px}
 .quranBar{
   flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;
