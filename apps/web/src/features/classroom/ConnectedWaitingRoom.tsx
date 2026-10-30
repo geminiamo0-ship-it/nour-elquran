@@ -5,6 +5,8 @@ import {LiveLessonMedia} from './LiveLessonMedia';
 import {ReaderPrintedPage,clampQuranPage,targetKey,type QuranTarget,type QuranInkStroke} from '@/features/student';
 import {fetchLiveInk,compactStroke,type InkView} from './live-ink';
 import {ConnectedClassroomNotes} from './ConnectedClassroomNotes';
+import {QuranVersePicker} from './QuranVersePicker';
+import {isVerseSelection,type VerseSelection} from './quran-verse-selection';
 import css from './Classroom.module.css';
 import liveCss from './ConnectedClassroom.module.css';
 import barCss from './ClassroomSessionHeader.module.css';
@@ -15,12 +17,14 @@ type Presence=Readonly<{
  revision:number;leaseTtlMs:number;canStart:false;mediaReady:false;
 }>;
 type Display='loading'|'ready'|'denied'|'error';
-type SharedPage=Readonly<{edition:'hafs-kfqc-v1.1.1';page:number;revision:number}>;
+type SharedPage=Readonly<{edition:'hafs-kfqc-v1.1.1';page:number;revision:number;verse?:VerseSelection}>;
 type PageResult=Readonly<{code:string;quran:SharedPage}>;
 function validPage(raw:unknown):raw is SharedPage{
  if(!raw||typeof raw!=='object'||Array.isArray(raw))return false;
  const p=raw as Record<string,unknown>;
- return Object.keys(p).length===3&&p.edition==='hafs-kfqc-v1.1.1'&&
+ return (Object.keys(p).length===3||
+  (Object.keys(p).length===4&&isVerseSelection(p.verse)))&&
+  p.edition==='hafs-kfqc-v1.1.1'&&
   Number.isInteger(p.page)&&Number(p.page)>=1&&Number(p.page)<=604&&
   Number.isSafeInteger(p.revision)&&Number(p.revision)>=0;
 }
@@ -76,7 +80,7 @@ async function call(id:Identity,action:'snapshot'|'join'|'heartbeat'|'leave',sig
  return safePresence(parsed,id.lessonId);
 }
 async function callPage(id:Identity,change?:Readonly<{
- page:number;expectedRevision:number;requestId:string;
+ page:number;expectedRevision:number;requestId:string;verse?:VerseSelection;
 }>):Promise<PageResult>{
  const response=await fetch(route(id)+'/quran-page',{
   method:change?'POST':'GET',
@@ -113,7 +117,6 @@ export function ConnectedWaitingRoom(){
  const inkPollBusy=useRef(false);
  const [pageError,setPageError]=useState('');
  const pagePollBusy=useRef(false);
- const [selectedVerse,setSelectedVerse]=useState<QuranTarget|null>(null);
  const [panelOpen,setPanelOpen]=useState(false);
  const [focusMode,setFocusMode]=useState(false);
  const stageRef=useRef<HTMLDivElement>(null);
@@ -247,21 +250,27 @@ export function ConnectedWaitingRoom(){
   }catch{if(alive.current)setInkError('تعذّر حفظ الرسم. لم تتم إضافة علامة غير مؤكدة.');}
   finally{if(alive.current)setInkBusy(false);}
  },[identity,joined,sharedPage,ink,inkBusy,inkMode]);
- const changeSharedPage=useCallback(async(next:number)=>{
-  if(identity?.role!=='teacher'||!joined||!sharedPage||pageBusy)return;
+ const changeSharedPage=useCallback(async(next:number,verse?:VerseSelection):Promise<boolean>=>{
+  if(identity?.role!=='teacher'||!joined||!sharedPage||pageBusy)return false;
   const page=clampQuranPage(next);
-  if(page===sharedPage.page)return;
+  if(page===sharedPage.page&&(!verse||
+   (sharedPage.verse?.surah===verse.surah&&sharedPage.verse.ayah===verse.ayah)))return true;
   setPageBusy(true);setPageError('');
   try{
    const result=await callPage(identity,{page,expectedRevision:sharedPage.revision,
-    requestId:crypto.randomUUID()});
-   if(!alive.current)return;
+    requestId:crypto.randomUUID(),...(verse?{verse}:{})});
+   if(!alive.current)return false;
    setSharedPage(prev=>prev&&prev.revision>result.quran.revision?prev:result.quran);
-   setSelectedVerse(null);setInkMode('off');
-   if(result.code==='QURAN_PAGE_CONFLICT')
-    setPageError('تغيّرت الصفحة على السيرفر؛ تم عرض أحدث إصدار مؤكّد.');
-  }catch{if(alive.current)setPageError('تعذر تأكيد تغيير الصفحة على السيرفر؛ لم يحدث تغيير وهمي.');}
-  finally{if(alive.current)setPageBusy(false);}
+   if(result.code==='QURAN_PAGE_CONFLICT'){
+    setPageError('تغيّرت الصفحة أو الآية على السيرفر؛ تم استعادة أحدث إصدار.');
+    return false;
+   }
+   setInkMode('off');
+   return true;
+  }catch{
+   if(alive.current)setPageError('تعذّر تأكيد الصفحة أو الآية المشتركة؛ لم يُعرض تحديد غير محفوظ.');
+   return false;
+  }finally{if(alive.current)setPageBusy(false);}
  },[identity,joined,sharedPage,pageBusy]);
  if(identity===undefined)return <main dir="rtl" className={liveCss.boot}>
   <p role="status">جارٍ التحقق من غرفة الحصة…</p>
@@ -276,6 +285,8 @@ export function ConnectedWaitingRoom(){
  const teacherCanTurn=identity.role==='teacher'&&joined&&!!sharedPage&&!pageBusy;
  const teacherCanDraw=teacherCanTurn&&!!ink&&ink.page===page&&!inkBusy;
  const currentStrokes=ink?.page===page?ink.strokes:[];
+ const selectedVerse:QuranTarget|null=sharedPage?.verse?
+  {page,surah:sharedPage.verse.surah,ayah:sharedPage.verse.ayah,wordIndex:null}:null;
  return <div ref={stageRef}
   className={[css.root,liveCss.connected,focusMode?css.focusMode:'',
    panelOpen?css.panelExpanded:''].filter(Boolean).join(' ')}
@@ -395,19 +406,24 @@ export function ConnectedWaitingRoom(){
      </div>
     </div>
     <div className={css.quranViewport} data-quran-layout="viewport-fit">
+     {role==='teacher'&&<QuranVersePicker enabled={teacherCanTurn}
+       selected={sharedPage?.verse??null} onNavigate={changeSharedPage}/>}
      <button type="button" className={css.pageEdgePrev} title="الصفحة السابقة" aria-label="الصفحة السابقة"
       disabled={!teacherCanTurn||page<=1} onClick={()=>void changeSharedPage(page-1)}>‹</button>
      <ReaderPrintedPage page={page} viewportFit inkMode={teacherCanDraw?inkMode:'off'} color={inkColor}
       strokes={currentStrokes} selectedKey={selectedVerse?targetKey(selectedVerse):null}
       noteKeys={new Set<string>()}
-      onSelect={setSelectedVerse} onOpenNote={setSelectedVerse}
+      onSelect={target=>{if(teacherCanTurn)void changeSharedPage(page,
+        {surah:target.surah,ayah:target.ayah});}}
+      onOpenNote={target=>{if(teacherCanTurn)void changeSharedPage(page,
+        {surah:target.surah,ayah:target.ayah});}}
       onInkChange={(targetPage,next)=>void updateSharedInk(targetPage,next)}/>
      <button type="button" className={css.pageEdgeNext} title="الصفحة التالية" aria-label="الصفحة التالية"
       disabled={!teacherCanTurn||page>=604} onClick={()=>void changeSharedPage(page+1)}>›</button>
     </div>
     <footer className={css.quranFooter}>
-     <span>الصفحة {page} من ٦٠٤ · الصفحة مشتركة ومعتمدة من السيرفر؛ تحديد الآيات محلي</span>
-     {selectedVerse&&<span>الآية المختارة محليًا: {selectedVerse.surah}:{selectedVerse.ayah}</span>}
+     <span>الصفحة {page} من ٦٠٤ · الصفحة وتحديد الآية مشتركان ومعتمدان من السيرفر</span>
+     {selectedVerse&&<span>الآية المختارة عند الطرفين: {selectedVerse.surah}:{selectedVerse.ayah}</span>}
     </footer>
    </main>
    <div className={css.panelSlot} id="lesson-notes" data-open={panelOpen?'true':'false'}>
