@@ -3,6 +3,7 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {Room} from 'livekit-client';
 import {JoinError,requestMediaTicket,type RoomIdentity} from './media-credentials';
+import {setDeviceWithEpochGuard} from './media-device-safety';
 
 type Phase='idle'|'connecting'|'connected'|'reconnecting'|'failed';
 function mediaMessage(error:unknown):string {
@@ -123,22 +124,36 @@ export function LiveLessonMedia({identity,active,compact=false}:{
  },[active,busy,identity]);
 
  const toggleMic=useCallback(async()=>{
-   if(!room.current||phase!=='connected'||busy)return;
+   const media=room.current;
+   if(!media||phase!=='connected'||busy)return;
+   const current=epoch.current;
+   const next=!mic;
    setBusy(true);setMessage('');
    try{
-     await room.current.localParticipant.setMicrophoneEnabled(!mic);
-     setMic(!mic);
-   }catch(error){setMessage(mediaMessage(error));}
-   finally{setBusy(false);}
+     const result=await setDeviceWithEpochGuard(next,
+       enabled=>media.localParticipant.setMicrophoneEnabled(enabled),
+       ()=>current===epoch.current&&room.current===media);
+     if(result.current)setMic(next);
+   }catch(error){
+     if(current===epoch.current&&room.current===media)setMessage(mediaMessage(error));
+   }finally{
+     if(current===epoch.current&&room.current===media)setBusy(false);
+   }
  },[mic,phase,busy]);
  const toggleCamera=useCallback(async()=>{
-   if(!room.current||phase!=='connected'||busy)return;
+   const media=room.current;
+   if(!media||phase!=='connected'||busy)return;
+   const current=epoch.current;
+   const next=!camera;
    setBusy(true);setMessage('');
    try{
-     const next=!camera;
-     const publication=await room.current.localParticipant.setCameraEnabled(next);
+     const result=await setDeviceWithEpochGuard(next,
+       enabled=>media.localParticipant.setCameraEnabled(enabled),
+       ()=>current===epoch.current&&room.current===media,
+       publication=>publication?.videoTrack?.stop());
+     if(!result.current)return;
      if(next){
-       const preview=publication?.videoTrack?.attach();
+       const preview=result.value?.videoTrack?.attach();
        if(preview){
          preview.muted=true;
          preview.autoplay=true;
@@ -149,8 +164,11 @@ export function LiveLessonMedia({identity,active,compact=false}:{
        }
      }else localVideo.current?.replaceChildren();
      setCamera(next);
-   }catch(error){setMessage(mediaMessage(error));}
-   finally{setBusy(false);}
+   }catch(error){
+     if(current===epoch.current&&room.current===media)setMessage(mediaMessage(error));
+   }finally{
+     if(current===epoch.current&&room.current===media)setBusy(false);
+   }
  },[camera,phase,busy]);
  const muteLearner=useCallback(async()=>{
    if(identity.role!=='teacher'||phase!=='connected'||busy)return;
