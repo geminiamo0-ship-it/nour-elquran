@@ -1,3 +1,7 @@
+## CR-01 (#196) waiting-room candidate gates
+- Node reducer tests: signed role-only actions, explicit join, independent teacher/learner leases, wrong actor 409, heartbeat without join 404, disconnect expiry, leave/rejoin, no Start/End and durable reconstruction; missing DO binding always 503. Exact-head GitHub Verify and API/Web/Worker TypeScript & build; optional local DO native smoke only when DO migration/binding supported.
+- **Dev acceptance pending:** isolate a new real Cloudflare DO binding on the Noor Dev Worker only, verify signed two-account synthetic join/heartbeat/leave/revocation and expiry, then a single targeted mobile RTL waiting-room QA. No production, no Chrome on every PR and no real minors/video.
+
 ## Phase 08B1 #192 sealed lesson Quran archive (source not yet staged)
 - SQLite migration 0015 and Python tests check real END+published report authorization, fixed edition and FK-backed Quran ayah anchors, bounded page/mark/coordinates, archive cannot be modified after one-way seal, prior report revision hidden when newer report published.
 - Strict browser client tests reject tampered canonical edition/anchor/page/ink and version mismatch; React uses read-only shared Quran renderer. Fast exact-head Verify + future isolated signed Dev GET owner/foreign/anonymous with synthetic D1 manifest only. No default Chrome, media assets, PDF, payment, live Classroom or real child records.
