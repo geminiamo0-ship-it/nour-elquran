@@ -20,6 +20,7 @@ import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '.
 import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts';
 import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '../classroom-access.ts';
 import {forwardVerifiedPresence,parseClientPresenceAction} from '../classroom/presence.ts';
+import {forwardVerifiedPage,parsePageAction} from '../classroom/quran-sync.ts';
 import {createMediaToken,mediaLessonWindow} from '../classroom/livekit-token.ts';
 import {checkLiveKitProvider} from '../classroom/livekit-provider-check.ts';
 import {wakeActingTeacherMedia,wakeLessonMediaReconciliation} from '../classroom/media-enforcement.ts';
@@ -244,6 +245,16 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
     const outcome=await createMediaToken(env,{lessonId,learnerId,
       actorSubject:authSubject,role:'learner'},access);
     const {status,...safe}=outcome;return reply(status,safe,requestId);
+  }
+  const learnerQuran=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/quran-page$/.exec(path);
+  if(learnerQuran){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const learnerId=learnerQuran[1]!,lessonId=learnerQuran[2]!;
+    const access=await checkOwnedLearnerClassroomAccess(db,accountId,learnerId,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    const outcome=await forwardVerifiedPage(env,{lessonId,learnerId,
+      actorSubject:authSubject,role:'learner'},{action:'snapshot'});
+    const {status,...body}=outcome;return reply(status,body,requestId);
   }
   const learnerPresence=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/(presence|presence-actions)$/.exec(path);
   if(learnerPresence){
@@ -485,6 +496,20 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     const outcome=await createMediaToken(env,{lessonId,learnerId:access.learnerId,
       actorSubject:session.user.id,role:'teacher'},access);
     const {status,...safe}=outcome;return reply(status,safe,requestId);
+  }
+  const teacherQuran=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/quran-page$/.exec(path);
+  if(teacherQuran){
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const lessonId=teacherQuran[1]!;
+    const access=await checkTeacherClassroomAccess(env.DB,session.user.id,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    const action=request.method==='GET'?{action:'snapshot' as const}:
+      parsePageAction(await readObject(request),'teacher');
+    if(!action)return reply(400,{code:'INVALID_QURAN_PAGE_COMMAND'},requestId);
+    const outcome=await forwardVerifiedPage(env,{lessonId,learnerId:access.learnerId,
+      actorSubject:session.user.id,role:'teacher'},action);
+    const {status,...body}=outcome;return reply(status,body,requestId);
   }
   const teacherPresence=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/(presence|presence-actions)$/.exec(path);
   if(teacherPresence){

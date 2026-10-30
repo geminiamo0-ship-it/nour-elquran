@@ -7,6 +7,7 @@ import type {Env} from '../bindings.ts';
 import {checkTeacherClassroomAccess,checkOwnedLearnerClassroomAccess} from '../classroom-access.ts';
 import {mediaLessonWindow} from './livekit-token.ts';
 import {evictVerifiedLiveKitActor} from './livekit-admin.ts';
+import {parseVerifiedPageCommand,initialPage,applyPageSet,safePage,type SharedPageRecord} from './quran-page.ts';
 
 export type RoomAction='join'|'heartbeat'|'leave'|'snapshot'|'media-intent';
 export type VerifiedRoomCommand=Readonly<{
@@ -247,6 +248,34 @@ export class LessonRoom {
     return Response.json({code:'ROOM_RECONCILE_QUEUED'},
       {headers:{'cache-control':'no-store'}});
    }catch{return Response.json({code:'ROOM_RECONCILE_UNAVAILABLE'},{status:503});}
+  }
+  if(path==='/internal/quran-page'){
+   if(request.method!=='POST')return Response.json({code:'NOT_FOUND'},{status:404});
+   let raw:unknown;
+   try{raw=await request.json();}catch{return Response.json({code:'INVALID_QURAN_PAGE_COMMAND'},{status:400});}
+   const cmd=parseVerifiedPageCommand(raw);
+   if(!cmd)return Response.json({code:'INVALID_QURAN_PAGE_COMMAND'},{status:400});
+   const now=Date.now();
+   try{
+    return await this.ctx.storage.transaction(async txn=>{
+     const room=await txn.get<RoomRecord>('room');
+     if(!room||room.lessonId!==cmd.lessonId)return Response.json({code:'NOT_JOINED'},{status:404});
+     const lease=room[cmd.role];
+     if(!lease||lease.expiresAtMs<=now||lease.subject!==cmd.actorSubject||
+       lease.learnerId!==cmd.learnerId)
+      return Response.json({code:'NOT_JOINED'},{status:404});
+     const page=await txn.get<SharedPageRecord>('quranPage')??initialPage();
+     if(cmd.action==='snapshot')
+      return Response.json({code:'QURAN_PAGE_SNAPSHOT',quran:safePage(page)},
+       {headers:{'cache-control':'no-store'}});
+     const applied=applyPageSet(page,cmd);
+     if(applied.code==='QURAN_PAGE_SET')await txn.put('quranPage',applied.next);
+     return Response.json({code:applied.code,quran:safePage(applied.next)},{
+      status:applied.code==='QURAN_PAGE_CONFLICT'?409:200,
+      headers:{'cache-control':'no-store'}
+     });
+    });
+   }catch{return Response.json({code:'CLASSROOM_QURAN_UNAVAILABLE'},{status:503});}
   }
   if(path!=='/internal/room-presence'||request.method!=='POST')
    return Response.json({code:'NOT_FOUND'},{status:404});
