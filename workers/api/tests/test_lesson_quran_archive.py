@@ -9,7 +9,7 @@ class LessonQuranArchive(unittest.TestCase):
   self.db.execute("PRAGMA foreign_keys=ON")
   for name in ("0001_core.sql","0003_teacher_schedule.sql",
                "0004_classroom_lifecycle.sql","0013_lesson_reports.sql",
-               "0015_lesson_quran_archive.sql"):
+               "0015_lesson_quran_archive.sql","0016_lesson_archive_required_fields.sql"):
    self.db.executescript((ROOT/name).read_text())
   db=self.db
   db.execute("INSERT INTO accounts(id,auth_subject,created_at_ms) VALUES('home','owner',0)")
@@ -96,6 +96,10 @@ class LessonQuranArchive(unittest.TestCase):
   with self.assertRaisesRegex(sqlite3.IntegrityError,"ARCHIVE_BAD_POINT"):
    self.mark(4,"marker",None,None,1,
     {"color":"#123456","width":12,"points":[{"x":1,"y":2},{"x":1100,"y":2}]})
+  with self.assertRaisesRegex(sqlite3.IntegrityError,"ARCHIVE_MARK_REQUIRED_FIELD_MISSING"):
+   self.mark(15,body={"text":"Missing color"})
+  with self.assertRaisesRegex(sqlite3.IntegrityError,"ARCHIVE_MARK_REQUIRED_FIELD_MISSING"):
+   self.mark(16,"pen",None,None,1,{"color":"#000000","points":[{"x":1,"y":2},{"x":3,"y":4}]})
   self.mark(5)
   self.seal()
   self.assertEqual(self.db.execute("SELECT COUNT(*) FROM lesson_quran_archive_marks").fetchone(),(1,))
