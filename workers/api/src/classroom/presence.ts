@@ -31,7 +31,7 @@ export async function forwardVerifiedPresence(env:Env,verified:Readonly<{
    return {status:503,code:'CLASSROOM_ROOM_UNAVAILABLE'};
   const data=payload as Record<string,unknown>;
   if(!res.ok){
-   const allowed=['NOT_JOINED','ROOM_ID_MISMATCH','ROOM_ACTOR_CONFLICT'];
+   const allowed=['NOT_JOINED','ROOM_ID_MISMATCH','ROOM_ACTOR_CONFLICT','ROOM_EVICTION_PENDING'];
    if((res.status===404||res.status===409)&&allowed.includes(String(data.code)))
     return {status:res.status as 404|409,code:data.code as string};
    return {status:503,code:'CLASSROOM_ROOM_UNAVAILABLE'};
