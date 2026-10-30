@@ -198,14 +198,14 @@ export function LiveLessonMedia({identity,active,compact=false}:{
        <h2 style={{margin:0,fontSize:compact?'0.78rem':'1.2rem'}}>{compact?'الصوت والفيديو':'الصوت والفيديو — LiveKit Cloud'}</h2>
        <p style={{margin:compact?'1px 0 0':'4px 0 0',fontSize:compact?10:13}}>
          {phase==='connecting'?'جارٍ الاتصال الآمن…':
-          phase==='connected'?(compact?'متصل · الأجهزة بقرارك':'متصل بالصوت والفيديو، والأجهزة مغلقة حتى تختار تشغيلها.'):
+          phase==='connected'?(compact?'متصل بالصوت والفيديو':'متصل بالصوت والفيديو، والأجهزة مغلقة حتى تختار تشغيلها.'):
           phase==='reconnecting'?'الإنترنت غير مستقر؛ جارٍ استعادة الاتصال…':
           phase==='failed'?'الاتصال غير متاح حاليًا.':
           (compact?'الأجهزة مغلقة افتراضيًا':'لا يتم تشغيل أي كاميرا أو ميكروفون تلقائيًا.')}
        </p>
      </div>
      {phase==='connected'||phase==='reconnecting'?
-       <button type="button" style={compact?{fontSize:10,padding:'3px 5px'}:undefined} onClick={stop}>{compact?'قطع الوسائط':'إنهاء اتصال الصوت والفيديو'}</button>:
+       <button type="button" style={compact?{fontSize:10,padding:'3px 5px'}:undefined} onClick={stop}>إنهاء اتصال الصوت والفيديو</button>:
        <button type="button" style={compact?{fontSize:10,padding:'3px 5px'}:undefined} disabled={!active||busy} onClick={()=>void connect()}>
          {busy?'جارٍ الاتصال…':'دخول الصوت والفيديو'}
        </button>}
