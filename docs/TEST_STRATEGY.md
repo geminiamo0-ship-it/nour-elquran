@@ -1,3 +1,6 @@
+## CR-02B2 #206 post-list mute lease race (candidate)
+- Fast `workers/api/tests/livekit-mute.test.ts`: after ListParticipants, revoked teacher's own LessonDO heartbeat must stop MutePublishedTrack; advancing beyond the scheduled lesson window must likewise stop it (live-status cutoff is separately pending in PR #202). Existing HMAC, microphone-only, signed-role, missing-secret and D1 regression tests remain required. Verify exact PR head and review; no actual LiveKit Cloud ACK/two-device media is proven by Node mocks.
+
 ## CR-02B2 signed mute no-secret Dev PASS (2026-10-30)
 - Noor exact main Verify #41002079116 PASS 4/4, Santoreno real no-secret Dev #41002323938 PASS: Sheikh signed mute 503 with no provider secret, forged unmute/SID 400, learner 404, anon 401, GET 405; CR-01, CR-02A, 07A, 08A, 08B1 regressions PASS. No actual provider ListParticipants, MutePublishedTrack, RemoveParticipant, guardian consent or 2-device media. Provider ACK/ejection and real lesson End still outstanding #206.
 

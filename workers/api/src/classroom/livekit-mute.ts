@@ -33,7 +33,8 @@ export function microphoneSids(body:unknown,expectedIdentity:string):string[]|nu
  return sids;
 }
 export async function muteSignedLearnerMicrophone(env:Env,teacherSubject:string,lessonId:string,
- now=Date.now(),transport:typeof fetch=fetch):Promise<MuteResult>{
+ now=Date.now(),transport:typeof fetch=fetch,
+ clock:()=>number=Date.now):Promise<MuteResult>{
  if(!env.DB)return {status:503,code:'DATABASE_UNAVAILABLE'};
  const access=await checkTeacherClassroomAccess(env.DB,teacherSubject,lessonId,now);
  if(!access||!mediaLessonWindow(access,now))
@@ -69,10 +70,19 @@ export async function muteSignedLearnerMicrophone(env:Env,teacherSubject:string,
   const sids=microphoneSids(payload,identity);
   if(sids===null)return {status:503,code:'LIVEKIT_ROOM_UNAVAILABLE'};
   if(!sids.length)return {status:200,code:'NO_LEARNER_MICROPHONE',mutedTracks:0};
-  // Prevent a race where acting Sheikh loses access between listing tracks
-  // and muting. Provider confirmation still required for success.
-  const stillAllowed=await checkTeacherClassroomAccess(env.DB,teacherSubject,lessonId,Date.now());
-  if(!stillAllowed)return {status:404,code:'NOT_FOUND'};
+  // ListParticipants is a network roundtrip: revalidate BOTH the D1 role,
+  // lesson time window and the teacher's own live DO lease before muting.
+  // A former Sheikh must not retain moderation power via an old HTTP request.
+  const checkedAt=clock();
+  const stillAllowed=await checkTeacherClassroomAccess(env.DB,teacherSubject,lessonId,checkedAt);
+  if(!stillAllowed||stillAllowed.learnerId!==access.learnerId||
+    !mediaLessonWindow(stillAllowed,checkedAt))
+   return {status:404,code:'NOT_FOUND'};
+  const stillPresent=await forwardVerifiedPresence(env,{
+   role:'teacher',actorSubject:teacherSubject,lessonId,learnerId:access.learnerId,
+  },'heartbeat');
+  if(stillPresent.status!==200)
+   return {status:stillPresent.status,code:stillPresent.code};
   let muted=0;
   for(const sid of sids){
    const res=await transport(liveKitRoomServiceURL(config,'MutePublishedTrack'),{
