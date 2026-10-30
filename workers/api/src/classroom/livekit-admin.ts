@@ -56,8 +56,8 @@ export async function evictVerifiedLiveKitActor(env:Env,actor:VerifiedMediaActor
   // A proxy can return HTTP 200 with an HTML/error body without LiveKit
   // acknowledging the revoke. Never drain the durable outbox on status alone.
   // Twirp's successful JSON response is an object (normally {}).
-  if(!res.ok||!/^application\\/json(?:\\s*;|$)/i.test(
-    res.headers.get('content-type')??''))return 'retry';
+  if(!res.ok||res.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase()!=='application/json')
+   return 'retry';
   const acknowledgement:unknown=await res.json();
   if(!acknowledgement||typeof acknowledgement!=='object'||
     Array.isArray(acknowledgement)||Object.hasOwn(acknowledgement,'error')||
