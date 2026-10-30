@@ -104,9 +104,10 @@ export async function createMediaToken(env:Env,actor:VerifiedMediaActor,
   return {status:404,code:'MEDIA_LESSON_UNAVAILABLE'};
  const config=validatedLiveKitConfig(env);
  if(!config)return {status:503,code:'LIVEKIT_NOT_CONFIGURED'};
- // A GET snapshot of the room is NOT sufficient: it could show a different
- // actor's lease. Only a server-validated heartbeat proves this exact actor.
- const presence=await forwardVerifiedPresence(env,actor,'heartbeat');
+ // A GET snapshot of the room is NOT sufficient: the participant-specific
+ // DO media-intent BOTH proves the lease and durably activates revocation
+ // alarms before any signed LiveKit credential is minted.
+ const presence=await forwardVerifiedPresence(env,actor,'media-intent');
  if(presence.status!==200)
   return {status:presence.status,code:presence.code};
  if(actor.role==='teacher'&&!presence.presence.teacherPresent||
