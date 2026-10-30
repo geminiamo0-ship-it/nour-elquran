@@ -46,7 +46,8 @@ test('production, learner and missing secrets never contact provider',async()=>{
   assert.equal((await checkLiveKitProvider(bad,actor,Date.now(),mock)).status,503);
  }
  assert.equal((await checkLiveKitProvider(env,{...actor,role:'learner'},Date.now(),mock)).status,503);
- assert.deepEqual(await checkLiveKitProvider({...env,LIVEKIT_API_SECRET:undefined},actor,Date.now(),mock),
+ const missing:Env={...env};delete missing.LIVEKIT_API_SECRET;
+ assert.deepEqual(await checkLiveKitProvider(missing,actor,Date.now(),mock),
   {status:503,code:'LIVEKIT_NOT_CONFIGURED'});
  assert.equal(count,0);
 });
