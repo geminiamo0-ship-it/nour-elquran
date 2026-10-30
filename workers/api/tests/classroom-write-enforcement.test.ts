@@ -10,7 +10,7 @@ function storage(){
   async get<T>(key:string){return data.get(key) as T|undefined;},
   async put<T>(key:string,value:T){data.set(key,value);},
   async transaction<T>(fn:(txn:Pick<LessonRoomStorage,'get'|'put'>)=>Promise<T>){return fn(s);},
-  async setAlarm(_time:number){},
+  async setAlarm(time:number){void time;},
  };
  return s;
 }
