@@ -29,7 +29,7 @@ describe('LiveKit device permission race safety',()=>{
     expect(trackEnabled).toBe(false);
   });
   it('re-disables a late microphone enable and tolerates disconnected old room',async()=>{
-    let current=false;
+    const current=false;
     const apply=vi.fn(async(enabled:boolean)=>{
       if(!enabled)throw new Error('room already disconnected');
       return undefined;
