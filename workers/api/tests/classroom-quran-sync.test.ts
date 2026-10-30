@@ -44,7 +44,7 @@ test('public page input cannot forge role, lesson, learner or implicit operation
 test('canonical edition, revision fencing, bounded replay and different-id conflict',()=>{
  let s=initialPage();
  assert.deepEqual(s,{edition:'hafs-kfqc-v1.1.1',page:1,revision:0,receipts:[]});
- let a=applyPageSet(s,request('set'));
+ const a=applyPageSet(s,request('set'));
  assert.equal(a.code,'QURAN_PAGE_SET');
  assert.equal(a.next.page,35);assert.equal(a.next.revision,1);
  assert.equal(applyPageSet(a.next,request('set')).code,'QURAN_PAGE_REPLAY');
