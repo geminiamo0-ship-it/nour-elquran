@@ -92,7 +92,14 @@ function resolveSource(importer, specifier, sourceRoot = srcRoot) {
       ? path.resolve(path.dirname(importer), specifier)
       : null;
   if (!base) return null;
-  for (const candidate of [base, base + '.ts', base + '.tsx', path.join(base, 'index.ts'), path.join(base, 'index.tsx')]) {
+  // NodeNext-style relative .js/.jsx specifiers may resolve to TS/TSX source.
+  // Check those sources too, otherwise a relative import can bypass boundaries.
+  const jsSource = base.endsWith('.js')
+    ? [base.slice(0, -3) + '.ts', base.slice(0, -3) + '.tsx']
+    : base.endsWith('.jsx')
+      ? [base.slice(0, -4) + '.tsx']
+      : [];
+  for (const candidate of [...jsSource, base, base + '.ts', base + '.tsx', path.join(base, 'index.ts'), path.join(base, 'index.tsx')]) {
     if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return candidate;
   }
   return null;
@@ -106,7 +113,24 @@ export function importSpecifiers(source) {
       && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
       requests.push(node.moduleSpecifier.text);
     }
-    if (ts.isCallExpression(node) && node.arguments.length === 1
+    // TypeScript's legacy import Foo = require('module') is an import, not a CallExpression.
+    // It must obey the same feature/route boundaries as static and lazy imports.
+    if (ts.isImportEqualsDeclaration(node)
+      && ts.isExternalModuleReference(node.moduleReference)
+      && node.moduleReference.expression
+      && ts.isStringLiteralLike(node.moduleReference.expression)) {
+      requests.push(node.moduleReference.expression.text);
+    }
+    // TypeScript's type-only import('module').Type and typeof import('module')
+    // are ImportTypeNodes, not dynamic import calls. They still create dependencies.
+    if (ts.isImportTypeNode(node)
+      && ts.isLiteralTypeNode(node.argument)
+      && ts.isStringLiteralLike(node.argument.literal)) {
+      requests.push(node.argument.literal.text);
+    }
+    // Dynamic import() can include a second import-attributes/options argument.
+    // Only inspecting one-argument calls would let those dependencies evade the graph.
+    if (ts.isCallExpression(node) && node.arguments.length >= 1
       && ts.isStringLiteralLike(node.arguments[0])
       && (node.expression.kind === ts.SyntaxKind.ImportKeyword
         || (ts.isIdentifier(node.expression) && node.expression.text === 'require'))) {
@@ -138,6 +162,18 @@ export function inspectArchitecture(sourceRoot = srcRoot) {
         }
         edges.add(target);
       }
+    }
+    // Triple-slash <reference path="..."> directives create TypeScript dependencies
+    // without ImportDeclaration/ImportTypeNode AST nodes.
+    for (const reference of source.referencedFiles) {
+      const request = reference.fileName.startsWith('.') ? reference.fileName : './' + reference.fileName;
+      const target = resolveSource(file, request, sourceRoot);
+      if (!target) continue;
+      const targetRelative = path.relative(sourceRoot, target).replaceAll('\\', '/');
+      if (targetRelative.startsWith('../') || path.isAbsolute(targetRelative)) continue;
+      const error = resolvedBoundaryError(relativeFile, targetRelative);
+      if (error) errors.push(relativeFile + ': ' + error + ' (reference path: ' + reference.fileName + ')');
+      edges.add(target);
     }
     graph.set(file, [...edges]);
   }

@@ -1,3 +1,6 @@
+## #57 TypeScript triple-slash reference-path source regression (2026-10-31)
+- `tests/architecture.test.mjs` creates synthetic TS files with `/// <reference path="..."/>`: forbidden cross-feature private, route private and shared-to-feature, an A↔B cycle, and an allowed route-to-public-index reference. Verify via Node governance tests and exact-head GitHub Actions. This is a static guard, not browser or runtime authorization evidence.
+
 ## Final signed Classroom synthetic Staging E2E PASS — 2026-10-31 / #240
 Classroom Dev accepted in the single synthetic run: https://github.com/geminiamo0-ship-it/santoreno/actions/runs/41140055151
 App commit: 57c59518a544672fa4c213d81b0e49208f5b2b70; test harness: 5875cc18344cc8871102499945ad8dd2cc3fc0f5.
@@ -22,6 +25,18 @@ The test checks role isolation 401/404/409, Quran page and exact Ayah, WebRTC, c
 - Mute/release: GitHub Verify https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41132499065 SUCCESS 4/4. Covers signed DO moderator state, idempotency, wrong role/expired lease and mocked provider confirmation; no real mic permission test.
 - Surah/Ayah navigation: GitHub Verify https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41134677808 SUCCESS 4/4 before docs updates. Exact publisher verse polygons, signed server verse-page proof, student read-only shared state, stale receipt/authorization checks, frontend unit and local D1.
 - Still required: Dev two-account test selecting Al-Baqarah 2:255/page 42, highlight in both browsers and on reload, mobile 360/390 narrow layout, teacher mute/release and learner opt-in reactivation including permission failure and reconnect. Neither main nor Production changed by draft PRs.
+
+## #57 architecture scanner regression — dynamic import options (2026-10-31)
+- Synthetic Node test in `tests/architecture.test.mjs` checks `import('path', { with: { type: 'json' } })` edges: deny cross-feature private, route private and shared-to-feature; allow app-to-feature public index; detect A↔B cycle when one edge has import options. `scripts/check-architecture.mjs` no longer assumes one argument. Exact-head Verify still required; no full Chrome/browser run needed for source-only checker change.
+
+## #57 — relative .js/.jsx specifier boundary coverage (2026-10-30)
+- Synthetic `tests/architecture.test.mjs` fixture uses NodeNext-style relative `.js` import paths targeting `.ts` source and `.jsx` targeting `.tsx` source. Forbidden cross-feature private, app private and shared/UI imports must fail; app import through feature `index.js` must remain allowed. No full Chrome suite for this AST-only gate; exact-head Verify required.
+
+## #57 — AST type-only dependency boundary regression (2026-10-30)
+- `tests/architecture.test.mjs` must fail on `import('feature/private').Type` in cross-feature/route code and on `typeof import('feature')` from shared/UI; allow type imports through a feature public index. The same `inspectArchitecture` graph runs in repository Verify. This is fast Node static testing, not Chrome or Dev media acceptance.
+
+## #57 import-equals architecture boundary regression (2026-10-30; source candidate)
+- `tests/architecture.test.mjs` adds a synthetic AST fixture for `import Foo = require('...')` from both `features/student` into private `features/teacher` internals and an `app` route via relative path. `scripts/check-architecture.mjs` must reject both in `pnpm test` and `pnpm lint` checks. This test does not exercise runtime media, auth, browser or Cloudflare services; exact-head CI required before accepting.
 
 ## CR-02B2 signed mute no-secret Dev PASS (2026-10-30)
 - Noor exact main Verify #41002079116 PASS 4/4, Santoreno real no-secret Dev #41002323938 PASS: Sheikh signed mute 503 with no provider secret, forged unmute/SID 400, learner 404, anon 401, GET 405; CR-01, CR-02A, 07A, 08A, 08B1 regressions PASS. No actual provider ListParticipants, MutePublishedTrack, RemoveParticipant, guardian consent or 2-device media. Provider ACK/ejection and real lesson End still outstanding #206.

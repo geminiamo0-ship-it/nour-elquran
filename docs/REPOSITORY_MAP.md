@@ -23,6 +23,12 @@ Relevant source: workers/api/src/classroom/quran-sync.ts, lesson-room.ts, lesson
 - workers/api/src/classroom/quran-page.ts, quran-sync.ts: optional versioned verse selection, idempotent receipts and verified publisher page metadata; existing LessonDO room transactions persist selection. Tests: workers/api/tests/classroom-quran-sync.test.ts and apps/web/src/features/classroom/quran-verse-navigation.test.ts.
 - PR #233 predecessor: workers/api/src/classroom/mic-policy.ts, lesson-room.ts, livekit-mute.ts, auth/routes.ts, apps/web/src/features/classroom/LiveLessonMedia.tsx and LiveClassroom.module.css provide Sheikh mute/release with voluntary learner re-enable. Source only, not real 2-device provider acceptance.
 
+## #57 — type-only import boundary gate
+- `scripts/check-architecture.mjs` includes TypeScript `ImportTypeNode` dependency specifiers in the existing import/cycle graph; `tests/architecture.test.mjs` adds synthetic type-only cross-feature, route, shared/UI and public-index regression fixtures. [Draft PR #230](https://github.com/geminiamo0-ship-it/nour-elquran/pull/230). No runtime changes.
+
+## #57 AST import-equals boundary check (2026-10-30; source candidate)
+- `scripts/check-architecture.mjs` recognizes TS `ImportEqualsDeclaration` (`import Foo = require('...')`) in addition to ordinary imports, exports, lazy imports and `require()` calls. `tests/architecture.test.mjs` checks deep feature and route bypasses. No new package or runtime dependency; current Next.js/static frontend unchanged. Exact-head Verify pending.
+
 ## CR-02B2 write-time wake and mute real Dev evidence
 - `docs/CLASSROOM_CR02B2_WRITE_MUTE_DEV_ACCEPTANCE.md` anchors Noor main Verify #41002079116, Santoreno Cloudflare no-secret Dev #41002323938. Mute track selection is server-only; actual LiveKit Cloud provider unconfigured/untested, #206 stays open.
 
