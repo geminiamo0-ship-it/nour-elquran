@@ -46,3 +46,15 @@ export async function resumeRemoteAudioIfCurrent(
   }
   return isCurrent();
 }
+
+/** A LiveKit event belongs to the active Room AND its original generation.
+ * A disconnected Room can emit queued events after a new Room is assigned.
+ */
+export function createRoomGenerationGuard<TRoom>(
+  expectedRoom: TRoom,
+  expectedGeneration: number,
+  readRoom: () => TRoom | null,
+  readGeneration: () => number,
+): () => boolean {
+  return () => readRoom() === expectedRoom && readGeneration() === expectedGeneration;
+}
