@@ -235,7 +235,7 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
   // Public commands contain ONLY {action}; all actor fields come from auth + D1.
   // CR-02A token request: no browser-provided identity, role, room, grant,
   // scope or arbitrary room/admin settings. Same-origin POST only.
-  const learnerMicPolicy=/^\\/v1\\/me\\/learners\\/([a-zA-Z0-9-]{1,128})\\/lessons\\/([a-zA-Z0-9-]{1,128})\\/microphone-policy$/.exec(path);
+  const learnerMicPolicy=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/microphone-policy$/.exec(path);
   if(learnerMicPolicy){
     if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
     const learnerId=learnerMicPolicy[1]!,lessonId=learnerMicPolicy[2]!;
@@ -478,7 +478,7 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // Every token requires new Better Auth+D1+LessonDO active lease checks.
   // Authorized Sheikh-only mute. The request cannot assert track SID, room,
   // learner identity, or muted:false; LiveKit RoomService lists exact tracks.
-  const teacherMicPolicy=/^\\/v1\\/teacher\\/lessons\\/([a-zA-Z0-9-]{1,128})\\/microphone-policy$/.exec(path);
+  const teacherMicPolicy=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/microphone-policy$/.exec(path);
   if(teacherMicPolicy){
     if(request.method!=='GET'&&request.method!=='POST')
       return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
