@@ -37,7 +37,7 @@ export function ClassroomSessionHeader({model,focusMode,onToggleFocus,panelOpen,
     <div className={css.identity}>
       <Link href="/teacher" className={css.back} aria-label="العودة إلى بوابة الشيخ">‹</Link>
       <h1>الفصل التفاعلي</h1>
-      <span className={css.previewLabel} title="معاينة محلية بلا اتصال أو بيانات طلاب">تجريبي</span>
+      <span className={css.previewLabel} title="معاينة محلية بلا اتصال أو بيانات طلاب">معاينة الفصل التفاعلي فقط</span>
     </div>
     <div className={css.sessionInfo}>
       <span className={css.phase} data-phase={room.phase}>
