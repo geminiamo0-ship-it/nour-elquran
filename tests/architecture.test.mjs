@@ -226,29 +226,29 @@ test('triple-slash path references enforce feature, route and shared boundaries 
     write('features/teacher/internal/Secret.ts', 'export const secret = true;');
     write('features/teacher/index.ts', "export { secret } from './internal/Secret';");
     write('features/student/Deep.ts',
-      '/// <reference path="../teacher/internal/Secret.ts" />\\nexport const deep = true;');
+      '/// <reference path="../teacher/internal/Secret.ts" />\nexport const deep = true;');
     write('app/Deep.ts',
-      '/// <reference path="../features/teacher/internal/Secret.ts" />\\nexport const deep = true;');
+      '/// <reference path="../features/teacher/internal/Secret.ts" />\nexport const deep = true;');
     write('shared/ui/Leak.ts',
-      '/// <reference path="../../features/teacher/index.ts" />\\nexport const leak = true;');
+      '/// <reference path="../../features/teacher/index.ts" />\nexport const leak = true;');
     write('app/Public.ts',
-      '/// <reference path="../features/teacher/index.ts" />\\nexport const valid = true;');
+      '/// <reference path="../features/teacher/index.ts" />\nexport const valid = true;');
     write('features/student/A.ts',
-      '/// <reference path="./B.ts" />\\nexport const a = true;');
+      '/// <reference path="./B.ts" />\nexport const a = true;');
     write('features/student/B.ts',
-      '/// <reference path="./A.ts" />\\nexport const b = true;');
+      '/// <reference path="./A.ts" />\nexport const b = true;');
 
     const errors = inspectArchitecture(root);
     assert.ok(errors.some(error => error.includes('features/student/Deep.ts')
-      && error.includes('Cross-feature')), errors.join('\\n'));
+      && error.includes('Cross-feature')), errors.join('\n'));
     assert.ok(errors.some(error => error.includes('app/Deep.ts')
-      && error.includes('public index')), errors.join('\\n'));
+      && error.includes('public index')), errors.join('\n'));
     assert.ok(errors.some(error => error.includes('shared/ui/Leak.ts')
-      && error.includes('Shared modules')), errors.join('\\n'));
+      && error.includes('Shared modules')), errors.join('\n'));
     assert.ok(errors.some(error => error.includes('Circular dependency:')
       && error.includes('features/student/A.ts')
-      && error.includes('features/student/B.ts')), errors.join('\\n'));
-    assert.ok(errors.every(error => !error.includes('app/Public.ts')), errors.join('\\n'));
+      && error.includes('features/student/B.ts')), errors.join('\n'));
+    assert.ok(errors.every(error => !error.includes('app/Public.ts')), errors.join('\n'));
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
