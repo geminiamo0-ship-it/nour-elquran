@@ -2,6 +2,7 @@
 import { useState, type FormEvent } from 'react';
 import { useStudent } from '../StudentContext';
 import styles from '../StudentPortal.module.css';
+import {ConnectedNotebookWorkspace} from './ConnectedNotebookWorkspace';
 
 export function NotebookWorkspace() {
   const { selected, notes, addNote, removeNote } = useStudent();
@@ -18,6 +19,7 @@ export function NotebookWorkspace() {
     setDraft('');
     setError('');
   }
+  if(!selected.profile.demo)return <ConnectedNotebookWorkspace learnerId={selected.profile.id}/>;
   return <div className={styles.workspace}>
     <section className={styles.panel}>
       <div className={styles.panelHead}><div><p className={styles.eyebrow}>ذاكرة الحصة</p><h2>دفتر الطالب الخاص</h2></div></div>
