@@ -1,3 +1,28 @@
+## Final Classroom runtime evidence — #240
+Classroom Dev accepted in the single synthetic run: https://github.com/geminiamo0-ship-it/santoreno/actions/runs/41140055151
+App commit: 57c59518a544672fa4c213d81b0e49208f5b2b70; test harness: 5875cc18344cc8871102499945ad8dd2cc3fc0f5.
+Verified real signed dual-browser synthetic LiveKit, teacher mic mute/release and learner opt-in, Quran page+ayah sync, ink/eraser and reconnect, mobile screenshots, signed Start/End D1 audit, private correction to report draft, explicit publish and the same approved report after teacher revocation.
+6236 pinned Hafs anchors verified. Automated isolated Dev PASS, not human visual acceptance or Production certification; no production data/media was modified.
+Tracked feature Issues #231 #232 #235 #236 remain open until owner personal visual QA. Browser screenshots are in noor-profile-remote-browser artifact of the final staging run.
+Earlier blockers were fixed by Noor PR #239 (canonical D1 lookup instead of HTTP 503) and Santoreno PR #296 (report revision 2->3: compare exact approved snapshot).
+Relevant source: workers/api/src/classroom/quran-sync.ts, lesson-room.ts, lesson-lifecycle-write.ts, live-corrections.ts; apps/web/src/features/classroom/ConnectedWaitingRoom.tsx, LiveLessonLifecycle.tsx, LiveLessonMedia.tsx, QuranVersePicker.tsx, ConnectedClassroomNotes.tsx. QA harness in geminiamo0-ship-it/santoreno scripts/noor_private_staging.py, noor_classroom_staging.py and noor_staging_livekit_browser.mjs.
+
+## Dev Quran shared verse 503 remediation — #238 (2026-10-31)
+- Single combined staging run [Santoreno #41137769340](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/41137769340) successfully deployed Noor main and passed real two-browser LiveKit synthetic A/V, Sheikh mute/release+student opt-in, shared Quran pagination/ink/eraser, phone viewports and reconnect. Failed *after* those at first signed POST Quran selected Ayah (HTTP 503). Do NOT claim completed lifecycle/report yet.
+- Fix candidate #238 changes server-side verse-to-page proof from cross-Worker HTTP fetch to the already audited D1 `quran_ayah_anchors` exact `(edition,surah,ayah,page)` row. Edition `hafs-kfqc:v1.1.1`, manifest pinned `864c5474872876b3db8a328d8c74781be83c004a7cdb168ffb4b7eb57477edd2` and 6236 anchors independently reconciled by staging. Wrong page/edition/missing D1 fail closed. No new Quran data or external media and no changes to browser rendering.
+- Retest integrated source Verify and then repeat same Dev synthetic complete classroom Start→Ayah→correction→End→report QA; Production remains untouched.
+
+## #235/#236 Classroom signed real lifecycle and private corrections (candidate)
+- `workers/api/src/classroom/lesson-lifecycle-write.ts`: actor-scoped GET for teacher and owning student, explicit signed teacher Start/End with D1 transactional batch, immutable lifecycle event, duplicate race response; after END triggers existing media-enforcement DO/outbox wake and auto-seeds private report draft via `lesson-reports.ts` if notes exist. `workers/api/src/bindings.ts`: optional real D1 `batch` API typed (missing binding fails closed). `workers/api/src/auth/routes.ts`: exact signed GET/POST routes, no client roles.
+- `workers/api/src/classroom/live-corrections.ts` and `lesson-room.ts`: validated, private acting-Sheikh-only typed correction log; current DO page+verse authoritative selection required, append/idempotency and 120-entry cap, server-only seed after end. `workers/api/tests/lesson-lifecycle-write.test.ts` and `live-corrections.test.ts`: targeted mocks/state/restart and authenticated authorization edge cases.
+- `apps/web/src/features/classroom/LiveLessonLifecycle.tsx`: small verified Start/End header panel with explicit end confirmation and report link; `ConnectedWaitingRoom.tsx` phase status and media stop on completed; `ConnectedClassroomNotes.tsx` real teacher-only correction/notes editor; CSS kept compact for phone. `apps/web/src/features/teacher/TeacherConnectedReports.tsx`: exact lesson selected from handoff query.
+- Release and actual two-account browser verification not yet done. Do not confuse source CI success with runtime proof.
+
+## #231 / #232 classroom owner QA source integration
+- apps/web/src/features/classroom/QuranVersePicker.tsx, quran-verse-navigation.ts and quran-verse-selection.ts: canonical Surah/Ayah picker and strict verified page search. ConnectedWaitingRoom.tsx and ConnectedClassroom.module.css integrate compact no-scroll floating rail and teacher-selected highlighted verse. apps/web/src/features/student/index.ts exports canonical Quran index adapter.
+- workers/api/src/classroom/quran-page.ts, quran-sync.ts: optional versioned verse selection, idempotent receipts and verified publisher page metadata; existing LessonDO room transactions persist selection. Tests: workers/api/tests/classroom-quran-sync.test.ts and apps/web/src/features/classroom/quran-verse-navigation.test.ts.
+- PR #233 predecessor: workers/api/src/classroom/mic-policy.ts, lesson-room.ts, livekit-mute.ts, auth/routes.ts, apps/web/src/features/classroom/LiveLessonMedia.tsx and LiveClassroom.module.css provide Sheikh mute/release with voluntary learner re-enable. Source only, not real 2-device provider acceptance.
+
 ## #57 — type-only import boundary gate
 - `scripts/check-architecture.mjs` includes TypeScript `ImportTypeNode` dependency specifiers in the existing import/cycle graph; `tests/architecture.test.mjs` adds synthetic type-only cross-feature, route, shared/UI and public-index regression fixtures. [Draft PR #230](https://github.com/geminiamo0-ship-it/nour-elquran/pull/230). No runtime changes.
 

@@ -1,3 +1,28 @@
+## Final signed Classroom synthetic Staging E2E PASS — 2026-10-31 / #240
+Classroom Dev accepted in the single synthetic run: https://github.com/geminiamo0-ship-it/santoreno/actions/runs/41140055151
+App commit: 57c59518a544672fa4c213d81b0e49208f5b2b70; test harness: 5875cc18344cc8871102499945ad8dd2cc3fc0f5.
+Verified real signed dual-browser synthetic LiveKit, teacher mic mute/release and learner opt-in, Quran page+ayah sync, ink/eraser and reconnect, mobile screenshots, signed Start/End D1 audit, private correction to report draft, explicit publish and the same approved report after teacher revocation.
+6236 pinned Hafs anchors verified. Automated isolated Dev PASS, not human visual acceptance or Production certification; no production data/media was modified.
+Tracked feature Issues #231 #232 #235 #236 remain open until owner personal visual QA. Browser screenshots are in noor-profile-remote-browser artifact of the final staging run.
+Earlier blockers were fixed by Noor PR #239 (canonical D1 lookup instead of HTTP 503) and Santoreno PR #296 (report revision 2->3: compare exact approved snapshot).
+The test checks role isolation 401/404/409, Quran page and exact Ayah, WebRTC, corrections/private drafts, Start and End audit and report history; do not rerun full Chrome suite unless source code or UI changes.
+
+## Dev Quran shared verse 503 remediation — #238 (2026-10-31)
+- Single combined staging run [Santoreno #41137769340](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/41137769340) successfully deployed Noor main and passed real two-browser LiveKit synthetic A/V, Sheikh mute/release+student opt-in, shared Quran pagination/ink/eraser, phone viewports and reconnect. Failed *after* those at first signed POST Quran selected Ayah (HTTP 503). Do NOT claim completed lifecycle/report yet.
+- Fix candidate #238 changes server-side verse-to-page proof from cross-Worker HTTP fetch to the already audited D1 `quran_ayah_anchors` exact `(edition,surah,ayah,page)` row. Edition `hafs-kfqc:v1.1.1`, manifest pinned `864c5474872876b3db8a328d8c74781be83c004a7cdb168ffb4b7eb57477edd2` and 6236 anchors independently reconciled by staging. Wrong page/edition/missing D1 fail closed. No new Quran data or external media and no changes to browser rendering.
+- Retest integrated source Verify and then repeat same Dev synthetic complete classroom Start→Ayah→correction→End→report QA; Production remains untouched.
+
+## #235/#236 signed Start/End and corrections — final single-suite plan
+- Verify source: strict lifecycle command allowlist (UUID4, start/end only), actor scope, actual DO teacher heartbeat and both participants present, D1 `batch` transactional status + append-only unique audit event with `changes()`, idempotent retry, 30/40min non-auto-end, completed report-draft gate, provider wake after signed END; no unsigned student/owner Start.
+- Corrections: exact selected server page/ayah, teacher-only adding and reading, general notes private, invalid kind/page/array/IDs rejected, 120-note cap, replay/mutation conflict, DO storage survives restart, private seed accessible solely after Worker D1 authorization.
+- Browser Dev acceptance STILL REQUIRED: two logged-in synthetic clients, Sheikh Start only after BOTH present, Quran verse highlight + marker, Sheikh mic mute/release with learner opt-in, Sheikh real correction log and End, LiveKit participant removal acknowledgement (including outages/rejoin), report draft prefilled and manual approval/publish; mobile 360x667 and 390x844 no outer scroll. NO Production.
+- Run exact HEAD Verify once after final code+docs changes; do not claim real browser acceptance based solely on CI.
+
+## Owner QA #231 / #232 source checks (2026-10-30)
+- Mute/release: GitHub Verify https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41132499065 SUCCESS 4/4. Covers signed DO moderator state, idempotency, wrong role/expired lease and mocked provider confirmation; no real mic permission test.
+- Surah/Ayah navigation: GitHub Verify https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41134677808 SUCCESS 4/4 before docs updates. Exact publisher verse polygons, signed server verse-page proof, student read-only shared state, stale receipt/authorization checks, frontend unit and local D1.
+- Still required: Dev two-account test selecting Al-Baqarah 2:255/page 42, highlight in both browsers and on reload, mobile 360/390 narrow layout, teacher mute/release and learner opt-in reactivation including permission failure and reconnect. Neither main nor Production changed by draft PRs.
+
 ## #57 architecture scanner regression — dynamic import options (2026-10-31)
 - Synthetic Node test in `tests/architecture.test.mjs` checks `import('path', { with: { type: 'json' } })` edges: deny cross-feature private, route private and shared-to-feature; allow app-to-feature public index; detect A↔B cycle when one edge has import options. `scripts/check-architecture.mjs` no longer assumes one argument. Exact-head Verify still required; no full Chrome/browser run needed for source-only checker change.
 

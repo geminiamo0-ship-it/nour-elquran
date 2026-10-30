@@ -7,8 +7,9 @@ import {checkTeacherClassroomAccess} from '../classroom-access.ts';
 import {forwardVerifiedPresence} from './presence.ts';
 import {liveKitActorNames,mediaLessonWindow,validatedLiveKitConfig} from './livekit-token.ts';
 import {liveKitRoomAdminToken,liveKitRoomServiceURL} from './livekit-admin.ts';
+import {forwardVerifiedMicPolicy,type MicPolicy} from './mic-policy.ts';
 
-type MuteResult=Readonly<{status:200|404|409|503;code:string;mutedTracks?:number}>;
+type MuteResult=Readonly<{status:200|404|409|503;code:string;mutedTracks?:number;policy?:MicPolicy}>;
 const sidPattern=/^[A-Za-z0-9_-]{1,128}$/;
 export function microphoneSids(body:unknown,expectedIdentity:string):string[]|null{
  if(!body||typeof body!=='object'||Array.isArray(body))return null;
@@ -68,7 +69,14 @@ export async function muteSignedLearnerMicrophone(env:Env,teacherSubject:string,
   const payload:unknown=await list.json();
   const sids=microphoneSids(payload,identity);
   if(sids===null)return {status:503,code:'LIVEKIT_ROOM_UNAVAILABLE'};
-  if(!sids.length)return {status:200,code:'NO_LEARNER_MICROPHONE',mutedTracks:0};
+  // Even if the student is not broadcasting yet, lock future UI unmute until
+  // the Sheikh explicitly releases the classroom microphone policy.
+  if(!sids.length){
+   const lock=await forwardVerifiedMicPolicy(env,{lessonId,learnerId:access.learnerId,
+     actorSubject:teacherSubject,role:'teacher'},'lock');
+   return lock.status===200?{status:200,code:'NO_LEARNER_MICROPHONE',mutedTracks:0,policy:lock.policy}:
+    {status:503,code:'MIC_POLICY_UNAVAILABLE'};
+  }
   // Prevent a race where acting Sheikh loses access between listing tracks
   // and muting. Provider confirmation still required for success.
   const stillAllowed=await checkTeacherClassroomAccess(env.DB,teacherSubject,lessonId,Date.now());
@@ -82,6 +90,9 @@ export async function muteSignedLearnerMicrophone(env:Env,teacherSubject:string,
    if(!res.ok)return {status:503,code:'LIVEKIT_MUTE_UNCONFIRMED'};
    muted++;
   }
-  return {status:200,code:'LEARNER_MICROPHONE_MUTED',mutedTracks:muted};
+  const lock=await forwardVerifiedMicPolicy(env,{lessonId,learnerId:access.learnerId,
+    actorSubject:teacherSubject,role:'teacher'},'lock');
+  if(lock.status!==200)return {status:503,code:'MIC_POLICY_UNAVAILABLE'};
+  return {status:200,code:'LEARNER_MICROPHONE_MUTED',mutedTracks:muted,policy:lock.policy};
  }catch{return {status:503,code:'LIVEKIT_ROOM_UNAVAILABLE'};}
 }

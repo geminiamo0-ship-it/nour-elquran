@@ -1,3 +1,27 @@
+## Classroom Dev final integration PASS — 2026-10-31 / #240
+Classroom Dev accepted in the single synthetic run: https://github.com/geminiamo0-ship-it/santoreno/actions/runs/41140055151
+App commit: 57c59518a544672fa4c213d81b0e49208f5b2b70; test harness: 5875cc18344cc8871102499945ad8dd2cc3fc0f5.
+Verified real signed dual-browser synthetic LiveKit, teacher mic mute/release and learner opt-in, Quran page+ayah sync, ink/eraser and reconnect, mobile screenshots, signed Start/End D1 audit, private correction to report draft, explicit publish and the same approved report after teacher revocation.
+6236 pinned Hafs anchors verified. Automated isolated Dev PASS, not human visual acceptance or Production certification; no production data/media was modified.
+Tracked feature Issues #231 #232 #235 #236 remain open until owner personal visual QA. Browser screenshots are in noor-profile-remote-browser artifact of the final staging run.
+Earlier blockers were fixed by Noor PR #239 (canonical D1 lookup instead of HTTP 503) and Santoreno PR #296 (report revision 2->3: compare exact approved snapshot).
+Next: owner visual UX review of the actual teacher and student staging classroom; then complete non-classroom backlog and Admin Dashboard.
+
+## Dev Quran shared verse 503 remediation — #238 (2026-10-31)
+- Single combined staging run [Santoreno #41137769340](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/41137769340) successfully deployed Noor main and passed real two-browser LiveKit synthetic A/V, Sheikh mute/release+student opt-in, shared Quran pagination/ink/eraser, phone viewports and reconnect. Failed *after* those at first signed POST Quran selected Ayah (HTTP 503). Do NOT claim completed lifecycle/report yet.
+- Fix candidate #238 changes server-side verse-to-page proof from cross-Worker HTTP fetch to the already audited D1 `quran_ayah_anchors` exact `(edition,surah,ayah,page)` row. Edition `hafs-kfqc:v1.1.1`, manifest pinned `864c5474872876b3db8a328d8c74781be83c004a7cdb168ffb4b7eb57477edd2` and 6236 anchors independently reconciled by staging. Wrong page/edition/missing D1 fail closed. No new Quran data or external media and no changes to browser rendering.
+- Retest integrated source Verify and then repeat same Dev synthetic complete classroom Start→Ayah→correction→End→report QA; Production remains untouched.
+
+## Owner Classroom follow-through #235/#236 — source candidate, NOT deployed (2026-10-31)
+- Branch `feat/235-real-lesson-start-end` integrates previous draft #233/#234 and new signed Start/End, teacher correction capture and post-End report draft prep. Signed GET lifecycle reads for Sheikh and learner; POST Start/End only current verified acting Sheikh. Start requires real two-party signed LessonDO heartbeat; state+unique append-only D1 event via atomic `DB.batch` and SQL `changes()`; no auto End after 30/40m. End triggers provider eviction wake/outbox and attempts a PRIVATE report draft from recorded corrections (not published); separate teacher manual grades/approval already available under /teacher/reports.
+- Real Sheikh-only correction notes are persisted per LessonDO with verified page and selected Ayah. Learner cannot read unpublished notes. Student video and Quran layout unchanged; report deep link opens chosen completed lesson.
+- **Verification pending:** one final exact-head GitHub Verify, review/merge, staging release and separate real two-account LiveKit browser QA. No claim of real provider ACK, child media or Production deploy. Issues #235/#236 remain open until actual acceptance; previous exact-head #234 Verify #41135034286 4/4 successful before these changes.
+
+## Owner QA #231 / #232 (2026-10-30): source candidate; staging NOT accepted
+- Draft PR #233 (https://github.com/geminiamo0-ship-it/nour-elquran/pull/233): verified Sheikh mute/release with persistent LessonDO lock; learner must manually enable own mic. Source Verify #41132499065 SUCCESS 4/4. No real-device approval.
+- Draft PR #234 (https://github.com/geminiamo0-ship-it/nour-elquran/pull/234): Quran Surah/Ayah side flyout, publisher polygon exact page resolution, Worker page/verse verification, signed shared page/verse CAS state and 2-second student highlight. Source Verify #41134677808 SUCCESS 4/4 before docs. PR #234 includes PR #233 commits until staged rebase.
+- Both Issues remain OPEN pending 2-device LiveKit and shared Quran + mobile Dev acceptance; production media OFF. Start/End write API remains separate unfinished work.
+
 ## #57 — dynamic import options boundary regression (2026-10-31; source candidate)
 - Draft [PR #230](https://github.com/geminiamo0-ship-it/nour-elquran/pull/230): TypeScript AST architecture checker now records the module in `import('module', { with: ... })`, not only single-argument dynamic imports. Previously two-argument calls escaped cross-feature/route/shared boundaries and cycle detection. Synthetic regression tests illegal deep feature/route/shared imports, a two-file cycle, and legal feature public-index import, including NodeNext `.js` specifiers.
 - Exact-head GitHub Verify pending on this source change; independent review and relevant #57 acceptance gates still required. No merge, Production/Dev deploy, secrets, children, media or paid services. Rollback: revert the scoped #57 commit(s).

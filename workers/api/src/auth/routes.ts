@@ -26,6 +26,9 @@ import {createMediaToken,mediaLessonWindow} from '../classroom/livekit-token.ts'
 import {checkLiveKitProvider} from '../classroom/livekit-provider-check.ts';
 import {wakeActingTeacherMedia,wakeLessonMediaReconciliation} from '../classroom/media-enforcement.ts';
 import {muteSignedLearnerMicrophone} from '../classroom/livekit-mute.ts';
+import {forwardVerifiedMicPolicy} from '../classroom/mic-policy.ts';
+import {readTeacherLifecycle,readLearnerLifecycle,teacherLifecycleAction,parseLifecycleAction} from '../classroom/lesson-lifecycle-write.ts';
+import {forwardCorrections,parseClientCorrection} from '../classroom/live-corrections.ts';
 import { normalizePhone, onlyKeys, readObject, validName } from './input.ts';
 
 type Auth = ReturnType<typeof createAuth>;
@@ -234,6 +237,22 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
   // Public commands contain ONLY {action}; all actor fields come from auth + D1.
   // CR-02A token request: no browser-provided identity, role, room, grant,
   // scope or arbitrary room/admin settings. Same-origin POST only.
+  const learnerLifecycle=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/lifecycle$/.exec(path);
+  if(learnerLifecycle){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const outcome=await readLearnerLifecycle(env,authSubject,learnerLifecycle[1]!,learnerLifecycle[2]!);
+    const {status,...body}=outcome;return reply(status,body,requestId);
+  }
+  const learnerMicPolicy=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/microphone-policy$/.exec(path);
+  if(learnerMicPolicy){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const learnerId=learnerMicPolicy[1]!,lessonId=learnerMicPolicy[2]!;
+    const access=await checkOwnedLearnerClassroomAccess(db,accountId,learnerId,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    const result=await forwardVerifiedMicPolicy(env,{lessonId,learnerId,
+      actorSubject:authSubject,role:'learner'},'snapshot');
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
   const learnerMedia=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/media-token$/.exec(path);
   if(learnerMedia){
     if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
@@ -467,6 +486,52 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // Every token requires new Better Auth+D1+LessonDO active lease checks.
   // Authorized Sheikh-only mute. The request cannot assert track SID, room,
   // learner identity, or muted:false; LiveKit RoomService lists exact tracks.
+  const teacherCorrections=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/corrections$/.exec(path);
+  if(teacherCorrections){
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const lessonId=teacherCorrections[1]!;
+    const access=await checkTeacherClassroomAccess(env.DB,session.user.id,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    const action=request.method==='GET'?'snapshot' as const:
+      parseClientCorrection(await readObject(request));
+    if(!action)return reply(400,{code:'INVALID_CORRECTION_COMMAND'},requestId);
+    const outcome=await forwardCorrections(env,{lessonId,learnerId:access.learnerId,
+      actorSubject:session.user.id,role:'teacher'},action);
+    const {status,...body}=outcome;return reply(status,body,requestId);
+  }
+  const teacherLifecycle=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/(lifecycle|lifecycle-actions)$/.exec(path);
+  if(teacherLifecycle){
+    const lessonId=teacherLifecycle[1]!,kind=teacherLifecycle[2]!;
+    if(request.method!==(kind==='lifecycle'?'GET':'POST'))
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    if(kind==='lifecycle'){
+      const outcome=await readTeacherLifecycle(env,session.user.id,lessonId);
+      const {status,...body}=outcome;return reply(status,body,requestId);
+    }
+    const action=parseLifecycleAction(await readObject(request));
+    if(!action)return reply(400,{code:'INVALID_LESSON_LIFECYCLE_ACTION'},requestId);
+    const outcome=await teacherLifecycleAction(env,session.user.id,lessonId,
+      action.action,action.operationId);
+    const {status,...body}=outcome;return reply(status,body,requestId);
+  }
+  const teacherMicPolicy=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/microphone-policy$/.exec(path);
+  if(teacherMicPolicy){
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const lessonId=teacherMicPolicy[1]!;
+    const access=await checkTeacherClassroomAccess(env.DB,session.user.id,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    if(request.method==='POST'){
+      const input=await readObject(request);
+      if(!input||Object.keys(input).length!==1||input.action!=='release')
+        return reply(400,{code:'INVALID_MIC_POLICY_COMMAND'},requestId);
+    }
+    const result=await forwardVerifiedMicPolicy(env,{lessonId,learnerId:access.learnerId,
+      actorSubject:session.user.id,role:'teacher'},
+      request.method==='POST'?'release':'snapshot');
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
   const teacherMute=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/mute-learner-microphone$/.exec(path);
   if(teacherMute){
     if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);

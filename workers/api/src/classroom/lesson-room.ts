@@ -9,6 +9,8 @@ import {mediaLessonWindow} from './livekit-token.ts';
 import {evictVerifiedLiveKitActor} from './livekit-admin.ts';
 import {parseVerifiedPageCommand,initialPage,applyPageSet,safePage,type SharedPageRecord} from './quran-page.ts';
 import {parseInkCommand,initialInk,visibleInk,applyInk,type InkPage} from './quran-ink.ts';
+import {parseVerifiedMicCommand,initialMicPolicy,applyMicPolicy,type MicPolicy} from './mic-policy.ts';
+import {parseVerifiedCorrection,initialCorrections,appendCorrection,type CorrectionsState} from './live-corrections.ts';
 
 export type RoomAction='join'|'heartbeat'|'leave'|'snapshot'|'media-intent';
 export type VerifiedRoomCommand=Readonly<{
@@ -249,6 +251,81 @@ export class LessonRoom {
     return Response.json({code:'ROOM_RECONCILE_QUEUED'},
       {headers:{'cache-control':'no-store'}});
    }catch{return Response.json({code:'ROOM_RECONCILE_UNAVAILABLE'},{status:503});}
+  }
+  if(path==='/internal/learner-microphone-policy'){
+   if(request.method!=='POST')return Response.json({code:'NOT_FOUND'},{status:404});
+   let raw:unknown;
+   try{raw=await request.json();}catch{return Response.json({code:'INVALID_MIC_POLICY_COMMAND'},{status:400});}
+   const cmd=parseVerifiedMicCommand(raw);
+   if(!cmd)return Response.json({code:'INVALID_MIC_POLICY_COMMAND'},{status:400});
+   const now=Date.now();
+   try{
+    return await this.ctx.storage.transaction(async txn=>{
+     const room=await txn.get<RoomRecord>('room');
+     if(!room||room.lessonId!==cmd.lessonId)
+      return Response.json({code:'NOT_JOINED'},{status:404});
+     const lease=room[cmd.role];
+     if(!lease||lease.expiresAtMs<=now||lease.subject!==cmd.actorSubject||
+      lease.learnerId!==cmd.learnerId)
+      return Response.json({code:'NOT_JOINED'},{status:404});
+     const current=await txn.get<MicPolicy>('learnerMicPolicy')??initialMicPolicy();
+     if(cmd.action==='snapshot')
+      return Response.json({code:'MIC_POLICY_SNAPSHOT',policy:current},
+       {headers:{'cache-control':'no-store'}});
+     // Only the current signed teacher can lock or release moderation. Releasing
+     // never unmutes an audio track or starts capture on the learner's device.
+     if(cmd.role!=='teacher')return Response.json({code:'NOT_JOINED'},{status:404});
+     const next=applyMicPolicy(current,cmd.action);
+     if(next!==current)await txn.put('learnerMicPolicy',next);
+     return Response.json({code:cmd.action==='lock'?'MIC_POLICY_LOCKED':'MIC_POLICY_RELEASED',
+      policy:next},{headers:{'cache-control':'no-store'}});
+    });
+   }catch{return Response.json({code:'MIC_POLICY_UNAVAILABLE'},{status:503});}
+  }
+  if(path==='/internal/corrections'){
+   if(request.method!=='POST')return Response.json({code:'NOT_FOUND'},{status:404});
+   let raw:unknown;
+   try{raw=await request.json();}catch{return Response.json({code:'INVALID_CORRECTION_COMMAND'},{status:400});}
+   const cmd=parseVerifiedCorrection(raw);
+   if(!cmd)return Response.json({code:'INVALID_CORRECTION_COMMAND'},{status:400});
+   const now=Date.now();
+   try{
+    return await this.ctx.storage.transaction(async txn=>{
+     const state=await txn.get<CorrectionsState>('teacherCorrections')??initialCorrections();
+     const view=(code:string,status=200)=>Response.json({
+      code,corrections:{revision:state.revision,items:state.items}
+     },{status,headers:{'cache-control':'no-store'}});
+     const room=await txn.get<RoomRecord>('room');
+     if(!room||room.lessonId!==cmd.lessonId)return Response.json({code:'NOT_JOINED'},{status:404});
+     // Post-End report seed is a read-only Worker-to-DO operation, only after
+     // fresh authenticated teacher authorization in D1. Historical author must
+     // match the Sheikh who saved the original corrections.
+     if(cmd.action==='seed'){
+      if(state.teacherSubject&&state.teacherSubject!==cmd.actorSubject)
+       return Response.json({code:'NOT_JOINED'},{status:404});
+      return view('CORRECTIONS_SEED');
+     }
+     const lease=room.teacher;
+     if(!lease||lease.subject!==cmd.actorSubject||
+      lease.learnerId!==cmd.learnerId||lease.expiresAtMs<=now)
+      return Response.json({code:'NOT_JOINED'},{status:404});
+     if(cmd.action==='snapshot')return view('CORRECTIONS_SNAPSHOT');
+     const page=await txn.get<SharedPageRecord>('quranPage')??initialPage();
+     if(page.page!==cmd.page||(
+       cmd.kind!=='general'&&(!page.verse||page.verse.surah!==cmd.surah||
+        page.verse.ayah!==cmd.ayah)))
+      return Response.json({code:'CORRECTION_CONFLICT'},{status:409});
+     const applied=appendCorrection(state,cmd,now);
+     if(applied.code==='CORRECTION_SAVED')
+      await txn.put('teacherCorrections',applied.state);
+     return Response.json({
+      code:applied.code,
+      corrections:{revision:applied.state.revision,items:applied.state.items}
+     },{status:applied.code==='CORRECTION_CONFLICT'?409:
+        applied.code==='CORRECTION_LIMIT'?413:200,
+      headers:{'cache-control':'no-store'}});
+    });
+   }catch{return Response.json({code:'CLASSROOM_CORRECTIONS_UNAVAILABLE'},{status:503});}
   }
   if(path==='/internal/quran-ink'){
    if(request.method!=='POST')return Response.json({code:'NOT_FOUND'},{status:404});
