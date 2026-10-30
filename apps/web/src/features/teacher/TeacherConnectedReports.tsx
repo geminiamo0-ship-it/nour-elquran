@@ -2,7 +2,7 @@
 import {useEffect,useRef,useState} from 'react';
 import type {TeacherCalendarRow,TeacherRosterRow} from './teacher-read-api';
 import {blankReport,lessonReportsClient,reportErrorMessage,
- type ReportContent,type TeacherReport} from '../shared/lesson-report-client';
+ type ReportContent,type TeacherReport} from '../shared';
 import css from './TeacherReadOnly.module.css';
 
 const scores=[
