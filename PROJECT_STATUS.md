@@ -1,3 +1,6 @@
+## #221 — late remote audio play after Stop (source candidate, 2026-10-30)
+- Draft PR #226 now captures each HTML audio element for manual resume and pauses that exact element if an in-flight `play()` settles after Stop/leave or Room replacement. Prevents a delayed old-room play from undoing teardown without touching the new room. Two synthetic deferred resolve/reject regressions added. **Exact-head Verify and signed two-browser Cloudflare Dev hardware/audio QA pending**; no Production, child data, recording or provider secrets.
+
 ## #221 — remote audio/video teardown on Stop and participant disconnect (source candidate, 2026-10-30)
 - Draft PR #226 now explicitly pauses attached remote audio/video, clears their MediaStream references and removes elements on Stop/leave, provider disconnect, participant disconnect and TrackUnsubscribed. DOM removal alone is not relied on to stop playback. Three synthetic cleanup tests cover audio/video, failed pause and failed stream release. **New exact-head CI and two-browser real-device QA required**; no Production, child data or recordings.
 
