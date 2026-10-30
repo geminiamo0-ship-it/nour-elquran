@@ -35,7 +35,7 @@ test('only signed room Admin for one opaque lesson and one opaque participant is
   times++;
   assert.equal(input,liveKitRoomServiceURL(config));
   assert.equal(init?.method,'POST');
-  assert.equal(init?.redirect,'error');
+  assert.equal(init?.redirect,'manual');
   const h=new Headers(init!.headers);
   assert.equal(h.get('content-type'),'application/json');
   const bearer=h.get('authorization')!;
@@ -66,7 +66,7 @@ test('unconfigured/failed provider always retries and never declares eviction su
  const noFetch:typeof fetch=async()=>{called++;return Response.json({});};
  assert.equal(await evictVerifiedLiveKitActor(bad,actor,Date.now(),noFetch),'unconfigured');
  assert.equal(called,0);
- for(const code of [400,401,404,408,429,500,503]){
+ for(const code of [302,400,401,404,408,429,500,503]){
   assert.equal(await evictVerifiedLiveKitActor(env,actor,Date.now(),async()=>{
    return Response.json({error:'reject'}, {status:code});
   }),'retry');

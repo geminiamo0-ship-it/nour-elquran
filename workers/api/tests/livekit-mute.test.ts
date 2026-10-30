@@ -60,6 +60,7 @@ test('server alone selects learner track SID; only true/mute for verified Sheikh
  const {roomName,identity}=await liveKitActorNames(config,actor);
  const calls:{url:string;body:Record<string,unknown>}[]=[];
  const transport:typeof fetch=async(input,init)=>{
+  assert.equal(init?.redirect,'manual');
   const url=String(input);const payload=JSON.parse(String(init?.body)) as Record<string,unknown>;
   const headers=new Headers(init?.headers);
   const token=headers.get('authorization')!.replace('Bearer ','');
@@ -93,6 +94,11 @@ test('no microphone reports no-op; provider unavailable never claims mute',async
  assert.equal(calls,1);
  const error:typeof fetch=async()=>Response.json({error:'provider down'},{status:503});
  assert.deepEqual(await muteSignedLearnerMicrophone(env(),teacher,lessonId,now,error),
+  {status:503,code:'LIVEKIT_ROOM_UNAVAILABLE'});
+ const redirect:typeof fetch=async()=>new Response(null,{status:302,headers:{
+  Location:'https://redirect.example.invalid'
+ }});
+ assert.deepEqual(await muteSignedLearnerMicrophone(env(),teacher,lessonId,now,redirect),
   {status:503,code:'LIVEKIT_ROOM_UNAVAILABLE'});
 });
 test('revoked Sheikh, no DO, no secrets fail closed before provider network',async()=>{

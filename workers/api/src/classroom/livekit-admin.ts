@@ -45,7 +45,7 @@ export async function evictVerifiedLiveKitActor(env:Env,actor:VerifiedMediaActor
   const {roomName,identity}=await liveKitActorNames(config,actor);
   const token=await liveKitRoomAdminToken(config,roomName,now);
   const url=liveKitRoomServiceURL(config);
-  const res=await transport(url,{method:'POST',redirect:'error',
+  const res=await transport(url,{method:'POST',redirect:'manual',
    headers:{'authorization':'Bearer '+token,'content-type':'application/json'},
    signal:AbortSignal.timeout(5000),
    body:JSON.stringify({room:roomName,identity,

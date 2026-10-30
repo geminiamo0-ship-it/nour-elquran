@@ -19,7 +19,7 @@ test('read-only provider JWT is valid HS256, 30s, roomList only, room-filtered',
  const result=await checkLiveKitProvider(env,actor,now,async(url,init)=>{
   calls++;
   assert.equal(url,'https://synthetic.livekit.cloud/twirp/livekit.RoomService/ListRooms');
-  assert.equal(init?.method,'POST');assert.equal(init?.redirect,'error');
+  assert.equal(init?.method,'POST');assert.equal(init?.redirect,'manual');
   assert.deepEqual(JSON.parse(String(init?.body)),{names:[roomName]});
   assert.doesNotMatch(String(init?.body),/synthetic-lesson|synthetic-actor/);
   const token=new Headers(init?.headers).get('authorization');
@@ -54,7 +54,7 @@ test('production, learner and missing secrets never contact provider',async()=>{
 test('provider failures report only static safe categories',async()=>{
  const cases=[
   [400,'LIVEKIT_PROVIDER_BAD_REQUEST'],[401,'LIVEKIT_PROVIDER_AUTH_REJECTED'],
-  [403,'LIVEKIT_PROVIDER_AUTH_REJECTED'],[404,'LIVEKIT_PROVIDER_HTTP_4XX'],
+  [403,'LIVEKIT_PROVIDER_AUTH_REJECTED'],[302,'LIVEKIT_PROVIDER_REDIRECT_BLOCKED'],[404,'LIVEKIT_PROVIDER_HTTP_4XX'],
   [429,'LIVEKIT_PROVIDER_RATE_LIMITED'],[500,'LIVEKIT_PROVIDER_UPSTREAM_5XX'],
   [503,'LIVEKIT_PROVIDER_UPSTREAM_5XX'],
  ] as const;

@@ -6,7 +6,8 @@ type Check=Readonly<{status:200|503;code:'LIVEKIT_PROVIDER_REACHABLE'|
  'LIVEKIT_NOT_CONFIGURED'|'LIVEKIT_PROVIDER_AUTH_REJECTED'|'LIVEKIT_PROVIDER_UNAVAILABLE'|
  'LIVEKIT_PROVIDER_BAD_REQUEST'|'LIVEKIT_PROVIDER_RATE_LIMITED'|
  'LIVEKIT_PROVIDER_HTTP_4XX'|'LIVEKIT_PROVIDER_UPSTREAM_5XX'|
- 'LIVEKIT_PROVIDER_BAD_RESPONSE'|'LIVEKIT_PROVIDER_NETWORK_ERROR'}>;
+ 'LIVEKIT_PROVIDER_BAD_RESPONSE'|'LIVEKIT_PROVIDER_NETWORK_ERROR'|
+ 'LIVEKIT_PROVIDER_REDIRECT_BLOCKED'}>;
 function base64url(value:unknown):string{
  const bytes=new TextEncoder().encode(JSON.stringify(value));
  let raw='';for(const b of bytes)raw+=String.fromCharCode(b);
@@ -36,13 +37,16 @@ export async function checkLiveKitProvider(
   const token=signed+'.'+btoa(sig).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
   const response=await transport('https://'+new URL(config.url).hostname+
    '/twirp/livekit.RoomService/ListRooms',{
-    method:'POST',redirect:'error',signal:AbortSignal.timeout(5000),
+    method:'POST',redirect:'manual',signal:AbortSignal.timeout(5000),
     headers:{authorization:'Bearer '+token,'content-type':'application/json'},
     body:JSON.stringify({names:[roomName]}),
   });
   // Only fixed status categories are returned, never provider bodies, tokens or URLs.
   if(response.status===401||response.status===403)
    return {status:503,code:'LIVEKIT_PROVIDER_AUTH_REJECTED'};
+  // Workers do not implement redirect:error; manual prevents credential forwarding.
+  if(response.status>=300&&response.status<400)
+   return {status:503,code:'LIVEKIT_PROVIDER_REDIRECT_BLOCKED'};
   if(response.status===400)return {status:503,code:'LIVEKIT_PROVIDER_BAD_REQUEST'};
   if(response.status===429)return {status:503,code:'LIVEKIT_PROVIDER_RATE_LIMITED'};
   if(response.status>=500)return {status:503,code:'LIVEKIT_PROVIDER_UPSTREAM_5XX'};

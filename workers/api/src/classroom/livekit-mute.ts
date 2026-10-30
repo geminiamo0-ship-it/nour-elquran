@@ -61,7 +61,7 @@ export async function muteSignedLearnerMicrophone(env:Env,teacherSubject:string,
   const url=liveKitRoomServiceURL(config,'ListParticipants');
   const headers={'authorization':'Bearer '+admin,'content-type':'application/json'};
   const list=await transport(url,{
-   method:'POST',redirect:'error',headers,signal:AbortSignal.timeout(5000),
+   method:'POST',redirect:'manual',headers,signal:AbortSignal.timeout(5000),
    body:JSON.stringify({room:roomName}),
   });
   if(!list.ok)return {status:503,code:'LIVEKIT_ROOM_UNAVAILABLE'};
@@ -76,7 +76,7 @@ export async function muteSignedLearnerMicrophone(env:Env,teacherSubject:string,
   let muted=0;
   for(const sid of sids){
    const res=await transport(liveKitRoomServiceURL(config,'MutePublishedTrack'),{
-    method:'POST',redirect:'error',headers,signal:AbortSignal.timeout(5000),
+    method:'POST',redirect:'manual',headers,signal:AbortSignal.timeout(5000),
     body:JSON.stringify({room:roomName,identity,track_sid:sid,muted:true}),
    });
    if(!res.ok)return {status:503,code:'LIVEKIT_MUTE_UNCONFIRMED'};
