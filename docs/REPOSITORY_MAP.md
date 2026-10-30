@@ -1,3 +1,7 @@
+## CR-01 signed waiting room files (#196; source-only)
+- `workers/api/src/classroom/lesson-room.ts`: SQLite-backed Durable Object lease reducer and fetch handler; `presence.ts`: strict signed session transport. `workers/api/src/auth/routes.ts`: server verified owner/acting Sheikh room endpoints. `workers/api/src/bindings.ts`, `workers/api/src/index.ts`, `workers/site/src/index.ts`, `workers/api/wrangler.jsonc`: DO exposure and local-only binding/migration.
+- `workers/api/tests/classroom-presence.test.ts`: TTL/role/restart/authorization-negatives. `apps/web/src/features/classroom/ConnectedWaitingRoom.tsx`, `apps/web/src/app/classroom/live/page.tsx`, authenticated student LessonHub and Sheikh schedule: no media, no fake presence. Contract `docs/CLASSROOM_WAITING_ROOM_CR01_CONTRACT.md`.
+
 ## Phase 08B1 archive source (#192)
 - D1 `workers/api/migrations/0015_lesson_quran_archive.sql`: append-only, sealed, canonical-page and bounded teacher mark archive tied to published report revision/END event.
 - Worker `workers/api/src/lesson-quran-archive.ts` and `auth/routes.ts`: only signed household GET; no archive writing endpoint.
