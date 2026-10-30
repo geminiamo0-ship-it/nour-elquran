@@ -1,3 +1,6 @@
+## CR-02B2 #206 provider-side eviction source
+- `workers/api/src/classroom/livekit-admin.ts`: signed room-scoped LiveKit RoomService RemoveParticipant transport, 60s admin JWT and token cutoff. `livekit-token.ts`: shared opaque names and durable media-intent pre-join. `lesson-room.ts`: bounded durable pending ejections, 10s D1 reconciliation/lease expiry alarms, provider retries with rejoin fence; `presence.ts`: fail-closed 409 pending code. `workers/api/tests/livekit-admin.test.ts`, `classroom-eviction.test.ts` validate signed transport and DO retry/reconstruction/expiry. `docs/CLASSROOM_CR02B2_PROVIDER_EVICTION_CONTRACT.md` separates source from real provider acceptance.
+
 ## CR-02B1 #204 LiveKit browser SDK client (source only)
 - `apps/web/package.json`, `pnpm-lock.yaml`: pinned `livekit-client` 2.23.0 (lockfile from temporary branch-only GitHub Action, action removed before PR). `apps/web/src/features/classroom/media-credentials.ts`: strict signed POST `{}` token client; `media-credentials.test.ts` validates payload and denial. `LiveLessonMedia.tsx`: client lazy SDK opt-in mic/camera remote tracks and reconnect cleanup. `ConnectedWaitingRoom.tsx` mounts it only after successful explicit signed room join. `docs/CLASSROOM_CR02B1_MEDIA_CLIENT_CONTRACT.md` lists release blockers, no connected-user eviction yet.
 

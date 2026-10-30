@@ -26,7 +26,7 @@ function environment(present=true):Env{
    assert.equal(value.role,actor.role);
    assert.equal(value.actorSubject,actor.actorSubject);
    assert.equal(value.learnerId,actor.learnerId);
-   assert.equal(value.action,'heartbeat');
+   assert.equal(value.action,'media-intent');
    if(!present)return Response.json({code:'NOT_JOINED'},{status:404});
    return Response.json({code:'ROOM_HEARTBEAT',presence:{
     lessonId:actor.lessonId,teacherPresent:false,learnerPresent:true,

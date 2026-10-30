@@ -9,7 +9,7 @@ import {forwardVerifiedPresence} from './presence.ts';
 export const MEDIA_TOKEN_TTL_SECONDS=120;
 export const MEDIA_EARLY_JOIN_MS=15*60*1000;
 export type MediaRole='teacher'|'learner';
-type VerifiedMediaActor=Readonly<{
+export type VerifiedMediaActor=Readonly<{
  lessonId:string;learnerId:string;actorSubject:string;role:MediaRole;
 }>;
 export type LiveKitConfig=Readonly<{
@@ -61,6 +61,14 @@ async function mac(key:CryptoKey,data:string):Promise<string>{
  return toBase64Url(new Uint8Array(await crypto.subtle.sign('HMAC',key,
   new TextEncoder().encode(data))));
 }
+export async function liveKitActorNames(config:LiveKitConfig,actor:VerifiedMediaActor):
+ Promise<{roomName:string;identity:string}>{
+ const key=await signer(config.secret);
+ const roomName='nq-'+(await mac(key,'noor:room:v1:'+actor.lessonId)).slice(0,32);
+ const identity='nq-'+(await mac(key,['noor:actor:v1',actor.lessonId,actor.learnerId,
+  actor.role,actor.actorSubject].join(':'))).slice(0,32);
+ return {roomName,identity};
+}
 export type IssuedToken=Readonly<{token:string;roomName:string;identity:string;expiresAt:number}>;
 /**
  * Separate per-lesson opaque room and participant names: no legal name,
@@ -70,10 +78,8 @@ export type IssuedToken=Readonly<{token:string;roomName:string;identity:string;e
 export async function mintLiveKitToken(config:LiveKitConfig,actor:VerifiedMediaActor,
  nowMs:number):Promise<IssuedToken>{
  if(!Number.isSafeInteger(nowMs)||nowMs<0)throw Error('INVALID_MEDIA_CLOCK');
+ const {roomName,identity}=await liveKitActorNames(config,actor);
  const key=await signer(config.secret);
- const roomName='nq-'+(await mac(key,'noor:room:v1:'+actor.lessonId)).slice(0,32);
- const identity='nq-'+(await mac(key,['noor:actor:v1',actor.lessonId,actor.learnerId,
-  actor.role,actor.actorSubject].join(':'))).slice(0,32);
  const nbf=Math.floor(nowMs/1000);
  const exp=nbf+MEDIA_TOKEN_TTL_SECONDS;
  const grant={
@@ -98,9 +104,10 @@ export async function createMediaToken(env:Env,actor:VerifiedMediaActor,
   return {status:404,code:'MEDIA_LESSON_UNAVAILABLE'};
  const config=validatedLiveKitConfig(env);
  if(!config)return {status:503,code:'LIVEKIT_NOT_CONFIGURED'};
- // A GET snapshot of the room is NOT sufficient: it could show a different
- // actor's lease. Only a server-validated heartbeat proves this exact actor.
- const presence=await forwardVerifiedPresence(env,actor,'heartbeat');
+ // A GET snapshot of the room is NOT sufficient: the participant-specific
+ // DO media-intent BOTH proves the lease and durably activates revocation
+ // alarms before any signed LiveKit credential is minted.
+ const presence=await forwardVerifiedPresence(env,actor,'media-intent');
  if(presence.status!==200)
   return {status:presence.status,code:presence.code};
  if(actor.role==='teacher'&&!presence.presence.teacherPresent||
