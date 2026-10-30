@@ -1,3 +1,7 @@
+## Phase 08A #190 notebook candidate (not yet Dev accepted)
+- Fast Node/Python SQLite: strict UUID and note body, historical owner/lesson linkage, explicit completed+END, cross-sibling/foreign/Sheikh denial, atomic revision CAS, idempotent event replay, hide tombstones and immutable events. Student client DTO tests.
+- Next release gate: exact-head Verify + isolated Cloudflare Dev D1 0014 signed session ownership and authoring/read-after-refresh, then targeted visual UI/RTL owner acceptance. No blanket Chrome in CI, no real minors, no R2 audio or public links.
+
 ## Phase 07A remote Dev API acceptance (2026-10-30)
 - [Noor main Verify #40986308630](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40986308630): 4/4 success after merged PR #187 at exact SHA `fedc03a8aa89e04a8080e5210840a93bf900027c`.
 - [Santoreno remote Dev #40986426733](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40986426733): deployed existing isolated Worker and D1 with 0013; authenticated synthetic roster/staff book + Dev-only classroom lifecycle event; draft/private, published revisions, CAS/replay, latest approved, independent 0/null/10 scores, revoke denied 404, foreign 404; Phase 05A/05B/06A1 regression pass. **Not a real Classroom/live presence test**. Browser UI not yet accepted, default Chrome OFF.
