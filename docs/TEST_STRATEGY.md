@@ -1,3 +1,8 @@
+## Phase 07A remote Dev API acceptance (2026-10-30)
+- [Noor main Verify #40986308630](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40986308630): 4/4 success after merged PR #187 at exact SHA `fedc03a8aa89e04a8080e5210840a93bf900027c`.
+- [Santoreno remote Dev #40986426733](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40986426733): deployed existing isolated Worker and D1 with 0013; authenticated synthetic roster/staff book + Dev-only classroom lifecycle event; draft/private, published revisions, CAS/replay, latest approved, independent 0/null/10 scores, revoke denied 404, foreign 404; Phase 05A/05B/06A1 regression pass. **Not a real Classroom/live presence test**. Browser UI not yet accepted, default Chrome OFF.
+- Next: targeted connected Reports/Progress RTL/mobile/keyboard visual check with only synthetic data, run once on demand. Staging must never use real minors/voice or production credentials.
+
 ## Phase 07A #186 report gates — NOT YET VERIFIED ON DEV
 - Fast Verify must run strict TS and Python SQLite report journal tests. No default Chrome. Validate completed lesson **with real END audit**; draft invisible to student, publish immutable, new draft preserves prior approved, CAS 409, independent 0–10/null scores, unassigned/revoked teacher and substitute +24h denial.
 - The merged-code run or this status text **does not prove** a staged API. After exact-head CI, stage additive 0013 on isolated Dev, exercise signed Better Auth owner/teacher/foreign owner/expired substitute across the two read paths and one mutation path, then obtain targeted 360/390/768/1280/1440 screenshots if accepting UI. Never run with real child data or simulate production attendance.
