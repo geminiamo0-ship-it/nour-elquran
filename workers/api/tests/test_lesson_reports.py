@@ -25,10 +25,10 @@ class ReportJournal(unittest.TestCase):
                   " VALUES('done','a','t','standard','scheduled',1000,2401000)")
   self.db.execute("UPDATE lessons SET status='live' WHERE id='done'")
   self.db.execute("INSERT INTO lesson_lifecycle_events(id,lesson_id,teacher_id,action,at_ms,operation_id)"
-                  " VALUES('start','done','t','start',1200,'op-start')")
+                  " VALUES('event-start','done','t','start',1200,'op-start-1')")
   self.db.execute("UPDATE lessons SET status='completed',ended_at_ms=3000 WHERE id='done'")
   self.db.execute("INSERT INTO lesson_lifecycle_events(id,lesson_id,teacher_id,action,at_ms,operation_id)"
-                  " VALUES('end','done','t','end',3000,'op-end')")
+                  " VALUES('event-end','done','t','end',3000,'op-end-1')")
  def tearDown(self):self.db.close()
  def event(self,n,kind='save',expected=0,actor='sheikh',scope='الفاتحة',at=3100,
            hifz=None,tajweed=10,recitation=0):
