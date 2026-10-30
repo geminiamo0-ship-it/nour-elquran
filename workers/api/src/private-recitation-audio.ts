@@ -29,12 +29,18 @@ export function parsePrivateAudioDescriptor(value:unknown):PrivateAudioDescripto
 }
 /** Generate an opaque R2 key with NO name, phone, account or signed URL. Server only. */
 export function privateRecitationObjectKey(learnerId:string,descriptor:PrivateAudioDescriptor):string{
-  if(!uuidV4.test(learnerId)||!uuidV4.test(descriptor.assetId)||
-    !Object.hasOwn(extensions,descriptor.mediaType))throw new Error('INVALID_PRIVATE_AUDIO_KEY');
-  return `assignment-audio/${learnerId}/${descriptor.assetId}.${extensions[descriptor.mediaType]}`;
+  // TypeScript types disappear at runtime. Revalidate the entire envelope here
+  // so a future call site cannot mint a key for forged/oversized media metadata.
+  const checked=parsePrivateAudioDescriptor(descriptor);
+  if(typeof learnerId!=='string'||!uuidV4.test(learnerId)||!checked)
+    throw new Error('INVALID_PRIVATE_AUDIO_KEY');
+  return `assignment-audio/${learnerId}/${checked.assetId}.${extensions[checked.mediaType]}`;
 }
 /** Never allow a private response to be cached by a CDN, intermediary or browser. */
 export function privateRecitationResponseHeaders(mediaType:MediaType):Headers{
+  // Never let a runtime-cast MIME type become an inline HTML or other response.
+  if(typeof mediaType!=='string'||!Object.hasOwn(extensions,mediaType))
+    throw new Error('INVALID_PRIVATE_AUDIO_MEDIA_TYPE');
   const headers=new Headers({
     'Cache-Control':'private, no-store, max-age=0',
     'Content-Type':mediaType,

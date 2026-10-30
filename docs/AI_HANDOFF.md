@@ -1,3 +1,7 @@
+## Next handoff — #180 fail-closed media boundary (2026-10-30)
+- Draft branch `fix/180-private-audio-runtime-guards` adds runtime revalidation in `privateRecitationObjectKey` and `privateRecitationResponseHeaders`, with adversarial Node tests. Scope is only the disabled server-side helper and tests; **no audio pipeline is enabled**.
+- Next: inspect exact branch-head Verify and review, then merge only after required gates and record postmerge CI. Parent #180 cannot be completed without owner-approved guardian identity, consent, retention/deletion/export and private R2 security/Dev acceptance. Do not ask the owner to repeat unchanged policy decisions every run; independent backlog remains available.
+
 ## Current work — private recitation groundwork #182 (2026-10-30)
 - Owner explicitly owns remaining assignment/review **visual** QA (#173/#178); development need not block on screenshots. Do not declare their visual acceptance yourself.
 - New source scope is [Phase 06A1 #182](https://github.com/geminiamo0-ship-it/nour-elquran/issues/182): locked D1 consent/audio metadata, opaque media envelope, owner-only disabled capability read; [contract](PRIVATE_RECITATION_AUDIO_CONTRACT.md). Absolutely no real-child voice upload, public R2 links, approved guardian proof or retention. Parent #180 remains open.

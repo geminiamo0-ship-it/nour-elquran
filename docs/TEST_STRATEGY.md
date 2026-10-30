@@ -1,3 +1,7 @@
+## #180 runtime media helper regression (2026-10-30; source-only)
+- `workers/api/tests/private-recitation-audio.test.ts` now asserts private R2 keys reject forged descriptors (submission ID, byte cap, duration, SHA, MIME) and array-coerced learner IDs even when TypeScript is bypassed. Playback headers must reject runtime `text/html`, MIME parameters and unsupported types before response creation.
+- Run in fast backend Node tests and exact-head Verify. This does **not** test actual media bytes, consent, R2, guardian identity or Dev upload; the feature remains hard-disabled.
+
 ## Phase 06A1 #182 — private audio **hard-disabled** source gates
 - Additive SQLite `0012_recitation_audio_privacy.sql` is executed by every migration replay; `test_recitation_audio_privacy.py` proves SQL rejects guardian grants and asset reservations, owner-scoped immutable withdrawal metadata and wrong-submission or public-link metadata in a disposable synthetic unlocked schema.
 - `private-recitation-audio.test.ts` covers UUIDv4 key formation, strict type/size/duration/SHA-256 and non-cacheable response headers. These are envelope checks, **not real binary sniff, R2 upload or anti-malware guarantees**.
