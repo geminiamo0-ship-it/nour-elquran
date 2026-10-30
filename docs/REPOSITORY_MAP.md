@@ -1,3 +1,6 @@
+## Classroom #221 subscribed audio autoplay guard (2026-10-30)
+- `apps/web/src/features/classroom/media-device-safety.ts`: `playSubscribedAudioIfCurrent` guards SDK `TrackSubscribed` audio autoplay against Stop/leave and stale blocked warnings; `LiveLessonMedia.tsx` calls it; `media-device-safety.test.ts` covers late success/rejection and current/stale cases. Source-only until exact-head CI and signed two-browser Dev.
+
 ## #221 late audio play completion fence (source candidate, 2026-10-30)
 - `apps/web/src/features/classroom/media-device-safety.ts`: `resumeRemoteAudioIfCurrent` pauses captured old audio elements after stale asynchronous `play()` completion. `LiveLessonMedia.tsx` passes element-bound play/pause callbacks. `media-device-safety.test.ts` covers late resolution/rejection. PR #226, exact-head CI and real browser acceptance separate.
 
