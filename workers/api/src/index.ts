@@ -48,3 +48,6 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 }
 
 export default { fetch: handleRequest };
+
+// Cloudflare Durable Object, intentionally not a public Worker HTTP route.
+export {LessonRoom} from './classroom/lesson-room.ts';

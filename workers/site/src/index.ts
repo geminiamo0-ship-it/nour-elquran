@@ -13,3 +13,6 @@ export async function handleSiteRequest(request: Request, env: SiteEnv): Promise
   return isApi ? handleRequest(request, env) : env.ASSETS.fetch(request);
 }
 export default { fetch: handleSiteRequest };
+
+// Export the DO class on the actual site Worker, not just the API module.
+export {LessonRoom} from '../../api/src/classroom/lesson-room.ts';
