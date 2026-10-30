@@ -3,7 +3,10 @@ import type {Env} from '../bindings.ts';
 import {liveKitActorNames,validatedLiveKitConfig,type VerifiedMediaActor} from './livekit-token.ts';
 
 type Check=Readonly<{status:200|503;code:'LIVEKIT_PROVIDER_REACHABLE'|
- 'LIVEKIT_NOT_CONFIGURED'|'LIVEKIT_PROVIDER_AUTH_REJECTED'|'LIVEKIT_PROVIDER_UNAVAILABLE'}>;
+ 'LIVEKIT_NOT_CONFIGURED'|'LIVEKIT_PROVIDER_AUTH_REJECTED'|'LIVEKIT_PROVIDER_UNAVAILABLE'|
+ 'LIVEKIT_PROVIDER_BAD_REQUEST'|'LIVEKIT_PROVIDER_RATE_LIMITED'|
+ 'LIVEKIT_PROVIDER_HTTP_4XX'|'LIVEKIT_PROVIDER_UPSTREAM_5XX'|
+ 'LIVEKIT_PROVIDER_BAD_RESPONSE'|'LIVEKIT_PROVIDER_NETWORK_ERROR'}>;
 function base64url(value:unknown):string{
  const bytes=new TextEncoder().encode(JSON.stringify(value));
  let raw='';for(const b of bytes)raw+=String.fromCharCode(b);
@@ -37,14 +40,21 @@ export async function checkLiveKitProvider(
     headers:{authorization:'Bearer '+token,'content-type':'application/json'},
     body:JSON.stringify({names:[roomName]}),
   });
+  // Only fixed status categories are returned, never provider bodies, tokens or URLs.
   if(response.status===401||response.status===403)
    return {status:503,code:'LIVEKIT_PROVIDER_AUTH_REJECTED'};
-  if(!response.ok||!response.headers.get('content-type')?.includes('application/json'))
-   return {status:503,code:'LIVEKIT_PROVIDER_UNAVAILABLE'};
-  const result:unknown=await response.json();
+  if(response.status===400)return {status:503,code:'LIVEKIT_PROVIDER_BAD_REQUEST'};
+  if(response.status===429)return {status:503,code:'LIVEKIT_PROVIDER_RATE_LIMITED'};
+  if(response.status>=500)return {status:503,code:'LIVEKIT_PROVIDER_UPSTREAM_5XX'};
+  if(!response.ok)return {status:503,code:'LIVEKIT_PROVIDER_HTTP_4XX'};
+  if(!response.headers.get('content-type')?.includes('application/json'))
+   return {status:503,code:'LIVEKIT_PROVIDER_BAD_RESPONSE'};
+  let result:unknown;
+  try{result=await response.json();}
+  catch{return {status:503,code:'LIVEKIT_PROVIDER_BAD_RESPONSE'};}
   if(!result||typeof result!=='object'||Array.isArray(result)||
    ('rooms' in result&&!Array.isArray((result as {rooms:unknown}).rooms)))
-   return {status:503,code:'LIVEKIT_PROVIDER_UNAVAILABLE'};
+   return {status:503,code:'LIVEKIT_PROVIDER_BAD_RESPONSE'};
   return {status:200,code:'LIVEKIT_PROVIDER_REACHABLE'};
- }catch{return {status:503,code:'LIVEKIT_PROVIDER_UNAVAILABLE'};}
+ }catch{return {status:503,code:'LIVEKIT_PROVIDER_NETWORK_ERROR'};}
 }
