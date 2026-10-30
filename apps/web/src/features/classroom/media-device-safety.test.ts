@@ -107,10 +107,10 @@ describe('LiveKit device permission race safety (#221)',()=>{
     expect(apply.mock.calls.map(call=>call[0])).toEqual([true]);
   });
 
-  it('does not turn a late rejected permission into a successful toggle',async()=>{
+  it('preserves a late rejected permission and attempts old-room cleanup',async()=>{
     const apply=vi.fn(async()=>{throw new Error('denied');});
     await expect(setDeviceWithEpochGuard(true,apply,()=>false))
       .rejects.toThrow('denied');
-    expect(apply).toHaveBeenCalledTimes(1);
+    expect(apply.mock.calls.map(call=>call[0])).toEqual([true,false]);
   });
 });
