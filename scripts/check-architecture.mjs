@@ -128,7 +128,9 @@ export function importSpecifiers(source) {
       && ts.isStringLiteralLike(node.argument.literal)) {
       requests.push(node.argument.literal.text);
     }
-    if (ts.isCallExpression(node) && node.arguments.length === 1
+    // Dynamic import() can include a second import-attributes/options argument.
+    // Only inspecting one-argument calls would let those dependencies evade the graph.
+    if (ts.isCallExpression(node) && node.arguments.length >= 1
       && ts.isStringLiteralLike(node.arguments[0])
       && (node.expression.kind === ts.SyntaxKind.ImportKeyword
         || (ts.isIdentifier(node.expression) && node.expression.text === 'require'))) {
