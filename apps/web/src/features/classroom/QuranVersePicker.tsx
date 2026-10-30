@@ -1,7 +1,7 @@
 'use client';
 
 import {useEffect,useRef,useState} from 'react';
-import type {QuranSurahInfo} from '@/features/student/quranSource';
+import type {QuranSurahInfo} from '@/features/student';
 import type {VerseSelection} from './quran-verse-selection';
 import {findVerifiedVersePage,loadCanonicalSurahs} from './quran-verse-navigation';
 import css from './ConnectedClassroom.module.css';
