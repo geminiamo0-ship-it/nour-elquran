@@ -1,3 +1,7 @@
+## Phase 08B2 #194 — source-only checkpoint security tests
+- workers/api/tests/archive-checkpoint.test.ts (Node fast backend suite): deterministic normalized SHA-256, digest tamper, forged learner/teacher/manifest, student marks, duplicate/reordered event sequence, time/page/ink bounds and extra-field denial. Strict TS and root fast Verify required on exact PR head.
+- These tests do **not** establish genuine two-person DO presence, teacher role authorization, D1 END/anchor checks, internal writer, restart/outbox recovery, remote Dev or PDF/PNG. Those remain separate acceptance gates in docs/LESSON_DO_ARCHIVE_CHECKPOINT_08B2.md; no default Chrome.
+
 ## Phase 08B1 #192 sealed lesson Quran archive (source not yet staged)
 - SQLite migration 0015 and Python tests check real END+published report authorization, fixed edition and FK-backed Quran ayah anchors, bounded page/mark/coordinates, archive cannot be modified after one-way seal, prior report revision hidden when newer report published.
 - Strict browser client tests reject tampered canonical edition/anchor/page/ink and version mismatch; React uses read-only shared Quran renderer. Fast exact-head Verify + future isolated signed Dev GET owner/foreign/anonymous with synthetic D1 manifest only. No default Chrome, media assets, PDF, payment, live Classroom or real child records.
