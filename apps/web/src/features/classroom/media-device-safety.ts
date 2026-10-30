@@ -58,3 +58,19 @@ export function createRoomGenerationGuard<TRoom>(
 ): () => boolean {
   return () => readRoom() === expectedRoom && readGeneration() === expectedGeneration;
 }
+
+/** On explicit Stop or unexpected provider disconnect, revoke local capture
+ * immediately, even if the SDK's asynchronous disable rejects on a dead Room.
+ * Each track/operation is independent so one failure cannot strand the other.
+ */
+export function stopLocalCaptureBestEffort(
+  tracks: Iterable<{stop: () => void} | null | undefined>,
+  disableMicrophone: () => Promise<unknown>,
+  disableCamera: () => Promise<unknown>,
+): void {
+  for (const track of tracks) {
+    try { track?.stop(); } catch { /* disposed track; continue */ }
+  }
+  try { void disableMicrophone().catch(() => {}); } catch { /* disconnected */ }
+  try { void disableCamera().catch(() => {}); } catch { /* disconnected */ }
+}
