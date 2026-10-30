@@ -1,3 +1,8 @@
+## #231 / #232 classroom owner QA source integration
+- apps/web/src/features/classroom/QuranVersePicker.tsx, quran-verse-navigation.ts and quran-verse-selection.ts: canonical Surah/Ayah picker and strict verified page search. ConnectedWaitingRoom.tsx and ConnectedClassroom.module.css integrate compact no-scroll floating rail and teacher-selected highlighted verse. apps/web/src/features/student/index.ts exports canonical Quran index adapter.
+- workers/api/src/classroom/quran-page.ts, quran-sync.ts: optional versioned verse selection, idempotent receipts and verified publisher page metadata; existing LessonDO room transactions persist selection. Tests: workers/api/tests/classroom-quran-sync.test.ts and apps/web/src/features/classroom/quran-verse-navigation.test.ts.
+- PR #233 predecessor: workers/api/src/classroom/mic-policy.ts, lesson-room.ts, livekit-mute.ts, auth/routes.ts, apps/web/src/features/classroom/LiveLessonMedia.tsx and LiveClassroom.module.css provide Sheikh mute/release with voluntary learner re-enable. Source only, not real 2-device provider acceptance.
+
 ## CR-02B2 write-time wake and mute real Dev evidence
 - `docs/CLASSROOM_CR02B2_WRITE_MUTE_DEV_ACCEPTANCE.md` anchors Noor main Verify #41002079116, Santoreno Cloudflare no-secret Dev #41002323938. Mute track selection is server-only; actual LiveKit Cloud provider unconfigured/untested, #206 stays open.
 
