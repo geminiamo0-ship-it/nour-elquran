@@ -1,5 +1,5 @@
 import {describe,expect,it,vi} from 'vitest';
-import {createRoomGenerationGuard,resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard,stopLocalCaptureBestEffort,stopRemotePlaybackBestEffort} from './media-device-safety';
+import {createRoomGenerationGuard,playSubscribedAudioIfCurrent,resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard,stopLocalCaptureBestEffort,stopRemotePlaybackBestEffort} from './media-device-safety';
 
 describe('LiveKit device permission race safety (#221)',()=>{
   it('commits a toggle only for the same active room generation',async()=>{
@@ -258,5 +258,52 @@ describe('Remote media playback cleanup on leave and participant loss (#221)',()
     stopRemotePlaybackBestEffort([element]);
     expect(element.pause).toHaveBeenCalledOnce();
     expect(remove).toHaveBeenCalledOnce();
+  });
+});
+
+describe('Subscribed remote audio autoplay race (#221)',()=>{
+  it('pauses only the old element when autoplay resolves after Stop/leave',async()=>{
+    let finish!:()=>void;
+    const deferred=new Promise<void>(resolve=>{finish=resolve;});
+    let current=true;
+    const pause=vi.fn();
+    const blocked=vi.fn();
+    const pending=playSubscribedAudioIfCurrent({play:()=>deferred,pause},
+      ()=>current,blocked);
+    current=false;
+    finish();
+    await pending;
+    expect(pause).toHaveBeenCalledOnce();
+    expect(blocked).not.toHaveBeenCalled();
+  });
+  it('suppresses stale autoplay warning and pauses on delayed rejection',async()=>{
+    let fail!:(reason:Error)=>void;
+    const deferred=new Promise<void>((_,reject)=>{fail=reject;});
+    let current=true;
+    const pause=vi.fn();
+    const blocked=vi.fn();
+    const pending=playSubscribedAudioIfCurrent({play:()=>deferred,pause},
+      ()=>current,blocked);
+    current=false;
+    fail(new Error('autoplay aborted'));
+    await pending;
+    expect(pause).toHaveBeenCalledOnce();
+    expect(blocked).not.toHaveBeenCalled();
+  });
+  it('reports current autoplay denial without pausing active remote audio',async()=>{
+    const pause=vi.fn();
+    const blocked=vi.fn();
+    await playSubscribedAudioIfCurrent({
+      play:async()=>{throw new Error('gesture required');},pause,
+    },()=>true,blocked);
+    expect(blocked).toHaveBeenCalledOnce();
+    expect(pause).not.toHaveBeenCalled();
+  });
+  it('never starts autoplay on an already-disconnected Room',async()=>{
+    const play=vi.fn(async()=>{});
+    const pause=vi.fn();
+    await playSubscribedAudioIfCurrent({play,pause},()=>false,vi.fn());
+    expect(play).not.toHaveBeenCalled();
+    expect(pause).not.toHaveBeenCalled();
   });
 });
