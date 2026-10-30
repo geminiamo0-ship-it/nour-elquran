@@ -20,7 +20,8 @@ import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '.
 import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts';
 import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '../classroom-access.ts';
 import {forwardVerifiedPresence,parseClientPresenceAction} from '../classroom/presence.ts';
-import {createMediaToken} from '../classroom/livekit-token.ts';
+import {createMediaToken,mediaLessonWindow} from '../classroom/livekit-token.ts';
+import {checkLiveKitProvider} from '../classroom/livekit-provider-check.ts';
 import {wakeActingTeacherMedia,wakeLessonMediaReconciliation} from '../classroom/media-enforcement.ts';
 import {muteSignedLearnerMicrophone} from '../classroom/livekit-mute.ts';
 import { normalizePhone, onlyKeys, readObject, validName } from './input.ts';
@@ -449,6 +450,28 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
       return reply(400,{code:'INVALID_MUTE_REQUEST'},requestId);
     const result=await muteSignedLearnerMicrophone(env,session.user.id,teacherMute[1]!);
     const {status,...body}=result;return reply(status,body,requestId);
+  }
+  // Dev-only read-only provider API health proof, never LiveKit media.
+  // Signed actor, fresh D1 Sheikh grant and matching DO lease are mandatory.
+  const teacherProviderCheck=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/livekit-provider-check$/.exec(path);
+  if(teacherProviderCheck){
+    if(env.NOOR_ENVIRONMENT!=='staging'||env.NOOR_DEV_OPEN!=='true'||
+       !/^https:\/\/noor-site-staging\.[a-z0-9-]+\.workers\.dev$/.test(new URL(request.url).origin))
+      return reply(404,{code:'NOT_FOUND'},requestId);
+    if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const lessonId=teacherProviderCheck[1]!;
+    const access=await checkTeacherClassroomAccess(env.DB,session.user.id,lessonId);
+    if(!access||!mediaLessonWindow(access,Date.now()))
+      return reply(404,{code:'NOT_FOUND'},requestId);
+    const input=await readObject(request);
+    if(!input||Object.keys(input).length!==0)
+      return reply(400,{code:'INVALID_LIVEKIT_PROBE_REQUEST'},requestId);
+    const actor={lessonId,learnerId:access.learnerId,
+      actorSubject:session.user.id,role:'teacher' as const};
+    const lease=await forwardVerifiedPresence(env,actor,'heartbeat');
+    if(lease.status!==200)return reply(lease.status,{code:lease.code},requestId);
+    const check=await checkLiveKitProvider(env,actor);
+    return reply(check.status,{code:check.code},requestId);
   }
   const teacherMedia=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/media-token$/.exec(path);
   if(teacherMedia){
