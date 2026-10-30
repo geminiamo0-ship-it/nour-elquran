@@ -137,9 +137,9 @@ export function ConnectedWaitingRoom(){
     </span>
     <button type="button" disabled={busy||status!=='ready'}
       onClick={()=>void refresh(joined?'leave':'join')}>
-      {busy?'جارٍ التأكيد…':joined?'مغادرة الغرفة':'الانضمام للحصة'}
+      {busy?'جارٍ التأكيد…':joined?'مغادرة غرفة الانتظار':'الانضمام لغرفة الانتظار'}
     </button>
-    <button type="button" disabled={busy} onClick={()=>void refresh('snapshot')}>تحديث</button>
+    <button type="button" disabled={busy} onClick={()=>void refresh('snapshot')}>تحديث الحالة</button>
     <details className={css.presenceDetails}>
       <summary>حالة الطرفين</summary>
       <div className={css.presencePopover}>
