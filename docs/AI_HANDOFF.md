@@ -1,3 +1,6 @@
+## Next exact action — #221 delayed remote audio race (2026-10-30)
+- Draft PR #226 `fix/221-livekit-permission-race-on-current-main`: inspect exact-head GitHub Verify after `resumeRemoteAudioIfCurrent` now pauses only the original audio element when its pending `play()` settles after Stop/leave, including rejection. Two deferred Vitest tests added. If Verify fails, fix on this branch. Then targeted signed synthetic two-browser Dev permission, Stop/rejoin and real audio/camera indicator QA; reviewer approval and reconcile with `main` before merge. Never infer hardware success from Vitest; no Production, minors, recordings or keys.
+
 ## #221 — remote audio/video teardown on Stop and participant disconnect (source candidate, 2026-10-30)
 - Draft PR #226 now explicitly pauses attached remote audio/video, clears their MediaStream references and removes elements on Stop/leave, provider disconnect, participant disconnect and TrackUnsubscribed. DOM removal alone is not relied on to stop playback. Three synthetic cleanup tests cover audio/video, failed pause and failed stream release. **New exact-head CI and two-browser real-device QA required**; no Production, child data or recordings.
 
