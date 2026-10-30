@@ -1,3 +1,6 @@
+## Classroom #221 — late LiveKit startAudio cleanup after Stop (source candidate; 2026-10-30)
+- Draft PR #226 now snapshots old remote audio elements **before** `Room.startAudio()`; if its internal playback resolves/rejects after Stop removes the DOM nodes, the old elements are paused without touching a replacement Room. Existing explicit `audio.play()` race cleanup retained. Added synthetic deferred resolve/reject tests in `media-device-safety.test.ts`. Exact-head Verify and real signed two-browser Cloudflare Dev/physical camera-mic QA remain required; do not merge, deploy Production or claim device acceptance.
+
 ## Classroom #221 — subscribed audio autoplay after Stop (source candidate; 2026-10-30)
 - PR #226 now guards the **TrackSubscribed audio element autoplay**, not only the explicit audio-resume button: an in-flight `play()` settling after leave pauses its captured old element, never the new Room; stale autoplay rejection does not surface an error. Four synthetic Vitest cases added. This is **unverified source until exact-head Verify completes**; no signed two-browser Cloudflare Dev or real hardware QA. Keep Draft, do not merge or deploy Production.
 
