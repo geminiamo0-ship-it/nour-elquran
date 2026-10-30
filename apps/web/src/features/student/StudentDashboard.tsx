@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useStudent } from './StudentContext';
 import { SchedulePanel } from './components/SchedulePanel';
 import { WirdPanel } from './components/WirdPanel';
-import {StudentAcademicPlanCard} from './components/StudentAcademicPlanCard';
+import {ConnectedStudentDashboard} from './ConnectedStudentDashboard';
 import styles from './StudentPortal.module.css';
 
 const stages = {
@@ -21,6 +21,7 @@ function Metric({ label, value, detail }: { label: string; value: string; detail
 export function StudentDashboard() {
   const { selected, finished } = useStudent();
   const { profile, lessons, tasks, latestReport } = selected;
+  if(!profile.demo)return <ConnectedStudentDashboard key={profile.id} learnerId={profile.id} name={profile.name}/>;
   const status = stages[profile.stage];
   return <>
     <div className={styles.pageHeader}>
@@ -43,7 +44,7 @@ export function StudentDashboard() {
     </section>
     <div className={styles.primaryGrid}>
       <SchedulePanel />
-      {profile.demo?<WirdPanel />:<StudentAcademicPlanCard key={profile.id} learnerId={profile.id}/>}
+      <WirdPanel />
     </div>
     <div className={styles.secondaryGrid}>
       <section className={styles.panel}>
