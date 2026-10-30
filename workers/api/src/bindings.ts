@@ -10,6 +10,8 @@ import type {LessonRoomNamespace} from './classroom/lesson-room.ts';
 
 export interface Env {
   LESSON_ROOMS?: LessonRoomNamespace;
+  NOOR_ENVIRONMENT?: string;
+  NOOR_DEV_OPEN?: string;
   LIVEKIT_URL?: string;
   LIVEKIT_API_KEY?: string;
   LIVEKIT_API_SECRET?: string;
