@@ -50,6 +50,30 @@ test('AST scanner rejects lazy imports and require() across module boundaries', 
   }
 });
 
+test('TypeScript import-equals require cannot bypass feature or route boundaries', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'noor-import-equals-'));
+  try {
+    const write = (relative, source) => {
+      const file = path.join(root, relative);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, source);
+    };
+    write('features/teacher/internal/Secret.ts', 'export const secret = 1;');
+    write('features/student/Legacy.ts',
+      "import Secret = require('@/features/teacher/internal/Secret'); export { Secret };");
+    write('app/LegacyRoute.ts',
+      "import Secret = require('../features/teacher/internal/Secret'); export { Secret };");
+    const errors = inspectArchitecture(root);
+    assert.equal(errors.length, 2, errors.join('\\n'));
+    assert.ok(errors.some(error => error.includes('features/student/Legacy.ts')
+      && error.includes('Cross-feature')));
+    assert.ok(errors.some(error => error.includes('app/LegacyRoute.ts')
+      && error.includes('public index')));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('route entrypoints can only consume a feature public API', () => {
   assert.match(boundaryError('app/page.tsx', '@/features/teacher/components/Private'), /public index/);
   assert.equal(boundaryError('app/page.tsx', '@/features/teacher'), null);

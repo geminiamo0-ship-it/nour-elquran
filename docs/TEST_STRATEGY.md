@@ -1,3 +1,6 @@
+## #57 import-equals architecture boundary regression (2026-10-30; source candidate)
+- `tests/architecture.test.mjs` adds a synthetic AST fixture for `import Foo = require('...')` from both `features/student` into private `features/teacher` internals and an `app` route via relative path. `scripts/check-architecture.mjs` must reject both in `pnpm test` and `pnpm lint` checks. This test does not exercise runtime media, auth, browser or Cloudflare services; exact-head CI required before accepting.
+
 ## CR-02B2 signed mute no-secret Dev PASS (2026-10-30)
 - Noor exact main Verify #41002079116 PASS 4/4, Santoreno real no-secret Dev #41002323938 PASS: Sheikh signed mute 503 with no provider secret, forged unmute/SID 400, learner 404, anon 401, GET 405; CR-01, CR-02A, 07A, 08A, 08B1 regressions PASS. No actual provider ListParticipants, MutePublishedTrack, RemoveParticipant, guardian consent or 2-device media. Provider ACK/ejection and real lesson End still outstanding #206.
 

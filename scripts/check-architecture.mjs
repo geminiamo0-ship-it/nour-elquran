@@ -106,6 +106,14 @@ export function importSpecifiers(source) {
       && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
       requests.push(node.moduleSpecifier.text);
     }
+    // TypeScript's legacy import Foo = require('module') is an import, not a CallExpression.
+    // It must obey the same feature/route boundaries as static and lazy imports.
+    if (ts.isImportEqualsDeclaration(node)
+      && ts.isExternalModuleReference(node.moduleReference)
+      && node.moduleReference.expression
+      && ts.isStringLiteralLike(node.moduleReference.expression)) {
+      requests.push(node.moduleReference.expression.text);
+    }
     if (ts.isCallExpression(node) && node.arguments.length === 1
       && ts.isStringLiteralLike(node.arguments[0])
       && (node.expression.kind === ts.SyntaxKind.ImportKeyword

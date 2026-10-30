@@ -1,3 +1,6 @@
+## #57 AST import-equals boundary check (2026-10-30; source candidate)
+- `scripts/check-architecture.mjs` recognizes TS `ImportEqualsDeclaration` (`import Foo = require('...')`) in addition to ordinary imports, exports, lazy imports and `require()` calls. `tests/architecture.test.mjs` checks deep feature and route bypasses. No new package or runtime dependency; current Next.js/static frontend unchanged. Exact-head Verify pending.
+
 ## CR-02B2 write-time wake and mute real Dev evidence
 - `docs/CLASSROOM_CR02B2_WRITE_MUTE_DEV_ACCEPTANCE.md` anchors Noor main Verify #41002079116, Santoreno Cloudflare no-secret Dev #41002323938. Mute track selection is server-only; actual LiveKit Cloud provider unconfigured/untested, #206 stays open.
 
