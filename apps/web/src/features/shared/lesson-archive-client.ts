@@ -1,4 +1,5 @@
-import type {QuranInkStroke} from '../student/quranAnnotations';
+type ArchiveStroke=Readonly<{id:string;page:number;color:string;width:number;
+ kind:'pen'|'marker';points:readonly {x:number;y:number}[]}>;
 
 export type ArchiveMark=Readonly<{
  id:string;page:number;surah:number|null;ayah:number|null;
@@ -73,7 +74,7 @@ export function parsePublishedQuranArchive(raw:unknown):PublishedQuranArchive|nu
   source:'classroom-do:v1',sourceSha256:a.sourceSha256,
   sealedAtMs:a.sealedAtMs as number,pages,marks};
 }
-export const archiveStrokes=(archive:PublishedQuranArchive,pageNumber:number):QuranInkStroke[]=>
+export const archiveStrokes=(archive:PublishedQuranArchive,pageNumber:number):ArchiveStroke[]=>
  archive.marks.filter(m=>m.page===pageNumber&&(m.kind==='pen'||m.kind==='marker'))
   .map(m=>({id:m.id,page:m.page,color:m.payload.color,
    width:m.payload.width!,kind:m.kind as 'pen'|'marker',points:m.payload.points!}));
