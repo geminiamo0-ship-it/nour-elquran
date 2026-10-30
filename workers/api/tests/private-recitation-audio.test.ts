@@ -13,7 +13,7 @@ const base={assetId,submissionId,mediaType:'audio/webm',byteSize:4096,
   durationMs:32000,sha256:'a'.repeat(64)};
 test('private audio envelope rejects misleading metadata, wrong sizes and untrusted IDs',()=>{
   assert.deepEqual(parsePrivateAudioDescriptor(base),base);
-  for(const value of [null,[],{...base,owner:'forged'}, {...base,mediaType:'audio/mpeg'},
+  for(const value of [null,[],{...base,owner:'forged'}, {...base,mediaType:'audio/mpeg'}, {...base,mediaType:'toString'}, {...base,mediaType:'constructor'},
     {...base,mediaType:'video/webm'}, {...base,byteSize:0},
     {...base,byteSize:MAX_RECITATION_BYTES+1}, {...base,byteSize:1.5},
     {...base,durationMs:0},{...base,durationMs:MAX_RECITATION_DURATION_MS+1},
