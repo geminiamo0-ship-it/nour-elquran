@@ -3,7 +3,7 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {Room} from 'livekit-client';
 import {JoinError,requestMediaTicket,type RoomIdentity} from './media-credentials';
-import {createRoomGenerationGuard,resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard} from './media-device-safety';
+import {createRoomGenerationGuard,resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard,stopLocalCaptureBestEffort} from './media-device-safety';
 import css from './LiveClassroom.module.css';
 
 type Phase='idle'|'connecting'|'connected'|'reconnecting'|'failed';
@@ -35,14 +35,21 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
  const [message,setMessage]=useState('');
  const [audioBlocked,setAudioBlocked]=useState(false);
 
+ const releaseCapture=(old:Room)=>{
+   stopLocalCaptureBestEffort(
+     Array.from(old.localParticipant.trackPublications.values(),publication=>publication.track),
+     ()=>old.localParticipant.setMicrophoneEnabled(false),
+     ()=>old.localParticipant.setCameraEnabled(false),
+   );
+ };
+
  const stop=useCallback(()=>{
    epoch.current++;
    const old=room.current;
    room.current=null;
    if(old){
      old.removeAllListeners();
-     void old.localParticipant.setMicrophoneEnabled(false).catch(()=>{});
-     void old.localParticipant.setCameraEnabled(false).catch(()=>{});
+     releaseCapture(old);
      void old.disconnect();
    }
    remoteVideo.current?.replaceChildren();
@@ -80,6 +87,8 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
        epoch.current++;
        room.current=null;
        media.removeAllListeners();
+       // A dropped provider connection must not leave browser capture active.
+       releaseCapture(media);
        remoteVideo.current?.replaceChildren();remoteAudio.current?.replaceChildren();
        localVideo.current?.replaceChildren();
        setMic(false);setCamera(false);setBusy(false);setAudioBlocked(false);setPhase('failed');
