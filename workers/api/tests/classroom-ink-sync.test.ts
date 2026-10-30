@@ -69,7 +69,7 @@ test('joined teacher writes durable ink, joined learner sees it, erased mark sur
  await api.put('quranPage',{edition:'hafs-kfqc-v1.1.1',page:35,revision:1,receipts:[]});
  const first=new LessonRoom({storage:api});
  assert.equal((await cmd(first,{...learner,action:'snapshot',page:35})).status,200);
- assert.equal((await cmd(first,{...learner,...add})).status,400);
+ assert.equal((await cmd(first,{...add,role:'learner',actorSubject:'signed-owner'})).status,400);
  assert.equal((await cmd(first,{...add,actorSubject:'other'})).status,404);
  assert.equal((await cmd(first,{...add,lessonId:'other-lesson'})).status,404);
  const created=await cmd(first,add);
