@@ -1,3 +1,6 @@
+## CR-02B3 #221 signed classroom media permission race guard
+- `apps/web/src/features/classroom/media-device-safety.ts`: guards asynchronous camera/mic toggles with Room/epoch identity and best-effort cleanup of late enables after Stop/leave. `media-device-safety.test.ts`: synthetic deferred-permission and stale-room regression. `LiveLessonMedia.tsx` calls the guard. Source-only until exact-head CI and two-browser Dev acceptance; no Production or real child media.
+
 ## CR-02B3 #221 signed Quran-first Classroom source (unverified candidate)
 - `apps/web/src/features/classroom/SignedClassroomStage.tsx`: role-specific real LiveKit media + existing canonical Quran read-only viewport; local navigation is **not** a shared page event.
 - `SignedClassroom.module.css`: full-height RTL desktop/mobile layout with remote Sheikh video first on learner mobile and Quran flex viewport. `ConnectedWaitingRoom.tsx`: compact signed room join/status shell. `LiveLessonMedia.tsx`: opt-in compact dock and track element sizing; no new media permissions. `classroom.test.tsx`: static markup contract.
