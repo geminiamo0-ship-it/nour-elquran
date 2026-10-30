@@ -1,7 +1,7 @@
 import {describe,expect,it,vi} from 'vitest';
 import {findVerifiedVersePage} from './quran-verse-navigation';
 import {isVerseSelection} from './quran-verse-selection';
-import type {QuranSurahInfo,QuranAyahRegion} from '@/features/student/quranSource';
+import type {QuranSurahInfo,QuranAyahRegion} from '@/features/student';
 
 const index:QuranSurahInfo[]=Array.from({length:114},(_,i)=>({
  number:i+1,nameArabic:'سورة',pageNumber:i===0?1:i===1?2:Math.min(604,10+i*5),
