@@ -1,7 +1,7 @@
 import {
  parseQuranAyahRegions,parseSurahIndex,quranPageMetadataUrl,quranSurahIndexUrl,
  type QuranAyahRegion,type QuranSurahInfo,
-} from '@/features/student/quranSource';
+} from '@/features/student';
 
 /** Printed-page index only; never estimate an Ayah page from verse counts. */
 async function loadJson(url:string,signal?:AbortSignal):Promise<unknown>{
