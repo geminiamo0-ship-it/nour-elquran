@@ -151,7 +151,7 @@ describe('LiveKit event identity after disconnect (#221)',()=>{
     const oldRoom={id:'old'};
     const newRoom={id:'new'};
     let currentRoom:typeof oldRoom|null=oldRoom;
-    let generation=7;
+    const generation=7;
     const oldEventAllowed=createRoomGenerationGuard(
       oldRoom,7,()=>currentRoom,()=>generation,
     );
