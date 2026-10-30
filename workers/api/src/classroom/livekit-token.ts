@@ -29,7 +29,7 @@ export function validatedLiveKitConfig(env:Pick<Env,'LIVEKIT_URL'|'LIVEKIT_API_K
   if(parsed.protocol!=='wss:'||!parsed.hostname.endsWith('.livekit.cloud')||
    !/^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.livekit\.cloud$/.test(parsed.hostname)||
    parsed.port||parsed.username||parsed.password||parsed.search||parsed.hash||
-   parsed.pathname!=='/'||url!==parsed.origin+'/')return null;
+   parsed.pathname!=='/'||(url!==parsed.origin&&url!==parsed.origin+'/'))return null;
   return {url:parsed.origin,key,secret};
  }catch{return null;}
 }
