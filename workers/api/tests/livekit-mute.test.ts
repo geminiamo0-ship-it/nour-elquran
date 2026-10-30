@@ -14,7 +14,7 @@ const access={id:lessonId,learnerId,role:'teacher',status:'live',
  kind:'standard',startsAtMs:now-1000,endsAtMs:now+100000};
 function db(active=true):CoreDatabase{return {prepare(sql){
  const stmt={
-  bind(..._args:unknown[]){return this;},
+  bind(...args:unknown[]){void args;return this;},
   async first<T>(){
    if(sql.includes('JOIN teachers t'))return active?access as T:null;
    if(sql.includes('FROM learners learner'))return {authSubject:owner} as T;
