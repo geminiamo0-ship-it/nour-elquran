@@ -86,7 +86,10 @@ export function ConnectedWaitingRoom(){
   });
   return()=>{controller.abort();};
  },[]);
- useEffect(()=>()=>{alive.current=false;},[]);
+ useEffect(()=>{
+  alive.current=true;
+  return ()=>{alive.current=false;};
+ },[]);
  const refresh=useCallback(async(action:'snapshot'|'join'|'heartbeat'|'leave')=>{
   if(!identity||running.current)return;
   running.current=true;
