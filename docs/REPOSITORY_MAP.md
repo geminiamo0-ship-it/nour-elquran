@@ -1,3 +1,6 @@
+## Phase 07A source→Dev verification evidence (2026-10-30)
+- Noor [PR #187](https://github.com/geminiamo0-ship-it/nour-elquran/pull/187) merged; [main Verify #40986308630](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40986308630) PASS. Santoreno [PR #257](https://github.com/geminiamo0-ship-it/santoreno/pull/257) deployed existing Dev with migration 0013 and signed HTTP [#40986426733](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40986426733) PASS. Report UI files exist but one owner visual QA remains open. Classroom End generator and R2/PDF archive absent. See report contract for exact scope.
+
 ## Phase 07A report files (#186; source-only until verified)
 - `workers/api/migrations/0013_lesson_reports.sql`: immutable report events, draft projection, published snapshot/last approved pointer and completed lesson/actor/substitute authorization triggers.
 - `workers/api/src/lesson-reports.ts`, `workers/api/src/auth/routes.ts`: validated commands and Better Auth teacher/owner report endpoints.
