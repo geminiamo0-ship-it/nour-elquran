@@ -1,3 +1,6 @@
+## #221 unexpected LiveKit disconnect / queued event regression (source candidate, 2026-10-30)
+- Vitest `media-device-safety.test.ts` verifies the Room-generation gate refuses queued old Room track/reconnect events after `room.current` is cleared or a new Room joins, and refuses reused Room references after epoch invalidation. `LiveLessonMedia.tsx` invalidates epoch on actual Disconnected and checks exact Room for all callbacks and post-connect success. Exact-head Verify (lint/strict TS/Vitest/build/D1) pending. Real signed Dev browser and device indicators remain a separate gate; no automatic global Chrome or Production.
+
 ## #221 follow-up: guard stale remote audio and Sheikh mute UI (source candidate, 2026-10-30)
 - Draft PR #226 prevents pending old-Room `startAudio()` from playing a **new Room's** audio after Stop/rejoin, suppresses stale remote autoplay failure notices and stale Sheikh mute HTTP result messages, and resets busy state on provider disconnect. Three synthetic deferred/audio-order tests added. Exact-head GitHub Verify and real signed Cloudflare Dev two-browser permission/audio QA remain required; no Production or private recordings.
 
