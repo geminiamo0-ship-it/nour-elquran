@@ -1,3 +1,9 @@
+## Phase 08B1 archive source (#192)
+- D1 `workers/api/migrations/0015_lesson_quran_archive.sql`: append-only, sealed, canonical-page and bounded teacher mark archive tied to published report revision/END event.
+- Worker `workers/api/src/lesson-quran-archive.ts` and `auth/routes.ts`: only signed household GET; no archive writing endpoint.
+- UI `apps/web/src/features/shared/lesson-archive-client.ts`, `student/components/PublishedLessonArchive.tsx`, `ConnectedNotebookWorkspace.tsx`: strict DTO and read-only existing Quran renderer.
+- Tests: `workers/api/tests/test_lesson_quran_archive.py`, `apps/web/src/features/shared/lesson-archive-client.test.ts`. Docs `LESSON_QURAN_ARCHIVE_08B1_CONTRACT.md`. No Dev/Production/source producer evidenced yet.
+
 ## Phase 08A #190 notebook source files
 - `workers/api/migrations/0014_notebook_private_notes.sql` private notes projection and immutable operation journal with completed-lesson authorization guard; not Quran annotations.
 - `workers/api/src/notebook-notes.ts` and `auth/routes.ts` signed owner operations; backend tests `notebook-notes.test.ts`, `test_notebook_notes.py`.

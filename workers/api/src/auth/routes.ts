@@ -14,6 +14,7 @@ import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudent
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
 import {getTeacherReport,getStudentReports,applyTeacherReport,parseReportAction} from '../lesson-reports.ts';
 import {parseNotebookAction,readNotebookNotes,writeNotebookNote} from '../notebook-notes.ts';
+import {readLessonQuranArchive} from '../lesson-quran-archive.ts';
 import {verifiedOwner} from '../published-assignments.ts';
 import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '../staff-teachers.ts';
 import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts';
@@ -191,6 +192,17 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
     const result=await applyPrivateMushaf(db,authSubject,learnerId,command);
     const {status,...body}=result;
     return reply(status,{learnerId,...body},requestId);
+  }
+  // Phase 08B1: ONLY owner-readable, current-report published and DO-sealed
+  // lesson Quran layers. No public mutation, seal, archive upload or export route.
+  const archiveMatch=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/quran-archive$/.exec(path);
+  if(archiveMatch){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const version=await db.prepare("SELECT version FROM noor_schema_meta WHERE component='lesson_quran_archive'")
+      .first<{version:number}>();
+    if(version?.version!==1)return reply(503,{code:'ARCHIVE_SCHEMA_NOT_READY'},requestId);
+    const result=await readLessonQuranArchive(db,authSubject,archiveMatch[1]!,archiveMatch[2]!);
+    const {status,...body}=result;return reply(status,body,requestId);
   }
   // Phase 08A: individual learner's private lesson note journal; never the
   // Sheikh's shared Quran layer and never a cross-profile note source.

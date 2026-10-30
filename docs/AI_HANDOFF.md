@@ -1,3 +1,7 @@
+## Next Phase 08B1 #192: secure Quran archive reader (source only)
+- Read `docs/LESSON_QURAN_ARCHIVE_08B1_CONTRACT.md`, migration 0015, `workers/api/src/lesson-quran-archive.ts` + auth route, shared lesson archive typed client/reader, SQLite and Vitest tests; branch `feat/192-lesson-quran-archive-read`. Fast Verify exact head + D1 tests first, then merge/postmerge Verify and isolated Dev owner-only GET/404 with synthetic sealed schema fixture. No automatic Chrome.
+- Only real Classroom DO snapshot exporter may eventually write+seal data with independently verified source digest and END/participant authorization; **this slice has no writer**. Never claim live archived marks exist on the service until that source is built. Report #186 and notebook #190 API Dev smoke already passed; keep UI and real classroom gates open. No Production, no Admin until final phase.
+
 ## Active Phase 08A #190 next steps (source only)
 - Review `docs/NOTEBOOK_PHASE_08A_CONTRACT.md`, Migration 0014, `workers/api/src/notebook-notes.ts` authenticated routes, and `ConnectedNotebookWorkspace.tsx`. Run exact-head Verify, fix real TypeScript/SQLite faults, then stage isolated D1 0014 and signed owner/foreign per-lesson note E2E on Dev. Do not mark API ready before remote acceptance or run Chrome by default.
 - Phase 07A report API is Dev accepted: Noor main Verify #40986308630 and Santoreno remote #40986426733. UI owner visual QA/real Classroom remain open, not blocking development of owner-private free-text notebook. Admin is last.

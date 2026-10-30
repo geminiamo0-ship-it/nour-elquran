@@ -1,3 +1,7 @@
+## Phase 08B1 #192 sealed lesson Quran archive (source not yet staged)
+- SQLite migration 0015 and Python tests check real END+published report authorization, fixed edition and FK-backed Quran ayah anchors, bounded page/mark/coordinates, archive cannot be modified after one-way seal, prior report revision hidden when newer report published.
+- Strict browser client tests reject tampered canonical edition/anchor/page/ink and version mismatch; React uses read-only shared Quran renderer. Fast exact-head Verify + future isolated signed Dev GET owner/foreign/anonymous with synthetic D1 manifest only. No default Chrome, media assets, PDF, payment, live Classroom or real child records.
+
 ## Phase 08A #190 notebook candidate (not yet Dev accepted)
 - Fast Node/Python SQLite: strict UUID and note body, historical owner/lesson linkage, explicit completed+END, cross-sibling/foreign/Sheikh denial, atomic revision CAS, idempotent event replay, hide tombstones and immutable events. Student client DTO tests.
 - Next release gate: exact-head Verify + isolated Cloudflare Dev D1 0014 signed session ownership and authoring/read-after-refresh, then targeted visual UI/RTL owner acceptance. No blanket Chrome in CI, no real minors, no R2 audio or public links.
