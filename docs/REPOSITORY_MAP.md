@@ -1,3 +1,8 @@
+## CR-02B3 #221 signed Quran-first Classroom source (unverified candidate)
+- `apps/web/src/features/classroom/SignedClassroomStage.tsx`: role-specific real LiveKit media + existing canonical Quran read-only viewport; local navigation is **not** a shared page event.
+- `SignedClassroom.module.css`: full-height RTL desktop/mobile layout with remote Sheikh video first on learner mobile and Quran flex viewport. `ConnectedWaitingRoom.tsx`: compact signed room join/status shell. `LiveLessonMedia.tsx`: opt-in compact dock and track element sizing; no new media permissions. `classroom.test.tsx`: static markup contract.
+- Source PR and exact-head CI/targeted signed browser QA required before acceptance. No server, D1, production or LiveKit configuration changes.
+
 ## CR-02B2 write-time wake and mute real Dev evidence
 - `docs/CLASSROOM_CR02B2_WRITE_MUTE_DEV_ACCEPTANCE.md` anchors Noor main Verify #41002079116, Santoreno Cloudflare no-secret Dev #41002323938. Mute track selection is server-only; actual LiveKit Cloud provider unconfigured/untested, #206 stays open.
 

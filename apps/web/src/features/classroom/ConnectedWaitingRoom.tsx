@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
 import {useCallback,useEffect,useRef,useState} from 'react';
-import {LiveLessonMedia} from './LiveLessonMedia';
+import {SignedClassroomStage} from './SignedClassroomStage';
+import css from './SignedClassroom.module.css';
 
 type Identity=Readonly<{role:'teacher'|'learner';lessonId:string;learnerId?:string}>;
 type Presence=Readonly<{
@@ -124,28 +125,42 @@ export function ConnectedWaitingRoom(){
   <h1>رابط غرفة الانتظار غير صالح</h1>
   <p>افتح الحصة المصرح بها من جدول الطالب أو الشيخ؛ لا يمكن اختيار دور أو حساب آخر من هذه الصفحة.</p>
   <Link href="/student">العودة للبوابة</Link></main>;
- return <main dir="rtl" style={{maxWidth:760,margin:'2rem auto',padding:24,display:'grid',gap:16}}>
-  <header><h1>غرفة انتظار الحصة</h1>
-   <p>غرفة Cloudflare خاصة بالحصة · {identity.role==='teacher'?'منظور الشيخ':'منظور الطالب'}</p></header>
-  <p>الانضمام هنا يؤكد اتصال حسابك بغرفة الانتظار فقط. لا يبدأ الحصة، ولا يشغّل الكاميرا أو الميكروفون، ولا يسجّل حضورًا رسميًا.</p>
-  {status==='loading'?<p role="status">جارٍ تحميل حالة غرفة الانتظار الموثقة…</p>:
-   <section aria-label="حالة طرفي الحصة" style={{padding:20,border:'1px solid #aaa',borderRadius:12}}>
-    <div style={{display:'flex',gap:16,flexWrap:'wrap'}}>
-     <p><strong>الشيخ:</strong> {presence?.teacherPresent?'متصل بغرفة الانتظار':'غير متصل'}</p>
-     <p><strong>الطالب:</strong> {presence?.learnerPresent?'متصل بغرفة الانتظار':'غير متصل'}</p>
-    </div>
-    <p role="status">{joined?'أنت متصل بالغرفة.':'لم تنضم إلى الغرفة بعد.'}</p>
-    <p>{presence?.bothPresent?'الطرفان متصلان، لكن بدء الدرس لم يُفعّل بعد.':'بانتظار اكتمال اتصال الطرفين.'}</p>
-   </section>}
-  {error&&<p role="alert">{error}</p>}
-  <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
-   <button type="button" disabled={busy||status!=='ready'} onClick={()=>void refresh(joined?'leave':'join')}>
-    {busy?'جارٍ تأكيد العملية…':joined?'مغادرة غرفة الانتظار':'الانضمام لغرفة الانتظار'}
-   </button>
-   <button type="button" disabled={busy} onClick={()=>void refresh('snapshot')}>تحديث الحالة</button>
-   <Link href={identity.role==='teacher'?'/teacher/schedule':'/student/lessons'}>العودة للجدول</Link>
+ return <main dir="rtl" className={css.shell}>
+  <header className={css.header}>
+    <div><h1>الحصة المباشرة</h1>
+      <small>{identity.role==='teacher'?'منظور الشيخ':'منظور الطالب'} · {status==='ready'?'تم التحقق من الحساب':'جارٍ التحقق'}</small></div>
+    <Link href={identity.role==='teacher'?'/teacher/schedule':'/student/lessons'}>العودة للجدول</Link>
+  </header>
+  <div className={css.lobbyBar}>
+    <span role="status" className={css.roomStatus}>
+      {joined?'متصل بغرفة الانتظار':status==='loading'?'جارٍ التحقق…':'لم تنضم بعد'}
+    </span>
+    <button type="button" disabled={busy||status!=='ready'}
+      onClick={()=>void refresh(joined?'leave':'join')}>
+      {busy?'جارٍ التأكيد…':joined?'مغادرة غرفة الانتظار':'الانضمام لغرفة الانتظار'}
+    </button>
+    <button type="button" disabled={busy} onClick={()=>void refresh('snapshot')}>تحديث الحالة</button>
+    <details className={css.presenceDetails}>
+      <summary>حالة الطرفين</summary>
+      <div className={css.presencePopover}>
+        <p>الشيخ: {presence?.teacherPresent?'متصل':'غير متصل'}</p>
+        <p>الطالب: {presence?.learnerPresent?'متصل':'غير متصل'}</p>
+        <p>{presence?.bothPresent?'الطرفان متصلان بالغرفة.':'بانتظار اكتمال اتصال الطرفين.'}</p>
+        <p>الاتصال بالغرفة لا يبدأ الحصة ولا يسجل حضورًا رسميًا.</p>
+      </div>
+    </details>
   </div>
-  {joined&&status==='ready'&&<LiveLessonMedia identity={identity} active={joined}/>}
-  <p>الصوت والفيديو منفصلان عن بدء الحصة الرسمية. تزامن المصحف وأرشيف العلامات ما زالا قيد التنفيذ؛ لا توجد محاكاة حضور.</p>
+  {error&&<p role="alert" className={css.alert}>{error}</p>}
+  {joined&&status==='ready'
+    ?<SignedClassroomStage identity={identity} active={joined}/>
+    :<section className={css.prejoin} aria-label="قبل دخول الحصة">
+      <h1>المصحف والكاميرا في شاشة واحدة</h1>
+      <p>انضم أولًا لغرفة الحصة المصرح بها. الكاميرا والميكروفون يظلان مغلقين حتى تختار تشغيلهما بنفسك.</p>
+      <p>{status==='loading'?'جارٍ تحميل حالة غرفة الانتظار الموثقة…':
+        'لا يبدأ الدرس رسميًا بمجرد دخول الغرفة.'}</p>
+    </section>}
+  <p className={css.legal}>
+    لا تسجيل صوت أو فيديو ولا حضور تلقائي. تزامن صفحة المصحف والرسم وأرشيف الحصة قيد التنفيذ.
+  </p>
  </main>;
 }
