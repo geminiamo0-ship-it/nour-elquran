@@ -1,3 +1,6 @@
+## Classroom CR-01 remote Dev proof (2026-10-30)
+- Exact Noor main Verify #40993668189 4/4 success, Santoreno Dev #40994099005 success: two signed actors, DO heartbeat/leave/rejoin/25s expiry, no fake Start/AV, foreign/sibling 404, anonymous 401, malformed public body 400. Checks followed by 07A/08A/08B1 regression PASS. This is **server API** evidence, not live two-device audiovisual or RTL/mobile screen acceptance; keep LiveKit and Classroom END separate.
+
 ## CR-01 (#196) waiting-room candidate gates
 - Node reducer tests: signed role-only actions, explicit join, independent teacher/learner leases, wrong actor 409, heartbeat without join 404, disconnect expiry, leave/rejoin, no Start/End and durable reconstruction; missing DO binding always 503. Exact-head GitHub Verify and API/Web/Worker TypeScript & build; optional local DO native smoke only when DO migration/binding supported.
 - **Dev acceptance pending:** isolate a new real Cloudflare DO binding on the Noor Dev Worker only, verify signed two-account synthetic join/heartbeat/leave/revocation and expiry, then a single targeted mobile RTL waiting-room QA. No production, no Chrome on every PR and no real minors/video.
