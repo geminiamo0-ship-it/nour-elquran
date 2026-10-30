@@ -116,7 +116,7 @@ export async function teacherLifecycleAction(env:Env,subject:string,lessonId:str
   if(!db.batch)return {status:503,code:'ATOMIC_D1_BATCH_REQUIRED'};
   if(action==='start'){
    const p=await forwardVerifiedPresence(env,{lessonId,learnerId:row.learnerId,
-    actorSubject:subject,role:'teacher'},'snapshot');
+    actorSubject:subject,role:'teacher'},'heartbeat');
    if(p.status!==200||!p.presence.bothPresent)
     return {status:409,code:'WAITING_FOR_PARTICIPANTS'};
   }
@@ -156,10 +156,13 @@ export async function teacherLifecycleAction(env:Env,subject:string,lessonId:str
   const fresh=await teacherRow(db,subject,lessonId,now);
   if(!fresh)return {status:404,code:'NOT_FOUND'};
   const state=await safe(db,fresh);
-  const eventWritten=results[1]?.meta.changes===1;
+  const eventWritten=results[0]?.success===true&&results[1]?.success===true&&
+   results[0]?.meta.changes===1&&results[1]?.meta.changes===1;
   if(!eventWritten){
-   // May be an idempotent competing Start/End. Never announce an un-audited write.
-   if(state.phase==='completed'||(state.phase==='live'&&action==='start'))
+   // May be a competing request. Require a real prior Start audit, and never
+   // report a newly committed transition if its paired audit is absent.
+   if((state.phase==='completed'&&state.startedAtMs!==null)||
+     (state.phase==='live'&&action==='start'&&state.startedAtMs!==null))
     return {status:200,code:state.phase==='completed'?'LESSON_ALREADY_ENDED':'LESSON_ALREADY_STARTED',
      lifecycle:state};
    return {status:409,code:'LESSON_STATE_CONFLICT'};
