@@ -21,6 +21,7 @@ import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts'
 import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '../classroom-access.ts';
 import {forwardVerifiedPresence,parseClientPresenceAction} from '../classroom/presence.ts';
 import {createMediaToken} from '../classroom/livekit-token.ts';
+import {wakeActingTeacherMedia,wakeLessonMediaReconciliation} from '../classroom/media-enforcement.ts';
 import { normalizePhone, onlyKeys, readObject, validName } from './input.ts';
 
 type Auth = ReturnType<typeof createAuth>;
@@ -317,7 +318,13 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     if(!command)return reply(400,{code:'INVALID_SCHEDULE_ACTION'},requestId);
     const outcome=await executeStaffSchedule(env.DB,session.user.id,command);
     const {status,...safe}=outcome;
-    return reply(status,safe,requestId);
+    // D1 cancellation is already committed; trigger the room's authoritative
+    // D1 reconcile now, not a browser-provided LiveKit identity.
+    const mediaEnforcement=command.action==='cancel'&&
+      (outcome.code==='SCHEDULE_ACTION_APPLIED'||outcome.code==='OPERATION_ALREADY_APPLIED')
+      ?await wakeLessonMediaReconciliation(env,command.resourceId!)
+      :undefined;
+    return reply(status,{...safe,...(mediaEnforcement?{mediaEnforcement}: {})},requestId);
   }
   if (path === '/v1/staff/teacher-actions') {
     if (request.method !== 'POST') return reply(405, {code:'METHOD_NOT_ALLOWED'}, requestId);
@@ -333,7 +340,14 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     if(!input)return reply(400, {code:'INVALID_TEACHER_ACTION'}, requestId);
     const output=await issueTeacherRoleAction(env.DB,session.user.id,input);
     const {status,...data}=output;
-    return reply(status,data,requestId);
+    // Suspended/dequalified acting teachers must lose active media; this
+    // wake happens after committed role change and is idempotent on replay.
+    const mediaEnforcement=(input.action==='suspend'||input.action==='revoke_qualification')&&
+      output.teacherId&&
+      (output.code==='TEACHER_ROLE_CHANGED'||output.code==='OPERATION_ALREADY_APPLIED')
+      ?await wakeActingTeacherMedia(env,output.teacherId)
+      :undefined;
+    return reply(status,{...data,...(mediaEnforcement?{mediaEnforcement}: {})},requestId);
   }
   if(path==='/v1/teacher/assignment-catalog'){
     if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
