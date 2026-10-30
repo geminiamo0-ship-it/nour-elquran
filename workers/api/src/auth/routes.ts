@@ -28,6 +28,7 @@ import {wakeActingTeacherMedia,wakeLessonMediaReconciliation} from '../classroom
 import {muteSignedLearnerMicrophone} from '../classroom/livekit-mute.ts';
 import {forwardVerifiedMicPolicy} from '../classroom/mic-policy.ts';
 import {readTeacherLifecycle,readLearnerLifecycle,teacherLifecycleAction,parseLifecycleAction} from '../classroom/lesson-lifecycle-write.ts';
+import {forwardCorrections,parseClientCorrection} from '../classroom/live-corrections.ts';
 import { normalizePhone, onlyKeys, readObject, validName } from './input.ts';
 
 type Auth = ReturnType<typeof createAuth>;
@@ -485,6 +486,20 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // Every token requires new Better Auth+D1+LessonDO active lease checks.
   // Authorized Sheikh-only mute. The request cannot assert track SID, room,
   // learner identity, or muted:false; LiveKit RoomService lists exact tracks.
+  const teacherCorrections=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/corrections$/.exec(path);
+  if(teacherCorrections){
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const lessonId=teacherCorrections[1]!;
+    const access=await checkTeacherClassroomAccess(env.DB,session.user.id,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    const action=request.method==='GET'?'snapshot' as const:
+      parseClientCorrection(await readObject(request));
+    if(!action)return reply(400,{code:'INVALID_CORRECTION_COMMAND'},requestId);
+    const outcome=await forwardCorrections(env,{lessonId,learnerId:access.learnerId,
+      actorSubject:session.user.id,role:'teacher'},action);
+    const {status,...body}=outcome;return reply(status,body,requestId);
+  }
   const teacherLifecycle=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/(lifecycle|lifecycle-actions)$/.exec(path);
   if(teacherLifecycle){
     const lessonId=teacherLifecycle[1]!,kind=teacherLifecycle[2]!;
