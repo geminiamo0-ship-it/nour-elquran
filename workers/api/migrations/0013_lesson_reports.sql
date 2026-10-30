@@ -60,11 +60,16 @@ BEGIN
       AND e.at_ms=l.ended_at_ms)
    AND (EXISTS (SELECT 1 FROM teacher_assignments a
     WHERE a.learner_id=l.learner_id AND a.teacher_id=t.id
-     AND a.starts_at_ms<=l.starts_at_ms AND a.ends_at_ms>l.starts_at_ms
-     AND (a.revoked_at_ms IS NULL OR a.revoked_at_ms>l.starts_at_ms))
+     AND a.revoked_at_ms IS NULL
+     AND a.starts_at_ms<=l.starts_at_ms AND a.ends_at_ms>=l.ends_at_ms)
     OR EXISTS (SELECT 1 FROM lesson_access_grants g
-      WHERE g.lesson_id=l.id AND g.teacher_id=t.id AND g.kind='substitute'
-       AND g.accepted_at_ms IS NOT NULL AND g.revoked_at_ms IS NULL))
+      WHERE g.lesson_id=l.id AND g.learner_id=l.learner_id
+       AND g.teacher_id=t.id AND g.kind='substitute'
+       AND g.revoked_at_ms IS NULL AND g.consent_deadline_ms IS NOT NULL
+       AND g.accepted_at_ms IS NOT NULL
+       AND g.accepted_at_ms<=g.consent_deadline_ms
+       AND g.accepted_at_ms<=l.starts_at_ms
+       AND g.starts_at_ms<=l.starts_at_ms AND g.ends_at_ms>=l.ends_at_ms))
  );
  -- Approved substitute: only the taught lesson, no unrelated student history.
  -- Initial report requires timely action after END; corrections expire 24h after
