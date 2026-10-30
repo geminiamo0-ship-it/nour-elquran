@@ -22,6 +22,7 @@ import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '.
 import {forwardVerifiedPresence,parseClientPresenceAction} from '../classroom/presence.ts';
 import {createMediaToken} from '../classroom/livekit-token.ts';
 import {wakeActingTeacherMedia,wakeLessonMediaReconciliation} from '../classroom/media-enforcement.ts';
+import {muteSignedLearnerMicrophone} from '../classroom/livekit-mute.ts';
 import { normalizePhone, onlyKeys, readObject, validName } from './input.ts';
 
 type Auth = ReturnType<typeof createAuth>;
@@ -438,6 +439,17 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // substitute scope on EVERY join, heartbeat, leave and snapshot.
   // CR-02A: only a qualified actual Sheikh can request a short LiveKit JWT.
   // Every token requires new Better Auth+D1+LessonDO active lease checks.
+  // Authorized Sheikh-only mute. The request cannot assert track SID, room,
+  // learner identity, or muted:false; LiveKit RoomService lists exact tracks.
+  const teacherMute=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/mute-learner-microphone$/.exec(path);
+  if(teacherMute){
+    if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const input=await readObject(request);
+    if(!input||Object.keys(input).length!==0)
+      return reply(400,{code:'INVALID_MUTE_REQUEST'},requestId);
+    const result=await muteSignedLearnerMicrophone(env,session.user.id,teacherMute[1]!);
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
   const teacherMedia=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/media-token$/.exec(path);
   if(teacherMedia){
     if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
