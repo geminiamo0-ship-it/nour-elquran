@@ -121,7 +121,7 @@ describe('Room-scoped remote audio resume (#221)',()=>{
     const start=new Promise<void>(resolve=>{resolveStart=resolve;});
     let current=true;
     const play=vi.fn(async()=>{});
-    const list=vi.fn(()=>[play]);
+    const list=vi.fn(()=>[{play,pause:vi.fn()}]);
     const pending=resumeRemoteAudioIfCurrent(()=>start,()=>current,list);
     current=false;
     resolveStart();
@@ -133,14 +133,47 @@ describe('Room-scoped remote audio resume (#221)',()=>{
     let current=true;
     const first=vi.fn(async()=>{current=false;});
     const second=vi.fn(async()=>{});
-    await expect(resumeRemoteAudioIfCurrent(async()=>{},()=>current,()=>[first,second]))
+    await expect(resumeRemoteAudioIfCurrent(async()=>{},()=>current,()=>[{play:first,pause:vi.fn()},{play:second,pause:vi.fn()}]))
       .resolves.toBe(false);
     expect(first).toHaveBeenCalledOnce();
     expect(second).not.toHaveBeenCalled();
   });
+  it('pauses only the old audio element if Stop happens during pending play',async()=>{
+    let finish!:()=>void;
+    let signalStarted!:()=>void;
+    const started=new Promise<void>(resolve=>{signalStarted=resolve;});
+    const pendingPlay=new Promise<void>(resolve=>{finish=resolve;});
+    let current=true;
+    const play=vi.fn(()=>{signalStarted();return pendingPlay;});
+    const pause=vi.fn();
+    const nextRoomPause=vi.fn();
+    const pending=resumeRemoteAudioIfCurrent(async()=>{},()=>current,
+      ()=>[{play,pause}]);
+    await started;
+    current=false;
+    finish();
+    await expect(pending).resolves.toBe(false);
+    expect(pause).toHaveBeenCalledOnce();
+    expect(nextRoomPause).not.toHaveBeenCalled();
+  });
+  it('pauses a stale element even if pending play rejects after Stop',async()=>{
+    let rejectPlay!:(error:Error)=>void;
+    let signalStarted!:()=>void;
+    const started=new Promise<void>(resolve=>{signalStarted=resolve;});
+    const pendingPlay=new Promise<void>((_,reject)=>{rejectPlay=reject;});
+    let current=true;
+    const pause=vi.fn();
+    const pending=resumeRemoteAudioIfCurrent(async()=>{},()=>current,
+      ()=>[{play:()=>{signalStarted();return pendingPlay;},pause}]);
+    await started;
+    current=false;
+    rejectPlay(new Error('play aborted'));
+    await expect(pending).rejects.toThrow('play aborted');
+    expect(pause).toHaveBeenCalledOnce();
+  });
   it('resumes explicitly requested audio for the still-current Room',async()=>{
     const play=vi.fn(async()=>{});
-    await expect(resumeRemoteAudioIfCurrent(async()=>{},()=>true,()=>[play]))
+    await expect(resumeRemoteAudioIfCurrent(async()=>{},()=>true,()=>[{play,pause:vi.fn()}]))
       .resolves.toBe(true);
     expect(play).toHaveBeenCalledOnce();
   });
