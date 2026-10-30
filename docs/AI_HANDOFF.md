@@ -1,3 +1,7 @@
+## #57 current handoff — TypeScript triple-slash references (2026-10-31)
+- On Draft PR #230 (`fix/57-import-equals-boundary-20261030`), inspect `scripts/check-architecture.mjs` and `tests/architecture.test.mjs`: triple-slash reference-path dependencies now enter the architecture graph and boundary checks. The new synthetic test exercises forbidden route/private, cross-feature, shared-to-feature, cycle and permitted public-index paths.
+- NEXT: inspect exact-head GitHub Verify four jobs; review diff and request independent approval before any merge. #57 OPEN; no deployment, real user data or media. Separately #242 portal QA is in progress and #1 main protection remains unverified.
+
 ## Current handoff: Classroom Dev final E2E PASS — 2026-10-31 / #240
 Classroom Dev accepted in the single synthetic run: https://github.com/geminiamo0-ship-it/santoreno/actions/runs/41140055151
 App commit: 57c59518a544672fa4c213d81b0e49208f5b2b70; test harness: 5875cc18344cc8871102499945ad8dd2cc3fc0f5.
