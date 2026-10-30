@@ -320,7 +320,7 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // including only a narrowly accepted substitute, never a role asserted by UI.
   const lessonReport=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/(report|report-actions)$/.exec(path);
   if(lessonReport){
-    const [,,lessonId,kind]=lessonReport;
+    const [,lessonId,kind]=lessonReport;
     if(request.method!==(kind==='report'?'GET':'POST'))
       return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
     const version=await env.DB.prepare("SELECT version FROM noor_schema_meta WHERE component='lesson_reports'")
