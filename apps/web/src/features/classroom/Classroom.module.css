@@ -110,8 +110,11 @@
 .toolbar{
   display:flex;align-items:center;justify-content:space-between;gap:7px;flex:0 0 auto;
   min-height:37px;padding:3px 8px;margin:0;border:1px solid var(--border);
-  border-radius:7px;background:var(--surface);
+  border-radius:7px;background:var(--surface);overflow-x:auto;overflow-y:hidden;
+  overscroll-behavior-x:contain;scrollbar-width:thin;
 }
+.inkPalette{display:flex;align-items:center;gap:7px;flex:0 0 auto;}
+.toolGroup,.colors{flex:0 0 auto;}
 .toolGroup,.colors,.mediaControls{display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
 .toolGroup button,.mediaControls button{
   min-height:29px;padding:4px 7px;border:1px solid #ded4c3;border-radius:6px;
@@ -119,6 +122,7 @@
 }
 .toolGroup button[aria-pressed=true]{background:#315a43;color:#fff;border-color:#315a43;}
 .toolGroup button>span{font-size:15px;line-height:1;}
+.toolGroup .toolLabel{font-size:10px;}
 .toolGroup>span{font-size:11px;font-weight:800;white-space:nowrap;padding:0 4px;}
 .colors{flex-wrap:nowrap;}
 .color,.selectedColor{
@@ -255,6 +259,49 @@
 .root[data-view-role="student"] .workspace{grid-template-columns:minmax(0,1fr) minmax(205px,24%);}
 .root[data-view-role="student"] .quranStage{grid-column:1;grid-row:1;}
 .root[data-view-role="student"] .mediaPanel{grid-column:2;grid-row:1;}
+/* Desktop: reclaim the previously unused space on both sides of the canonical Quran.
+   Rails are anchored to the stage, never laid over printed Quran pixels. */
+/* Keep the side rails off narrower desktops: their fixed 88px width can cover the
+   canonical Quran when the middle grid column is squeezed by the two side panels. */
+@media(min-width:1200px) and (min-height:560px){
+ .quranStage>.toolbar{
+   position:absolute;z-index:8;inset:29px 0 18px;height:auto;min-height:0;
+   padding:0;margin:0;border:0;border-radius:0;background:transparent;
+   overflow:visible;display:block;pointer-events:none;
+ }
+ .quranStage>.toolbar>.inkPalette{
+   position:absolute;right:7px;top:50%;transform:translateY(-50%);
+   display:flex;flex-direction:column;gap:10px;width:88px;
+   align-items:stretch;pointer-events:auto;padding:7px 5px;
+   border:1px solid var(--border);border-radius:10px;
+   background:#fffdf9f2;box-shadow:0 4px 15px #294b3b16;
+ }
+ .quranStage>.toolbar>.inkPalette>.toolGroup{
+   display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:5px;
+ }
+ .quranStage>.toolbar>.inkPalette>.toolGroup button{
+   display:flex;align-items:center;justify-content:center;gap:4px;
+   min-height:36px;padding:5px 3px;white-space:nowrap;font-size:10px;
+ }
+ .quranStage>.toolbar>.inkPalette>.toolGroup button>span:first-child{font-size:17px;}
+ .quranStage>.toolbar>.inkPalette>.colors{
+   display:flex;justify-content:center;flex-wrap:wrap;gap:8px 7px;
+   border-top:1px solid var(--border);padding-top:10px;
+ }
+ .quranStage>.toolbar>.inkPalette .color,
+ .quranStage>.toolbar>.inkPalette .selectedColor{width:25px;height:25px;}
+ .quranStage>.toolbar>.pageNavigation{
+   position:absolute;left:8px;top:50%;transform:translateY(-50%);
+   display:flex;flex-direction:column;flex-wrap:nowrap;gap:7px;
+   align-items:center;pointer-events:auto;padding:9px 6px;
+   border:1px solid var(--border);border-radius:10px;
+   background:#fffdf9f2;box-shadow:0 4px 15px #294b3b16;
+ }
+ .quranStage>.toolbar>.pageNavigation button{min-width:39px;min-height:39px;font-size:20px;}
+ .quranStage>.toolbar>.pageNavigation>span{font-size:10px;padding:4px 1px;direction:ltr;}
+ .root[data-view-role="student"] .quranStage>.toolbar>.pageNavigation{display:none;}
+ .pageEdgePrev,.pageEdgeNext{display:none;}
+}
 @media(max-width:1000px) and (min-width:721px){
  .root:not([data-view-role="student"]) .workspace{grid-template-columns:minmax(170px,24%) minmax(0,1fr) minmax(185px,22%);}
  .presenceHeading,.prejoinActions>span,.workspaceIdentity{display:none;}
@@ -287,12 +334,13 @@
  .prejoinActions button{font-size:9px;min-height:26px;padding:3px 5px;}
  .clockDetails summary{font-size:9px;padding:4px;}
  .toolbar{min-height:32px;gap:3px;padding:2px 5px;}
+ .inkPalette{gap:4px;}
  .toolGroup{gap:2px;}
  .toolGroup button{font-size:0;min-width:27px;min-height:27px;padding:3px 5px;}
  .toolGroup button>span{font-size:14px;}
  .toolGroup>span{font-size:10px;padding:0 1px;}
  .colors{gap:2px;}
- .color,.selectedColor{width:13px;height:13px;}
+ .color,.selectedColor{width:23px;height:23px;}
  .mediaControls{min-height:27px;padding:2px 4px;gap:3px;}
  .mediaControls button{min-height:24px;padding:2px 4px;font-size:9px;}
  .workspace,.root[data-view-role="student"] .workspace{
@@ -335,8 +383,6 @@
  .pageEdgePrev,.pageEdgeNext{display:none;}
  .floatingVideo{top:45px;right:5px;width:min(220px,65vw);max-height:28dvh;}
  .root[data-view-role="student"] .toolbar{min-height:30px;}
- .root[data-view-role="student"] .toolbar .colors{display:none;}
- .root[data-view-role="student"] .toolbar .toolGroup:last-child button{display:none;}
  .root[data-view-role="student"] .toolGroup>span{font-size:10px;}
  .focusMode .pageTop{display:flex;}
  .focusMode .demoTag{display:none;}

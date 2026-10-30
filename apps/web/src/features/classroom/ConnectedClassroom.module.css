@@ -32,3 +32,15 @@
 @media(max-width:390px){
  .connected[data-view-role="student"] .mediaPanel{height:clamp(108px,19dvh,132px);}
 }
+
+/* The approved #134 compact session chrome sits above the original Quran stage. */
+.connected .sessionRole{font-size:10px;font-weight:800;color:#f4dcaa;white-space:nowrap;}
+.connected .menuStatus{margin:0;font-size:11px;line-height:1.5;color:#617466;}
+/* Keep disabled drawing controls readable without implying a backend connection. */
+.connected .quranStage>.toolbar .inkPalette button:disabled{opacity:.62;}
+@media(max-width:720px){
+ .connected .sessionRole{display:none;}
+ /* Focus all phone height on teacher camera and the canonical Quran page. */
+ .connected .quranStage>.toolbar{max-height:42px;}
+ .connected[data-view-role="student"] .mediaPanel{min-height:90px;}
+}
