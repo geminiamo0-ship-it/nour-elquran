@@ -89,7 +89,10 @@ describe('connected learner isolation', () => {
       id: '10b4e832-c325-4da9-8cff-e1f10d209156', name: 'Connected learner', stage: 'new', demo: false,
     }]}><StudentDashboard /></StudentProvider>);
     expect(html).toContain('Connected learner');
-    expect(html).toContain('لم يُنشَر أي تقرير');
+    // Server render has no authenticated API response yet. A genuine loading
+    // state is required; an invented empty-report result would be misleading.
+    expect(html).toContain('جارٍ تحميل بيانات الطالب الموثقة');
+    expect(html).not.toContain('لم يُنشَر أي تقرير');
     expect(html).not.toContain('شيخ تجريبي');
     expect(html).not.toContain('طالبة منتظمة');
     expect(html).not.toContain('8 / 10');
