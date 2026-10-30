@@ -38,22 +38,28 @@ export async function resumeRemoteAudioIfCurrent(
   isCurrent: () => boolean,
   audioPlays: () => Iterable<{play: () => Promise<unknown>; pause: () => void}>,
 ): Promise<boolean> {
-  await startAudio();
   if (!isCurrent()) return false;
-  for (const audio of audioPlays()) {
+  // Capture the old Room's elements *before* startAudio(). LiveKit may call
+  // play() internally and settle after Stop has removed them from the DOM.
+  // Querying the container only after startAudio() would lose those elements.
+  const oldAudio = Array.from(audioPlays());
+  try {
+    await startAudio();
     if (!isCurrent()) return false;
-    try {
+    for (const audio of oldAudio) {
+      if (!isCurrent()) return false;
       await audio.play();
-    } finally {
-      // An in-flight HTMLMediaElement.play() can settle after Stop/leave.
-      // The room teardown already paused it, but a late play may resume it.
-      // Pause only the captured old element, never the newly joined room.
-      if (!isCurrent()) {
+    }
+    return isCurrent();
+  } finally {
+    // Also runs when startAudio() or play() rejects after a room replacement.
+    // Never pause the new Room's audio; these references belong to the old one.
+    if (!isCurrent()) {
+      for (const audio of oldAudio) {
         try { audio.pause(); } catch { /* element already detached */ }
       }
     }
   }
-  return isCurrent();
 }
 
 /** A LiveKit event belongs to the active Room AND its original generation.
