@@ -1,6 +1,11 @@
+## Dev runtime verification — API gate passed (2026-10-30)
+- Source [Noor #187](https://github.com/geminiamo0-ship-it/nour-elquran/pull/187) merged to `fedc03a8aa89e04a8080e5210840a93bf900027c`, postmerge [Verify #40986308630](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40986308630) 4/4 PASS.
+- Real isolated [Cloudflare Dev #40986426733](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40986426733) SUCCESS on Santoreno `4b267a852401a527699084b3e8357642b5a54a98`. D1 0013 migration, deployed API, synthetic signed authorized teacher, explicit **test-only** Start/End audit, draft/publish/replay/CAS, student latest-only, foreign/anon 404/401 and revoke teacher denial; legacy staging regressions PASS.
+- Still pending: owner target UI/RTL/mobile acceptance, real Classroom DO two-person presence + End event, snapshot/archive linking, notifications and Production. No Chrome run in default workflow. This Dev test does not constitute production readiness.
+
 # Noor Phase 07A — Completed lesson report contract (#186)
 
-**Status:** source implementation on PR branch; no real Cloudflare Dev runtime acceptance or Production enablement is implied. Parent #155 and CORE-13 #51 stay open.
+**Status:** isolated Cloudflare Dev API/D1 acceptance verified; UI visual QA, real Classroom and Production remain pending. Parent #155 and CORE-13 #51 stay open.
 
 ## What is authoritative
 
@@ -30,7 +35,7 @@
 ## Acceptance & gates
 
 - Source tests: `workers/api/tests/test_lesson_reports.py` (SQLite immutable revision / actor / end-event / primary/substitute / timed scope); `workers/api/tests/lesson-reports.test.ts` (strict DTO/grades).
-- **Not yet proven by tests:** deployed Dev D1 migration 0013, real Better Auth HTTP report flow, browser screenshots/keyboard, multi-device, Cloudflare production. GitHub Verify is necessary but not sufficient.
+- **Now verified on isolated Dev:** migration 0013 and signed Better Auth synthetic report GET/POST. **Not verified:** browser screenshots/keyboard, multi-device UI, real Classroom, Cloudflare production. GitHub Verify is necessary but not sufficient.
 - Isolated Dev E2E must create **synthetic** staff-owned scheduled lesson, qualified acting Sheikh, an explicit valid Start+End audit, save draft, prove owner sees empty, publish, owner sees version, save revision two, prove old version still visible, publish second, revoke access and test 404, other account 404, expired substitute 404. Cleanup synthetic records.
 - Do not run generic Chrome on every commit. Use one targeted visual acceptance if requested (360/390/768/1280/1440).
 - No Production changes, audio/AI, admin website, payment or WhatsApp. Booking is later Admin Dashboard work; classroom End event is a separate project. See ADR 0008.
