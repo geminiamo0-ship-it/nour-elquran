@@ -6,6 +6,7 @@ import {ReaderPrintedPage,clampQuranPage,targetKey,type QuranTarget} from '@/fea
 import {ConnectedClassroomNotes} from './ConnectedClassroomNotes';
 import css from './Classroom.module.css';
 import liveCss from './ConnectedClassroom.module.css';
+import barCss from './ClassroomSessionHeader.module.css';
 
 type Identity=Readonly<{role:'teacher'|'learner';lessonId:string;learnerId?:string}>;
 type Presence=Readonly<{
@@ -78,7 +79,6 @@ export function ConnectedWaitingRoom(){
  const [localPage,setLocalPage]=useState(1);
  const [selectedVerse,setSelectedVerse]=useState<QuranTarget|null>(null);
  const [panelOpen,setPanelOpen]=useState(false);
- const [compactToolbar,setCompactToolbar]=useState(false);
  const [focusMode,setFocusMode]=useState(false);
  const stageRef=useRef<HTMLDivElement>(null);
  const running=useRef(false);
@@ -155,87 +155,64 @@ export function ConnectedWaitingRoom(){
  };
  return <div ref={stageRef}
   className={[css.root,liveCss.connected,focusMode?css.focusMode:'',
-   panelOpen?css.panelExpanded:'',compactToolbar?css.toolbarCollapsed:''].filter(Boolean).join(' ')}
+   panelOpen?css.panelExpanded:''].filter(Boolean).join(' ')}
   data-view-role={role} data-focus={focusMode?'on':'off'} data-classroom-connected="true"
   dir="rtl" aria-label="الفصل القرآني المتصل">
-  <div className={css.pageTop}>
-   <Link href={role==='teacher'?'/teacher/schedule':'/student/lessons'}>العودة إلى {role==='teacher'?'بوابة الشيخ':'بوابة الطالب'}</Link>
-   <span className={css.previewDisclosure}>غرفة خاصة · حساب موثق · بدون تسجيل</span>
-   <div className={css.workspaceActions}>
-    <button type="button" className={css.focusButton} aria-pressed={focusMode}
-     onClick={()=>void toggleFocus()}>{focusMode?'الخروج من وضع الحصة':'⛶ وضع الحصة'}</button>
-    {role==='teacher'&&<button type="button" className={css.panelToggle}
-     aria-expanded={panelOpen} aria-controls="lesson-notes"
-     onClick={()=>setPanelOpen(p=>!p)}>{panelOpen?'إخفاء لوحة الأدوات':'الأخطاء والتقييم'}</button>}
-    <button type="button" className={css.toolbarToggle} aria-expanded={!compactToolbar}
-     onClick={()=>setCompactToolbar(v=>!v)}>
-     {compactToolbar?'إظهار الأدوات الإضافية':'إخفاء الأدوات الإضافية'}
-    </button>
-   </div>
-  </div>
-  <div className={css.topline}>
-   <div className={css.lessonTitle}>
+  <header className={barCss.header} aria-label="إدارة الحصة المتصلة">
+   <div className={barCss.identity}>
+    <Link className={barCss.back} href={role==='teacher'?'/teacher/schedule':'/student/lessons'}
+     aria-label="العودة إلى جدول الحصص">‹</Link>
     <h1>الفصل التفاعلي</h1>
-    <span className={css.demoTag}>اتصال موثق · LiveKit</span>
+    <span className={barCss.previewLabel}>LiveKit · موثق</span>
    </div>
-   <div className={css.topControls}>
-    <span className={css.workspaceIdentity}>
-     {role==='teacher'?'منظور الشيخ':'منظور الطالب'}
+   <div className={barCss.sessionInfo}>
+    <span className={barCss.phase} data-phase={joined?'live':'waiting'}>
+     {joined?'غرفة الانتظار':'غير منضم'}
     </span>
-    <span className={joined?css.stateLive:css.stateWaiting}>
-     {joined?'داخل غرفة الانتظار':'بانتظار الانضمام'}
-    </span>
+    <span className={liveCss.sessionRole}>{role==='teacher'?'الشيخ':'الطالب'}</span>
    </div>
-  </div>
-  <section className={css.prejoinCard} aria-label="حالة طرفي الحصة">
-   <div className={css.prejoinPeople}>
-    <strong className={css.presenceHeading}>حالة الطرفين</strong>
-    <span className={liveCss.actor} data-online={presence?.teacherPresent?'true':'false'}>
-     ● الشيخ {presence?.teacherPresent?'متصل':'غير متصل'}
-    </span>
-    <span className={liveCss.actor} data-online={presence?.learnerPresent?'true':'false'}>
-     ● الطالب {presence?.learnerPresent?'متصل':'غير متصل'}
-    </span>
-    <span className={liveCss.status} role="status">
-     {status==='loading'?'جارٍ التحقق…':
-      joined?(presence?.bothPresent?'الطرفان في غرفة الانتظار':'بانتظار الطرف الآخر'):'غرفة انتظار خاصة'}
-    </span>
-   </div>
-   <div className={css.prejoinActions}>
-    <button className={css.primaryBtn} type="button" disabled={busy||status!=='ready'}
+   <div className={barCss.actions}>
+    <button type="button" className={barCss.start} disabled={busy||status!=='ready'}
      onClick={()=>void refresh(joined?'leave':'join')}>
-     {busy?'جارٍ تأكيد العملية…':joined?'مغادرة غرفة الانتظار':'الانضمام لغرفة الانتظار'}
+     {busy?'جارٍ التأكيد…':joined?'مغادرة غرفة الانتظار':'الانضمام لغرفة الانتظار'}
     </button>
-    <button className={liveCss.refresh} type="button" disabled={busy}
-     onClick={()=>void refresh('snapshot')}>تحديث الحالة</button>
+    {role==='teacher'&&<button type="button" className={barCss.iconAction}
+     aria-label="الأخطاء والتقييم" aria-expanded={panelOpen} aria-controls="lesson-notes"
+     onClick={()=>setPanelOpen(v=>!v)}>✎</button>}
+    <button type="button" className={barCss.iconAction}
+     aria-label={focusMode?'الخروج من وضع الحصة':'وضع الحصة'}
+     aria-pressed={focusMode} onClick={()=>void toggleFocus()}>⛶</button>
+    <details className={barCss.menu} onKeyDown={event=>{
+     if(event.key==='Escape'){
+      event.preventDefault();event.currentTarget.open=false;
+      event.currentTarget.querySelector('summary')?.focus();
+     }
+    }}>
+     <summary aria-label="حالة المشاركين وإعدادات الغرفة">⚙</summary>
+     <div className={barCss.menuPanel}>
+      <strong>غرفة الحصة · اتصال موثّق</strong>
+      <div className={barCss.presence} aria-label="حالة طرفي الحصة">
+       <span className={liveCss.actor} data-online={presence?.teacherPresent?'true':'false'}>
+        ● الشيخ {presence?.teacherPresent?'متصل':'غير متصل'}
+       </span>
+       <span className={liveCss.actor} data-online={presence?.learnerPresent?'true':'false'}>
+        ● الطالب {presence?.learnerPresent?'متصل':'غير متصل'}
+       </span>
+      </div>
+      <p role="status" className={liveCss.menuStatus}>
+       {status==='loading'?'جارٍ التحقق من الغرفة…':joined?
+        (presence?.bothPresent?'الطرفان في غرفة الانتظار':'بانتظار الطرف الآخر'):
+        'انضم أولًا لطلب تصريح الصوت والفيديو.'}
+      </p>
+      <button type="button" disabled={busy} onClick={()=>void refresh('snapshot')}>
+       تحديث حالة الطرفين
+      </button>
+      <small>هذه غرفة انتظار فعلية، وليست بدءًا رسميًا للحصة. الكاميرا والمايك لا يعملان تلقائيًا، ولا توجد محاكاة حضور.</small>
+     </div>
+    </details>
    </div>
-  </section>
+  </header>
   {error&&<p className={liveCss.error} role="alert">{error}</p>}
-  <div className={css.toolbar} role="toolbar" aria-label="أدوات المصحف">
-   <div className={css.toolGroup}>
-    <span className={liveCss.readOnlyLabel}>الآيات</span>
-    {([{symbol:'⌖',name:'تحديد الآية'},{symbol:'✎',name:'قلم'},
-      {symbol:'▰',name:'تظليل'},{symbol:'⌫',name:'ممحاة'}] as const).map((item,i)=>
-     <button key={item.name} type="button" title={i===0?'تحديد آية للقراءة فقط':
-      item.name+' غير مفعل حتى اعتماد التزامن'}
-      disabled={i!==0} aria-pressed={false} onClick={()=>{if(i===0)setSelectedVerse(null);}}>
-      <span aria-hidden="true">{item.symbol}</span>{item.name}
-     </button>)}
-   </div>
-   <div className={css.colors} aria-label="ألوان التظليل غير مفعلة">
-    {['#d0a94c','#388e68','#e2604e','#397ca7','#8d67b0'].map(color=>
-     <button key={color} type="button" className={css.color} style={{background:color}}
-      disabled title="يُفعّل بعد التزامن" aria-label={'لون '+color+' غير متاح'}/>)}
-   </div>
-   <div className={css.toolGroup}>
-    <button type="button" disabled={localPage<=1}
-     onClick={()=>changePage(localPage-1)}>صفحة سابقة ↑</button>
-    <span>صفحة {localPage} / 604</span>
-    <button type="button" disabled={localPage>=604}
-     onClick={()=>changePage(localPage+1)}>صفحة تالية ↓</button>
-   </div>
-   <span className={liveCss.localTag}>تصفح محلي</span>
-  </div>
   <div className={css.workspace}>
    <aside className={[css.mediaPanel,liveCss.mediaPanel].join(' ')} aria-label="لوحة فيديو المشاركين">
     <header className={css.mediaHead}><strong>المشاركون</strong>
@@ -254,6 +231,41 @@ export function ConnectedWaitingRoom(){
       <h2>المصحف المشترك</h2></div>
      <span className={css.quranStatus}>تصفح محلي · التزامن لم يُفعّل</span>
     </header>
+    <div className={css.toolbar} role="toolbar" aria-label="أدوات المصحف">
+     <div className={css.inkPalette} aria-label="القلم والألوان">
+      <div className={css.toolGroup}>
+       {([{symbol:'⌖',name:'تحديد الآية'},{symbol:'✎',name:'قلم'},
+        {symbol:'▰',name:'تظليل'},{symbol:'⌫',name:'ممحاة'}] as const).map((item,i)=>
+        <button key={item.name} type="button"
+         title={i===0?'تحديد آية للقراءة فقط':item.name+' غير مفعل حتى اعتماد التزامن'}
+         aria-label={item.name} aria-pressed={i===0} disabled={i!==0}
+         onClick={()=>setSelectedVerse(null)}>
+         <span aria-hidden="true">{item.symbol}</span>
+         <span className={css.toolLabel}>{item.name}</span>
+        </button>)}
+      </div>
+      <div className={css.colors} role="group" aria-label="ألوان الرسم غير مفعلة">
+       {([{color:'#d0a94c',name:'ذهبي'},{color:'#388e68',name:'أخضر'},
+        {color:'#e2604e',name:'أحمر'},{color:'#397ca7',name:'أزرق'},
+        {color:'#8d67b0',name:'بنفسجي'}] as const).map(({color,name})=>
+        <button key={color} type="button" className={css.color} style={{background:color}}
+         disabled title={'لون '+name+' (بعد تفعيل التزامن)'}
+         aria-label={'لون '+name+' غير متاح'}/>)}
+      </div>
+     </div>
+     <div className={[css.toolGroup,css.pageNavigation].join(' ')}
+      role="group" aria-label="التنقل بين صفحات المصحف محليًا">
+      <button type="button" aria-label="الصفحة السابقة" title="الصفحة السابقة"
+       disabled={localPage<=1} onClick={()=>changePage(localPage-1)}>
+       <span aria-hidden="true">‹</span>
+      </button>
+      <span aria-live="polite">{localPage} / 604</span>
+      <button type="button" aria-label="الصفحة التالية" title="الصفحة التالية"
+       disabled={localPage>=604} onClick={()=>changePage(localPage+1)}>
+       <span aria-hidden="true">›</span>
+      </button>
+     </div>
+    </div>
     <div className={css.quranViewport} data-quran-layout="viewport-fit">
      <button type="button" className={css.pageEdgePrev} title="الصفحة السابقة" aria-label="الصفحة السابقة"
       disabled={localPage<=1} onClick={()=>changePage(localPage-1)}>‹</button>
