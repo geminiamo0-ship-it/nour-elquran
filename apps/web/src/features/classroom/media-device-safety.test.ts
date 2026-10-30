@@ -44,7 +44,7 @@ describe('LiveKit device permission race safety (#221)',()=>{
   });
 
   it('does not re-enable devices for stale disable operations',async()=>{
-    const apply=vi.fn(async()=>undefined);
+    const apply=vi.fn(async(enabled:boolean)=>{void enabled;return undefined;});
     expect(await setDeviceWithEpochGuard(false,apply,()=>false))
       .toEqual({current:false});
     expect(apply.mock.calls.map(call=>call[0])).toEqual([false]);
