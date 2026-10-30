@@ -10,6 +10,9 @@ import type {LessonRoomNamespace} from './classroom/lesson-room.ts';
 
 export interface Env {
   LESSON_ROOMS?: LessonRoomNamespace;
+  LIVEKIT_URL?: string;
+  LIVEKIT_API_KEY?: string;
+  LIVEKIT_API_SECRET?: string;
   DB?: CoreDatabase;
   AUTH_ENABLED?: string;
   AUTH_SECRET?: string;

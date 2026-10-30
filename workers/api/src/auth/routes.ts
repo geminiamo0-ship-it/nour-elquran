@@ -20,6 +20,7 @@ import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '.
 import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts';
 import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '../classroom-access.ts';
 import {forwardVerifiedPresence,parseClientPresenceAction} from '../classroom/presence.ts';
+import {createMediaToken} from '../classroom/livekit-token.ts';
 import { normalizePhone, onlyKeys, readObject, validName } from './input.ts';
 
 type Auth = ReturnType<typeof createAuth>;
@@ -226,6 +227,21 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
   }
   // CR-01: a signed household owner controls exactly their verified learner.
   // Public commands contain ONLY {action}; all actor fields come from auth + D1.
+  // CR-02A token request: no browser-provided identity, role, room, grant,
+  // scope or arbitrary room/admin settings. Same-origin POST only.
+  const learnerMedia=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/media-token$/.exec(path);
+  if(learnerMedia){
+    if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const learnerId=learnerMedia[1]!,lessonId=learnerMedia[2]!;
+    const access=await checkOwnedLearnerClassroomAccess(db,accountId,learnerId,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    const body=await readObject(request);
+    if(!body||Object.keys(body).length!==0)
+      return reply(400,{code:'INVALID_MEDIA_TOKEN_REQUEST'},requestId);
+    const outcome=await createMediaToken(env,{lessonId,learnerId,
+      actorSubject:authSubject,role:'learner'},access);
+    const {status,...safe}=outcome;return reply(status,safe,requestId);
+  }
   const learnerPresence=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/(presence|presence-actions)$/.exec(path);
   if(learnerPresence){
     const learnerId=learnerPresence[1]!,lessonId=learnerPresence[2]!;
@@ -406,6 +422,21 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   }
   // CR-01: freshly verify qualified acting teacher/primary or consented
   // substitute scope on EVERY join, heartbeat, leave and snapshot.
+  // CR-02A: only a qualified actual Sheikh can request a short LiveKit JWT.
+  // Every token requires new Better Auth+D1+LessonDO active lease checks.
+  const teacherMedia=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/media-token$/.exec(path);
+  if(teacherMedia){
+    if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const lessonId=teacherMedia[1]!;
+    const access=await checkTeacherClassroomAccess(env.DB,session.user.id,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    const body=await readObject(request);
+    if(!body||Object.keys(body).length!==0)
+      return reply(400,{code:'INVALID_MEDIA_TOKEN_REQUEST'},requestId);
+    const outcome=await createMediaToken(env,{lessonId,learnerId:access.learnerId,
+      actorSubject:session.user.id,role:'teacher'},access);
+    const {status,...safe}=outcome;return reply(status,safe,requestId);
+  }
   const teacherPresence=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/(presence|presence-actions)$/.exec(path);
   if(teacherPresence){
     const lessonId=teacherPresence[1]!,mode=teacherPresence[2]!;

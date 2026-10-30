@@ -1,3 +1,6 @@
+## Classroom CR-02A LiveKit token candidate #200
+- `workers/api/src/classroom/livekit-token.ts`: server-only LiveKit URL/secrets validation, 120s HMAC SHA256 scoped JWT mint, strict no-admin/no-record/no-data grant, D1 lesson schedule and actor-specific DO lease checks. `workers/api/src/auth/routes.ts` adds two signed POST media-token endpoints, `workers/api/src/bindings.ts` adds optional server secrets. `workers/api/tests/livekit-token.test.ts` signs/validates synthetic JWT and rejects forgery/off-room/expired/unconfigured requests. `docs/CLASSROOM_LIVEKIT_CR02A_TOKEN_CONTRACT.md` distinguishes backend scaffold from actual media and revocation.
+
 ## CR-01 isolated Dev acceptance reference
 - `docs/CLASSROOM_CR01_DEV_ACCEPTANCE.md` records Noor main Verify #40993668189 and Santoreno real DO #40994099005; only signed waiting-room connectivity is accepted, not media or attendance. Site DO class in `workers/site/src/index.ts`, local Wrangler binding only; production root config remains unchanged. UI StrictMode follow-up #199, classroom #196 remains open.
 
