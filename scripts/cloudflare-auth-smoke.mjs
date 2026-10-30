@@ -55,6 +55,17 @@ assert.equal(badLogin.response.headers.getSetCookie().length,0);
 const first = await call('/v1/me/learners',{method:'POST',cookie:cookieA,body:{name:'Fixture Learner A',learnerType:'child'}});
 assert.equal(first.response.status,201,JSON.stringify(first.data));
 const learner = first.data.learner.id;
+// #182: native Better Auth + actual local D1 must prove private audio
+// cannot be activated or discovered for a foreign learner.
+const privateAudioPolicy='/v1/me/learners/'+learner+'/recitation-audio-policy';
+const audioPolicy=await call(privateAudioPolicy,{cookie:cookieA});
+assert.equal(audioPolicy.response.status,200,JSON.stringify(audioPolicy.data));
+assert.equal(audioPolicy.data.uploadEnabled,false);
+assert.equal(audioPolicy.data.code,'AUDIO_PRIVACY_APPROVAL_REQUIRED');
+assert.equal((await call(privateAudioPolicy,{cookie:cookieB})).response.status,404);
+assert.equal((await call(privateAudioPolicy)).response.status,401);
+assert.equal((await call(privateAudioPolicy,{method:'POST',cookie:cookieA,body:{grant:true}})).response.status,405);
+console.log('Native recitation privacy: owner-scoped disabled only, signed-out and foreign denial, no grant/upload API PASS');
 // #157: exercise the actual Better Auth / Worker / D1 profile endpoint, not only SQL.
 assert.equal(first.data.learner.revision,1);
 const profilePath='/v1/me/learners/'+learner+'/profile-actions';
