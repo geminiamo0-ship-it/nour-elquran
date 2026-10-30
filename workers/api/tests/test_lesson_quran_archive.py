@@ -91,7 +91,7 @@ class LessonQuranArchive(unittest.TestCase):
    self.mark(1,page=2)
   with self.assertRaises(sqlite3.IntegrityError):
    self.mark(2,surah=1,ayah=2)
-  with self.assertRaisesRegex(sqlite3.IntegrityError,"ARCHIVE_MARK_INVALID"):
+  with self.assertRaisesRegex(sqlite3.IntegrityError,"ARCHIVE_MARK_REQUIRED_FIELD_MISSING"):
    self.mark(3,body={"text":"note","color":"red"})
   with self.assertRaisesRegex(sqlite3.IntegrityError,"ARCHIVE_BAD_POINT"):
    self.mark(4,"marker",None,None,1,
