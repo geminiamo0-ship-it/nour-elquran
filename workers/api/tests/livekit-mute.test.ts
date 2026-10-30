@@ -12,11 +12,11 @@ const teacher='signed-sheikh',owner='signed-household';
 const now=1_810_000_000_000;
 const access={id:lessonId,learnerId,role:'teacher',status:'live',
  kind:'standard',startsAtMs:now-1000,endsAtMs:now+100000};
-function db(active=true):CoreDatabase{return {prepare(sql){
+function db(active=true,status:'live'|'scheduled'='live'):CoreDatabase{return {prepare(sql){
  const stmt={
   bind(...args:unknown[]){void args;return this;},
   async first<T>(){
-   if(sql.includes('JOIN teachers t'))return active?access as T:null;
+   if(sql.includes('JOIN teachers t'))return active?{...access,status} as T:null;
    if(sql.includes('FROM learners learner'))return {authSubject:owner} as T;
    return null;
   },
@@ -25,10 +25,11 @@ function db(active=true):CoreDatabase{return {prepare(sql){
  };
  return stmt;
 }};}
-function env(active=true,allowedHeartbeats=Infinity):Env{
+function env(active=true,allowedHeartbeats=Infinity,
+ status:'live'|'scheduled'='live'):Env{
  let heartbeats=0;
  return {...{LIVEKIT_URL:config.url,LIVEKIT_API_KEY:config.key,LIVEKIT_API_SECRET:config.secret},
-  DB:db(active),LESSON_ROOMS:{idFromName(s){return s;},get(){
+  DB:db(active,status),LESSON_ROOMS:{idFromName(s){return s;},get(){
    return {async fetch(req){
     const data=await req.json() as Record<string,unknown>;
     assert.equal(data.role,'teacher');assert.equal(data.actorSubject,teacher);
@@ -102,7 +103,7 @@ test('lease loss after ListParticipants blocks provider mute despite initial acc
  assert.equal(calls.length,1);
  assert.ok(calls[0]?.endsWith('/ListParticipants'));
 });
-test('lesson admission expiring during provider listing blocks late mute',async()=>{
+test('scheduled lesson window expiring during provider listing blocks late mute',async()=>{
  const actor={lessonId,learnerId,role:'learner' as const,actorSubject:owner};
  const {identity}=await liveKitActorNames(config,actor);
  let calls=0;
@@ -113,7 +114,7 @@ test('lesson admission expiring during provider listing blocks late mute',async(
   ]}]});
  };
  const result=await muteSignedLearnerMicrophone(
-  env(),teacher,lessonId,now,provider,()=>now+4_000_000);
+  env(true,Infinity,'scheduled'),teacher,lessonId,now,provider,()=>now+4_000_000);
  assert.deepEqual(result,{status:404,code:'NOT_FOUND'});
  assert.equal(calls,1);
 });
