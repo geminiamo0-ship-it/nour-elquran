@@ -1,0 +1,161 @@
+/* Real signed classroom: compact, viewport-sized, Quran-first and explicit media. */
+.root{
+ direction:rtl;box-sizing:border-box;display:flex;flex-direction:column;
+ gap:5px;height:100vh;height:100dvh;max-height:100dvh;min-width:0;width:100%;
+ padding:0 7px 5px;overflow:hidden;color:#294a37;background:#f8f5ec;
+ font-family:'Tajawal','Noto Kufi Arabic',Tahoma,sans-serif;line-height:1.35;
+ --live-border:#ddd1b8;
+}
+.root *,.root *::before,.root *::after{box-sizing:border-box;}
+.root button{font:inherit;cursor:pointer;}
+.root button:disabled{opacity:.5;cursor:not-allowed;}
+.root:fullscreen{width:100vw;height:100dvh;background:#f8f5ec;}
+.root :focus-visible{outline:2px solid #af863b;outline-offset:2px;}
+.head{
+ display:flex;align-items:center;justify-content:space-between;gap:9px;
+ flex:0 0 auto;min-height:39px;margin:0 -7px;padding:4px 12px;
+ background:#244434;color:#fffdf7;font-size:12px;
+}
+.brand,.headActions{display:flex;align-items:center;gap:10px;min-width:0;}
+.brand strong{font-size:16px;color:#f3d594;white-space:nowrap;}
+.brand span{white-space:nowrap;}
+.headDivider{opacity:.5;}
+.headActions a{font-size:11px;color:#f3d594;text-decoration:none;font-weight:800;white-space:nowrap;}
+.authenticated{font-size:10px;color:#d2e4d6;white-space:nowrap;}
+.headButton{
+ min-height:28px;padding:4px 8px;border:1px solid #8ba58e;border-radius:6px;
+ background:#41674e;color:#fffdf7;font-size:10px;font-weight:800;white-space:nowrap;
+}
+.presenceStrip{
+ flex:0 0 auto;display:flex;align-items:center;gap:10px;min-height:40px;
+ background:#fffdfa;border:1px solid var(--live-border);border-radius:7px;
+ padding:4px 9px;font-size:11px;min-width:0;
+}
+.actors,.presenceActions{display:flex;align-items:center;gap:8px;min-width:0;flex:0 0 auto;}
+.actors span{font-weight:750;white-space:nowrap;color:#a07346;}
+.actors span[data-presence="online"]{color:#24724d;}
+.waitingText{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#647765;}
+.presenceActions button{
+ border-radius:6px;border:1px solid #d3c6ad;background:#f5f1e8;color:#37583f;
+ font-size:10px;min-height:28px;padding:4px 8px;font-weight:700;white-space:nowrap;
+}
+.presenceActions .joinButton{background:#315b43;border-color:#315b43;color:#fff;}
+.error{margin:0;padding:5px 8px;background:#fff0e9;color:#9b4034;border-radius:6px;font-size:11px;}
+.workspace{
+ display:grid;grid-template-columns:minmax(0,1fr) minmax(208px,24%);
+ gap:7px;flex:1 1 auto;min-height:0;min-width:0;
+}
+.quranStage,.mediaDock{
+ display:flex;flex-direction:column;min-width:0;min-height:0;height:100%;
+ border:1px solid var(--live-border);border-radius:9px;background:#fffdf7;overflow:hidden;
+}
+.quranStage{padding:5px;}
+.quranHead{
+ display:flex;align-items:center;justify-content:space-between;gap:7px;
+ border-bottom:1px solid #efe8da;flex:0 0 auto;min-height:27px;padding:0 6px 3px;
+}
+.quranHead h1{margin:0;font-size:16px;font-family:'Amiri',Georgia,serif;white-space:nowrap;}
+.quranHead small{font-size:10px;color:#7b8d7d;font-family:Tahoma,sans-serif;}
+.localBadge{background:#fff1da;color:#936d2b;font-size:9px;padding:4px 7px;
+ border-radius:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52%;}
+.quranViewport{
+ flex:1 1 auto;min-height:0;min-width:0;width:100%;position:relative;
+ container-type:size;display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.pageNav{
+ display:flex;align-items:center;justify-content:center;gap:13px;
+ flex:0 0 auto;min-height:32px;padding:2px 3px;border-top:1px solid #efe8da;font-size:11px;
+}
+.pageNav button{
+ border:1px solid #d4c5a6;background:#f6f1e6;color:#2f5940;
+ border-radius:5px;min-height:26px;padding:3px 10px;font-size:10px;font-weight:800;
+}
+.mediaDock{padding:5px;}
+.mediaWaiting{
+ flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+ gap:12px;padding:12px;text-align:center;background:#284536;color:#fffdfa;border-radius:6px;
+}
+.mediaWaiting strong{font-size:17px;}
+.mediaWaiting span,.mediaWaiting small{font-size:11px;color:#dbe8dc;}
+.mediaRoot{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;
+ gap:5px;min-width:0;min-height:0;width:100%;height:100%;overflow:hidden;}
+.mediaTop{display:flex;flex-direction:column;gap:2px;min-width:0;padding:2px 4px;}
+.mediaTop strong{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mediaTop span{font-size:10px;color:#59715c;}
+.mediaAlert{margin:0;padding:3px 6px;background:#fff1e9;color:#a24f38;font-size:10px;border-radius:5px;}
+.videoGrid{display:grid;grid-template-rows:minmax(0,1fr) minmax(0,.35fr);gap:5px;min-width:0;min-height:0;}
+.remoteCard,.localCard{position:relative;min-width:0;min-height:0;
+ border-radius:7px;overflow:hidden;background:radial-gradient(circle at 40% 20%,#456b51,#203a2e);}
+.localCard{background:#3a5543;}
+.videoTarget{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.videoTarget video{width:100%;height:100%;object-fit:cover;}
+.videoLabel{position:absolute;bottom:4px;right:6px;padding:2px 5px;border-radius:4px;
+ background:#162f27c9;color:#fff;font-size:10px;pointer-events:none;}
+.remoteAudio{display:none;}
+.mediaActions{display:flex;flex-wrap:wrap;gap:4px;align-items:center;}
+.mediaActions button{
+ flex:1 1 auto;min-width:0;border:1px solid #d2c7b2;background:#f6f3e9;
+ color:#2f543b;font-size:10px;font-weight:750;padding:5px 4px;min-height:28px;border-radius:5px;
+}
+.mediaActions button:first-child{background:#315b43;border-color:#315b43;color:#fff;}
+.mediaActions button[aria-pressed=true]{background:#ffe9cb;border-color:#cea75f;color:#785323;}
+.mediaPrivacy{margin:0;padding:1px 2px;font-size:9px;color:#748572;}
+.disclosure{flex:0 0 auto;min-height:17px;padding:0 4px;overflow:hidden;
+ white-space:nowrap;text-overflow:ellipsis;font-size:9px;color:#6a7d6b;}
+.boot{direction:rtl;display:grid;gap:14px;place-content:center;min-height:100dvh;
+ padding:22px;text-align:center;background:#f8f5ec;}
+.boot a{color:#315b43;}
+@media(max-width:780px){
+ .workspace{grid-template-columns:minmax(0,1fr) minmax(180px,27%);}
+ .headActions .authenticated{display:none;}
+ .waitingText{display:none;}
+}
+@media(max-width:720px){
+ .root{gap:3px;padding:0 4px 3px;}
+ .head{margin:0 -4px;padding:3px 7px;min-height:34px;}
+ .brand{gap:5px;}
+ .brand strong{font-size:13px;}
+ .brand span{font-size:10px;}
+ .headActions{gap:5px;}
+ .headActions a,.headButton{font-size:10px;}
+ .presenceStrip{min-height:35px;padding:3px 5px;gap:5px;}
+ .actors{gap:6px;flex:1;}
+ .actors span{font-size:9px;}
+ .presenceActions{gap:3px;}
+ .presenceActions button{padding:3px 5px;font-size:9px;min-height:27px;}
+ .presenceActions .secondaryButton{display:none;}
+ .workspace{display:flex;flex-direction:column;gap:3px;min-height:0;}
+ .quranStage{flex:1 1 auto;height:auto;min-height:0;order:1;padding:2px;}
+ .mediaDock{flex:0 0 auto;min-height:0;height:clamp(142px,24dvh,182px);order:0;padding:3px;}
+ .root[data-live-role="teacher"] .mediaDock{order:2;height:clamp(113px,19dvh,142px);}
+ .quranHead{min-height:22px;padding:0 3px 1px;}
+ .quranHead h1{font-size:14px;}
+ .quranHead small{font-size:9px;}
+ .localBadge{font-size:8px;max-width:54%;padding:2px 4px;}
+ .pageNav{min-height:27px;gap:9px;}
+ .pageNav button{min-height:24px;padding:2px 9px;}
+ .mediaRoot{gap:2px;grid-template-rows:auto minmax(0,1fr) auto;}
+ .mediaTop{display:flex;flex-direction:row;gap:5px;align-items:center;justify-content:space-between;padding:0 3px;}
+ .mediaTop strong{font-size:9px;}
+ .mediaTop span{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+ .mediaAlert{position:absolute;top:66px;z-index:10;inset-inline:8px;}
+ .videoGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,28%);grid-template-rows:minmax(0,1fr);gap:3px;}
+ .root[data-live-role="teacher"] .videoGrid{grid-template-columns:minmax(0,1fr) minmax(0,22%);}
+ .videoLabel{font-size:8px;padding:1px 3px;}
+ .mediaActions{display:flex;flex-wrap:nowrap;gap:2px;}
+ .mediaActions button{padding:3px 4px;font-size:9px;min-height:25px;max-width:46%;}
+ .mediaActions .extraAction{display:none;}
+ .mediaPrivacy{display:none;}
+ .disclosure{min-height:12px;font-size:8px;}
+ .mediaWaiting{gap:3px;padding:5px;}
+ .mediaWaiting strong{font-size:12px;}
+ .mediaWaiting span,.mediaWaiting small{font-size:9px;}
+}
+@media(max-width:390px){
+ .brand span,.headDivider{display:none;}
+ .actors span{font-size:8px;}
+ .localBadge{max-width:59%;}
+ .mediaDock{height:clamp(135px,22dvh,157px);}
+ .root[data-live-role="teacher"] .mediaDock{height:clamp(100px,17dvh,120px);}
+}
+@media(prefers-reduced-motion:reduce){.root *{transition:none!important;}}

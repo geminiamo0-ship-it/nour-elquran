@@ -3,6 +3,7 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {Room} from 'livekit-client';
 import {JoinError,requestMediaTicket,type RoomIdentity} from './media-credentials';
+import css from './LiveClassroom.module.css';
 
 type Phase='idle'|'connecting'|'connected'|'reconnecting'|'failed';
 function mediaMessage(error:unknown):string {
@@ -183,65 +184,48 @@ export function LiveLessonMedia({identity,active}:{
    }catch{setAudioBlocked(true);}
  },[]);
 
- return <section aria-label="الصوت والفيديو المباشر" style={{
-   border:'1px solid var(--border,#e4d9c0)',borderRadius:10,padding:14,
-   background:'var(--paper-2,#fffdf7)',display:'grid',gap:12,
- }}>
-   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap'}}>
-     <div>
-       <h2 style={{margin:0,fontSize:'1.2rem'}}>الصوت والفيديو — LiveKit Cloud</h2>
-       <p style={{margin:'4px 0 0',fontSize:13}}>
-         {phase==='connecting'?'جارٍ الاتصال الآمن…':
-          phase==='connected'?'متصل بالصوت والفيديو، والأجهزة مغلقة حتى تختار تشغيلها.':
-          phase==='reconnecting'?'الإنترنت غير مستقر؛ جارٍ استعادة الاتصال…':
-          phase==='failed'?'الاتصال غير متاح حاليًا.':
-          'لا يتم تشغيل أي كاميرا أو ميكروفون تلقائيًا.'}
-       </p>
-     </div>
-     {phase==='connected'||phase==='reconnecting'?
-       <button type="button" onClick={stop}>إنهاء اتصال الصوت والفيديو</button>:
-       <button type="button" disabled={!active||busy} onClick={()=>void connect()}>
-         {busy?'جارٍ الاتصال…':'دخول الصوت والفيديو'}
-       </button>}
+ return <section aria-label="الصوت والفيديو المباشر" className={css.mediaRoot}
+  data-media-phase={phase}>
+  <div className={css.mediaTop}>
+   <strong>الصوت والفيديو · LiveKit Cloud</strong>
+   <span role="status">{phase==='connected'?'متصل بالصوت والفيديو — الأجهزة تحت تحكمك':
+    phase==='connecting'?'جارٍ الاتصال الآمن…':phase==='reconnecting'?'جارٍ استعادة الاتصال…':
+    phase==='failed'?'الاتصال غير متاح حاليًا':'الأجهزة مغلقة افتراضيًا'}</span>
+  </div>
+  {message&&<p role="alert" className={css.mediaAlert}>{message}</p>}
+  <div className={css.videoGrid}>
+   <div className={css.remoteCard}>
+    <div ref={remoteVideo} aria-label="فيديو الطرف الآخر" className={css.videoTarget}/>
+    <span className={css.videoLabel}>{identity.role==='learner'?'كاميرا الشيخ':'كاميرا الطالب'}</span>
    </div>
-   {message&&<p role="alert" style={{color:'#923e29',margin:0}}>{message}</p>}
-   <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,220px),1fr))',gap:10}}>
-     <div style={{minHeight:150,background:'#21382e',borderRadius:8,overflow:'hidden',position:'relative'}}>
-       <div ref={remoteVideo} aria-label="فيديو الطرف الآخر" style={{
-         width:'100%',height:150,display:'flex',alignItems:'center',justifyContent:'center',
-       }}/>
-       <span style={{position:'absolute',bottom:6,right:8,color:'#fff',fontSize:12}}>
-         {identity.role==='learner'?'كاميرا الشيخ':'كاميرا الطالب'}
-       </span>
-     </div>
-     <div style={{minHeight:150,background:'#30493c',borderRadius:8,overflow:'hidden',position:'relative'}}>
-       <div ref={localVideo} aria-label="معاينة كاميرتي" style={{
-         width:'100%',height:150,display:'flex',alignItems:'center',justifyContent:'center',
-       }}/>
-       <span style={{position:'absolute',bottom:6,right:8,color:'#fff',fontSize:12}}>كاميرتي</span>
-     </div>
+   <div className={css.localCard}>
+    <div ref={localVideo} aria-label="معاينة كاميرتي" className={css.videoTarget}/>
+    <span className={css.videoLabel}>معاينتي</span>
    </div>
-   <div ref={remoteAudio} aria-label="صوت الطرف الآخر"/>
-   <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-     <button type="button" disabled={phase!=='connected'||busy}
-       onClick={()=>void toggleMic()} aria-pressed={mic}>
-       {mic?'إيقاف ميكروفوني':'تشغيل ميكروفوني'}
-     </button>
-     <button type="button" disabled={phase!=='connected'||busy}
-       onClick={()=>void toggleCamera()} aria-pressed={camera}>
-       {camera?'إيقاف كاميرتي':'تشغيل كاميرتي'}
-     </button>
-     {identity.role==='teacher'&&<button type="button"
-       disabled={phase!=='connected'||busy} onClick={()=>void muteLearner()}>
-       كتم ميكروفون الطالب
-     </button>}
-     {audioBlocked&&<button type="button" onClick={()=>void enableRemoteAudio()}>
-       تشغيل صوت الطرف الآخر
-     </button>}
-   </div>
-   <p style={{fontSize:12,margin:0,color:'var(--ink-2,#47544a)'}}>
-     لا يوجد تسجيل صوت أو فيديو. إيقاف اتصال الوسائط لا يُنهي الحصة التعليمية.
-     لا يُعد هذا الاتصال دليل حضور رسمي. يمكن للشيخ كتم ميكروفون الطالب فقط؛ لا يستطيع تشغيله عن بُعد.
-   </p>
+  </div>
+  <div ref={remoteAudio} aria-label="صوت الطرف الآخر" className={css.remoteAudio}/>
+  <div className={css.mediaActions}>
+   {phase==='connected'||phase==='reconnecting'?
+    <button type="button" onClick={stop}>إنهاء اتصال الصوت والفيديو</button>:
+    <button type="button" disabled={!active||busy} onClick={()=>void connect()}>
+     {busy?'جارٍ الاتصال…':'دخول الصوت والفيديو'}
+    </button>}
+   <button type="button" disabled={phase!=='connected'||busy}
+    onClick={()=>void toggleMic()} aria-pressed={mic}>
+    {mic?'إيقاف ميكروفوني':'تشغيل ميكروفوني'}
+   </button>
+   <button type="button" disabled={phase!=='connected'||busy}
+    onClick={()=>void toggleCamera()} aria-pressed={camera}>
+    {camera?'إيقاف كاميرتي':'تشغيل كاميرتي'}
+   </button>
+   {identity.role==='teacher'&&<button type="button" className={css.extraAction}
+    disabled={phase!=='connected'||busy} onClick={()=>void muteLearner()}>
+    كتم ميكروفون الطالب
+   </button>}
+   {audioBlocked&&<button type="button" onClick={()=>void enableRemoteAudio()}>
+    تشغيل صوت الطرف الآخر
+   </button>}
+  </div>
+  <p className={css.mediaPrivacy}>لا تسجيل ولا تشغيل أجهزة عن بُعد. إيقاف الوسائط لا ينهي الحصة.</p>
  </section>;
 }
