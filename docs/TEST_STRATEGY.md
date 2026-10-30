@@ -1,3 +1,6 @@
+## CR-02B2 #206 post-write wake and teacher mute tests (source-only)
+- Unit tests confirm server-only exact role/lesson reconciliation, invalid private DO room, signed Sheikh + fresh DO lease for microphone mute, server-sourced learner identity and MIC track SID only, `muted:true` never remote unmute/camera/screen share, independent RoomService JWT HMAC, no-secret 503, provider failures fail-closed. Existing CR-01/CR-02A/CR-02B1, report, notebook, D1 and Next build must stay green. Real LiveKit Cloud service ACK/participant moderation and actual signed End writes still outstanding; Admin last.
+
 ## CR-02B2 first source acceptance (2026-10-30)
 - Exact PR Verify #40999824319 PASS 4/4, postmerge #40999944470 PASS 4/4. DO read-only snapshot regression fixed before merge; simulated provider/DO tests cover revocation queued durable outbox and expiry. Isolated Dev no-secret smoke from Santoreno #267 is distinct and may only verify public action/credential denials, not provider API effectiveness. Real LiveKit room removal/participant token cutoff, direct write-time hooks, user device A/V, mute-only and timing SLA remain open #206.
 
