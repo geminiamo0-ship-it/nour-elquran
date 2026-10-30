@@ -1,3 +1,8 @@
+## Owner QA #231 / #232 source checks (2026-10-30)
+- Mute/release: GitHub Verify https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41132499065 SUCCESS 4/4. Covers signed DO moderator state, idempotency, wrong role/expired lease and mocked provider confirmation; no real mic permission test.
+- Surah/Ayah navigation: GitHub Verify https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41134677808 SUCCESS 4/4 before docs updates. Exact publisher verse polygons, signed server verse-page proof, student read-only shared state, stale receipt/authorization checks, frontend unit and local D1.
+- Still required: Dev two-account test selecting Al-Baqarah 2:255/page 42, highlight in both browsers and on reload, mobile 360/390 narrow layout, teacher mute/release and learner opt-in reactivation including permission failure and reconnect. Neither main nor Production changed by draft PRs.
+
 ## CR-02B2 signed mute no-secret Dev PASS (2026-10-30)
 - Noor exact main Verify #41002079116 PASS 4/4, Santoreno real no-secret Dev #41002323938 PASS: Sheikh signed mute 503 with no provider secret, forged unmute/SID 400, learner 404, anon 401, GET 405; CR-01, CR-02A, 07A, 08A, 08B1 regressions PASS. No actual provider ListParticipants, MutePublishedTrack, RemoveParticipant, guardian consent or 2-device media. Provider ACK/ejection and real lesson End still outstanding #206.
 
