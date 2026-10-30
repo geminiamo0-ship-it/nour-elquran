@@ -6,7 +6,8 @@ describe('LiveKit device permission race safety (#221)',()=>{
     const apply=vi.fn(async(enabled:boolean)=>({enabled}));
     expect(await setDeviceWithEpochGuard(true,apply,()=>true))
       .toEqual({current:true,value:{enabled:true}});
-    expect(apply).toHaveBeenCalledExactlyOnceWith(true);
+    expect(apply).toHaveBeenCalledTimes(1);
+    expect(apply).toHaveBeenCalledWith(true);
   });
 
   it('stops a late camera track and disables capture after Stop/leave',async()=>{
