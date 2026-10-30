@@ -1,3 +1,6 @@
+## Classroom #221 — subscribed audio autoplay after Stop (source candidate; 2026-10-30)
+- PR #226 now guards the **TrackSubscribed audio element autoplay**, not only the explicit audio-resume button: an in-flight `play()` settling after leave pauses its captured old element, never the new Room; stale autoplay rejection does not surface an error. Four synthetic Vitest cases added. This is **unverified source until exact-head Verify completes**; no signed two-browser Cloudflare Dev or real hardware QA. Keep Draft, do not merge or deploy Production.
+
 ## #221 — late remote audio play after Stop (source candidate, 2026-10-30)
 - Draft PR #226 now captures each HTML audio element for manual resume and pauses that exact element if an in-flight `play()` settles after Stop/leave or Room replacement. Prevents a delayed old-room play from undoing teardown without touching the new room. Two synthetic deferred resolve/reject regressions added. **Exact-head Verify and signed two-browser Cloudflare Dev hardware/audio QA pending**; no Production, child data, recording or provider secrets.
 
