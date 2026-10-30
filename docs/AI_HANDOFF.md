@@ -1,3 +1,8 @@
+## Active Phase 08A #190 next steps (source only)
+- Review `docs/NOTEBOOK_PHASE_08A_CONTRACT.md`, Migration 0014, `workers/api/src/notebook-notes.ts` authenticated routes, and `ConnectedNotebookWorkspace.tsx`. Run exact-head Verify, fix real TypeScript/SQLite faults, then stage isolated D1 0014 and signed owner/foreign per-lesson note E2E on Dev. Do not mark API ready before remote acceptance or run Chrome by default.
+- Phase 07A report API is Dev accepted: Noor main Verify #40986308630 and Santoreno remote #40986426733. UI owner visual QA/real Classroom remain open, not blocking development of owner-private free-text notebook. Admin is last.
+- No private Quran layer duplication. Real Classroom/DO snapshots, archive PNG/PDF, sharing and notifications are separate future work.
+
 ## Next action after Phase 07A isolated Dev PASS (2026-10-30)
 - Current main `fedc03a8aa89e04a8080e5210840a93bf900027c`, [Verify #40986308630](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40986308630) 4/4 successful; isolated [Santoreno staging #40986426733](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40986426733) SUCCESS, confirms remote D1 migration 0013 and signed staff/Sheikh/owner report POST/GET with isolated synthetic END. Keep #186 open until UI acceptance.
 - **Next exact task:** one targeted connected Sheikh Reports / Student Progress visual QA using synthetic staging accounts (360x667,390x844,1280x900), only on demand; verify draft save ACK/loading/error, latest published owner-visible, sibling switch, keyboard/RTL, no fixture fallback. Then Phase 07B notebook actual published lesson link, private notes, and archived Quran layers once Classroom event snapshot contract is verified. Do not automatically Chrome every commit.
