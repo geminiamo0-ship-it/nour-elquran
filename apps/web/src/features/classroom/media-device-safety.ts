@@ -97,3 +97,24 @@ export function stopLocalCaptureBestEffort(
   try { void disableMicrophone().catch(() => {}); } catch { /* disconnected */ }
   try { void disableCamera().catch(() => {}); } catch { /* disconnected */ }
 }
+
+/** A subscribed remote audio element can finish autoplay after Stop/leave.
+ * Guard both the blocked-autoplay warning and the old element's playback.
+ * Never pause the audio element belonging to a newly joined Room.
+ */
+export async function playSubscribedAudioIfCurrent(
+  audio: {play: () => Promise<unknown>; pause: () => void},
+  isCurrent: () => boolean,
+  onBlocked: () => void,
+): Promise<void> {
+  if (!isCurrent()) return;
+  try {
+    await audio.play();
+  } catch {
+    if (isCurrent()) onBlocked();
+  } finally {
+    if (!isCurrent()) {
+      try { audio.pause(); } catch { /* element already detached */ }
+    }
+  }
+}
