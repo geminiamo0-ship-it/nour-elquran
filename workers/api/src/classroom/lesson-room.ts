@@ -147,7 +147,7 @@ export class LessonRoom {
    }
    const before=current[command.role];
    const applied=applyRoomCommand(current,command,now);
-   if(applied.next){
+   if(applied.next&&applied.next!==current){
     if(command.action==='leave'&&before)enqueue(pending,current,command.role,before);
     await txn.put('room',applied.next);
    }else if(current!==old)await txn.put('room',current);
