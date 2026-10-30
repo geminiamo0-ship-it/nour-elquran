@@ -1,3 +1,7 @@
+## #57 — triple-slash reference-path architecture guard (2026-10-31; source candidate)
+- Draft PR #230 additionally inspects TypeScript `/// <reference path="..."/>` dependencies, which are compiler edges not visited by ordinary import AST traversal. Enforce route public-index, cross-feature private import and shared isolation, and include references in cycle detection. Synthetic regression covers forbidden references, permitted public index and a cycle.
+- Exact new-head CI and independent review required; no merge or Dev/Production deployment. Issue #57 remains OPEN. Rollback: revert the scoped #57 commits.
+
 ## Classroom Dev final integration PASS — 2026-10-31 / #240
 Classroom Dev accepted in the single synthetic run: https://github.com/geminiamo0-ship-it/santoreno/actions/runs/41140055151
 App commit: 57c59518a544672fa4c213d81b0e49208f5b2b70; test harness: 5875cc18344cc8871102499945ad8dd2cc3fc0f5.
