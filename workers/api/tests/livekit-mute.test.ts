@@ -25,13 +25,16 @@ function db(active=true):CoreDatabase{return {prepare(sql){
  };
  return stmt;
 }};}
-function env(active=true):Env{
+function env(active=true,allowedHeartbeats=Infinity):Env{
+ let heartbeats=0;
  return {...{LIVEKIT_URL:config.url,LIVEKIT_API_KEY:config.key,LIVEKIT_API_SECRET:config.secret},
   DB:db(active),LESSON_ROOMS:{idFromName(s){return s;},get(){
    return {async fetch(req){
     const data=await req.json() as Record<string,unknown>;
     assert.equal(data.role,'teacher');assert.equal(data.actorSubject,teacher);
     assert.equal(data.action,'heartbeat');
+    if(++heartbeats>allowedHeartbeats)
+     return Response.json({code:'NOT_JOINED'},{status:404});
     return Response.json({code:'ROOM_HEARTBEAT',presence:{
      lessonId,teacherPresent:true,learnerPresent:true,bothPresent:true,
      revision:2,leaseTtlMs:25000,mediaReady:false,canStart:false,
@@ -82,6 +85,37 @@ test('server alone selects learner track SID; only true/mute for verified Sheikh
  assert.deepEqual(calls[1]?.body,{room:roomName,identity,
   track_sid:'STUDENT_MIC',muted:true});
  assert.ok(calls[1]!.url.endsWith('/MutePublishedTrack'));
+});
+test('lease loss after ListParticipants blocks provider mute despite initial access',async()=>{
+ const actor={lessonId,learnerId,role:'learner' as const,actorSubject:owner};
+ const {identity}=await liveKitActorNames(config,actor);
+ const calls:string[]=[];
+ const provider:typeof fetch=async(input)=>{
+  calls.push(String(input));
+  return Response.json({participants:[{identity,tracks:[
+   {sid:'STUDENT_MIC',source:2,type:0},
+  ]}]});
+ };
+ const result=await muteSignedLearnerMicrophone(
+  env(true,1),teacher,lessonId,now,provider,()=>now);
+ assert.deepEqual(result,{status:404,code:'NOT_JOINED'});
+ assert.equal(calls.length,1);
+ assert.ok(calls[0]?.endsWith('/ListParticipants'));
+});
+test('lesson admission expiring during provider listing blocks late mute',async()=>{
+ const actor={lessonId,learnerId,role:'learner' as const,actorSubject:owner};
+ const {identity}=await liveKitActorNames(config,actor);
+ let calls=0;
+ const provider:typeof fetch=async()=>{
+  calls++;
+  return Response.json({participants:[{identity,tracks:[
+   {sid:'STUDENT_MIC',source:2,type:0},
+  ]}]});
+ };
+ const result=await muteSignedLearnerMicrophone(
+  env(),teacher,lessonId,now,provider,()=>now+4_000_000);
+ assert.deepEqual(result,{status:404,code:'NOT_FOUND'});
+ assert.equal(calls,1);
 });
 test('no microphone reports no-op; provider unavailable never claims mute',async()=>{
  let calls=0;
