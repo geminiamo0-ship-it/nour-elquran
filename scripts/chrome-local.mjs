@@ -17,21 +17,29 @@ export function isNoorStagingOrigin(url) {
   return typeof url==='string' &&
     /^https:\/\/noor-site-staging\.[a-z0-9-]+\.workers\.dev\/$/.test(url);
 }
-export async function openNoorStagingChrome(url) {
+export async function openNoorStagingChrome(url, options = {}) {
   if (!isNoorStagingOrigin(url)) throw Error('Only verified Noor development staging is allowed');
-  return openChrome(url);
+  // Fake devices are exclusively for explicit synthetic developer QA.
+  // Never use real microphones/cameras in CI or in other environments.
+  const syntheticMedia = options.syntheticMedia === true &&
+    process.env.NOOR_SYNTHETIC_LIVEKIT_QA === 'true';
+  return openChrome(url, syntheticMedia);
 }
 export async function openLocalChrome(url) {
   if (!/^http:\/\/127\.0\.0\.1:\d+\/$/.test(url)) throw Error('Local test origin required');
   return openChrome(url);
 }
-async function openChrome(url) {
+async function openChrome(url, syntheticMedia = false) {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(),'noor-auth-chrome-'));
   const port = 45000 + Math.floor(Math.random()*4000);
   const child = spawn(process.env.CHROME_BIN || 'google-chrome',[
     '--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage',
     '--no-proxy-server','--no-first-run','--no-default-browser-check','--disable-extensions',
-    '--disable-background-networking','--remote-debugging-address=127.0.0.1',
+    '--disable-background-networking',
+    ...(syntheticMedia ? ['--use-fake-device-for-media-stream',
+      '--use-fake-ui-for-media-stream',
+      '--autoplay-policy=no-user-gesture-required'] : []),
+    '--remote-debugging-address=127.0.0.1',
     '--remote-debugging-port='+port,'--remote-allow-origins=*','--user-data-dir='+profile,
   ],{stdio:['ignore','ignore','pipe']});
   let browserErrors = '';
