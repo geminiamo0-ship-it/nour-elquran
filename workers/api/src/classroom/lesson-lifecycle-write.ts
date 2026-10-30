@@ -5,6 +5,8 @@
 import type {CoreDatabase,Env} from '../bindings.ts';
 import {forwardVerifiedPresence} from './presence.ts';
 import {wakeLessonMediaReconciliation} from './media-enforcement.ts';
+import {forwardCorrections,type Correction} from './live-corrections.ts';
+import {applyTeacherReport} from '../lesson-reports.ts';
 
 const id=/^[A-Za-z0-9-]{1,128}$/;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -17,6 +19,23 @@ export type SafeLifecycle=Readonly<{
  reservedUntilMs:number;instructionMinutes:30;reservationMinutes:40;
 }>;
 type EventRow={at_ms:number;action:Action};
+function prepareDraft(notes:readonly Correction[]){
+ const category:Record<Correction['kind'],string>={
+  memorization:'الحفظ',recitation:'التلاوة',tajweed:'التجويد',
+  pronunciation:'النطق',general:'ملاحظة عامة'
+ };
+ const refs=[...new Set(notes.filter(x=>x.surah!==null)
+  .map(x=>x.surah+':'+x.ayah))];
+ return {
+  scope:(refs.length?'آيات الحصة: '+refs.join('، '):'ملاحظات الحصة').slice(0,700),
+  strengths:'',corrections:notes.map(n=>
+   category[n.kind]+(n.surah===null?'':' ('+n.surah+':'+n.ayah+'):')+' '+n.text)
+   .join('\n').slice(0,1000),
+  nextPlan:'مراجعة التصحيحات المسجلة أثناء الحصة.',
+  memorization:null,recitation:null,tajweed:null,
+ };
+}
+
 type Snapshot=Readonly<{status:200;code:'LESSON_LIFECYCLE';lifecycle:SafeLifecycle}|
  {status:404|503;code:string}>;
 export function parseLifecycleAction(raw:unknown):{action:Action;operationId:string}|null{
@@ -98,7 +117,8 @@ export async function readLearnerLifecycle(env:Env,subject:string,learnerId:stri
  */
 export async function teacherLifecycleAction(env:Env,subject:string,lessonId:string,
  action:Action,operationId:string,now=Date.now()):Promise<
- {status:200|404|409|503;code:string;lifecycle?:SafeLifecycle;mediaRevocation?:string}>{
+ {status:200|404|409|503;code:string;lifecycle?:SafeLifecycle;mediaRevocation?:string;
+ reportDraft?:'created'|'empty'|'retry_needed'}>{
  if(!env.DB)return {status:503,code:'DATABASE_UNAVAILABLE'};
  const db=env.DB;
  if(!id.test(lessonId)||!uuid.test(operationId))return {status:404,code:'NOT_FOUND'};
@@ -168,8 +188,25 @@ export async function teacherLifecycleAction(env:Env,subject:string,lessonId:str
    return {status:409,code:'LESSON_STATE_CONFLICT'};
   }
   if(action==='end'){
+   // Ending is already committed. A missing report service must never silently
+   // roll back or reopen the lesson. Draft remains PRIVATE until Sheikh publish.
+   let reportDraft:'created'|'empty'|'retry_needed'='retry_needed';
+   try{
+    const seed=await forwardCorrections(env,{lessonId,learnerId:row.learnerId,
+     actorSubject:subject,role:'teacher'},'seed');
+    if(seed.status===200&&seed.corrections){
+     if(!seed.corrections.items.length)reportDraft='empty';
+     else{
+      const draft=prepareDraft(seed.corrections.items);
+      const written=await applyTeacherReport(db,subject,lessonId,{
+       kind:'save',operationId:crypto.randomUUID(),expectedRevision:0,...draft
+      },now);
+      if(written.status===200)reportDraft='created';
+     }
+    }
+   }catch{reportDraft='retry_needed';}
    const wake=await wakeLessonMediaReconciliation(env,lessonId);
-   return {status:200,code:'LESSON_ENDED',lifecycle:state,
+   return {status:200,code:'LESSON_ENDED',lifecycle:state,reportDraft,
     mediaRevocation:wake==='sent'?'requested':'retry_pending'};
   }
   return {status:200,code:'LESSON_STARTED',lifecycle:state};
