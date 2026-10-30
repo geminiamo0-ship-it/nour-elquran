@@ -1,3 +1,9 @@
+## #235/#236 signed Start/End and corrections — final single-suite plan
+- Verify source: strict lifecycle command allowlist (UUID4, start/end only), actor scope, actual DO teacher heartbeat and both participants present, D1 `batch` transactional status + append-only unique audit event with `changes()`, idempotent retry, 30/40min non-auto-end, completed report-draft gate, provider wake after signed END; no unsigned student/owner Start.
+- Corrections: exact selected server page/ayah, teacher-only adding and reading, general notes private, invalid kind/page/array/IDs rejected, 120-note cap, replay/mutation conflict, DO storage survives restart, private seed accessible solely after Worker D1 authorization.
+- Browser Dev acceptance STILL REQUIRED: two logged-in synthetic clients, Sheikh Start only after BOTH present, Quran verse highlight + marker, Sheikh mic mute/release with learner opt-in, Sheikh real correction log and End, LiveKit participant removal acknowledgement (including outages/rejoin), report draft prefilled and manual approval/publish; mobile 360x667 and 390x844 no outer scroll. NO Production.
+- Run exact HEAD Verify once after final code+docs changes; do not claim real browser acceptance based solely on CI.
+
 ## Owner QA #231 / #232 source checks (2026-10-30)
 - Mute/release: GitHub Verify https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41132499065 SUCCESS 4/4. Covers signed DO moderator state, idempotency, wrong role/expired lease and mocked provider confirmation; no real mic permission test.
 - Surah/Ayah navigation: GitHub Verify https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41134677808 SUCCESS 4/4 before docs updates. Exact publisher verse polygons, signed server verse-page proof, student read-only shared state, stale receipt/authorization checks, frontend unit and local D1.
