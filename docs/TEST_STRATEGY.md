@@ -1,3 +1,6 @@
+## #221 local capture teardown regression (2026-10-30; source candidate)
+- Synthetic Vitest: after unexpected provider disconnect, every local track stop is attempted synchronously even if another stop throws; microphone and camera SDK disables are both attempted even on a dead Room. These tests do not prove hardware capture stopped: targeted signed Cloudflare Dev browser permission/forced-disconnect/indicator acceptance is still required. Exact-head Verify pending.
+
 ## #221 unexpected LiveKit disconnect / queued event regression (source candidate, 2026-10-30)
 - Vitest `media-device-safety.test.ts` verifies the Room-generation gate refuses queued old Room track/reconnect events after `room.current` is cleared or a new Room joins, and refuses reused Room references after epoch invalidation. `LiveLessonMedia.tsx` invalidates epoch on actual Disconnected and checks exact Room for all callbacks and post-connect success. Exact-head Verify (lint/strict TS/Vitest/build/D1) pending. Real signed Dev browser and device indicators remain a separate gate; no automatic global Chrome or Production.
 
