@@ -241,7 +241,8 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
         throw Error('MIC_MODERATION_FAILED');
        // The moderation state is committed on LessonDO after provider ACK.
        // Poll the authoritative policy to reconcile even after a UI refresh.
-       setMicPolicy(prev=>({locked:true,revision:(prev?.revision??0)+1}));
+       const state=verifiedMicPolicy(body);
+       setMicPolicy(prev=>prev&&prev.revision>state.revision?prev:state);
        setMessage(code==='NO_LEARNER_MICROPHONE'?
         'الطالب لا يبث صوتًا الآن؛ مُنع تشغيله حتى تلغي الكتم.':
         'تم كتم ميكروفون الطالب؛ يمكنك الضغط على «إلغاء كتم الطالب».');
