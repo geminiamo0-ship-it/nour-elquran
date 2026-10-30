@@ -28,12 +28,12 @@ describe('Quran verse side navigator',()=>{
   expect(read.mock.calls.length).toBeLessThanOrEqual(11);
  });
  it('handles a Surah that spans a single canonical page without guessing',async()=>{
-  const read=vi.fn(async(_page:number)=>[region(1,1),region(1,7)]);
+  const read=vi.fn(async(page:number)=>{void page;return [region(1,1),region(1,7)];});
   expect(await findVerifiedVersePage(index,1,7,read)).toBe(1);
   expect(read).toHaveBeenCalledWith(1);
  });
  it('fails closed instead of guessing when verse polygon is missing',async()=>{
-  const read=async(_page:number)=>[region(2,1),region(2,4)];
+  const read=async(page:number)=>{void page;return [region(2,1),region(2,4)];};
   await expect(findVerifiedVersePage(index,2,6,read)).rejects.toThrow('QURAN_VERSE_NOT_FOUND');
   await expect(findVerifiedVersePage(index,2,287,read)).rejects.toThrow('INVALID_QURAN_VERSE');
  });
