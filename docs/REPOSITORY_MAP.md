@@ -1,3 +1,6 @@
+## CR-02B1 #204 LiveKit browser SDK client (source only)
+- `apps/web/package.json`, `pnpm-lock.yaml`: pinned `livekit-client` 2.23.0 (lockfile from temporary branch-only GitHub Action, action removed before PR). `apps/web/src/features/classroom/media-credentials.ts`: strict signed POST `{}` token client; `media-credentials.test.ts` validates payload and denial. `LiveLessonMedia.tsx`: client lazy SDK opt-in mic/camera remote tracks and reconnect cleanup. `ConnectedWaitingRoom.tsx` mounts it only after successful explicit signed room join. `docs/CLASSROOM_CR02B1_MEDIA_CLIENT_CONTRACT.md` lists release blockers, no connected-user eviction yet.
+
 ## CR-02A exact Dev acceptance evidence
 - `docs/CLASSROOM_LIVEKIT_CR02A_DEV_ACCEPTANCE.md` anchors Noor main Verify #40996405754 and Santoreno isolated real Dev #40996681563. The Dev service deliberately has no LiveKit secrets: valid signed issuer endpoint returns 503 with no token. A/V actual provider integration and already-connected participant eviction remain CR-02B.
 
