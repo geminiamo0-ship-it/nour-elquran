@@ -3,6 +3,7 @@ import {useEffect,useRef,useState,type FormEvent} from 'react';
 import {notebookClient,notebookError,lessonReportsClient,
  type LessonRow,type PrivateNote,type StudentReport} from '../../shared';
 import styles from '../StudentPortal.module.css';
+import {PublishedLessonArchive} from './PublishedLessonArchive';
 
 type Loaded={status:'ready';lessons:readonly LessonRow[];reports:readonly StudentReport[]};
 type State=Loaded|{status:'loading'|'error'};
@@ -97,8 +98,10 @@ export function ConnectedNotebookWorkspace({learnerId}:{learnerId:string}){
        <p><b>مواضع التصحيح:</b> {report.corrections||'—'}</p>
        <p><b>المراجعة القادمة:</b> {report.nextPlan||'—'}</p>
       </div>:<p>انتهت الحصة، وتقرير الشيخ قيد الإعداد أو لم يُنشر بعد.</p>}
-      <p className={styles.muted}>أرشيف المصحف والطبقات الأصلية لم يُربطا بالحصة بعد؛ لا توجد روابط تنزيل صورية.</p>
+      <p className={styles.muted}>تنزيل PDF/PNG غير متاح حتى اكتمال ختم المصدر والتصدير الخاص.</p>
      </div>
+     <PublishedLessonArchive learnerId={learnerId} lessonId={lessonId}
+      reportRevision={report?.revision??null}/>
      <h3>ملاحظاتي الخاصة</h3>
      {notesState==='loading'?<p role="status">جارٍ تحميل ملاحظات الحصة...</p>:
       notesState==='error'?<div role="alert">
