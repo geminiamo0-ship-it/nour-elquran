@@ -1,3 +1,7 @@
+## Current 08B2 handoff — #194 checkpoint validator, no real DO exporter (2026-10-30)
+- Branch feat/194-do-archive-checkpoint-contract adds workers/api/src/classroom/archive-checkpoint.ts, matching Node tests and [checkpoint contract](LESSON_DO_ARCHIVE_CHECKPOINT_08B2.md). It validates teacher-only ordered event IDs, page/anchor shape, source scope and canonical SHA-256. **Source only**; do not claim real LessonDO, presence, END, sealed archive, R2, PDF, Dev or Production.
+- Next exact action: inspect PR exact-head Verify and review; then implement actual authenticated LessonDO event persistence/presence and internal export with independently checked D1 END/manifest/report revision. Reconcile DO restart/replay before any seal. Avoid default Chrome until actual UI/DO is functional. Keep #194 open and Admin last.
+
 ## 08B1 handoff: owner archive GET Dev PASS; no live DO source
 - See `docs/PHASE_08B1_DEV_ACCEPTANCE.md`: Noor main Verify #40990456089 and Santoreno remote Dev #40990589139 PASS. Sealed-snapshot owner reader is implemented, but all real archives are intentionally absent until the trusted Classroom DO writer (#194). Do not claim actual teacher marks/PDF, visual QA or Production. Admin Dashboard remains last.
 
