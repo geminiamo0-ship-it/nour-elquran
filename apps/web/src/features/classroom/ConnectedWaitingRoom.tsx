@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import {useCallback,useEffect,useRef,useState} from 'react';
+import {LiveLessonMedia} from './LiveLessonMedia';
 
 type Identity=Readonly<{role:'teacher'|'learner';lessonId:string;learnerId?:string}>;
 type Presence=Readonly<{
@@ -144,6 +145,7 @@ export function ConnectedWaitingRoom(){
    <button type="button" disabled={busy} onClick={()=>void refresh('snapshot')}>تحديث الحالة</button>
    <Link href={identity.role==='teacher'?'/teacher/schedule':'/student/lessons'}>العودة للجدول</Link>
   </div>
-  <p>الصوت والفيديو عبر LiveKit Cloud، والتزامن والمصحف وتوثيق بدء/إنهاء الحصة، مراحل منفصلة لم تُفعّل بعد. لا توجد محاكاة حضور هنا.</p>
+  {joined&&status==='ready'&&<LiveLessonMedia identity={identity} active={joined}/>}
+  <p>الصوت والفيديو منفصلان عن بدء الحصة الرسمية. تزامن المصحف وأرشيف العلامات ما زالا قيد التنفيذ؛ لا توجد محاكاة حضور.</p>
  </main>;
 }
