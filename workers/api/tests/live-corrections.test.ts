@@ -37,7 +37,7 @@ function mem(){
   teacher:{subject:actor.actorSubject,learnerId:actor.learnerId,expiresAtMs:now+30_000},
   learner:{subject:'owner',learnerId:actor.learnerId,expiresAtMs:now+30_000}};
  const storage:LessonRoomStorage={
-  async get<T>(key){return entries.get(key) as T|undefined;},
+  async get<T>(key:string){return entries.get(key) as T|undefined;},
   async put<T>(key:string,value:T){entries.set(key,value);},
   async transaction<T>(fn:(txn:Pick<LessonRoomStorage,'get'|'put'>)=>Promise<T>){
    return fn(storage);
