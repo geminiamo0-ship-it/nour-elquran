@@ -1,5 +1,7 @@
 # Phase 08B1 — Sealed Quran lesson archives (read-only foundation) #192
 
+> **2026-10-31 owner decision:** [ADR 0009](adr/0009-unified-cumulative-learner-mushaf.md) supersedes any interpretation of a separate lesson-only learner Mushaf. This sealed archive is an **immutable historical view/proof** of the same learner's cumulative annotation history filtered by lesson/revision; the cumulative current projection must ingest accepted classroom edits after server acknowledgment **without waiting for report publication**. Only a *sealed historical snapshot* may require a completed published report. Trusted exporter and migration remain unimplemented (#248, #251–#253).
+
 **Source status:** branch until verified. **Do not claim any live Classroom teacher ink ingestion, browser visual acceptance or Production rollout.**
 
 ## Canonical data / provenance
