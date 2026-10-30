@@ -61,7 +61,7 @@ class NotebookNotesTest(unittest.TestCase):
    self.event(21)
  def test_note_identity_scope_and_body_rules(self):
   self.event(1)
-  with self.assertRaisesRegex(sqlite3.IntegrityError,"NOTEBOOK_VERSION_CONFLICT"):
+  with self.assertRaisesRegex(sqlite3.IntegrityError,"NOTEBOOK_ACCESS_DENIED"):
    self.event(2,version=1,learner="l2")
   with self.assertRaisesRegex(sqlite3.IntegrityError,"NOTEBOOK_BAD_BODY"):
    self.event(3,version=1,body=" ")
