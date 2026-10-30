@@ -53,9 +53,15 @@ export async function evictVerifiedLiveKitActor(env:Env,actor:VerifiedMediaActor
     // The value must be close to current provider wall-clock time.
     revoke_token_ts:Math.floor(now/1000)}),
   });
-  // Do not treat unverified 404/5xx/error bodies as successful token revocation:
-  // LiveKit says explicit revoke_token_ts normally suppresses absent-participant
-  // errors. Any other response leaves the outbox pending for reconciliation.
-  return res.ok?'removed':'retry';
+  // A proxy can return HTTP 200 with an HTML/error body without LiveKit
+  // acknowledging the revoke. Never drain the durable outbox on status alone.
+  // Twirp's successful JSON response is an object (normally {}).
+  if(!res.ok||!/^application\\/json(?:\\s*;|$)/i.test(
+    res.headers.get('content-type')??''))return 'retry';
+  const acknowledgement:unknown=await res.json();
+  if(!acknowledgement||typeof acknowledgement!=='object'||
+    Array.isArray(acknowledgement)||Object.hasOwn(acknowledgement,'error')||
+    Object.hasOwn(acknowledgement,'code'))return 'retry';
+  return 'removed';
  }catch{return 'retry';}
 }
