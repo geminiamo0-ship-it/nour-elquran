@@ -23,7 +23,7 @@ export function validatedLiveKitConfig(env:Pick<Env,'LIVEKIT_URL'|'LIVEKIT_API_K
  const url=env.LIVEKIT_URL,key=env.LIVEKIT_API_KEY,secret=env.LIVEKIT_API_SECRET;
  if(typeof url!=='string'||typeof key!=='string'||typeof secret!=='string'||
   !/^[A-Za-z0-9_-]{8,128}$/.test(key)||secret.length<32||secret.length>4096||
-  /[\x00-\x1f\x7f]/.test(secret))return null;
+  Array.from(secret).some(char=>char.charCodeAt(0)<32||char.charCodeAt(0)===127))return null;
  try{
   const parsed=new URL(url);
   if(parsed.protocol!=='wss:'||!parsed.hostname.endsWith('.livekit.cloud')||
