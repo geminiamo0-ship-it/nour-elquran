@@ -116,18 +116,38 @@ describe('LiveKit device permission race safety (#221)',()=>{
 });
 
 describe('Room-scoped remote audio resume (#221)',()=>{
-  it('never plays new-room audio when an old startAudio finishes after leave',async()=>{
+  it('pauses old audio if LiveKit startAudio finishes after Stop and DOM removal',async()=>{
     let resolveStart!:()=>void;
     const start=new Promise<void>(resolve=>{resolveStart=resolve;});
     let current=true;
     const play=vi.fn(async()=>{});
-    const list=vi.fn(()=>[{play,pause:vi.fn()}]);
+    const pause=vi.fn();
+    // Simulate old DOM elements becoming unreachable on Stop.
+    const elements=[{play,pause}];
+    const list=vi.fn(()=>elements);
     const pending=resumeRemoteAudioIfCurrent(()=>start,()=>current,list);
+    elements.length=0;
     current=false;
     resolveStart();
     await expect(pending).resolves.toBe(false);
-    expect(list).not.toHaveBeenCalled();
+    expect(list).toHaveBeenCalledOnce();
     expect(play).not.toHaveBeenCalled();
+    expect(pause).toHaveBeenCalledOnce();
+  });
+  it('pauses captured old audio when LiveKit startAudio rejects after leave',async()=>{
+    let rejectStart!:(reason:Error)=>void;
+    const start=new Promise<void>((_,reject)=>{rejectStart=reject;});
+    let current=true;
+    const play=vi.fn(async()=>{});
+    const pause=vi.fn();
+    const elements=[{play,pause}];
+    const pending=resumeRemoteAudioIfCurrent(()=>start,()=>current,()=>elements);
+    elements.length=0;
+    current=false;
+    rejectStart(new Error('startAudio aborted'));
+    await expect(pending).rejects.toThrow('startAudio aborted');
+    expect(play).not.toHaveBeenCalled();
+    expect(pause).toHaveBeenCalledOnce();
   });
   it('stops playback sequence when Stop occurs during first play',async()=>{
     let current=true;
