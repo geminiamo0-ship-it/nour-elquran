@@ -1,3 +1,7 @@
+## #57 handoff — dynamic import options regression (2026-10-31)
+- Draft PR #230 branch `fix/57-import-equals-boundary-20261030`: inspect `scripts/check-architecture.mjs` (CallExpression with one or more arguments) and `tests/architecture.test.mjs` (two-argument dynamic import boundaries + cycle). The original scanner only recorded `import('module')`; `import('module', { with: ... })` was invisible to architecture rules.
+- NEXT EXACT ACTION: inspect latest PR HEAD and exact-head Verify jobs; resolve any failures, review diff and branch divergence from main, then request independent review. Keep PR Draft and Issue #57 OPEN until acceptance. No Dev/Production, user data or secrets.
+
 ## #57 handoff — NodeNext-style relative extension imports (2026-10-30)
 - On [Draft PR #230](https://github.com/geminiamo0-ship-it/nour-elquran/pull/230), `resolveSource` now resolves relative `.js` and `.jsx` specifiers to TS/TSX candidates before boundary/cycle enforcement; regression tests include private cross-feature, route, shared/UI and valid public index. Next: inspect exact new-head Verify and all four jobs, review diff and ensure no false positives. Previous `e68843ca` Verify #41125292783 was 4/4 PASS **before** this patch. Do not merge without required review/branch protection. No browser, LiveKit provider, Dev or Production claims. #57 OPEN; #1 branch protection and #221 real device QA separate.
 
