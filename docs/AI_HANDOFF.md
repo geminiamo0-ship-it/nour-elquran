@@ -1,3 +1,6 @@
+## #221 — remote audio/video teardown on Stop and participant disconnect (source candidate, 2026-10-30)
+- Draft PR #226 now explicitly pauses attached remote audio/video, clears their MediaStream references and removes elements on Stop/leave, provider disconnect, participant disconnect and TrackUnsubscribed. DOM removal alone is not relied on to stop playback. Three synthetic cleanup tests cover audio/video, failed pause and failed stream release. **New exact-head CI and two-browser real-device QA required**; no Production, child data or recordings.
+
 ## #221 next verification — local device capture after unexpected disconnect (2026-10-30)
 - Draft PR #226 includes source-only best-effort synchronous track stop and independent SDK disables for explicit Stop and unexpected RoomEvent.Disconnected. Test both disposed track and failed disable. **Run exact-head GitHub Verify 4/4 before claiming pass**, then targeted signed synthetic Cloudflare Dev two-browser permission, provider disconnect and browser camera/mic indicator QA; reviewer approval before merge. No Production or real minors.
 

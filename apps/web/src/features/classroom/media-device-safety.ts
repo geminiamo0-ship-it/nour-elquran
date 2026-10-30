@@ -59,6 +59,20 @@ export function createRoomGenerationGuard<TRoom>(
   return () => readRoom() === expectedRoom && readGeneration() === expectedGeneration;
 }
 
+/** Detaching a remote media element from the DOM does not guarantee playback
+ * stops immediately. Pause, release its MediaStream and remove it independently,
+ * including if an earlier cleanup step throws. Never stop a remote provider track.
+ */
+export function stopRemotePlaybackBestEffort(
+  elements: Iterable<{pause: () => void; srcObject: unknown; remove: () => void}>,
+): void {
+  for (const element of elements) {
+    try { element.pause(); } catch { /* already disposed */ }
+    try { element.srcObject = null; } catch { /* browser may reject */ }
+    try { element.remove(); } catch { /* detached */ }
+  }
+}
+
 /** On explicit Stop or unexpected provider disconnect, revoke local capture
  * immediately, even if the SDK's asynchronous disable rejects on a dead Room.
  * Each track/operation is independent so one failure cannot strand the other.

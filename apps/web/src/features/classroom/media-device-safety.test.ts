@@ -1,5 +1,5 @@
 import {describe,expect,it,vi} from 'vitest';
-import {createRoomGenerationGuard,resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard,stopLocalCaptureBestEffort} from './media-device-safety';
+import {createRoomGenerationGuard,resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard,stopLocalCaptureBestEffort,stopRemotePlaybackBestEffort} from './media-device-safety';
 
 describe('LiveKit device permission race safety (#221)',()=>{
   it('commits a toggle only for the same active room generation',async()=>{
@@ -195,5 +195,37 @@ describe('Local capture teardown on unexpected LiveKit disconnect (#221)',()=>{
     stopLocalCaptureBestEffort([],disableMic,disableCamera);
     expect(disableMic).toHaveBeenCalledOnce();
     expect(disableCamera).toHaveBeenCalledOnce();
+  });
+});
+
+
+describe('Remote media playback cleanup on leave and participant loss (#221)',()=>{
+  it('pauses, releases and removes both audio and video media elements',()=>{
+    const audio={pause:vi.fn(),srcObject:{stream:'audio'} as unknown,remove:vi.fn()};
+    const video={pause:vi.fn(),srcObject:{stream:'video'} as unknown,remove:vi.fn()};
+    stopRemotePlaybackBestEffort([audio,video]);
+    for(const element of [audio,video]){
+      expect(element.pause).toHaveBeenCalledOnce();
+      expect(element.srcObject).toBeNull();
+      expect(element.remove).toHaveBeenCalledOnce();
+    }
+  });
+  it('still releases and removes media if pause fails, and continues to next element',()=>{
+    const first={pause:vi.fn(()=>{throw new Error('detached');}),srcObject:{} as unknown,remove:vi.fn()};
+    const second={pause:vi.fn(),srcObject:{} as unknown,remove:vi.fn()};
+    stopRemotePlaybackBestEffort([first,second]);
+    expect(first.srcObject).toBeNull();
+    expect(first.remove).toHaveBeenCalledOnce();
+    expect(second.pause).toHaveBeenCalledOnce();
+    expect(second.srcObject).toBeNull();
+    expect(second.remove).toHaveBeenCalledOnce();
+  });
+  it('still removes a detached element when clearing its srcObject throws',()=>{
+    const remove=vi.fn();
+    const element={pause:vi.fn(),get srcObject():unknown{return 'stream';},
+      set srcObject(_value:unknown){throw new Error('not writable');},remove};
+    stopRemotePlaybackBestEffort([element]);
+    expect(element.pause).toHaveBeenCalledOnce();
+    expect(remove).toHaveBeenCalledOnce();
   });
 });

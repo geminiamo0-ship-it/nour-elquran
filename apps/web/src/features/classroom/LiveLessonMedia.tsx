@@ -3,7 +3,7 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {Room} from 'livekit-client';
 import {JoinError,requestMediaTicket,type RoomIdentity} from './media-credentials';
-import {createRoomGenerationGuard,resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard,stopLocalCaptureBestEffort} from './media-device-safety';
+import {createRoomGenerationGuard,resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard,stopLocalCaptureBestEffort,stopRemotePlaybackBestEffort} from './media-device-safety';
 import css from './LiveClassroom.module.css';
 
 type Phase='idle'|'connecting'|'connected'|'reconnecting'|'failed';
@@ -16,6 +16,14 @@ function mediaMessage(error:unknown):string {
   if(error instanceof DOMException&&['NotAllowedError','PermissionDeniedError'].includes(error.name))
     return 'المتصفح رفض صلاحية الجهاز. يمكنك الاستمرار بالصوت فقط أو بدون كاميرا.';
   return 'لم يكتمل الاتصال أو تفعيل الجهاز. يمكنك إعادة المحاولة بدون تغيير الحصة.';
+}
+function clearRemotePlayback(video:HTMLDivElement|null,audio:HTMLDivElement|null):void {
+  stopRemotePlaybackBestEffort([
+    ...Array.from(video?.querySelectorAll('video')??[]),
+    ...Array.from(audio?.querySelectorAll('audio')??[]),
+  ]);
+  video?.replaceChildren();
+  audio?.replaceChildren();
 }
 function releaseCapture(old:Room):void {
   stopLocalCaptureBestEffort(
@@ -52,8 +60,7 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
      releaseCapture(old);
      void old.disconnect();
    }
-   remoteVideo.current?.replaceChildren();
-   remoteAudio.current?.replaceChildren();
+   clearRemotePlayback(remoteVideo.current,remoteAudio.current);
    localVideo.current?.replaceChildren();
    setMic(false);setCamera(false);setAudioBlocked(false);setPhase('idle');setBusy(false);
  },[]);
@@ -89,7 +96,7 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
        media.removeAllListeners();
        // A dropped provider connection must not leave browser capture active.
        releaseCapture(media);
-       remoteVideo.current?.replaceChildren();remoteAudio.current?.replaceChildren();
+       clearRemotePlayback(remoteVideo.current,remoteAudio.current);
        localVideo.current?.replaceChildren();
        setMic(false);setCamera(false);setBusy(false);setAudioBlocked(false);setPhase('failed');
        setMessage('انقطع اتصال الوسائط؛ يلزم إعادة تصريح الدخول.');
@@ -117,10 +124,10 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
      });
      media.on(RoomEvent.TrackUnsubscribed,track=>{
        if(!isCurrentRoom())return;
-       for(const element of track.detach())element.remove();
+       stopRemotePlaybackBestEffort(track.detach());
      });
      media.on(RoomEvent.ParticipantDisconnected,()=>{
-       if(isCurrentRoom())remoteVideo.current?.replaceChildren();
+       if(isCurrentRoom())clearRemotePlayback(remoteVideo.current,remoteAudio.current);
      });
      await media.connect(ticket.serverUrl,ticket.participantToken,{
        autoSubscribe:true,

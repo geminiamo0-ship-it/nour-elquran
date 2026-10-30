@@ -1,3 +1,6 @@
+## #221 — remote audio/video teardown on Stop and participant disconnect (source candidate, 2026-10-30)
+- Draft PR #226 now explicitly pauses attached remote audio/video, clears their MediaStream references and removes elements on Stop/leave, provider disconnect, participant disconnect and TrackUnsubscribed. DOM removal alone is not relied on to stop playback. Three synthetic cleanup tests cover audio/video, failed pause and failed stream release. **New exact-head CI and two-browser real-device QA required**; no Production, child data or recordings.
+
 ## #221 — unexpected LiveKit disconnect capture teardown (source candidate, 2026-10-30)
 - Draft PR #226 now synchronously stops all old Room local tracks on explicit Stop and unexpected provider Disconnected, then best-effort requests independent microphone/camera disable. This closes a privacy gap where a provider drop cleared the UI but might leave a local device capturing. Two synthetic teardown tests added. **CI for this new commit and real signed two-browser Cloudflare Dev device indicators remain unverified**; no merge, Production, child data, or recording.
 

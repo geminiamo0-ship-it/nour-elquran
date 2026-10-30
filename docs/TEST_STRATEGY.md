@@ -1,3 +1,8 @@
+## #221 — remote audio/video teardown on Stop and participant disconnect (source candidate, 2026-10-30)
+- Draft PR #226 now explicitly pauses attached remote audio/video, clears their MediaStream references and removes elements on Stop/leave, provider disconnect, participant disconnect and TrackUnsubscribed. DOM removal alone is not relied on to stop playback. Three synthetic cleanup tests cover audio/video, failed pause and failed stream release. **New exact-head CI and two-browser real-device QA required**; no Production, child data or recordings.
+
+- Run targeted signed two-browser Dev acceptance: after explicit media enable, leave/disconnect or remote participant loss must immediately silence remote audio and release media elements; check Chrome media indicators and no playback after rejoin. This is **not** proved by Vitest alone.
+
 ## #221 local capture teardown regression (2026-10-30; source candidate)
 - Synthetic Vitest: after unexpected provider disconnect, every local track stop is attempted synchronously even if another stop throws; microphone and camera SDK disables are both attempted even on a dead Room. These tests do not prove hardware capture stopped: targeted signed Cloudflare Dev browser permission/forced-disconnect/indicator acceptance is still required. Exact-head Verify pending.
 
