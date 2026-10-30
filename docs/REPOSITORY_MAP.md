@@ -1,3 +1,6 @@
+## #221 late audio play completion fence (source candidate, 2026-10-30)
+- `apps/web/src/features/classroom/media-device-safety.ts`: `resumeRemoteAudioIfCurrent` pauses captured old audio elements after stale asynchronous `play()` completion. `LiveLessonMedia.tsx` passes element-bound play/pause callbacks. `media-device-safety.test.ts` covers late resolution/rejection. PR #226, exact-head CI and real browser acceptance separate.
+
 ## #221 — remote audio/video teardown on Stop and participant disconnect (source candidate, 2026-10-30)
 - Draft PR #226 now explicitly pauses attached remote audio/video, clears their MediaStream references and removes elements on Stop/leave, provider disconnect, participant disconnect and TrackUnsubscribed. DOM removal alone is not relied on to stop playback. Three synthetic cleanup tests cover audio/video, failed pause and failed stream release. **New exact-head CI and two-browser real-device QA required**; no Production, child data or recordings.
 
