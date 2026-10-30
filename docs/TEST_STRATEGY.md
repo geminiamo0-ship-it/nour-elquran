@@ -1,3 +1,6 @@
+## #57 architecture scanner regression — dynamic import options (2026-10-31)
+- Synthetic Node test in `tests/architecture.test.mjs` checks `import('path', { with: { type: 'json' } })` edges: deny cross-feature private, route private and shared-to-feature; allow app-to-feature public index; detect A↔B cycle when one edge has import options. `scripts/check-architecture.mjs` no longer assumes one argument. Exact-head Verify still required; no full Chrome/browser run needed for source-only checker change.
+
 ## #57 — relative .js/.jsx specifier boundary coverage (2026-10-30)
 - Synthetic `tests/architecture.test.mjs` fixture uses NodeNext-style relative `.js` import paths targeting `.ts` source and `.jsx` targeting `.tsx` source. Forbidden cross-feature private, app private and shared/UI imports must fail; app import through feature `index.js` must remain allowed. No full Chrome suite for this AST-only gate; exact-head Verify required.
 
