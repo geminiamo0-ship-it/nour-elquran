@@ -1,3 +1,6 @@
+## CR-02B2 first source acceptance (2026-10-30)
+- Exact PR Verify #40999824319 PASS 4/4, postmerge #40999944470 PASS 4/4. DO read-only snapshot regression fixed before merge; simulated provider/DO tests cover revocation queued durable outbox and expiry. Isolated Dev no-secret smoke from Santoreno #267 is distinct and may only verify public action/credential denials, not provider API effectiveness. Real LiveKit room removal/participant token cutoff, direct write-time hooks, user device A/V, mute-only and timing SLA remain open #206.
+
 ## CR-02B2 #206 server-side media eviction source gates
 - Fast Node tests independently verify scoped HS256 RoomService JWT and expected HTTPS Twirp payload/revoke_token_ts, denial on bad provider response/timeout; SQLite DO alarm tests prove persistent pending removal across restart and provider outage, 25s lease expiry, revoked teacher D1, pending reconnect fence and no client-supplied provider IDs. Regression CR-01, CR-02A/2B1, D1+Next build. Actual LiveKit credentials/ACK, provider-side 2-device eviction, teacher mute-only, instant write-path revocation and child privacy are NOT accepted and MUST be separate before release.
 
