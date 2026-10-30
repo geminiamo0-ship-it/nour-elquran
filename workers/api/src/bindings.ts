@@ -6,7 +6,10 @@ export interface D1Statement {
   run(): Promise<{ success: boolean; meta: { changes: number } }>;
 }
 export interface CoreDatabase { prepare(sql: string): D1Statement; }
+import type {LessonRoomNamespace} from './classroom/lesson-room.ts';
+
 export interface Env {
+  LESSON_ROOMS?: LessonRoomNamespace;
   DB?: CoreDatabase;
   AUTH_ENABLED?: string;
   AUTH_SECRET?: string;
