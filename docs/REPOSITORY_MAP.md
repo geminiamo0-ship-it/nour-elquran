@@ -1,3 +1,6 @@
+## CR-02B2 #206 staff write-time media + mute source
+- `workers/api/src/classroom/media-enforcement.ts`: after signed D1 staff changes, wake exact lesson DO and affected active teacher sessions. `workers/api/src/classroom/lesson-room.ts`: private server binding `/internal/reconcile-media` endpoint runs D1-authorized alarm. `workers/api/src/classroom/livekit-mute.ts`: exact learner, microphone-only LiveKit ListParticipants/MutePublishedTrack, server-minted admin token. `workers/api/src/auth/routes.ts`: signed teacher mute POST and staff post-commit wake. `apps/web/src/features/classroom/LiveLessonMedia.tsx`: teacher-only opt-in mute button. `workers/api/tests/{livekit-mute,classroom-write-enforcement}.test.ts`. Contract `docs/CLASSROOM_CR02B2_WRITE_MUTE_CONTRACT.md`. No production/provider tests yet.
+
 ## CR-02B2 source merge and evidence
 - `docs/CLASSROOM_CR02B2_SOURCE_ACCEPTANCE.md` records Noor #207 merged, main Verify #40999944470 and the limits of simulated RoomService/DO tests. No provider-enabled connected eviction accepted; do not conflate source CI and live media.
 
