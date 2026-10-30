@@ -90,7 +90,7 @@ export function TeacherReadOnlyView({pathname}:{pathname:string}) {
       .sort((a,b)=>a.startsAtMs-b.startsAtMs).slice(0,3);
     return <section className={css.card}>
       <h1>بوابة الشيخ — بيانات موثقة من الخادم</h1>
-      <p>مرحبًا بك. هذه البيانات من API محمي بجلسة الحساب؛ لا توجد أرقام تقارير أو تسميعات مُختلَقة.</p>
+      <p>مرحبًا بك. هذه البيانات من API محمي بجلسة الحساب؛ لا تُعرض أرقام وهمية، ويمكن فتح التقارير والواجبات الفعلية من أقسامهما.</p>
       <div className={css.metrics}>
         <Link href="/teacher/students"><strong>{learners.length}</strong><span>طلابي المسندون حاليًا</span></Link>
         <Link href="/teacher/schedule"><strong>{lessons.length}</strong><span>الحصص الظاهرة في الجدول</span></Link>
