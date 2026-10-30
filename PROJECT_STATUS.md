@@ -1,3 +1,6 @@
+## #221 follow-up — stale LiveKit Room event invalidation (source candidate, 2026-10-30)
+- Draft PR #226 now invalidates the Room generation on unexpected provider disconnect and requires both exact Room identity and generation for reconnect, track subscribe/unsubscribe, participant events and post-connect success. Prevents a queued old-Room track or late connect completion from repopulating a new room or falsely reporting connected. Two synthetic room-event gate tests added. **New exact-head Verify and real two-browser Cloudflare Dev permission/rejoin QA still required**; no Production, minors, recording or keys.
+
 ## #221 follow-up: guard stale remote audio and Sheikh mute UI (source candidate, 2026-10-30)
 - Draft PR #226 prevents pending old-Room `startAudio()` from playing a **new Room's** audio after Stop/rejoin, suppresses stale remote autoplay failure notices and stale Sheikh mute HTTP result messages, and resets busy state on provider disconnect. Three synthetic deferred/audio-order tests added. Exact-head GitHub Verify and real signed Cloudflare Dev two-browser permission/audio QA remain required; no Production or private recordings.
 
