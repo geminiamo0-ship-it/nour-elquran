@@ -13,6 +13,7 @@ import {readOwnerAssignments,readTeacherAssignments,getAssignmentCatalog,publish
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
 import {getTeacherReport,getStudentReports,applyTeacherReport,parseReportAction} from '../lesson-reports.ts';
+import {parseNotebookAction,readNotebookNotes,writeNotebookNote} from '../notebook-notes.ts';
 import {verifiedOwner} from '../published-assignments.ts';
 import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '../staff-teachers.ts';
 import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts';
@@ -190,6 +191,25 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
     const result=await applyPrivateMushaf(db,authSubject,learnerId,command);
     const {status,...body}=result;
     return reply(status,{learnerId,...body},requestId);
+  }
+  // Phase 08A: individual learner's private lesson note journal; never the
+  // Sheikh's shared Quran layer and never a cross-profile note source.
+  const noteMatch=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/notebook-notes$/.exec(path);
+  if(noteMatch){
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const version=await db.prepare("SELECT version FROM noor_schema_meta WHERE component='notebook_notes'")
+      .first<{version:number}>();
+    if(version?.version!==1)return reply(503,{code:'NOTEBOOK_SCHEMA_NOT_READY'},requestId);
+    const learnerId=noteMatch[1]!,lessonId=noteMatch[2]!;
+    const result=request.method==='GET'
+      ?await readNotebookNotes(db,authSubject,learnerId,lessonId)
+      :await (async()=>{
+         const action=parseNotebookAction(await readObject(request));
+         if(!action)return {status:400,code:'INVALID_NOTEBOOK_ACTION'} as const;
+         return writeNotebookNote(db,authSubject,learnerId,lessonId,action);
+       })();
+    const {status,...body}=result;return reply(status,body,requestId);
   }
   const learnerAccessMatch = /^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/access$/.exec(path);
   if (learnerAccessMatch && request.method === 'GET') {
