@@ -146,7 +146,6 @@ describe('Room-scoped remote audio resume (#221)',()=>{
     let current=true;
     const play=vi.fn(()=>{signalStarted();return pendingPlay;});
     const pause=vi.fn();
-    const nextRoomPause=vi.fn();
     const pending=resumeRemoteAudioIfCurrent(async()=>{},()=>current,
       ()=>[{play,pause}]);
     await started;
@@ -154,7 +153,6 @@ describe('Room-scoped remote audio resume (#221)',()=>{
     finish();
     await expect(pending).resolves.toBe(false);
     expect(pause).toHaveBeenCalledOnce();
-    expect(nextRoomPause).not.toHaveBeenCalled();
   });
   it('pauses a stale element even if pending play rejects after Stop',async()=>{
     let rejectPlay!:(error:Error)=>void;
