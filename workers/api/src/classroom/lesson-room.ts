@@ -226,6 +226,28 @@ export class LessonRoom {
  }
  async fetch(request:Request):Promise<Response>{
   const path=new URL(request.url).pathname;
+  // Worker-only DO binding wake, called immediately after an authoritative
+  // staff permission write. There is NO public Worker HTTP route for this URL.
+  if(path==='/internal/reconcile-media'){
+   if(request.method!=='POST')return Response.json({code:'NOT_FOUND'},{status:404});
+   let input:unknown;
+   try{input=await request.json();}catch{return Response.json({code:'NOT_FOUND'},{status:404});}
+   if(!input||typeof input!=='object'||Array.isArray(input)||
+      Object.keys(input).length!==1||
+      !Object.hasOwn(input,'lessonId')||
+      typeof (input as {lessonId:unknown}).lessonId!=='string'||
+      !allowed.test((input as {lessonId:string}).lessonId))
+    return Response.json({code:'NOT_FOUND'},{status:404});
+   const lessonId=(input as {lessonId:string}).lessonId;
+   const room=await this.ctx.storage.get<RoomRecord>('room');
+   if(!room||room.lessonId!==lessonId)
+    return Response.json({code:'ROOM_NOT_INITIALIZED'},{status:404});
+   try{
+    await this.alarm(); // D1 is rechecked, not the caller's supplied reason.
+    return Response.json({code:'ROOM_RECONCILE_QUEUED'},
+      {headers:{'cache-control':'no-store'}});
+   }catch{return Response.json({code:'ROOM_RECONCILE_UNAVAILABLE'},{status:503});}
+  }
   if(path!=='/internal/room-presence'||request.method!=='POST')
    return Response.json({code:'NOT_FOUND'},{status:404});
   let value:unknown;
