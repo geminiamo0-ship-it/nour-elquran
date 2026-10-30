@@ -17,7 +17,7 @@ export function parsePrivateAudioDescriptor(value:unknown):PrivateAudioDescripto
   if(Object.keys(value).length!==expected.length||!expected.every(key=>key in value)||
     typeof value.assetId!=='string'||!uuidV4.test(value.assetId)||
     typeof value.submissionId!=='string'||!uuidV4.test(value.submissionId)||
-    typeof value.mediaType!=='string'||!(value.mediaType in extensions)||
+    typeof value.mediaType!=='string'||!Object.hasOwn(extensions,value.mediaType)||
     !Number.isSafeInteger(value.byteSize)||Number(value.byteSize)<1||
     Number(value.byteSize)>MAX_RECITATION_BYTES||
     !Number.isSafeInteger(value.durationMs)||Number(value.durationMs)<1||
@@ -30,7 +30,7 @@ export function parsePrivateAudioDescriptor(value:unknown):PrivateAudioDescripto
 /** Generate an opaque R2 key with NO name, phone, account or signed URL. Server only. */
 export function privateRecitationObjectKey(learnerId:string,descriptor:PrivateAudioDescriptor):string{
   if(!uuidV4.test(learnerId)||!uuidV4.test(descriptor.assetId)||
-    !(descriptor.mediaType in extensions))throw new Error('INVALID_PRIVATE_AUDIO_KEY');
+    !Object.hasOwn(extensions,descriptor.mediaType))throw new Error('INVALID_PRIVATE_AUDIO_KEY');
   return `assignment-audio/${learnerId}/${descriptor.assetId}.${extensions[descriptor.mediaType]}`;
 }
 /** Never allow a private response to be cached by a CDN, intermediary or browser. */
