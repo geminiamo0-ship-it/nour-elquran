@@ -1,3 +1,7 @@
+## CR-02B3 #221 Quran-first signed classroom candidate — verification pending
+- Fast static-render test checks signed learner/teacher roles, canonical read-only Mushaf, real LiveKit media dock and honest no-sync label. Run exact-head Verify (repository policy, strict TypeScript, lint, Vitest, Next build, native local D1) before any merge.
+- Targeted synthetic signed staging browser QA at 360x667, 390x844, 1280x900 must measure Quran and remote camera visible heights, no page/horizontal scroll, keyboard reachable mic/camera/leave controls and actual WebRTC track display. Compare to #219 prior screenshots; no broad Chrome suite or real child data. DO page/ink sync, hardware audio/video, provider eviction/consent remain separate blockers; never mark Production accepted from CSS or static tests.
+
 ## CR-02B2 signed mute no-secret Dev PASS (2026-10-30)
 - Noor exact main Verify #41002079116 PASS 4/4, Santoreno real no-secret Dev #41002323938 PASS: Sheikh signed mute 503 with no provider secret, forged unmute/SID 400, learner 404, anon 401, GET 405; CR-01, CR-02A, 07A, 08A, 08B1 regressions PASS. No actual provider ListParticipants, MutePublishedTrack, RemoveParticipant, guardian consent or 2-device media. Provider ACK/ejection and real lesson End still outstanding #206.
 
