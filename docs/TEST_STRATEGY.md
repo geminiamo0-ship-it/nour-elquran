@@ -1,3 +1,6 @@
+## CR-02B2 #206 provider eviction acknowledgement regression (2026-10-30)
+- Fast `workers/api/tests/livekit-admin.test.ts` must accept a valid Twirp JSON object on 200, but return retry for 204, HTML 200, malformed JSON, JSON arrays and synthetic 200 error objects. This guards against false-positive eviction completion and lost durable outbox retries. Run exact-head Verify before merging; provider-level ACK, connected-user removal and two-device testing remain separate and unverified.
+
 ## CR-02B2 signed mute no-secret Dev PASS (2026-10-30)
 - Noor exact main Verify #41002079116 PASS 4/4, Santoreno real no-secret Dev #41002323938 PASS: Sheikh signed mute 503 with no provider secret, forged unmute/SID 400, learner 404, anon 401, GET 405; CR-01, CR-02A, 07A, 08A, 08B1 regressions PASS. No actual provider ListParticipants, MutePublishedTrack, RemoveParticipant, guardian consent or 2-device media. Provider ACK/ejection and real lesson End still outstanding #206.
 
