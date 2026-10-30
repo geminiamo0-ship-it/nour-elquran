@@ -6,6 +6,24 @@ import {JoinError,requestMediaTicket,type RoomIdentity} from './media-credential
 import css from './LiveClassroom.module.css';
 
 type Phase='idle'|'connecting'|'connected'|'reconnecting'|'failed';
+type MicPolicy=Readonly<{locked:boolean;revision:number}>;
+function verifiedMicPolicy(raw:unknown):MicPolicy{
+ if(!raw||typeof raw!=='object'||Array.isArray(raw))throw Error('INVALID_MIC_POLICY');
+ const v=raw as Record<string,unknown>;
+ const p=v.policy;
+ if(!p||typeof p!=='object'||Array.isArray(p))throw Error('INVALID_MIC_POLICY');
+ const state=p as Record<string,unknown>;
+ if(Object.keys(state).length!==2||typeof state.locked!=='boolean'||
+  !Number.isSafeInteger(state.revision)||Number(state.revision)<0)
+  throw Error('INVALID_MIC_POLICY');
+ return state as MicPolicy;
+}
+function microphonePolicyRoute(identity:RoomIdentity){
+ const lesson=encodeURIComponent(identity.lessonId);
+ return identity.role==='teacher'?'/v1/teacher/lessons/'+lesson+'/microphone-policy':
+  '/v1/me/learners/'+encodeURIComponent(identity.learnerId!)+'/lessons/'+lesson+'/microphone-policy';
+}
+
 function mediaMessage(error:unknown):string {
   if(error instanceof JoinError){
     if(error.code==='UNAVAILABLE')return 'الصوت والفيديو غير مفعّلين في هذه البيئة حتى يتم توصيل LiveKit Cloud.';
@@ -33,6 +51,44 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState('');
  const [audioBlocked,setAudioBlocked]=useState(false);
+ const [micPolicy,setMicPolicy]=useState<MicPolicy|null>(null);
+ const [micPolicyError,setMicPolicyError]=useState(false);
+ useEffect(()=>{
+   if(!active){setMicPolicy(null);setMicPolicyError(false);return;}
+   const controller=new AbortController();
+   let running=false;
+   const poll=async()=>{
+     if(running||controller.signal.aborted||document.visibilityState==='hidden')return;
+     running=true;
+     try{
+       const response=await fetch(microphonePolicyRoute(identity),{
+         method:'GET',credentials:'same-origin',cache:'no-store',redirect:'error',
+         signal:controller.signal,
+       });
+       if(!response.ok)throw Error('MIC_POLICY_UNAVAILABLE');
+       const state=verifiedMicPolicy(await response.json());
+       if(controller.signal.aborted)return;
+       setMicPolicy(prev=>prev&&prev.revision>state.revision?prev:state);
+       setMicPolicyError(false);
+     }catch{
+       if(!controller.signal.aborted)setMicPolicyError(true);
+     }finally{running=false;}
+   };
+   void poll();
+   const timer=window.setInterval(()=>void poll(),2_000);
+   document.addEventListener('visibilitychange',poll);
+   return()=>{controller.abort();window.clearInterval(timer);
+    document.removeEventListener('visibilitychange',poll);};
+ },[active,identity.lessonId,identity.learnerId,identity.role]);
+ useEffect(()=>{
+   if(identity.role!=='learner'||!micPolicy?.locked)return;
+   // Moderation can silence an already published mic; never re-enable devices
+   // when the Sheikh releases the lock. Only the learner can opt back in.
+   const media=room.current;
+   if(media)void media.localParticipant.setMicrophoneEnabled(false).catch(()=>{});
+   setMic(false);
+ },[identity.role,micPolicy?.locked]);
+
 
  const stop=useCallback(()=>{
    epoch.current++;
@@ -80,6 +136,14 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
        setMic(false);setCamera(false);setPhase('failed');
        setMessage('انقطع اتصال الوسائط؛ يلزم إعادة تصريح الدخول.');
      });
+     media.on(RoomEvent.TrackMuted,(publication,participant)=>{
+       if(current===epoch.current&&participant===media.localParticipant&&
+        publication.source===Track.Source.Microphone)setMic(false);
+     });
+     media.on(RoomEvent.TrackUnmuted,(publication,participant)=>{
+       if(current===epoch.current&&participant===media.localParticipant&&
+        publication.source===Track.Source.Microphone)setMic(true);
+     });
      media.on(RoomEvent.TrackSubscribed,(track)=>{
        if(current!==epoch.current)return;
        if(track.kind!==Track.Kind.Audio&&track.kind!==Track.Kind.Video)return;
@@ -123,14 +187,15 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
  },[active,busy,identity]);
 
  const toggleMic=useCallback(async()=>{
-   if(!room.current||phase!=='connected'||busy)return;
+   if(!room.current||phase!=='connected'||busy||
+      (identity.role==='learner'&&(!micPolicy||micPolicy.locked||micPolicyError)))return;
    setBusy(true);setMessage('');
    try{
      await room.current.localParticipant.setMicrophoneEnabled(!mic);
      setMic(!mic);
    }catch(error){setMessage(mediaMessage(error));}
    finally{setBusy(false);}
- },[mic,phase,busy]);
+ },[mic,phase,busy,identity.role,micPolicy,micPolicyError]);
  const toggleCamera=useCallback(async()=>{
    if(!room.current||phase!=='connected'||busy)return;
    setBusy(true);setMessage('');
@@ -151,28 +216,40 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
    }catch(error){setMessage(mediaMessage(error));}
    finally{setBusy(false);}
  },[camera,phase,busy]);
- const muteLearner=useCallback(async()=>{
-   if(identity.role!=='teacher'||phase!=='connected'||busy)return;
+ const toggleLearnerModeration=useCallback(async()=>{
+   if(identity.role!=='teacher'||phase!=='connected'||busy||!micPolicy||micPolicyError)return;
    setBusy(true);setMessage('');
+   const release=micPolicy.locked;
    try{
-     const response=await fetch(
+     const response=await fetch(release?microphonePolicyRoute(identity):
        '/v1/teacher/lessons/'+encodeURIComponent(identity.lessonId)+'/mute-learner-microphone',{
-         method:'POST',headers:{'content-type':'application/json'},body:'{}',
-         credentials:'same-origin',cache:'no-store',redirect:'error',
-       });
+       method:'POST',headers:{'content-type':'application/json'},
+       body:release?JSON.stringify({action:'release'}):'{}',
+       credentials:'same-origin',cache:'no-store',redirect:'error',
+     });
      const body:unknown=await response.json();
-     if(!response.ok)throw new Error('MUTE_FAILED');
-     if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('MUTE_FAILED');
+     if(!response.ok||!body||typeof body!=='object'||Array.isArray(body))
+      throw Error('MIC_MODERATION_FAILED');
      const code=(body as Record<string,unknown>).code;
-     if(code==='LEARNER_MICROPHONE_MUTED')
-       setMessage('تم تأكيد كتم ميكروفون الطالب من الخادم.');
-     else if(code==='NO_LEARNER_MICROPHONE')
-       setMessage('الطالب لا يبث صوتًا الآن.');
-     else throw new Error('MUTE_FAILED');
+     if(release){
+       if(code!=='MIC_POLICY_RELEASED')throw Error('MIC_MODERATION_FAILED');
+       const state=verifiedMicPolicy(body);
+       setMicPolicy(prev=>prev&&prev.revision>state.revision?prev:state);
+       setMessage('تم إلغاء كتم الطالب من جهة الشيخ؛ الطالب يختار تشغيل ميكروفونه بنفسه.');
+     }else{
+       if(code!=='LEARNER_MICROPHONE_MUTED'&&code!=='NO_LEARNER_MICROPHONE')
+        throw Error('MIC_MODERATION_FAILED');
+       // The moderation state is committed on LessonDO after provider ACK.
+       // Poll the authoritative policy to reconcile even after a UI refresh.
+       setMicPolicy(prev=>({locked:true,revision:(prev?.revision??0)+1}));
+       setMessage(code==='NO_LEARNER_MICROPHONE'?
+        'الطالب لا يبث صوتًا الآن؛ مُنع تشغيله حتى تلغي الكتم.':
+        'تم كتم ميكروفون الطالب؛ يمكنك الضغط على «إلغاء كتم الطالب».');
+     }
    }catch{
-     setMessage('تعذّر تأكيد كتم ميكروفون الطالب. لم نحاول تشغيل أي جهاز عن بُعد.');
+     setMessage('تعذّر تأكيد تغيير كتم الطالب؛ حدّث حالة الاتصال وحاول مرة أخرى.');
    }finally{setBusy(false);}
- },[identity,phase,busy]);
+ },[identity,phase,busy,micPolicy,micPolicyError]);
  const enableRemoteAudio=useCallback(async()=>{
    const media=room.current;if(!media)return;
    try{
@@ -210,18 +287,25 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
     <button type="button" disabled={!active||busy} onClick={()=>void connect()}>
      {busy?'جارٍ الاتصال…':'دخول الصوت والفيديو'}
     </button>}
-   <button type="button" disabled={phase!=='connected'||busy}
+   <button type="button" disabled={phase!=='connected'||busy||
+      (identity.role==='learner'&&(!micPolicy||micPolicy.locked||micPolicyError))}
     onClick={()=>void toggleMic()} aria-pressed={mic}>
-    {mic?'إيقاف ميكروفوني':'تشغيل ميكروفوني'}
+    {identity.role==='learner'&&micPolicy?.locked?'الشيخ كتم ميكروفونك':
+      mic?'إيقاف ميكروفوني':'تشغيل ميكروفوني'}
    </button>
    <button type="button" disabled={phase!=='connected'||busy}
     onClick={()=>void toggleCamera()} aria-pressed={camera}>
     {camera?'إيقاف كاميرتي':'تشغيل كاميرتي'}
    </button>
    {identity.role==='teacher'&&<button type="button" className={css.extraAction}
-    disabled={phase!=='connected'||busy} onClick={()=>void muteLearner()}>
-    كتم ميكروفون الطالب
+    disabled={phase!=='connected'||busy||!micPolicy||micPolicyError}
+    onClick={()=>void toggleLearnerModeration()}>
+    {micPolicy?.locked?'إلغاء كتم الطالب':'كتم ميكروفون الطالب'}
    </button>}
+   {identity.role==='learner'&&micPolicy?.locked&&
+    <p className={css.mediaPrivacy} role="status">الشيخ كتم صوتك. عند إلغاء الكتم يمكنك تشغيل ميكروفونك بنفسك.</p>}
+   {micPolicyError&&<p role="status" className={css.mediaPrivacy}>
+    تعذّر تحديث حالة كتم الطالب؛ سنحاول مجددًا.</p>}
    {audioBlocked&&<button type="button" onClick={()=>void enableRemoteAudio()}>
     تشغيل صوت الطرف الآخر
    </button>}
