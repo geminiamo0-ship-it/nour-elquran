@@ -44,14 +44,14 @@ describe('LiveKit device permission race safety (#221)',()=>{
   });
 
   it('does not re-enable devices for stale disable operations',async()=>{
-    const apply=vi.fn(async(_enabled:boolean)=>undefined);
+    const apply=vi.fn(async()=>undefined);
     expect(await setDeviceWithEpochGuard(false,apply,()=>false))
       .toEqual({current:false});
     expect(apply.mock.calls.map(call=>call[0])).toEqual([false]);
   });
 
   it('does not turn a late rejected permission into a successful toggle',async()=>{
-    const apply=vi.fn(async(_enabled:boolean)=>{throw new Error('denied');});
+    const apply=vi.fn(async()=>{throw new Error('denied');});
     await expect(setDeviceWithEpochGuard(true,apply,()=>false))
       .rejects.toThrow('denied');
     expect(apply).toHaveBeenCalledTimes(1);
