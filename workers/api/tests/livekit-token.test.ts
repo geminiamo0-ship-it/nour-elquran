@@ -2,7 +2,7 @@ import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
 import {createHmac} from 'node:crypto';
 import {
- MEDIA_TOKEN_TTL_SECONDS,MEDIA_EARLY_JOIN_MS,validatedLiveKitConfig,
+ MEDIA_TOKEN_TTL_SECONDS,MEDIA_EARLY_JOIN_MS,MEDIA_LIVE_OVERRUN_MS,validatedLiveKitConfig,
  mediaLessonWindow,mintLiveKitToken,createMediaToken,
 } from '../src/classroom/livekit-token.ts';
 import type {ClassroomAccess} from '../src/classroom-access.ts';
@@ -94,12 +94,16 @@ test('signed JWT is verified with HMAC-SHA256, time-bound, opaque, strict camera
  assert.equal(other.roomName,issued.roomName);
  assert.notEqual(other.identity,issued.identity);
 });
-test('scheduled admission limited to 15 minutes before start, still no automatic class end for live',()=>{
+test('scheduled and live media-token admission is bounded without automatically ending a class',()=>{
  assert.equal(mediaLessonWindow(lesson,lesson.startsAtMs-MEDIA_EARLY_JOIN_MS-1),false);
  assert.equal(mediaLessonWindow(lesson,lesson.startsAtMs-MEDIA_EARLY_JOIN_MS),true);
  assert.equal(mediaLessonWindow(lesson,lesson.endsAtMs),true);
  assert.equal(mediaLessonWindow(lesson,lesson.endsAtMs+1),false);
- assert.equal(mediaLessonWindow({...lesson,status:'live'},lesson.endsAtMs+100000000),true);
+ const live={...lesson,status:'live' as const};
+ assert.equal(mediaLessonWindow(live,lesson.startsAtMs-MEDIA_EARLY_JOIN_MS-1),false);
+ assert.equal(mediaLessonWindow(live,lesson.startsAtMs-MEDIA_EARLY_JOIN_MS),true);
+ assert.equal(mediaLessonWindow(live,lesson.endsAtMs+MEDIA_LIVE_OVERRUN_MS),true);
+ assert.equal(mediaLessonWindow(live,lesson.endsAtMs+MEDIA_LIVE_OVERRUN_MS+1),false);
  assert.equal(mediaLessonWindow({...lesson,startsAtMs:Number.NaN},1000),false);
  assert.equal(mediaLessonWindow({...lesson,endsAtMs:0},1000),false);
 });
@@ -122,6 +126,9 @@ test('issuer rejects absent config, no DO binding, expired lease and wrong learn
   assert.deepEqual(await createMediaToken(env,actor,access,1_050_000),
    {status:404,code:'MEDIA_LESSON_UNAVAILABLE'});
  }
+ assert.deepEqual(await createMediaToken(env,actor,{...lesson,status:'live'},
+  lesson.endsAtMs+MEDIA_LIVE_OVERRUN_MS+1),
+  {status:404,code:'MEDIA_LESSON_UNAVAILABLE'});
  const good=await createMediaToken(env,actor,lesson,1_050_000);
  assert.equal(good.status,200);
  if(good.status===200){
