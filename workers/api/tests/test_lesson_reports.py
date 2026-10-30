@@ -91,7 +91,10 @@ class ReportJournal(unittest.TestCase):
    self.event(90)
   self.db.execute("INSERT INTO lesson_access_grants("
                   "id,lesson_id,learner_id,teacher_id,kind,accepted_at_ms,consent_deadline_ms,"
-                  "starts_at_ms,ends_at_ms) VALUES('grant','done','a','t','substitute',1100,1300,1000,2401000)")
+                  "starts_at_ms,ends_at_ms) VALUES('grant','done','a','t','substitute',1100,1200,1000,2401000)")
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'REPORT_ACCESS_DENIED'):
+   self.event(91)
+  self.db.execute("UPDATE lesson_access_grants SET accepted_at_ms=900,consent_deadline_ms=1000 WHERE id='grant'")
   self.event(1)
   self.event(2,kind='publish',expected=1,at=3200)
   with self.assertRaisesRegex(sqlite3.IntegrityError,'REPORT_SUBSTITUTE_DENIED'):
