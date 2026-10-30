@@ -437,7 +437,8 @@ export function ConnectedWaitingRoom(){
     </footer>
    </main>
    <div className={css.panelSlot} id="lesson-notes" data-open={panelOpen?'true':'false'}>
-    <ConnectedClassroomNotes role={role} page={page} selectedVerse={selectedVerse}/>
+    <ConnectedClassroomNotes role={role} page={page} lessonId={identity.lessonId}
+     joined={joined&&lessonPhase!=='completed'} selectedVerse={selectedVerse}/>
    </div>
   </div>
   <p className={[css.disclaimer,liveCss.disclaimer].join(' ')}>
