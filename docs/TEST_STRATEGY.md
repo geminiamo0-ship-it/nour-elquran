@@ -1,3 +1,6 @@
+## Classroom #221 subscribed audio autoplay race regression (2026-10-30)
+- Four synthetic cases: delayed subscribed `play()` resolution after leave pauses old element; delayed rejection suppresses stale warning and pauses; active autoplay denial still reports blocked; already-disconnected Room never starts playback. This specifically covers `TrackSubscribed` auto-play (distinct from user-triggered `startAudio`). Requires exact-head Verify plus opt-in two-browser Dev/hardware acceptance; CI alone does not prove device indicators or real WebRTC behavior.
+
 ## #221 late remote audio play after leave (source regression, 2026-10-30)
 - `media-device-safety.test.ts` now defers `HTMLMediaElement.play()` until after the room becomes stale, verifying the **captured old element** is paused on late resolve and late reject. New-room audio must not be touched. Source tests do not prove browser autoplay behavior; targeted signed two-browser Cloudflare Dev audio silence and Stop/rejoin test is required. Exact-head Verify pending.
 
