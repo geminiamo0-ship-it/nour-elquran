@@ -3,7 +3,7 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {Room} from 'livekit-client';
 import {JoinError,requestMediaTicket,type RoomIdentity} from './media-credentials';
-import {resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard} from './media-device-safety';
+import {createRoomGenerationGuard,resumeRemoteAudioIfCurrent,setDeviceWithEpochGuard} from './media-device-safety';
 import css from './LiveClassroom.module.css';
 
 type Phase='idle'|'connecting'|'connected'|'reconnecting'|'failed';
@@ -68,21 +68,25 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
      pending=new Room({adaptiveStream:true,dynacast:true,stopLocalTrackOnUnpublish:true});
      const media=pending;
      room.current=media;
+     const isCurrentRoom=createRoomGenerationGuard(media,current,()=>room.current,()=>epoch.current);
 
      // Never auto-enable camera or microphone at connection. Devices
      // are enabled only by the participant's explicit local button.
-     media.on(RoomEvent.Reconnecting,()=>{if(current===epoch.current)setPhase('reconnecting');});
-     media.on(RoomEvent.Reconnected,()=>{if(current===epoch.current)setPhase('connected');});
+     media.on(RoomEvent.Reconnecting,()=>{if(isCurrentRoom())setPhase('reconnecting');});
+     media.on(RoomEvent.Reconnected,()=>{if(isCurrentRoom())setPhase('connected');});
      media.on(RoomEvent.Disconnected,()=>{
-       if(current!==epoch.current)return;
+       if(!isCurrentRoom())return;
+       // Invalidate all pending connect/device/audio work and queued SDK events.
+       epoch.current++;
        room.current=null;
+       media.removeAllListeners();
        remoteVideo.current?.replaceChildren();remoteAudio.current?.replaceChildren();
        localVideo.current?.replaceChildren();
-       setMic(false);setCamera(false);setBusy(false);setPhase('failed');
+       setMic(false);setCamera(false);setBusy(false);setAudioBlocked(false);setPhase('failed');
        setMessage('انقطع اتصال الوسائط؛ يلزم إعادة تصريح الدخول.');
      });
      media.on(RoomEvent.TrackSubscribed,(track)=>{
-       if(current!==epoch.current)return;
+       if(!isCurrentRoom())return;
        if(track.kind!==Track.Kind.Audio&&track.kind!==Track.Kind.Video)return;
        const element=track.attach();
        // Remote audio autoplay can be blocked on mobile; the user can
@@ -91,7 +95,7 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
          if(element instanceof HTMLAudioElement){
            element.autoplay=true;
            void element.play().catch(()=>{
-             if(current===epoch.current&&room.current===media)setAudioBlocked(true);
+             if(isCurrentRoom())setAudioBlocked(true);
            });
          }
          remoteAudio.current?.appendChild(element);
@@ -103,15 +107,16 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
        }
      });
      media.on(RoomEvent.TrackUnsubscribed,track=>{
+       if(!isCurrentRoom())return;
        for(const element of track.detach())element.remove();
      });
      media.on(RoomEvent.ParticipantDisconnected,()=>{
-       if(current===epoch.current)remoteVideo.current?.replaceChildren();
+       if(isCurrentRoom())remoteVideo.current?.replaceChildren();
      });
      await media.connect(ticket.serverUrl,ticket.participantToken,{
        autoSubscribe:true,
      });
-     if(current!==epoch.current){
+     if(!isCurrentRoom()){
        await media.disconnect();return;
      }
      setPhase('connected');
