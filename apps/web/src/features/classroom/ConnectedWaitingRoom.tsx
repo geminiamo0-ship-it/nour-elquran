@@ -127,8 +127,8 @@ export function ConnectedWaitingRoom(){
   <Link href="/student">العودة للبوابة</Link></main>;
  return <main dir="rtl" className={css.shell}>
   <header className={css.header}>
-    <div><strong>الحصة المباشرة</strong>
-      <small>{identity.role==='teacher'?'منظور الشيخ':'منظور الطالب'} · دخول موثق</small></div>
+    <div><h1>الحصة المباشرة</h1>
+      <small>{identity.role==='teacher'?'منظور الشيخ':'منظور الطالب'} · {status==='ready'?'تم التحقق من الحساب':'جارٍ التحقق'}</small></div>
     <Link href={identity.role==='teacher'?'/teacher/schedule':'/student/lessons'}>العودة للجدول</Link>
   </header>
   <div className={css.lobbyBar}>
