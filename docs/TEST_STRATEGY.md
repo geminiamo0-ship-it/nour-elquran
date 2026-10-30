@@ -1,3 +1,7 @@
+## #221 asynchronous LiveKit permission race regression
+- Fast Vitest: active Room toggle succeeds; deferred camera enable after Stop/leave stops its returned video track and calls disable; deferred/stale microphone stops its audio track even if disconnected Room rejects disable; stale disable never re-enables; rejected browser permission propagates without false success. Strict TypeScript, lint, build and native D1 checks in exact-head GitHub Verify.
+- Focused manual Dev browser gate: signed synthetic adult Sheikh/learner, real WebRTC on approved 360/390/1280 viewport, open device permission prompt then Stop/leave, grant permission late, confirm camera/microphone indicator OFF and no local track publication. Never run global Chrome per commit; no production, real minors, recording or secrets.
+
 ## CR-02B2 signed mute no-secret Dev PASS (2026-10-30)
 - Noor exact main Verify #41002079116 PASS 4/4, Santoreno real no-secret Dev #41002323938 PASS: Sheikh signed mute 503 with no provider secret, forged unmute/SID 400, learner 404, anon 401, GET 405; CR-01, CR-02A, 07A, 08A, 08B1 regressions PASS. No actual provider ListParticipants, MutePublishedTrack, RemoveParticipant, guardian consent or 2-device media. Provider ACK/ejection and real lesson End still outstanding #206.
 
