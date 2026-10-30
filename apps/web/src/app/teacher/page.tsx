@@ -1,2 +1,2 @@
-import {TeacherHome} from '@/features/teacher';
-export default function TeacherPage(){return <TeacherHome/>;}
+/** Authenticated teacher UI is rendered in the signed TeacherShell. */
+export default function TeacherPage(){return null;}
