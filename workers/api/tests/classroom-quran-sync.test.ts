@@ -139,7 +139,7 @@ test('teacher may select a verified Ayah with revision CAS; learner receives the
   revision:1,verse});
  const learner=await forwardVerifiedPage(env,student,{action:'snapshot'});
  assert.deepEqual(learner.quran,result.quran);
- const replay=await forwardVerifiedPage(env,verified,action,transport);
+ const replay=await forwardVerifiedPage(env,verified,action);
  assert.equal(replay.code,'QURAN_PAGE_REPLAY');
  const mismatch=await forwardVerifiedPage(env,verified,{action:'set',page:42,
   expectedRevision:1,requestId:'highlight-0002',verse:{surah:2,ayah:254}});
