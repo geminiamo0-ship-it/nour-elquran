@@ -21,6 +21,7 @@ import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts'
 import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '../classroom-access.ts';
 import {forwardVerifiedPresence,parseClientPresenceAction} from '../classroom/presence.ts';
 import {forwardVerifiedPage,parsePageAction} from '../classroom/quran-sync.ts';
+import {forwardVerifiedInk,parseClientInk} from '../classroom/ink-sync.ts';
 import {createMediaToken,mediaLessonWindow} from '../classroom/livekit-token.ts';
 import {checkLiveKitProvider} from '../classroom/livekit-provider-check.ts';
 import {wakeActingTeacherMedia,wakeLessonMediaReconciliation} from '../classroom/media-enforcement.ts';
@@ -245,6 +246,19 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
     const outcome=await createMediaToken(env,{lessonId,learnerId,
       actorSubject:authSubject,role:'learner'},access);
     const {status,...safe}=outcome;return reply(status,safe,requestId);
+  }
+  const learnerInk=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/quran-ink$/.exec(path);
+  if(learnerInk){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const learnerId=learnerInk[1]!,lessonId=learnerInk[2]!;
+    const access=await checkOwnedLearnerClassroomAccess(db,accountId,learnerId,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    const page=Number(new URL(request.url).searchParams.get('page'));
+    const action=parseClientInk({action:'snapshot',page},'learner');
+    if(!action)return reply(400,{code:'INVALID_INK_COMMAND'},requestId);
+    const outcome=await forwardVerifiedInk(env,{lessonId,learnerId,
+      actorSubject:authSubject,role:'learner'},action);
+    const {status,...body}=outcome;return reply(status,body,requestId);
   }
   const learnerQuran=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/quran-page$/.exec(path);
   if(learnerQuran){
@@ -496,6 +510,22 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     const outcome=await createMediaToken(env,{lessonId,learnerId:access.learnerId,
       actorSubject:session.user.id,role:'teacher'},access);
     const {status,...safe}=outcome;return reply(status,safe,requestId);
+  }
+  const teacherInk=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/quran-ink$/.exec(path);
+  if(teacherInk){
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const lessonId=teacherInk[1]!;
+    const access=await checkTeacherClassroomAccess(env.DB,session.user.id,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    const action=request.method==='GET'?
+      parseClientInk({action:'snapshot',
+        page:Number(new URL(request.url).searchParams.get('page'))},'teacher'):
+      parseClientInk(await readObject(request),'teacher');
+    if(!action)return reply(400,{code:'INVALID_INK_COMMAND'},requestId);
+    const outcome=await forwardVerifiedInk(env,{lessonId,learnerId:access.learnerId,
+      actorSubject:session.user.id,role:'teacher'},action);
+    const {status,...body}=outcome;return reply(status,body,requestId);
   }
   const teacherQuran=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/quran-page$/.exec(path);
   if(teacherQuran){

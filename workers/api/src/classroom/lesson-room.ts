@@ -8,6 +8,7 @@ import {checkTeacherClassroomAccess,checkOwnedLearnerClassroomAccess} from '../c
 import {mediaLessonWindow} from './livekit-token.ts';
 import {evictVerifiedLiveKitActor} from './livekit-admin.ts';
 import {parseVerifiedPageCommand,initialPage,applyPageSet,safePage,type SharedPageRecord} from './quran-page.ts';
+import {parseInkCommand,initialInk,visibleInk,applyInk,type InkPage} from './quran-ink.ts';
 
 export type RoomAction='join'|'heartbeat'|'leave'|'snapshot'|'media-intent';
 export type VerifiedRoomCommand=Readonly<{
@@ -248,6 +249,34 @@ export class LessonRoom {
     return Response.json({code:'ROOM_RECONCILE_QUEUED'},
       {headers:{'cache-control':'no-store'}});
    }catch{return Response.json({code:'ROOM_RECONCILE_UNAVAILABLE'},{status:503});}
+  }
+  if(path==='/internal/quran-ink'){
+   if(request.method!=='POST')return Response.json({code:'NOT_FOUND'},{status:404});
+   let raw:unknown;
+   try{raw=await request.json();}catch{return Response.json({code:'INVALID_INK_COMMAND'},{status:400});}
+   const cmd=parseInkCommand(raw);
+   if(!cmd)return Response.json({code:'INVALID_INK_COMMAND'},{status:400});
+   const now=Date.now();
+   try{
+    return await this.ctx.storage.transaction(async txn=>{
+     const room=await txn.get<RoomRecord>('room');
+     if(!room||room.lessonId!==cmd.lessonId)return Response.json({code:'NOT_JOINED'},{status:404});
+     const lease=room[cmd.role];
+     if(!lease||lease.expiresAtMs<=now||lease.subject!==cmd.actorSubject||
+      lease.learnerId!==cmd.learnerId)return Response.json({code:'NOT_JOINED'},{status:404});
+     const state=await txn.get<InkPage>('quranInk:'+cmd.page)??initialInk(cmd.page);
+     if(cmd.action==='snapshot')return Response.json({code:'INK_SNAPSHOT',ink:visibleInk(state)},
+      {headers:{'cache-control':'no-store'}});
+     const current=await txn.get<SharedPageRecord>('quranPage')??initialPage();
+     if(current.page!==cmd.page)return Response.json({code:'INK_CONFLICT',ink:visibleInk(state)},
+      {status:409,headers:{'cache-control':'no-store'}});
+     const result=applyInk(state,cmd);
+     if(result.code==='INK_APPLIED')await txn.put('quranInk:'+cmd.page,result.next);
+     const status=result.code==='INK_CONFLICT'?409:result.code==='INK_LIMIT'?413:200;
+     return Response.json({code:result.code,ink:visibleInk(result.next)},
+      {status,headers:{'cache-control':'no-store'}});
+    });
+   }catch{return Response.json({code:'CLASSROOM_INK_UNAVAILABLE'},{status:503});}
   }
   if(path==='/internal/quran-page'){
    if(request.method!=='POST')return Response.json({code:'NOT_FOUND'},{status:404});
