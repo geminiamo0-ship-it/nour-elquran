@@ -1,3 +1,6 @@
+## 2026-10-30 #221 subscribed audio autoplay safety handoff (source candidate)
+- In PR #226 branch `fix/221-livekit-permission-race-on-current-main`, added `playSubscribedAudioIfCurrent` to cover the *automatic* `TrackSubscribed` `audio.play()` path, previously outside the explicit resume guard. Late resolve/reject after Stop pauses only old captured audio and suppresses stale blocked-autoplay UI. Four synthetic tests in `media-device-safety.test.ts`. **Do not claim verified** until exact-head Verify. Next: check GitHub Verify on latest head, then signed two-browser Dev delayed autoplay/Stop/rejoin, reviewer approval and reconcile main; no Production/children/recording.
+
 ## Next exact action — #221 delayed remote audio race (2026-10-30)
 - Draft PR #226 `fix/221-livekit-permission-race-on-current-main`: inspect exact-head GitHub Verify after `resumeRemoteAudioIfCurrent` now pauses only the original audio element when its pending `play()` settles after Stop/leave, including rejection. Two deferred Vitest tests added. If Verify fails, fix on this branch. Then targeted signed synthetic two-browser Dev permission, Stop/rejoin and real audio/camera indicator QA; reviewer approval and reconcile with `main` before merge. Never infer hardware success from Vitest; no Production, minors, recordings or keys.
 
