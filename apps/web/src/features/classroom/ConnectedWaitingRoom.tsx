@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {LiveLessonMedia} from './LiveLessonMedia';
+import {LiveLessonLifecycle} from './LiveLessonLifecycle';
 import {ReaderPrintedPage,clampQuranPage,targetKey,type QuranTarget,type QuranInkStroke} from '@/features/student';
 import {fetchLiveInk,compactStroke,type InkView} from './live-ink';
 import {ConnectedClassroomNotes} from './ConnectedClassroomNotes';
@@ -105,6 +106,7 @@ export function ConnectedWaitingRoom(){
  const [status,setStatus]=useState<Display>('loading');
  const [presence,setPresence]=useState<Presence|null>(null);
  const [joined,setJoined]=useState(false);
+ const [lessonPhase,setLessonPhase]=useState<'scheduled'|'live'|'completed'|'cancelled'|null>(null);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [sharedPage,setSharedPage]=useState<SharedPage|null>(null);
@@ -300,15 +302,23 @@ export function ConnectedWaitingRoom(){
     <span className={barCss.previewLabel}>LiveKit · موثق</span>
    </div>
    <div className={barCss.sessionInfo}>
-    <span className={barCss.phase} data-phase={joined?'live':'waiting'}>
-     {joined?'غرفة الانتظار':'غير منضم'}
+    <span className={barCss.phase}
+     data-phase={lessonPhase==='completed'?'ended':lessonPhase==='live'?'live':'waiting'}>
+     {lessonPhase==='completed'?'انتهت الحصة':lessonPhase==='live'?'الحصة جارية':
+      joined?'غرفة الانتظار':'غير منضم'}
     </span>
     <span className={liveCss.sessionRole}>{role==='teacher'?'الشيخ':'الطالب'}</span>
    </div>
    <div className={barCss.actions}>
-    <button type="button" className={barCss.start} disabled={busy||status!=='ready'}
+    <LiveLessonLifecycle role={identity.role} lessonId={identity.lessonId}
+      learnerId={identity.learnerId} joined={joined}
+      bothPresent={presence?.bothPresent===true}
+      onPhase={phase=>{setLessonPhase(phase);
+       if(phase==='completed'||phase==='cancelled')setJoined(false);}}/>
+    <button type="button" className={barCss.start}
+     disabled={busy||status!=='ready'||lessonPhase==='completed'||lessonPhase==='cancelled'}
      onClick={()=>void refresh(joined?'leave':'join')}>
-     {busy?'جارٍ التأكيد…':joined?'مغادرة غرفة الانتظار':'الانضمام لغرفة الانتظار'}
+     {busy?'جارٍ التأكيد…':joined?'مغادرة الحصة':'الانضمام لغرفة الانتظار'}
     </button>
     {role==='teacher'&&<button type="button" className={barCss.iconAction}
      aria-label="الأخطاء والتقييم" aria-expanded={panelOpen} aria-controls="lesson-notes"
@@ -341,7 +351,7 @@ export function ConnectedWaitingRoom(){
       <button type="button" disabled={busy} onClick={()=>void refresh('snapshot')}>
        تحديث حالة الطرفين
       </button>
-      <small>هذه غرفة انتظار فعلية، وليست بدءًا رسميًا للحصة. الكاميرا والمايك لا يعملان تلقائيًا، ولا توجد محاكاة حضور.</small>
+      <small>الشيخ وحده يبدأ الحصة رسميًا وينهيها. الكاميرا والمايك لا يعملان تلقائيًا؛ التوقيت موثق على D1.</small>
      </div>
     </details>
    </div>
@@ -354,7 +364,7 @@ export function ConnectedWaitingRoom(){
     <header className={css.mediaHead}><strong>المشاركون</strong>
      <span>{joined?'غرفة صوت وفيديو حقيقية':'الكاميرا مغلقة'}</span>
     </header>
-    {joined&&status==='ready'?<LiveLessonMedia identity={identity} active={joined} embedded/>:
+    {joined&&status==='ready'&&lessonPhase!=='completed'?<LiveLessonMedia identity={identity} active={joined} embedded/>:
      <div className={css.videoOffline}>
       <strong>كاميرا {role==='teacher'?'الطالب':'الشيخ'} غير متصلة</strong>
       <span>انضم إلى غرفة الانتظار لبدء الاتصال الآمن.</span>
