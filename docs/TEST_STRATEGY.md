@@ -1,3 +1,6 @@
+## CR-02B2 #206 server-side media eviction source gates
+- Fast Node tests independently verify scoped HS256 RoomService JWT and expected HTTPS Twirp payload/revoke_token_ts, denial on bad provider response/timeout; SQLite DO alarm tests prove persistent pending removal across restart and provider outage, 25s lease expiry, revoked teacher D1, pending reconnect fence and no client-supplied provider IDs. Regression CR-01, CR-02A/2B1, D1+Next build. Actual LiveKit credentials/ACK, provider-side 2-device eviction, teacher mute-only, instant write-path revocation and child privacy are NOT accepted and MUST be separate before release.
+
 ## CR-02B1 #204 LiveKit browser SDK test plan (source only)
 - Exact pinned lockfile frozen install, TS/ESLint/Vitest strict media ticket parser and denial responses, Next SSR/build + local D1. Unit tests intentionally use synthetic tokens and **no** real provider credentials or devices. Browser LiveKit capture/reconnect and permission test needs one targeted 360px/390px/desktop QA and real signed two-device Dev. CR-02B2 provider-side eviction of already-connected revoked students/Sheikh mandatory before media credentials injected for real users. Existing CR-01 and 07A/08A/08B1 regression smoke separate; no default Chrome.
 
