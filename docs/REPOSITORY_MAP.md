@@ -1,3 +1,6 @@
+## CR-01 isolated Dev acceptance reference
+- `docs/CLASSROOM_CR01_DEV_ACCEPTANCE.md` records Noor main Verify #40993668189 and Santoreno real DO #40994099005; only signed waiting-room connectivity is accepted, not media or attendance. Site DO class in `workers/site/src/index.ts`, local Wrangler binding only; production root config remains unchanged. UI StrictMode follow-up #199, classroom #196 remains open.
+
 ## CR-01 signed waiting room files (#196; source-only)
 - `workers/api/src/classroom/lesson-room.ts`: SQLite-backed Durable Object lease reducer and fetch handler; `presence.ts`: strict signed session transport. `workers/api/src/auth/routes.ts`: server verified owner/acting Sheikh room endpoints. `workers/api/src/bindings.ts`, `workers/api/src/index.ts`, `workers/site/src/index.ts`, `workers/api/wrangler.jsonc`: DO exposure and local-only binding/migration.
 - `workers/api/tests/classroom-presence.test.ts`: TTL/role/restart/authorization-negatives. `apps/web/src/features/classroom/ConnectedWaitingRoom.tsx`, `apps/web/src/app/classroom/live/page.tsx`, authenticated student LessonHub and Sheikh schedule: no media, no fake presence. Contract `docs/CLASSROOM_WAITING_ROOM_CR01_CONTRACT.md`.
