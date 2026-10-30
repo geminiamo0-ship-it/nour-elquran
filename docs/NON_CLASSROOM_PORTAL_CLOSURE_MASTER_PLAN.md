@@ -1,3 +1,6 @@
+## Phase 08B1 implementation slice (2026-10-30; source pending verification)
+- #192 prepares read-only immutable canonical Quran lesson archive envelopes/pages/teacher marks tied to published report and END; cannot serve fake layers or write via student/teacher APIs. No actual Classroom DO snapshot producer or PDF/PNG; those remain separate, and Admin Dashboard is still LAST. See `LESSON_QURAN_ARCHIVE_08B1_CONTRACT.md`. The backend notebook notes 08A isolated Dev gate passed in [Santoreno #40988644083](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40988644083); UI visual acceptance remains open.
+
 ## Phase 07A verification update (2026-10-30)
 - Phase 07A authenticated reports API/D1 is **accepted on isolated Cloudflare Dev** after [Noor PR #187](https://github.com/geminiamo0-ship-it/nour-elquran/pull/187), [Noor main Verify #40986308630](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40986308630), and [Santoreno Dev #40986426733](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40986426733). It covers signed Sheikh save→publish→revise, student latest-only, D1 immutable audit and role denial, using TEST-ONLY completed lesson events. Actual Classroom integration, visual UI acceptance and lesson notebook/archive still pending. Do not close Phase 07 overall or move Admin Dashboard earlier.
 
