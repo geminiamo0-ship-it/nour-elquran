@@ -1,3 +1,6 @@
+## 08B1 handoff: owner archive GET Dev PASS; no live DO source
+- See `docs/PHASE_08B1_DEV_ACCEPTANCE.md`: Noor main Verify #40990456089 and Santoreno remote Dev #40990589139 PASS. Sealed-snapshot owner reader is implemented, but all real archives are intentionally absent until the trusted Classroom DO writer (#194). Do not claim actual teacher marks/PDF, visual QA or Production. Admin Dashboard remains last.
+
 ## Next Phase 08B1 #192: secure Quran archive reader (source only)
 - Read `docs/LESSON_QURAN_ARCHIVE_08B1_CONTRACT.md`, migration 0015, `workers/api/src/lesson-quran-archive.ts` + auth route, shared lesson archive typed client/reader, SQLite and Vitest tests; branch `feat/192-lesson-quran-archive-read`. Fast Verify exact head + D1 tests first, then merge/postmerge Verify and isolated Dev owner-only GET/404 with synthetic sealed schema fixture. No automatic Chrome.
 - Only real Classroom DO snapshot exporter may eventually write+seal data with independently verified source digest and END/participant authorization; **this slice has no writer**. Never claim live archived marks exist on the service until that source is built. Report #186 and notebook #190 API Dev smoke already passed; keep UI and real classroom gates open. No Production, no Admin until final phase.
