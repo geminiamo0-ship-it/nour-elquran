@@ -1,3 +1,6 @@
+## #221 `Room.startAudio()` delayed completion after Stop (2026-10-30)
+- Synthetic Vitest: capture old audio element list before `startAudio()` (which may itself trigger media playback), remove elements on Stop, then resolve/reject deferred SDK call; assert old elements paused once and new room untouched. This is distinct from pending per-element `audio.play()` and subscribed autoplay regressions. Require exact PR-head Verify and targeted real signed two-browser Dev/physical audio + camera/mic indicators before accepting UX; no blanket Chrome, Production or real child data.
+
 ## Classroom #221 subscribed audio autoplay race regression (2026-10-30)
 - Four synthetic cases: delayed subscribed `play()` resolution after leave pauses old element; delayed rejection suppresses stale warning and pauses; active autoplay denial still reports blocked; already-disconnected Room never starts playback. This specifically covers `TrackSubscribed` auto-play (distinct from user-triggered `startAudio`). Requires exact-head Verify plus opt-in two-browser Dev/hardware acceptance; CI alone does not prove device indicators or real WebRTC behavior.
 
