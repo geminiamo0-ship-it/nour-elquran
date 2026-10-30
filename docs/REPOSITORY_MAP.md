@@ -1,3 +1,6 @@
+## CR-02B2 source merge and evidence
+- `docs/CLASSROOM_CR02B2_SOURCE_ACCEPTANCE.md` records Noor #207 merged, main Verify #40999944470 and the limits of simulated RoomService/DO tests. No provider-enabled connected eviction accepted; do not conflate source CI and live media.
+
 ## CR-02B2 #206 provider-side eviction source
 - `workers/api/src/classroom/livekit-admin.ts`: signed room-scoped LiveKit RoomService RemoveParticipant transport, 60s admin JWT and token cutoff. `livekit-token.ts`: shared opaque names and durable media-intent pre-join. `lesson-room.ts`: bounded durable pending ejections, 10s D1 reconciliation/lease expiry alarms, provider retries with rejoin fence; `presence.ts`: fail-closed 409 pending code. `workers/api/tests/livekit-admin.test.ts`, `classroom-eviction.test.ts` validate signed transport and DO retry/reconstruction/expiry. `docs/CLASSROOM_CR02B2_PROVIDER_EVICTION_CONTRACT.md` separates source from real provider acceptance.
 
