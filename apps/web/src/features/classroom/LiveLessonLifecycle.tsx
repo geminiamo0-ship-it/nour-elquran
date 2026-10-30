@@ -40,7 +40,7 @@ function message(code:string){
  return m[code]??'تعذّر تأكيد العملية من الخادم؛ لم نعتمد أي تغيير محلي.';
 }
 export function LiveLessonLifecycle(props:Props){
- const {role,lessonId,learnerId,joined,bothPresent,onPhase}=props;
+ const {role,lessonId,joined,bothPresent,onPhase}=props;
  const [result,setResult]=useState<Result|null>(null);
  const [busy,setBusy]=useState(false);
  const [confirm,setConfirm]=useState(false);
