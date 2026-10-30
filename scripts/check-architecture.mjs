@@ -163,6 +163,18 @@ export function inspectArchitecture(sourceRoot = srcRoot) {
         edges.add(target);
       }
     }
+    // Triple-slash <reference path="..."> directives create TypeScript dependencies
+    // without ImportDeclaration/ImportTypeNode AST nodes.
+    for (const reference of source.referencedFiles) {
+      const request = reference.fileName.startsWith('.') ? reference.fileName : './' + reference.fileName;
+      const target = resolveSource(file, request, sourceRoot);
+      if (!target) continue;
+      const targetRelative = path.relative(sourceRoot, target).replaceAll('\\', '/');
+      if (targetRelative.startsWith('../') || path.isAbsolute(targetRelative)) continue;
+      const error = resolvedBoundaryError(relativeFile, targetRelative);
+      if (error) errors.push(relativeFile + ': ' + error + ' (reference path: ' + reference.fileName + ')');
+      edges.add(target);
+    }
     graph.set(file, [...edges]);
   }
   const cycle = findCycle(graph);
