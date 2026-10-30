@@ -1,3 +1,9 @@
+## #182 Phase 06A1 locked audio backend groundwork (source only)
+- `workers/api/migrations/0012_recitation_audio_privacy.sql`: immutable consent and asset metadata, current owner/same-submission scope triggers, explicit grant/upload blocker triggers, no real recordings.
+- `workers/api/src/private-recitation-audio.ts`: strict media envelope and opaque private R2 keys, non-cacheable headers, hard-disabled flag. No actual bucket binding or media API.
+- `workers/api/src/auth/routes.ts`: authenticated owner-only disabled `/v1/me/learners/:learnerId/recitation-audio-policy` GET; no public grant/upload/playback.
+- `workers/api/tests/private-recitation-audio.test.ts`, `test_recitation_audio_privacy.py`: synthetic parser, SQL deny and immutability tests. [Full privacy contract](PRIVATE_RECITATION_AUDIO_CONTRACT.md). Parent #180 remains blocked on guardian verification, retention/delete/export, bucket provisioning and Dev tests. User owns #173/#178 visual review.
+
 ## 05A/05B real Dev D1 routes — postmerge verification (2026-10-30)
 - 05A `workers/api/migrations/0010_published_assignments.sql`, `workers/api/src/published-assignments.ts`: verified publisher; [Dev remote #40971275548](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40971275548) passed.
 - 05B `workers/api/migrations/0011_assignment_submissions.sql`, `workers/api/src/assignment-submissions.ts`: owner-scoped `GET/POST /v1/me/learners/:learner/assignments/:task/submissions` and active qualified primary teacher `GET/POST /v1/teacher/learners/:learner/assignments/:task/reviews`. Append-only retry/accept history max 5. `StudentAssignmentSubmission.tsx` and `TeacherAssignmentReview.tsx` use `assignment-attempt-client.ts`; [Dev remote #40975149637](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/40975149637) passed API security/owner/teacher/replay.

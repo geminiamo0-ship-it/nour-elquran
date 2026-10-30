@@ -11,6 +11,8 @@ import { listVerifiedTeacherLearners } from '../teacher-roster.ts';
 import {readOwnerPlan,readTeacherPlan,writeTeacherPlan,parsePlanAction} from '../academic-plans.ts';
 import {readOwnerAssignments,readTeacherAssignments,getAssignmentCatalog,publishAssignment,parsePublishAssignment} from '../published-assignments.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
+import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
+import {verifiedOwner} from '../published-assignments.ts';
 import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '../staff-teachers.ts';
 import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts';
 import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '../classroom-access.ts';
@@ -109,6 +111,24 @@ async function profiles(db: CoreDatabase, accountId: string, authSubject: string
       })();
     const {status,...body}=result;
     return reply(status,body,requestId);
+  }
+  // Phase 06A1: safe read-only capability discovery. No endpoint may grant
+  // child consent, mint an R2 upload, serve audio, or treat phone as guardian proof.
+  const audioPolicyMatch=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/recitation-audio-policy$/.exec(path);
+  if(audioPolicyMatch){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    if(!await verifiedOwner(db,authSubject,audioPolicyMatch[1]!))
+      return reply(404,{code:'NOT_FOUND'},requestId);
+    const migration=await db.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='recitation_audio_privacy'"
+    ).first<{version:number}>();
+    if(migration?.version!==1)return reply(503,{code:'AUDIO_PRIVACY_SCHEMA_NOT_READY'},requestId);
+    return reply(200,{
+      uploadEnabled:PRIVATE_RECITATION_UPLOADS_ENABLED,
+      consentStatus:'not_available',
+      storageStatus:'not_configured',
+      code:'AUDIO_PRIVACY_APPROVAL_REQUIRED',
+    },requestId);
   }
   const ownedAssignmentsMatch=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/assignments$/.exec(path);
   if(ownedAssignmentsMatch){

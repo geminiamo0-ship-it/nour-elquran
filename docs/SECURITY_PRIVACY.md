@@ -1,3 +1,7 @@
+## Audio private-by-default addendum — Phase 06A1 #182
+- [Private recitation contract](PRIVATE_RECITATION_AUDIO_CONTRACT.md) records the proposed D1 ledger, owner-scoped disabled read route, server-only R2 key builder and hard deny of grants/assets until verification and approved retention/deletion/consent policy. The asset table contains metadata only; no recorded content, bucket binding or object URL exists in this phase.
+- Neither account ownership alone nor `phoneVerified` is verified adult/guardian consent. Do not activate or expose a child voice pipeline on a Cloudflare variable; the DB-level locks require a separate approved migration. All recordings must remain device-only until the entire #180 privacy gate is complete.
+
 # Security, child safety and privacy baseline
 
 ## AUTH-01 #110 implementation boundary

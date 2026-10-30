@@ -1,3 +1,9 @@
+## Phase 06A1 #182 — private audio **hard-disabled** source gates
+- Additive SQLite `0012_recitation_audio_privacy.sql` is executed by every migration replay; `test_recitation_audio_privacy.py` proves SQL rejects guardian grants and asset reservations, owner-scoped immutable withdrawal metadata and wrong-submission or public-link metadata in a disposable synthetic unlocked schema.
+- `private-recitation-audio.test.ts` covers UUIDv4 key formation, strict type/size/duration/SHA-256 and non-cacheable response headers. These are envelope checks, **not real binary sniff, R2 upload or anti-malware guarantees**.
+- `scripts/cloudflare-auth-smoke.mjs` calls `GET /v1/me/learners/:id/recitation-audio-policy` via actual local Better Auth/Worker/D1 to assert owner 200 disabled, foreign owner 404, signed-out 401 and POST 405. Chrome is not required for this server-only source change.
+- [Privacy contract](PRIVATE_RECITATION_AUDIO_CONTRACT.md) lists unresolved guardian verification, age, retention, deletion/export, private R2 provisioning and actual Dev media/security acceptance; **never present #182 as voice-recording availability**.
+
 ### One-time remaining UI acceptance for #173 / #178 (not a default CI gate)
 1. On the existing Dev site, sign in as synthetic qualified assigned Sheikh, open `/teacher/assignments/`, select verified assigned learner and publish one existing Hafs range; confirm only server-confirmed task appears after refresh.
 2. With synthetic household account, select target learner in `/student/training/`, see the new task and the right Quran range; sibling/foreign owner cannot see the task.
