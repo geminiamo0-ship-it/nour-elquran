@@ -215,6 +215,45 @@ test('dynamic import with options is included in boundaries and cycle detection'
   }
 });
 
+test('triple-slash path references enforce feature, route and shared boundaries and cycles', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'noor-triple-slash-'));
+  try {
+    const write = (relative, source) => {
+      const file = path.join(root, relative);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, source);
+    };
+    write('features/teacher/internal/Secret.ts', 'export const secret = true;');
+    write('features/teacher/index.ts', "export { secret } from './internal/Secret';");
+    write('features/student/Deep.ts',
+      '/// <reference path="../teacher/internal/Secret.ts" />\\nexport const deep = true;');
+    write('app/Deep.ts',
+      '/// <reference path="../features/teacher/internal/Secret.ts" />\\nexport const deep = true;');
+    write('shared/ui/Leak.ts',
+      '/// <reference path="../../features/teacher/index.ts" />\\nexport const leak = true;');
+    write('app/Public.ts',
+      '/// <reference path="../features/teacher/index.ts" />\\nexport const valid = true;');
+    write('features/student/A.ts',
+      '/// <reference path="./B.ts" />\\nexport const a = true;');
+    write('features/student/B.ts',
+      '/// <reference path="./A.ts" />\\nexport const b = true;');
+
+    const errors = inspectArchitecture(root);
+    assert.ok(errors.some(error => error.includes('features/student/Deep.ts')
+      && error.includes('Cross-feature')), errors.join('\\n'));
+    assert.ok(errors.some(error => error.includes('app/Deep.ts')
+      && error.includes('public index')), errors.join('\\n'));
+    assert.ok(errors.some(error => error.includes('shared/ui/Leak.ts')
+      && error.includes('Shared modules')), errors.join('\\n'));
+    assert.ok(errors.some(error => error.includes('Circular dependency:')
+      && error.includes('features/student/A.ts')
+      && error.includes('features/student/B.ts')), errors.join('\\n'));
+    assert.ok(errors.every(error => !error.includes('app/Public.ts')), errors.join('\\n'));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('route entrypoints can only consume a feature public API', () => {
   assert.match(boundaryError('app/page.tsx', '@/features/teacher/components/Private'), /public index/);
   assert.equal(boundaryError('app/page.tsx', '@/features/teacher'), null);
