@@ -1,6 +1,6 @@
 import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
-import {parsePageAction,forwardVerifiedPage} from '../src/classroom/quran-sync.ts';
+import {parsePageAction,forwardVerifiedPage,verifyPublishedVerse} from '../src/classroom/quran-sync.ts';
 import {initialPage,applyPageSet,parseVerifiedPageCommand} from '../src/classroom/quran-page.ts';
 import {LessonRoom,type LessonRoomStorage,type RoomRecord} from '../src/classroom/lesson-room.ts';
 import type {Env} from '../src/bindings.ts';
@@ -92,4 +92,50 @@ test('forwarder fails closed on absent binding, corrupt/mismatched edition',asyn
  })})}} as unknown as Env;
  assert.deepEqual(await forwardVerifiedPage(env,verified,{action:'snapshot'}),
   {status:503,code:'CLASSROOM_QURAN_UNAVAILABLE'});
+});
+
+test('teacher may select a verified Ayah with revision CAS; learner receives the same highlight',async()=>{
+ const verse={surah:2,ayah:255};
+ assert.deepEqual(parsePageAction({action:'set',page:42,expectedRevision:0,
+  requestId:'highlight-0001',verse},'teacher'),{
+   action:'set',page:42,expectedRevision:0,requestId:'highlight-0001',verse});
+ assert.equal(parsePageAction({action:'set',page:42,expectedRevision:0,
+  requestId:'highlight-0001',verse},'learner'),null);
+ assert.equal(parsePageAction({action:'set',page:42,expectedRevision:0,
+  requestId:'highlight-0001',verse:{...verse,inject:'yes'}},'teacher'),null);
+ const transport:typeof fetch=async(input)=>{
+  assert.equal(String(input).endsWith('/pages/042.json'),true);
+  return Response.json({ayahs:[{surahNumber:2,ayahNumber:255,
+   polygon:'M 0 0 L 1 1 Z'}]});
+ };
+ assert.equal(await verifyPublishedVerse(42,verse,transport),true);
+ assert.equal(await verifyPublishedVerse(42,{surah:2,ayah:254},transport),false);
+ const {api}=storage();
+ const storeRoom:RoomRecord={lessonId:'lesson-q',revision:2,
+  teacher:{subject:'sheikh-q',learnerId:'learner-q',expiresAtMs:Date.now()+60_000},
+  learner:{subject:'owner-q',learnerId:'learner-q',expiresAtMs:Date.now()+60_000}};
+ await api.put('room',storeRoom);
+ const lesson=new LessonRoom({storage:api});
+ const env={LESSON_ROOMS:{idFromName:()=>({}),get:()=>({
+  fetch:(request:Request)=>lesson.fetch(request)})}} as unknown as Env;
+ const action=parsePageAction({action:'set',page:42,expectedRevision:0,
+  requestId:'highlight-0001',verse},'teacher')!;
+ const result=await forwardVerifiedPage(env,verified,action,transport);
+ assert.equal(result.status,200);
+ assert.deepEqual(result.quran,{edition:'hafs-kfqc-v1.1.1',page:42,
+  revision:1,verse});
+ const learner=await forwardVerifiedPage(env,student,{action:'snapshot'});
+ assert.deepEqual(learner.quran,result.quran);
+ const replay=await forwardVerifiedPage(env,verified,action,transport);
+ assert.equal(replay.code,'QURAN_PAGE_REPLAY');
+ const mismatch=await forwardVerifiedPage(env,verified,{action:'set',page:42,
+  expectedRevision:1,requestId:'highlight-0002',verse:{surah:2,ayah:254}},transport);
+ assert.deepEqual(mismatch,{status:400,code:'QURAN_VERSE_PAGE_MISMATCH'});
+ const offline:typeof fetch=async()=>{throw Error('offline');};
+ const unavailable=await forwardVerifiedPage(env,verified,{action:'set',page:42,
+  expectedRevision:1,requestId:'highlight-0003',verse},offline);
+ assert.deepEqual(unavailable,{status:503,code:'QURAN_VERSE_METADATA_UNAVAILABLE'});
+ const nextPage=await forwardVerifiedPage(env,verified,{action:'set',page:43,
+  expectedRevision:1,requestId:'highlight-0004'});
+ assert.deepEqual(nextPage.quran,{edition:'hafs-kfqc-v1.1.1',page:43,revision:2});
 });
