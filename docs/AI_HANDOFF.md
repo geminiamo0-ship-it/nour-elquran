@@ -1,3 +1,7 @@
+## Current work — CR-01 signed DO Classroom waiting room (#196)
+- Branch `feat/196-classroom-waiting-room-do`: read `docs/CLASSROOM_WAITING_ROOM_CR01_CONTRACT.md`, `workers/api/src/classroom/lesson-room.ts`, `presence.ts`, auth routes and `ConnectedWaitingRoom.tsx`. First run source exact-head Verify and fix any failure. Current Wrangler DO config is **local API Worker only**, actual Noor Dev site deployment requires dedicated Santoreno DO binding/migration review, and Dev two-account join/expiry/revoke proof. No false real-room, attendance, LiveKit, Quran sync or Production assertions.
+- Owner approved LiveKit Cloud for A/V only (ADR 0007); Cloudflare Workers/D1/DO own lesson state and Quran. Next after waiting-room acceptance: limited signed LiveKit join tokens + true device test, then DO Quran page/ink and explicit authenticated lifecycle Start/End → archive #194. Admin Dashboard last.
+
 ## 08B1 handoff: owner archive GET Dev PASS; no live DO source
 - See `docs/PHASE_08B1_DEV_ACCEPTANCE.md`: Noor main Verify #40990456089 and Santoreno remote Dev #40990589139 PASS. Sealed-snapshot owner reader is implemented, but all real archives are intentionally absent until the trusted Classroom DO writer (#194). Do not claim actual teacher marks/PDF, visual QA or Production. Admin Dashboard remains last.
 
