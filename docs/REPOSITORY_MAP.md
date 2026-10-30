@@ -1,3 +1,7 @@
+## Phase 08B2 #194 — source-only archive checkpoint validator
+- workers/api/src/classroom/archive-checkpoint.ts: strict, deterministic normalized DO teacher-event snapshot validation and SHA-256 helpers; no DO or HTTP integration. workers/api/tests/archive-checkpoint.test.ts: Node positive/negative source contract tests.
+- docs/LESSON_DO_ARCHIVE_CHECKPOINT_08B2.md: protocol, trust boundaries, acceptance and rollback. Existing D1 0015/0016 owner read-only archive is unchanged; live writer/room/outbox are not implemented.
+
 ## Phase 08B1 archive source (#192)
 - D1 `workers/api/migrations/0015_lesson_quran_archive.sql`: append-only, sealed, canonical-page and bounded teacher mark archive tied to published report revision/END event.
 - Worker `workers/api/src/lesson-quran-archive.ts` and `auth/routes.ts`: only signed household GET; no archive writing endpoint.
