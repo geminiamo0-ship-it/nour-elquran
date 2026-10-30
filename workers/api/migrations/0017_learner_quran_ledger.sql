@@ -112,8 +112,13 @@ BEGIN
       AND t.status='active' AND t.qualified=1
       AND grant_row.revoked_at_ms IS NULL
       AND grant_row.starts_at_ms<=NEW.at_ms AND grant_row.ends_at_ms>NEW.at_ms
-      AND (NEW.surah IS NULL OR (NEW.surah=task.surah
-        AND NEW.ayah BETWEEN task.from_ayah AND task.to_ayah))
+      AND EXISTS (
+        SELECT 1 FROM quran_ayah_anchors anchor
+        WHERE anchor.edition_id=NEW.edition_id AND anchor.page=NEW.page
+          AND anchor.surah=task.surah
+          AND anchor.ayah BETWEEN task.from_ayah AND task.to_ayah
+          AND (NEW.surah IS NULL OR (NEW.surah=anchor.surah AND NEW.ayah=anchor.ayah))
+      )
   );
  -- Never let a new item reuse a prior ID or alter authorship/visibility/source.
  SELECT RAISE(ABORT,'QURAN_LEDGER_REVISION_CONFLICT') WHERE
@@ -144,16 +149,16 @@ BEGIN
  SELECT RAISE(ABORT,'QURAN_LEDGER_PAYLOAD_DENIED') WHERE
   (NEW.action='hide' AND NEW.payload_json<>'{}')
   OR (NEW.action='put' AND (
-    json_type(NEW.payload_json,'$.color')<>'text'
+    COALESCE(json_type(NEW.payload_json,'$.color'),'<missing>')<>'text'
     OR json_extract(NEW.payload_json,'$.color')
       NOT GLOB '#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]'
     OR (NEW.kind='note' AND (
-      json_type(NEW.payload_json,'$.text')<>'text'
+      COALESCE(json_type(NEW.payload_json,'$.text'),'<missing>')<>'text'
       OR length(trim(json_extract(NEW.payload_json,'$.text'))) NOT BETWEEN 1 AND 500))
     OR (NEW.kind IN ('pen','marker') AND (
-      json_type(NEW.payload_json,'$.width') NOT IN ('integer','real')
+      COALESCE(json_type(NEW.payload_json,'$.width'),'<missing>') NOT IN ('integer','real')
       OR json_extract(NEW.payload_json,'$.width') NOT BETWEEN 1 AND 60
-      OR json_type(NEW.payload_json,'$.points')<>'array'
+      OR COALESCE(json_type(NEW.payload_json,'$.points'),'<missing>')<>'array'
       OR json_array_length(NEW.payload_json,'$.points') NOT BETWEEN 2 AND 2500))
   ));
  SELECT RAISE(ABORT,'QURAN_LEDGER_POINT_DENIED') WHERE
