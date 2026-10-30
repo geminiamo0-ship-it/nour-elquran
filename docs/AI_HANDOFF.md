@@ -1,3 +1,6 @@
+## CR-02A #200 security follow-up — bounded stale-live token admission (2026-10-30)
+- Review of PR #201 identified an unbounded token-issuance path whenever D1 status stayed `live`, even arbitrarily long after scheduled end. Branch now limits **new token issuance** to scheduled end +60m for live lessons, with matching start lower bound, Node boundary/issuer regressions, contract and test-strategy updates. This is not an automatic END or LiveKit participant eviction. Exact-head GitHub Verify and review are required before merging; no provider secrets, A/V or Production.
+ 
 ## CR-02A current coding slice: source-only signed LiveKit Cloud token gateway (#200)
 - Follow `docs/CLASSROOM_LIVEKIT_CR02A_TOKEN_CONTRACT.md`: pure WebCrypto HMAC JWT and signed teacher/household owner POST endpoints, D1 role and 25s LessonDO heartbeat gate. No real LiveKit credentials, project provisioning, A/V devices or external room tests; missing configuration must fail closed. Next gate exact-head Verify (typecheck/unit/build/local D1), inspect JWT/credential privacy, then merge and optional Dev 503/no-token acceptance. CR-02B needs user-owned Cloudflare secrets + LiveKit project and two actual browsers, a revocation mechanism to eject connected users, and no recording. Do not claim provider operational; Admin dashboard still last.
 
