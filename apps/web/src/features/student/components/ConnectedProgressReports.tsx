@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useState} from 'react';
-import {lessonReportsClient,reportErrorMessage,type StudentReport} from '../../shared/lesson-report-client';
+import {lessonReportsClient,reportErrorMessage,type StudentReport} from '../../shared';
 import styles from '../StudentPortal.module.css';
 import table from './ProgressTable.module.css';
 const score=(v:number|null)=>v===null?'لم يُقيَّم':v+' / 10';
