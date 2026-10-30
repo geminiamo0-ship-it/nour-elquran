@@ -92,7 +92,14 @@ function resolveSource(importer, specifier, sourceRoot = srcRoot) {
       ? path.resolve(path.dirname(importer), specifier)
       : null;
   if (!base) return null;
-  for (const candidate of [base, base + '.ts', base + '.tsx', path.join(base, 'index.ts'), path.join(base, 'index.tsx')]) {
+  // NodeNext-style relative .js/.jsx specifiers may resolve to TS/TSX source.
+  // Check those sources too, otherwise a relative import can bypass boundaries.
+  const jsSource = base.endsWith('.js')
+    ? [base.slice(0, -3) + '.ts', base.slice(0, -3) + '.tsx']
+    : base.endsWith('.jsx')
+      ? [base.slice(0, -4) + '.tsx']
+      : [];
+  for (const candidate of [...jsSource, base, base + '.ts', base + '.tsx', path.join(base, 'index.ts'), path.join(base, 'index.tsx')]) {
     if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return candidate;
   }
   return null;

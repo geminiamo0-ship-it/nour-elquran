@@ -1,3 +1,6 @@
+## #57 — relative .js/.jsx specifier boundary coverage (2026-10-30)
+- Synthetic `tests/architecture.test.mjs` fixture uses NodeNext-style relative `.js` import paths targeting `.ts` source and `.jsx` targeting `.tsx` source. Forbidden cross-feature private, app private and shared/UI imports must fail; app import through feature `index.js` must remain allowed. No full Chrome suite for this AST-only gate; exact-head Verify required.
+
 ## #57 — AST type-only dependency boundary regression (2026-10-30)
 - `tests/architecture.test.mjs` must fail on `import('feature/private').Type` in cross-feature/route code and on `typeof import('feature')` from shared/UI; allow type imports through a feature public index. The same `inspectArchitecture` graph runs in repository Verify. This is fast Node static testing, not Chrome or Dev media acceptance.
 

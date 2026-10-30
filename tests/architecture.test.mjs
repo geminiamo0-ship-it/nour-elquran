@@ -138,6 +138,44 @@ test('type-only import() dependencies cannot bypass feature or shared boundaries
   }
 });
 
+test('relative NodeNext .js/.jsx imports cannot bypass feature, route or shared boundaries', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'noor-js-specifier-boundaries-'));
+  try {
+    const write = (relative, source) => {
+      const file = path.join(root, relative);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, source);
+    };
+    write('features/teacher/internal/Secret.ts', 'export const secret = 1;');
+    write('features/teacher/internal/Widget.tsx', 'export const widget = 1;');
+    write('features/teacher/index.ts', "export { secret } from './internal/Secret';");
+    write('features/student/Legacy.ts',
+      "export { secret } from '../teacher/internal/Secret.js';");
+    write('app/Legacy.tsx',
+      "export { secret } from '../features/teacher/internal/Secret.js';");
+    write('app/LegacyJsx.tsx',
+      "export { widget } from '../features/teacher/internal/Widget.jsx';");
+    write('shared/ui/Legacy.ts',
+      "export { secret } from '../../features/teacher/index.js';");
+    write('app/Public.tsx',
+      "export { secret } from '../features/teacher/index.js';");
+
+    const errors = inspectArchitecture(root);
+    assert.equal(errors.length, 4, errors.join('\\n'));
+    assert.ok(errors.some(error => error.includes('features/student/Legacy.ts')
+      && error.includes('Cross-feature')), errors.join('\\n'));
+    assert.ok(errors.some(error => error.includes('app/Legacy.tsx')
+      && error.includes('public index')), errors.join('\\n'));
+    assert.ok(errors.some(error => error.includes('app/LegacyJsx.tsx')
+      && error.includes('public index')), errors.join('\\n'));
+    assert.ok(errors.some(error => error.includes('shared/ui/Legacy.ts')
+      && error.includes('Shared modules')), errors.join('\\n'));
+    assert.ok(errors.every(error => !error.includes('app/Public.tsx')), errors.join('\\n'));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('route entrypoints can only consume a feature public API', () => {
   assert.match(boundaryError('app/page.tsx', '@/features/teacher/components/Private'), /public index/);
   assert.equal(boundaryError('app/page.tsx', '@/features/teacher'), null);
