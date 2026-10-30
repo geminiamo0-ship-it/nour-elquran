@@ -39,7 +39,8 @@ function harness(config:{both?:boolean;authorized?:boolean;noBatch?:boolean;owne
     async run(){return {success:true,meta:{changes:0}};}
    };return stmt;
   },
-  ...(!config.noBatch?{async batch(_items:D1Statement[]){
+  ...(!config.noBatch?{async batch(items:D1Statement[]){
+   assert.equal(items.length,2);
    events++;
    if(status==='scheduled'){status='live';startedAtMs=now;}
    else if(status==='live'){status='completed';endedAtMs=now+20_000;}
