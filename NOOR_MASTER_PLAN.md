@@ -1,3 +1,6 @@
+## Product update 2026-10-30 — Admin last; invited Sheikh application
+The owner approved [ADR 0008](docs/adr/0008-admin-last-teacher-onboarding.md): the Admin Dashboard is the **final** implementation stage, with booking, subscriptions, payments and teacher management. Staff sends a single-use invitation; Sheikh completes a dedicated professional account/profile form (qualifications, small CV, image); account stays pending until staff reviews and activates it, and staff assigns learners separately. Educational Student/Sheikh portal development now proceeds with Phase 07 reports without delivering Admin UI. Classroom remains its own later integration milestone. Historical earlier plan ordering below is superseded.
+
 # نور القرآن — Product plan and decision register
 
 ## Owner-approved platform replacement — 2026-10-29
