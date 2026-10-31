@@ -18,6 +18,11 @@ const inkStrokes=(marks:readonly TeacherInkMark[],page:number):QuranInkStroke[]=
   points:m.payload.points as {x:number;y:number}[],
  }));
 const safeError=(e:unknown)=>e instanceof Error?e.message:'DRAFT_UNAVAILABLE';
+/** Explicit discard is mandatory for an unpublished, dirty ink editor. */
+export function inkEditorExitDecision(dirty:boolean,busy:boolean):'blocked'|'confirm'|'close'{
+ if(busy)return 'blocked';
+ return dirty?'confirm':'close';
+}
 
 export function TeacherAssignmentInkEditor({learnerId,initial,existing,onCancel,onSaved,onPublished}:Props){
  const [stored,setStored]=useState<SavedInkDraft|null>(existing??null);
@@ -40,9 +45,9 @@ export function TeacherAssignmentInkEditor({learnerId,initial,existing,onCancel,
  // Do not silently discard private corrections when closing the editor.
  // The caller must explicitly confirm loss of any unpublished changes.
  const requestClose=()=>{
-  if(inFlight.current||busy)return;
-  if(dirty){setConfirmDiscard(true);return;}
-  onCancel();
+  const action=inkEditorExitDecision(dirty,busy||inFlight.current);
+  if(action==='confirm')setConfirmDiscard(true);
+  if(action==='close')onCancel();
  };
  useEffect(()=>{
   if(!dirty)return;
