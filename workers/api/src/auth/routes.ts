@@ -128,7 +128,7 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
   }
   // #244: single D1 transaction replaces a scheduled FREE trial, never a
   // client-side cancel+rebook sequence that might lose the original slot.
-  const trialReplacement=/^\\/v1\\/me\\/learners\\/([a-zA-Z0-9-]{1,128})\\/(trial-reschedule-slots|trial-reschedules)$/.exec(path);
+  const trialReplacement=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/(trial-reschedule-slots|trial-reschedules)$/.exec(path);
   if(trialReplacement){
     const learnerId=trialReplacement[1]!,mode=trialReplacement[2]!;
     if(request.method!==(mode==='trial-reschedule-slots'?'GET':'POST'))
