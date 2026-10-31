@@ -3,6 +3,8 @@
 -- Keep all existing access, range, JSON, immutability and projection checks.
 -- Existing 0017/0018 are already deployed: additive migration only.
 -- Use length + leading '#' + short negated-class GLOB for 6 hex characters.
+-- SQLite NULL in a missing JSON property must fail closed: COALESCE every
+-- required draft mark field and point coordinate before boolean validation.
 -- Apply to both private draft and canonical event guards; publication must
 -- not fail later for the same cause. No existing data is modified.
 DROP TRIGGER teacher_assignment_draft_guard;
@@ -37,14 +39,14 @@ BEGIN
  SELECT RAISE(ABORT,'DRAFT_MARKS_INVALID') WHERE EXISTS(
   SELECT 1 FROM json_each(NEW.marks_json) m WHERE
    json_type(m.value)<>'object'
-   OR json_type(m.value,'$.id')<>'text'
+   OR COALESCE(json_type(m.value,'$.id'),'<missing>')<>'text'
    OR length(json_extract(m.value,'$.id')) NOT BETWEEN 8 AND 40
-   OR json_type(m.value,'$.kind')<>'text'
+   OR COALESCE(json_type(m.value,'$.kind'),'<missing>')<>'text'
    OR json_extract(m.value,'$.kind') NOT IN ('pen','marker','note','highlight')
-   OR json_type(m.value,'$.page')<>'integer'
+   OR COALESCE(json_type(m.value,'$.page'),'<missing>')<>'integer'
    OR json_extract(m.value,'$.page') NOT BETWEEN 1 AND 604
-   OR json_type(m.value,'$.payload')<>'object'
-   OR json_type(m.value,'$.payload.color')<>'text'
+   OR COALESCE(json_type(m.value,'$.payload'),'<missing>')<>'object'
+   OR COALESCE(json_type(m.value,'$.payload.color'),'<missing>')<>'text'
    OR (length(json_extract(m.value,'$.payload.color'))<>7
     OR substr(json_extract(m.value,'$.payload.color'),1,1)<>'#'
     OR substr(json_extract(m.value,'$.payload.color'),2) GLOB '*[^0-9a-fA-F]*')
@@ -57,13 +59,13 @@ BEGIN
         json_extract(m.value,'$.surah')=anchor.surah))
    )
    OR (json_extract(m.value,'$.kind') IN ('pen','marker') AND
-      (json_type(m.value,'$.surah')<>'null' OR json_type(m.value,'$.ayah')<>'null' OR
-       json_type(m.value,'$.payload.points')<>'array' OR
+      (COALESCE(json_type(m.value,'$.surah'),'<missing>')<>'null' OR COALESCE(json_type(m.value,'$.ayah'),'<missing>')<>'null' OR
+       COALESCE(json_type(m.value,'$.payload.points'),'<missing>')<>'array' OR
        json_array_length(m.value,'$.payload.points') NOT BETWEEN 2 AND 600 OR
-       json_type(m.value,'$.payload.width') NOT IN ('integer','real') OR
+       COALESCE(json_type(m.value,'$.payload.width'),'<missing>') NOT IN ('integer','real') OR
        json_extract(m.value,'$.payload.width') NOT BETWEEN 1 AND 60))
    OR (json_extract(m.value,'$.kind')='note' AND
-     (json_type(m.value,'$.payload.text')<>'text' OR
+     (COALESCE(json_type(m.value,'$.payload.text'),'<missing>')<>'text' OR
        length(trim(json_extract(m.value,'$.payload.text'))) NOT BETWEEN 1 AND 500))
  );
  SELECT RAISE(ABORT,'DRAFT_MARKS_INVALID') WHERE EXISTS(
@@ -72,8 +74,8 @@ BEGIN
  SELECT RAISE(ABORT,'DRAFT_MARKS_INVALID') WHERE EXISTS(
   SELECT 1 FROM json_each(NEW.marks_json) m, json_each(m.value,'$.payload.points') point
   WHERE json_extract(m.value,'$.kind') IN ('pen','marker')
-    AND (json_type(point.value,'$.x') NOT IN ('integer','real') OR
-      json_type(point.value,'$.y') NOT IN ('integer','real') OR
+    AND (COALESCE(json_type(point.value,'$.x'),'<missing>') NOT IN ('integer','real') OR
+      COALESCE(json_type(point.value,'$.y'),'<missing>') NOT IN ('integer','real') OR
       json_extract(point.value,'$.x') NOT BETWEEN 0 AND 1000 OR
       json_extract(point.value,'$.y') NOT BETWEEN 0 AND 1594));
 END;
@@ -179,8 +181,8 @@ BEGIN
  SELECT RAISE(ABORT,'QURAN_LEDGER_POINT_DENIED') WHERE
   NEW.action='put' AND NEW.kind IN ('pen','marker') AND EXISTS (
     SELECT 1 FROM json_each(NEW.payload_json,'$.points') point WHERE
-      json_type(point.value,'$.x') NOT IN ('integer','real') OR
-      json_type(point.value,'$.y') NOT IN ('integer','real') OR
+      COALESCE(json_type(point.value,'$.x'),'<missing>') NOT IN ('integer','real') OR
+      COALESCE(json_type(point.value,'$.y'),'<missing>') NOT IN ('integer','real') OR
       json_extract(point.value,'$.x') NOT BETWEEN 0 AND 1000 OR
       json_extract(point.value,'$.y') NOT BETWEEN 0 AND 1594
   );
