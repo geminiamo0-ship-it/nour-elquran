@@ -376,9 +376,10 @@ export class LessonRoom {
     await this.flushQuranInk();
     return await this.ctx.storage.transaction(async txn=>{
      const room=await txn.get<RoomRecord>('room');
-     if(!room||room.lessonId!==input.lessonId||
-      room.teacher?.subject!==input.actorSubject||
-      room.teacher.learnerId!==input.learnerId)
+     const teacher=room?.teacher;
+     if(!room||room.lessonId!==input.lessonId||!teacher||
+      teacher.subject!==input.actorSubject||
+      teacher.learnerId!==input.learnerId)
       return Response.json({code:'NOT_JOINED'},{status:404});
      const pending=await txn.get<PendingQuranInk[]>('pendingQuranInk')??[];
      if(pending.length)
