@@ -1,3 +1,8 @@
+## #244 signed trial availability refresh after cancellation — 2026-10-31 (candidate)
+- Source branch fix/244-refresh-trial-after-cancel-20261031 based on verified main@196f3373589b04300b0c34573773c254f9197a4a. A successful owner trial cancellation previously reloaded only ConnectedClassroomLessons while StudentTrialBooking kept the previous eligible:false state and could not display rebooking slots until a manual refresh.
+- ConnectedClassroomLessons.tsx now increments a dedicated availability revision AFTER confirmed cancellation, and StudentTrialBooking.tsx includes that revision in its abortable signed availability effect. SSR regression ensures the connected route never falls back to synthetic booking preview. No optimistic booking, new backend/API, finance or child data.
+- NEXT: exact-head Verify and independent PR review; signed synthetic owner/learner Cloudflare Dev test: book → cancel >=6h → availability refresh without pressing Update → rebook, plus sibling/failed-cancel negative paths. Keep #244 and #155 OPEN until Dev acceptance. No Production, payment or WhatsApp changes.
+
 ## #252 classroom snapshot ACK safety — 2026-10-31 (branch candidate)
 - Branch `fix/252-ink-snapshot-ack-semantics-20261031`: `LessonRoom` no longer calls an ink snapshot `saved` merely because `pendingQuranInk` is empty; old DO-only strokes can exist without any canonical ledger event. A pending outbox still reports `pending`. Write ACK behavior is unchanged.
 - Tests in `classroom-cumulative-delivery.test.ts` cover pending outage snapshot and pre-bridge DO stroke before/after enabling the gated bridge; D1 event count remains zero for the latter.
