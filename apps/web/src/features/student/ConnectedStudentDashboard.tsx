@@ -4,6 +4,7 @@ import {useEffect,useState} from 'react';
 import {assignmentClient,lessonReportsClient,notebookClient,
  type LessonRow,type PublishedAssignment,type StudentReport} from '../shared';
 import {StudentAcademicPlanCard} from './components/StudentAcademicPlanCard';
+import {StudentConnectedInbox} from './components/StudentConnectedInbox';
 import styles from './StudentPortal.module.css';
 
 type Read={status:'loading'}|{status:'error'}|
@@ -133,6 +134,7 @@ export function ConnectedStudentDashboard({learnerId,name}:{
       </div>
      </section>
     </div>
+    <StudentConnectedInbox key={learnerId} learnerId={learnerId}/>
    </>}
  </>;
 }
