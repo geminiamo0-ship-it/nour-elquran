@@ -16,6 +16,7 @@ import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts
 import {getTeacherReport,getStudentReports,applyTeacherReport,parseReportAction} from '../lesson-reports.ts';
 import {parseNotebookAction,readNotebookNotes,writeNotebookNote} from '../notebook-notes.ts';
 import {readLessonQuranArchive} from '../lesson-quran-archive.ts';
+import {readOwnerLessonQuranHistory} from '../lesson-quran-history.ts';
 import {verifiedOwner} from '../published-assignments.ts';
 import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '../staff-teachers.ts';
 import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts';
@@ -228,6 +229,26 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
     const result=await applyPrivateMushaf(db,authSubject,learnerId,command);
     const {status,...body}=result;
     return reply(status,{learnerId,...body},requestId);
+  }
+  // #253: completed, audited lesson, as-of-End immutable shared marks only.
+  // Unlike quran-archive, this does not claim a published sealed report.
+  const historyMatch=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/quran-history$/.exec(path);
+  if(historyMatch){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const params=new URL(request.url).searchParams;
+    if(params.size>1||(params.size===1&&!params.has('page'))||
+       (params.has('page')&&(!/^([1-9]\d{0,2})$/.test(params.get('page')??'')||
+        Number(params.get('page'))>604)))
+      return reply(400,{code:'INVALID_HISTORY_PAGE'},requestId);
+    const version=await db.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='learner_quran_ledger'"
+    ).first<{version:number}>();
+    if(version?.version!==1)return reply(503,{code:'QURAN_LEDGER_SCHEMA_NOT_READY'},requestId);
+    const result=await readOwnerLessonQuranHistory(db,authSubject,
+      historyMatch[1]!,historyMatch[2]!,
+      params.has('page')?Number(params.get('page')):null);
+    const {status,...body}=result;
+    return reply(status,body,requestId);
   }
   // Phase 08B1: ONLY owner-readable, current-report published and DO-sealed
   // lesson Quran layers. No public mutation, seal, archive upload or export route.
