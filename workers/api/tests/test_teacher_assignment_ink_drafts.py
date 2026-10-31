@@ -123,4 +123,30 @@ class TeacherDraftD1(unittest.TestCase):
   self.assertEqual(self.db.execute(
    'SELECT count(*) FROM teacher_assignment_draft_versions').fetchone(),(0,))
 
+
+ def test_missing_required_json_fields_fail_closed(self):
+  # SQLite three-valued logic turns a missing json_type into NULL, not TRUE.
+  # DB triggers must reject omitted fields even if the HTTP validator does.
+  without=lambda obj,key:{k:v for k,v in obj.items() if k!=key}
+  cases=[
+   ('id',without(PEN_MARK,'id')),
+   ('color',{**PEN_MARK,'payload':without(PEN_MARK['payload'],'color')}),
+   ('points',{**PEN_MARK,'payload':without(PEN_MARK['payload'],'points')}),
+   ('width',{**PEN_MARK,'payload':without(PEN_MARK['payload'],'width')}),
+   ('surah',without(PEN_MARK,'surah')),
+   ('ayah',without(PEN_MARK,'ayah')),
+   ('point-x',{**PEN_MARK,'payload':{**PEN_MARK['payload'],
+    'points':[{'y':220},{'x':140,'y':235}]}}),
+   ('point-y',{**PEN_MARK,'payload':{**PEN_MARK['payload'],
+    'points':[{'x':120},{'x':140,'y':235}]}}),
+   ('note-text',{**NOTE_MARK,'payload':without(NOTE_MARK['payload'],'text')}),
+  ]
+  for n,(field,mark) in enumerate(cases,1):
+   with self.subTest(field=field),self.assertRaisesRegex(
+     sqlite3.IntegrityError,'DRAFT_MARKS_INVALID'):
+    self.draft(marks=[mark],
+     draft=str(n)+'145a6fa-1d94-4994-91e7-5819692ba3b6')
+  self.assertEqual(self.db.execute(
+   'SELECT count(*) FROM teacher_assignment_draft_versions').fetchone(),(0,))
+
 if __name__=='__main__':unittest.main()
