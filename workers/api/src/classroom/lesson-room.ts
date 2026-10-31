@@ -13,6 +13,7 @@ import {appendQuranLedgerEvent} from '../learner-quran-ledger.ts';
 import {prepareCumulativeInkDelivery,queueCumulativeInk,
  type PendingQuranInk} from './ink-cumulative-outbox.ts';
 import {parseVerifiedMicCommand,initialMicPolicy,applyMicPolicy,type MicPolicy} from './mic-policy.ts';
+import {validVerifiedRealtimeActor,validRealtimeHint,type VerifiedRealtimeActor,type RealtimeHint} from './realtime.ts';
 import {parseVerifiedCorrection,initialCorrections,appendCorrection,type CorrectionsState} from './live-corrections.ts';
 
 export type RoomAction='join'|'heartbeat'|'leave'|'snapshot'|'media-intent';
@@ -102,7 +103,18 @@ export interface LessonRoomStorage {
  transaction<T>(fn:(txn:Pick<LessonRoomStorage,'get'|'put'>)=>Promise<T>):Promise<T>;
  setAlarm?(timeMs:number):Promise<void>;
 }
-export interface LessonRoomContext {storage:LessonRoomStorage;}
+export interface LessonRoomContext {
+ storage:LessonRoomStorage;
+ acceptWebSocket?(socket:WebSocket):void;
+ getWebSockets?():WebSocket[];
+ waitUntil?(promise:Promise<unknown>):void;
+}
+type RealtimeSocket=WebSocket&{
+ serializeAttachment(value:VerifiedRealtimeActor):void;
+ deserializeAttachment():unknown;
+};
+declare const WebSocketPair: {new():{0:WebSocket;1:WebSocket}};
+
 export interface RoomStub {fetch(request:Request):Promise<Response>;}
 export interface LessonRoomNamespace {
  idFromName(name:string):unknown;
@@ -136,6 +148,75 @@ export class LessonRoom {
  private readonly env:Env|undefined;
  constructor(ctx:LessonRoomContext,env?:Env){this.ctx=ctx;this.env=env;}
  private get cumulativeInkEnabled(){return this.env?.NOOR_CUMULATIVE_INK_ENABLED==='true';}
+ /** Only a verified Worker can reach this internal upgrade path. DO separately
+  * checks the current lease and fresh D1 role on initial connection and every
+  * broadcast. Sockets carry no credentials or writable user commands. */
+ private async realtimeUpgrade(request:Request):Promise<Response>{
+  if(request.method!=='GET'||request.headers.get('Upgrade')?.toLowerCase()!=='websocket')
+   return Response.json({code:'NOT_FOUND'},{status:404});
+  const actor:unknown={
+   lessonId:request.headers.get('x-noor-lesson'),
+   learnerId:request.headers.get('x-noor-learner'),
+   actorSubject:request.headers.get('x-noor-subject'),
+   role:request.headers.get('x-noor-role')
+  };
+  if(!validVerifiedRealtimeActor(actor))
+   return Response.json({code:'NOT_FOUND'},{status:404});
+  if(!this.ctx.acceptWebSocket||!this.ctx.getWebSockets)
+   return Response.json({code:'REALTIME_NOT_CONFIGURED'},{status:503});
+  const now=Date.now();
+  const room=await this.ctx.storage.get<RoomRecord>('room');
+  const lease=room?.[actor.role];
+  if(!room||room.lessonId!==actor.lessonId||
+     !lease||lease.subject!==actor.actorSubject||
+     lease.learnerId!==actor.learnerId||lease.expiresAtMs<=now||
+     !await this.authorized(lease,actor.role,actor.lessonId,now))
+   return Response.json({code:'NOT_JOINED'},{status:404});
+  // Bound socket count and protect multi-tab viewers from memory exhaustion.
+  const sockets=this.ctx.getWebSockets();
+  if(sockets.length>=6)return Response.json({code:'REALTIME_CAPACITY'},{status:429});
+  const pair=new WebSocketPair();
+  const client=pair[0],server=pair[1] as RealtimeSocket;
+  server.serializeAttachment(actor);
+  this.ctx.acceptWebSocket(server);
+  return new Response(null,{status:101,webSocket:client} as ResponseInit&{webSocket:WebSocket});
+ }
+ /** No uncommitted draw data is sent. The notification says only that an
+  * already-committed DO revision can now be fetched through signed GET. */
+ private async pushRealtime(hint:RealtimeHint):Promise<void>{
+  if(!validRealtimeHint(hint)||!this.ctx.getWebSockets)return;
+  const room=await this.ctx.storage.get<RoomRecord>('room');
+  if(!room)return;
+  const now=Date.now(),message=JSON.stringify(hint);
+  for(const base of this.ctx.getWebSockets()){
+   const socket=base as RealtimeSocket;
+   let actor:unknown;
+   try{actor=socket.deserializeAttachment();}catch{actor=null;}
+   if(!validVerifiedRealtimeActor(actor)||actor.lessonId!==room.lessonId){
+    try{socket.close(1008,'unauthorized');}catch{} continue;
+   }
+   const lease=room[actor.role];
+   if(!lease||lease.subject!==actor.actorSubject||
+      lease.learnerId!==actor.learnerId||lease.expiresAtMs<=now||
+      !await this.authorized(lease,actor.role,actor.lessonId,now)){
+    try{socket.close(1008,'authorization expired');}catch{} continue;
+   }
+   try{if(socket.readyState===1)socket.send(message);}catch{
+    try{socket.close(1011,'delivery failed');}catch{}
+   }
+  }
+ }
+ private notifyRealtime(hint:RealtimeHint):void{
+  if(!this.ctx.waitUntil||!this.ctx.getWebSockets)return;
+  this.ctx.waitUntil(this.pushRealtime(hint).catch(()=>undefined));
+ }
+ /** Receive-only channel. Privileged drawing/page writes must remain signed
+  * HTTP requests with CAS, idempotency, D1 gates and durable outbox. */
+ webSocketMessage(socket:WebSocket,_message:string|ArrayBuffer):void{
+  void _message;
+  try{socket.close(1008,'read only');}catch{}
+ }
+
  private async scheduleNext(now:number):Promise<void>{
   if(!this.ctx.storage.setAlarm)return;
   const [room,outbox,pendingInk]=await Promise.all([
@@ -273,6 +354,7 @@ export class LessonRoom {
  }
  async fetch(request:Request):Promise<Response>{
   const path=new URL(request.url).pathname;
+  if(path==='/internal/realtime')return this.realtimeUpgrade(request);
   // Worker-only DO binding wake, called immediately after an authoritative
   // staff permission write. There is NO public Worker HTTP route for this URL.
   if(path==='/internal/reconcile-media'){
@@ -484,6 +566,9 @@ export class LessonRoom {
     });
     if(!('ink' in applied)||!applied.ink)
      return Response.json({code:applied.code},{status:applied.status});
+    if(applied.code==='INK_APPLIED'&&applied.status===200)
+     this.notifyRealtime({type:'quran-ink',page:applied.ink.page,
+      revision:applied.ink.revision});
     if(!durable||cmd.action==='snapshot'||applied.status!==200)
      return Response.json({code:applied.code,ink:applied.ink,
       ...('persistence' in applied?{persistence:applied.persistence}:{})},
@@ -510,7 +595,7 @@ export class LessonRoom {
    if(!cmd)return Response.json({code:'INVALID_QURAN_PAGE_COMMAND'},{status:400});
    const now=Date.now();
    try{
-    return await this.ctx.storage.transaction(async txn=>{
+    const response=await this.ctx.storage.transaction(async txn=>{
      const room=await txn.get<RoomRecord>('room');
      if(!room||room.lessonId!==cmd.lessonId)return Response.json({code:'NOT_JOINED'},{status:404});
      const lease=room[cmd.role];
@@ -528,6 +613,19 @@ export class LessonRoom {
       headers:{'cache-control':'no-store'}
      });
     });
+    if(cmd.action==='set'&&response.status===200){
+     const body:unknown=await response.clone().json();
+     if(body&&typeof body==='object'&&!Array.isArray(body)){
+      const value=body as Record<string,unknown>;
+      const q=value.quran;
+      if(value.code==='QURAN_PAGE_SET'&&q&&typeof q==='object'&&!Array.isArray(q)){
+       const record=q as Record<string,unknown>;
+       const hint={type:'quran-page',page:record.page,revision:record.revision};
+       if(validRealtimeHint(hint))this.notifyRealtime(hint);
+      }
+     }
+    }
+    return response;
    }catch{return Response.json({code:'CLASSROOM_QURAN_UNAVAILABLE'},{status:503});}
   }
   if(path!=='/internal/room-presence'||request.method!=='POST')
