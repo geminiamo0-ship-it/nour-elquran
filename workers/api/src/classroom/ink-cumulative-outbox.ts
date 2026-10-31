@@ -68,7 +68,13 @@ export type EnqueueQuranResult=
 export function queueCumulativeInk(items:readonly PendingQuranInk[],
  event:PendingQuranInk):EnqueueQuranResult{
  const previous=items.find(x=>x.operationId===event.operationId);
- if(previous)return {code:JSON.stringify(previous)===JSON.stringify(event)?'REPLAY':'CONFLICT',items};
+ // Retries use the first accepted timestamp; regeneration at a later clock
+ // must not turn an otherwise identical operation into a false conflict.
+ if(previous){
+  const same=JSON.stringify({...previous,acceptedAtMs:0})===
+   JSON.stringify({...event,acceptedAtMs:0});
+  return {code:same?'REPLAY':'CONFLICT',items};
+ }
  if(items.length>=MAX_PENDING_QURAN_INK)return {code:'FULL',items};
  return {code:'QUEUED',items:[...items,event]};
 }
