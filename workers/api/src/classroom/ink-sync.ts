@@ -58,3 +58,31 @@ export function validInk(raw:unknown):raw is InkView{
   action:'add',page:s.page,expectedRevision:0,requestId:'ink-check-0001',stroke
  })!==null);
 }
+
+/** Internal authenticated Worker -> DO fence. Never expose this command to a
+ * browser: the Worker derives the acting Sheikh and lesson learner from D1.
+ */
+export async function forwardInkEndFence(env:Env,verified:Readonly<{
+ lessonId:string;learnerId:string;actorSubject:string;
+}>,operationId:string,action:'prepare'|'release'|'complete'):Promise<
+ {status:200|409|503;code:string}>{
+ if(!env.LESSON_ROOMS)return {status:503,code:'INK_ROOM_UNAVAILABLE'};
+ try{
+  const stub=env.LESSON_ROOMS.get(env.LESSON_ROOMS.idFromName(verified.lessonId));
+  const response=await stub.fetch(new Request('https://lesson-room.internal/internal/ink-end-fence',{
+   method:'POST',headers:{'content-type':'application/json'},
+   body:JSON.stringify({...verified,operationId,action})
+  }));
+  const body:unknown=await response.json();
+  if(!body||typeof body!=='object'||Array.isArray(body))throw Error('INVALID');
+  const code=(body as {code?:unknown}).code;
+  if(typeof code!=='string')throw Error('INVALID');
+  if(response.status===200&&
+   (code==='INK_END_READY'||code==='INK_FENCE_RELEASED'||code==='INK_FENCE_COMPLETED'))
+   return {status:200,code};
+  if(response.status===409&&
+   (code==='INK_END_PENDING'||code==='INK_END_FENCE_CONFLICT'))
+   return {status:409,code};
+  return {status:503,code:'INK_FENCE_UNAVAILABLE'};
+ }catch{return {status:503,code:'INK_FENCE_UNAVAILABLE'};}
+}
