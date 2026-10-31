@@ -124,6 +124,34 @@ class FreeTrialD1(unittest.TestCase):
    self.book(slot)
   self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
 
+
+ def test_rebooked_trial_slot_still_blocks_withdrawal(self):
+  # The first cancelled booking is not proof that the slot is free:
+  # a later real booking of that same 40-minute slot must remain protected.
+  slot=self.open(starts=T+9*3600000)
+  first=self.book(slot)
+  self.fixture.action('cancel',resource=first,now=T)
+  second=self.book(slot)
+  self.assertNotEqual(first,second)
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM trial_booking_events WHERE slot_id=?',(slot,)).fetchone(),(2,))
+  close="""INSERT INTO trial_slot_closure_events
+   (id,operation_id,slot_id,actor_subject,reason,at_ms)
+   VALUES(?,?,?,?,?,?)"""
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'TRIAL_SLOT_ALREADY_BOOKED'):
+   self.db.execute(close,(str(uuid4()),str(uuid4()),slot,'staff',
+    'Attempt to withdraw a rebooked trial',T))
+  self.assertEqual(self.db.execute(
+   'SELECT status FROM lessons WHERE id=?',(second,)).fetchone(),('scheduled',))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM trial_slot_closure_events WHERE slot_id=?',(slot,)).fetchone(),(0,))
+  self.fixture.action('cancel',resource=second,now=T)
+  self.db.execute(close,(str(uuid4()),str(uuid4()),slot,'staff',
+   'Withdrawal after all bookings cancelled',T))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM trial_slot_closure_events WHERE slot_id=?',(slot,)).fetchone(),(1,))
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
+
  def test_full_migration_chain_includes_both_0023_and_0024(self):
   # The fixture applies all migrations in order, including the merged
   # ink compatibility guard and this branch's trial closure guard.
