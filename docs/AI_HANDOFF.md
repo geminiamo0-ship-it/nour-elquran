@@ -1,3 +1,7 @@
+## #251 A3 native D1 CI failure triage — 2026-10-31
+
+PR [#259](https://github.com/geminiamo0-ship-it/nour-elquran/pull/259) initially failed native Wrangler D1 smoke on a valid owner pen write: `LIKE or GLOB pattern too complex` in migration 0017 hex validation. Added forward-only migration `0018_quran_ledger_color_guard.sql` replacing only the insert guard with short negative-class hex validation, plus SQLite regression. Temporary local diagnostic response and log modifications were **reverted**, no secret/actor logging remains. Next: inspect exact latest-head GitHub Verify 4 jobs, fix any further failure, then independent review; no merge, staging or Production until gates pass.
+
 ## Current #251 A3 — owner-only cumulative self-study writes (candidate, 2026-10-31)
 
 Branch `feat/251-owner-cumulative-self-study-write` adds a narrow signed owner POST to `/v1/me/learners/:id/cumulative-quran`, with strict `self_study` origin and no actor/role/learner body authority, D1 event ACK, replay/CAS/hide and response subject redaction. `scripts/cloudflare-auth-smoke.mjs` now covers real local Better Auth/D1 write/read, isolation, forgery and legacy coexistence. **Next exact action:** inspect PR/Verify on branch HEAD, fix failing checks, then independent review; do not merge without gates. No UI, Classroom DO bridge, historical backfill, Dev or Production release. #251, #252, #253 OPEN.
