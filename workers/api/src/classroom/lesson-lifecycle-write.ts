@@ -101,14 +101,6 @@ export async function readTeacherLifecycle(env:Env,subject:string,lessonId:strin
   return row?{status:200,code:'LESSON_LIFECYCLE',lifecycle:await safe(env.DB,row)}:
    {status:404,code:'NOT_FOUND'};
  }catch{return {status:503,code:'LIFECYCLE_UNAVAILABLE'};}
- finally{
-  if(fencedLearner&&!endCommitted){
-   // Never reopen after an unknown D1 outcome; the DO checks live status
-   // and exact End operation before releasing the room write barrier.
-   try{await releaseLessonCumulativeInk(env,lessonId,fencedLearner,subject,operationId);}
-   catch{ /* fail closed; a verified Sheikh may safely retry End */ }
-  }
- }
 }
 export async function readLearnerLifecycle(env:Env,subject:string,learnerId:string,
  lessonId:string):Promise<Snapshot>{
@@ -235,4 +227,12 @@ export async function teacherLifecycleAction(env:Env,subject:string,lessonId:str
   }
   return {status:200,code:'LESSON_STARTED',lifecycle:state};
  }catch{return {status:503,code:'LIFECYCLE_UNAVAILABLE'};}
+ finally{
+  if(fencedLearner&&!endCommitted){
+   // Never reopen after an unknown D1 outcome; the DO checks live status
+   // and exact End operation before releasing the room write barrier.
+   try{await releaseLessonCumulativeInk(env,lessonId,fencedLearner,subject,operationId);}
+   catch{ /* fail closed; a verified Sheikh may safely retry End */ }
+  }
+ }
 }
