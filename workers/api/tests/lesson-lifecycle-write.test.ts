@@ -15,9 +15,10 @@ test('accept only explicit teacher command with strict V4 operation ID',()=>{
   {action:'start',operationId:requestId,teacherId:'forged'},null,[],{}])
   assert.equal(parseLifecycleAction(value),null);
 });
-function harness(config:{both?:boolean;authorized?:boolean;noBatch?:boolean;owner?:boolean}={}){
+function harness(config:{both?:boolean;authorized?:boolean;noBatch?:boolean;owner?:boolean;
+ inkEnabled?:boolean;failEndOnce?:boolean}={}){
  let status:'scheduled'|'live'|'completed'='scheduled',endedAtMs:null|number=null;
- let startedAtMs:null|number=null,events=0;
+ let startedAtMs:null|number=null,events=0,failedEnd=false,inkClosed=false;
  const statements:string[]=[];
  const row=()=>({id:lessonId,learnerId:studentId,teacherId:'teacher-a',
   status,startsAtMs:starts,endsAtMs:starts+40*60_000,endedAtMs});
@@ -41,6 +42,9 @@ function harness(config:{both?:boolean;authorized?:boolean;noBatch?:boolean;owne
   },
   ...(!config.noBatch?{async batch(items:D1Statement[]){
    assert.equal(items.length,2);
+   if(status==='live'&&config.failEndOnce&&!failedEnd){
+    failedEnd=true;throw Error('SYNTHETIC_END_D1_OUTAGE');
+   }
    events++;
    if(status==='scheduled'){status='live';startedAtMs=now;}
    else if(status==='live'){status='completed';endedAtMs=now+20_000;}
@@ -48,10 +52,20 @@ function harness(config:{both?:boolean;authorized?:boolean;noBatch?:boolean;owne
   }}:{}),
  };
  const calls:string[]=[];
- const env:Env={DB:db,LESSON_ROOMS:{
+ const env:Env={DB:db,NOOR_CUMULATIVE_INK_ENABLED:config.inkEnabled?'true':undefined,
+  LESSON_ROOMS:{
   idFromName(x){return x;},
   get(){return {async fetch(req){
    const path=new URL(req.url).pathname;calls.push(path);
+   if(path==='/internal/quran-ink-end-fence'){
+    inkClosed=true;
+    return Response.json({code:'QURAN_INK_FENCED'});
+   }
+   if(path==='/internal/quran-ink-end-release'){
+    if(status!=='live')return Response.json({code:'QURAN_INK_FENCE_UNAVAILABLE'},{status:503});
+    inkClosed=false;
+    return Response.json({code:'QURAN_INK_FENCE_RELEASED'});
+   }
    if(path==='/internal/room-presence')return Response.json({
     code:'ROOM_SNAPSHOT',presence:{lessonId,teacherPresent:true,
      learnerPresent:config.both!==false,bothPresent:config.both!==false,
@@ -59,7 +73,7 @@ function harness(config:{both?:boolean;authorized?:boolean;noBatch?:boolean;owne
    return Response.json({code:'ROOM_RECONCILE_QUEUED'});
   }};}
  }};
- return {env,events:()=>events,statements,calls};
+ return {env,events:()=>events,statements,calls,isInkClosed:()=>inkClosed};
 }
 test('refuse Start when learner is missing; do not mutate D1',async()=>{
  const h=harness({both:false});
@@ -100,4 +114,20 @@ test('unauthorized Sheikh/owner cannot see lesson and atomic D1 is mandatory',as
  assert.deepEqual(await teacherLifecycleAction(noBatch.env,teacherSubject,lessonId,
   'start',requestId,now),{status:503,code:'ATOMIC_D1_BATCH_REQUIRED'});
  assert.equal(noBatch.events(),0);
+});
+
+test('End D1 failure releases same signed DO writer fence before retry',async()=>{
+ const h=harness({inkEnabled:true,failEndOnce:true});
+ assert.equal((await teacherLifecycleAction(h.env,teacherSubject,lessonId,'start',
+  requestId,now)).code,'LESSON_STARTED');
+ const id='2163d489-5a27-4af2-83d0-1c3b7f989eff';
+ const failed=await teacherLifecycleAction(h.env,teacherSubject,lessonId,'end',id,now+20_000);
+ assert.deepEqual(failed,{status:503,code:'LIFECYCLE_UNAVAILABLE'});
+ assert.equal(h.isInkClosed(),false,'failed End must not permanently lock live Quran');
+ assert.ok(h.calls.includes('/internal/quran-ink-end-release'));
+ assert.equal(h.events(),1);
+ const retried=await teacherLifecycleAction(h.env,teacherSubject,lessonId,'end',id,now+25_000);
+ assert.equal(retried.code,'LESSON_ENDED');
+ assert.equal(h.isInkClosed(),true,'successful End permanently closes writes');
+ assert.equal(h.events(),2);
 });
