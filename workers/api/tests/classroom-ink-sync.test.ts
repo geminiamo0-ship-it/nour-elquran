@@ -31,10 +31,11 @@ function cmd(room:LessonRoom,raw:unknown){
 test('role spoofing, invalid points, malformed ids and cross-page drawings fail closed',()=>{
  assert.ok(parseClientInk({action:'add',page:35,expectedRevision:0,
   requestId:'ink-add-00001',stroke:mark},'teacher'));
- assert.equal(parseClientInk({action:'add',page:35,expectedRevision:0,
-  requestId:'ink-add-00001',stroke:mark},'learner'),null);
+ assert.ok(parseClientInk({action:'add',page:35,expectedRevision:0,
+  requestId:'ink-add-00001',stroke:mark},'learner'));
+ assert.ok(parseInkCommand({...add,role:'learner',actorSubject:'signed-owner'}));
  for(const v of [
-  {...add,role:'learner'},
+  {...add,role:'intruder'},
   {...add,stroke:{...mark,points:[{x:0,y:0},{x:1001,y:100}]}},
   {...add,stroke:{...mark,page:36}},
   {...add,stroke:{...mark,color:'url(javascript:bad)'}},
@@ -69,12 +70,13 @@ test('joined teacher writes durable ink, joined learner sees it, erased mark sur
  await api.put('quranPage',{edition:'hafs-kfqc-v1.1.1',page:35,revision:1,receipts:[]});
  const first=new LessonRoom({storage:api});
  assert.equal((await cmd(first,{...learner,action:'snapshot',page:35})).status,200);
- assert.equal((await cmd(first,{...add,role:'learner',actorSubject:'signed-owner'})).status,400);
  assert.equal((await cmd(first,{...add,actorSubject:'other'})).status,404);
  assert.equal((await cmd(first,{...add,lessonId:'other-lesson'})).status,404);
  const created=await cmd(first,add);
  assert.equal(created.status,200);
  assert.equal((await created.json()).ink.revision,1);
+ // Even with a valid lease, the learner cannot erase a teacher's mark.
+ assert.equal((await cmd(first,{...hide,role:'learner',actorSubject:'signed-owner'})).status,409);
  const reboot=new LessonRoom({storage:api});
  const learnerView=await cmd(reboot,{...learner,action:'snapshot',page:35});
  assert.deepEqual((await learnerView.json()).ink.strokes,[mark]);
@@ -99,4 +101,39 @@ test('missing binding and malformed DO return fail closed',async()=>{
  })})}} as unknown as Env;
  assert.deepEqual(await forwardVerifiedInk(broken,author,{action:'snapshot',page:35}),
   {status:503,code:'CLASSROOM_INK_UNAVAILABLE'});
+});
+
+// Signatures and authors must remain genuine across DO reboot and moderation.
+// The student's own pen is accepted ONLY from their verified lease; they
+// cannot erase the teacher's mark, but the Sheikh can moderate their stroke.
+test('learner shared ink preserves provenance and Sheikh moderation across DO reboot',async()=>{
+ const {api,items}=memory();
+ const room:RoomRecord={lessonId:'lesson-ink',revision:2,
+  teacher:{subject:'signed-sheikh',learnerId:'learner-ink',expiresAtMs:now+60000},
+  learner:{subject:'signed-owner',learnerId:'learner-ink',expiresAtMs:now+60000}};
+ await api.put('room',room);
+ await api.put('quranPage',{edition:'hafs-kfqc-v1.1.1',page:35,revision:1,receipts:[]});
+ const teacherAdd=add;
+ const childMark={...mark,id:'ink-child-001'};
+ const childAdd={...add,role:'learner' as const,actorSubject:'signed-owner',
+  stroke:childMark,requestId:'child-write-001',expectedRevision:1};
+ const instance=new LessonRoom({storage:api});
+ assert.equal((await cmd(instance,teacherAdd)).status,200);
+ assert.equal((await cmd(instance,childAdd)).status,200);
+ const state=items.get('quranInk:35') as {records:readonly {author:string;subject:string;visible:boolean}[]};
+ assert.deepEqual(state.records.map(x=>[x.author,x.subject]),[
+  ['teacher','signed-sheikh'],['learner','signed-owner']]);
+ const booted=new LessonRoom({storage:api});
+ assert.equal((await cmd(booted,childAdd)).status,200);
+ const childHideTeacher={...hide,role:'learner' as const,actorSubject:'signed-owner',
+  expectedRevision:2,requestId:'child-hide-01'};
+ assert.equal((await cmd(booted,childHideTeacher)).status,409);
+ const moderation={...hide,strokeId:childMark.id,expectedRevision:2,
+  requestId:'moderation-001'};
+ assert.equal((await cmd(booted,moderation)).status,200);
+ const latest=items.get('quranInk:35') as {records:readonly {author:string;subject:string;visible:boolean}[]};
+ assert.deepEqual(latest.records.map(x=>[x.author,x.visible]),[
+  ['teacher',true],['learner',false]]);
+ assert.equal((await cmd(booted,moderation)).status,200);
+ assert.equal((await cmd(booted,{...childAdd,stroke:{...childMark,id:'other-child-001'}})).status,409);
 });
