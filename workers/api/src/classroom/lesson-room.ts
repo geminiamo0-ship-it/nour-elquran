@@ -187,7 +187,7 @@ export class LessonRoom {
  }
  /** No uncommitted draw data is sent. The notification says only that an
   * already-committed DO revision can now be fetched through signed GET. */
- private async pushRealtime(hint:RealtimeHint):Promise<void>{
+ private async pushRealtime(hint:RealtimeHint,onlyRole?:RoomRole):Promise<void>{
   if(!validRealtimeHint(hint)||!this.ctx.getWebSockets)return;
   const room=await this.ctx.storage.get<RoomRecord>('room');
   if(!room)return;
@@ -199,6 +199,7 @@ export class LessonRoom {
    if(!validVerifiedRealtimeActor(actor)||actor.lessonId!==room.lessonId){
     try{socket.close(1008,'unauthorized');}catch{/* socket already closed; continue best-effort cleanup */} continue;
    }
+   if(onlyRole&&actor.role!==onlyRole)continue;
    const lease=room[actor.role];
    if(!lease||lease.subject!==actor.actorSubject||
       lease.learnerId!==actor.learnerId||lease.expiresAtMs<=now||
@@ -210,10 +211,10 @@ export class LessonRoom {
    }
   }
  }
- private notifyRealtime(hint:RealtimeHint):void{
+ private notifyRealtime(hint:RealtimeHint,onlyRole?:RoomRole):void{
   if(this.env?.NOOR_REALTIME_HINTS_ENABLED!=='true')return;
   if(!this.ctx.waitUntil||!this.ctx.getWebSockets)return;
-  this.ctx.waitUntil(this.pushRealtime(hint).catch(()=>undefined));
+  this.ctx.waitUntil(this.pushRealtime(hint,onlyRole).catch(()=>undefined));
  }
  /** A provisional preview is *not* a Quran ink write or saved receipt.
   * Explicitly require the separate D1 cumulative gate before live previews;
@@ -487,7 +488,7 @@ export class LessonRoom {
    if(!cmd)return Response.json({code:'INVALID_CORRECTION_COMMAND'},{status:400});
    const now=Date.now();
    try{
-    return await this.ctx.storage.transaction(async txn=>{
+    const response=await this.ctx.storage.transaction(async txn=>{
      const state=await txn.get<CorrectionsState>('teacherCorrections')??initialCorrections();
      const view=(code:string,status=200)=>Response.json({
       code,corrections:{revision:state.revision,items:state.items}
@@ -522,6 +523,19 @@ export class LessonRoom {
         applied.code==='CORRECTION_LIMIT'?413:200,
       headers:{'cache-control':'no-store'}});
     });
+    if(cmd.action==='add'&&response.status===200){
+     const body:unknown=await response.clone().json();
+     if(body&&typeof body==='object'&&!Array.isArray(body)){
+      const data=body as Record<string,unknown>;
+      const value=data.corrections;
+      if(data.code==='CORRECTION_SAVED'&&value&&typeof value==='object'&&!Array.isArray(value)){
+       const state=value as Record<string,unknown>;
+       const hint={type:'corrections',page:cmd.page,revision:state.revision};
+       if(validRealtimeHint(hint))this.notifyRealtime(hint,'teacher');
+      }
+     }
+    }
+    return response;
    }catch{return Response.json({code:'CLASSROOM_CORRECTIONS_UNAVAILABLE'},{status:503});}
   }
   // The authenticated Worker fences the room BEFORE D1 lesson End. Room
@@ -712,6 +726,9 @@ export class LessonRoom {
    result=await this.queued(now,command);
    await this.scheduleNext(now);
   }catch{return Response.json({code:'ROOM_EVICTION_UNAVAILABLE'},{status:503});}
+  if(result.ok&&(result.code==='ROOM_JOINED'||result.code==='ROOM_LEFT')){
+   this.notifyRealtime({type:'presence',page:1,revision:result.state.revision});
+  }
   if(!result.ok)return Response.json({code:result.code},{
    status:result.code==='ROOM_ACTOR_CONFLICT'||result.code==='ROOM_EVICTION_PENDING'?409:404});
   // A confirmed leave enqueues a durable provider removal before replying.
