@@ -193,16 +193,16 @@ export class LessonRoom {
    let actor:unknown;
    try{actor=socket.deserializeAttachment();}catch{actor=null;}
    if(!validVerifiedRealtimeActor(actor)||actor.lessonId!==room.lessonId){
-    try{socket.close(1008,'unauthorized');}catch{} continue;
+    try{socket.close(1008,'unauthorized');}catch{/* socket already closed; continue best-effort cleanup */} continue;
    }
    const lease=room[actor.role];
    if(!lease||lease.subject!==actor.actorSubject||
       lease.learnerId!==actor.learnerId||lease.expiresAtMs<=now||
       !await this.authorized(lease,actor.role,actor.lessonId,now)){
-    try{socket.close(1008,'authorization expired');}catch{} continue;
+    try{socket.close(1008,'authorization expired');}catch{/* socket already closed; continue best-effort cleanup */} continue;
    }
    try{if(socket.readyState===1)socket.send(message);}catch{
-    try{socket.close(1011,'delivery failed');}catch{}
+    try{socket.close(1011,'delivery failed');}catch{/* socket already closed; continue best-effort cleanup */}
    }
   }
  }
@@ -214,7 +214,7 @@ export class LessonRoom {
   * HTTP requests with CAS, idempotency, D1 gates and durable outbox. */
  webSocketMessage(socket:WebSocket,_message:string|ArrayBuffer):void{
   void _message;
-  try{socket.close(1008,'read only');}catch{}
+  try{socket.close(1008,'read only');}catch{/* socket already closed; continue best-effort cleanup */}
  }
 
  private async scheduleNext(now:number):Promise<void>{
