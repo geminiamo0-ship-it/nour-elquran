@@ -1,3 +1,8 @@
+## 2026-10-31 / #251 A3 — native D1 GLOB runtime blocker and forward fix (pending verification)
+
+- PR [#259](https://github.com/geminiamo0-ship-it/nour-elquran/pull/259) initial native CI [#41150302660](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41150302660) **failed**: D1 `LIKE or GLOB pattern too complex` from historical 0017 hex-color insert guard; code-quality/governance/repository policy succeeded. Confirmed through temporary synthetic local diagnostics, removed before final branch.
+- Added additive 0018 migration to replace only insert trigger with short bounded hex validation, plus Python invalid/valid hex tests. No old migration/data changed, no Production/Dev deploy. **Retest latest head before claiming PASS.**
+
 ## 2026-10-31 / #251 A3 — signed cumulative self-study event write candidate (not merged)
 
 - Branch `feat/251-owner-cumulative-self-study-write`: owner-only POST to existing cumulative Quran endpoint, restricted to `self_study`; Better Auth + learner D1 ownership, schema gate, strict payload and Origin, DB ACK, idempotent replay/CAS/hide, no internal actor IDs in browser response. Native local signed D1 smoke added. **Exact-head CI/PR review pending**, no Dev/Production deployment.
