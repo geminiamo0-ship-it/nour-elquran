@@ -1,3 +1,9 @@
+## 2026-10-31 / #244 — native populated D1 0023→0024 trial-closure gate (PR #280 candidate)
+- Existing native local upgrade smoke incorrectly copied future 0024 into the pre-0023 migration set. The branch now excludes both 0023 and 0024 from legacy setup, applies 0023 first, seeds a **booked** synthetic 40-minute trial on populated native D1, then applies 0024 with replay check.
+- New disposable fixture `scripts/fixtures/trial-slot-native-pre0024.sql` and `scripts/cloudflare-local-smoke.sh` assertions require booked-slot withdrawal to fail with `TRIAL_SLOT_ALREADY_BOOKED` **without changing the lesson**, then explicit owner cancellation to allow staff withdrawal. Tests use no real child data or remote Cloudflare binding.
+- **Candidate only:** exact new-head Verify is pending; do not claim native D1 PASS until the run completes. PR #280 stays Draft and #244 OPEN. Independent review and signed isolated Dev 0023→0024 acceptance remain required; #286 remote Sheikh ink 503 remains OPEN. No Production, payments, audio, WhatsApp or cumulative flag changes.
+- NEXT: inspect exact PR-head Verify (including native D1), fix failures; obtain independent review and complete Dev #286 before any 0024 migration deployment.
+
 ## 2026-10-31 / #244 — rebased trial closure guard on merged 0023 (PR #280; candidate)
 - P0 #286 ink migration 0023 is now on main `acdd869ac596edb4019bf453d8b1ccf6f56c5c51`, but remote Dev acceptance is still pending and #286 has been reopened. This PR retains only forward migration `0024_trial_slot_close_booking_guard.sql` to reject closing a booked slot; it does not touch 0023 or Production.
 - Combined source verification requires full 0001→0023→0024 migration chain, synthetic booked-slot denial and post-cancel withdrawal, and exact-head GitHub Verify. The remote Dev migration, independent security review and signed staff/owner acceptance remain separate gates. #244 OPEN; do not merge until acceptance.
