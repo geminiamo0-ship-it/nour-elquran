@@ -1,3 +1,8 @@
+## #244 migration ordering acceptance gate (candidate PR #298, 2026-11-01)
+- Open PR #280 owns D1 migration **0024** (withdrawal guard), while owner reschedule PR #298 uses **0025**. Do not merge/deploy 0025 before independently reviewed 0024 has passed populated isolated Dev upgrade. Never reuse a migration number for two files.
+- GitHub exact-head Verify must run native local Wrangler D1 fresh-schema smoke and the pre-0023 populated forward-upgrade fixture, plus Python SQL transaction regression, strict TypeScript, and API/client tests. Native local CI cannot substitute for **remote** 0023→0024→0025 D1 upgrade or signed two-role browser E2E.
+- After #280 merge, update #298 to latest main and retest the **combined** migration order with actual booked slot, cancellation/rebooking, staff withdrawal denial, atomic guardian reschedule, conflict rollback, sibling 404 and lesson calendar refresh. Keep both PRs unmerged until their separate review/acceptance gates; no Production, payments, WhatsApp or child media.
+
 ## #252 ink snapshot truthfulness regression (candidate; no runtime acceptance)
 - A DO snapshot must never claim `persistence:'saved'` solely from an empty outbox: historical room-only marks may not have a D1 event. Pending D1 delivery must remain `pending`; only a confirmed append/replay may report `saved`.
 - Targeted `classroom-cumulative-delivery.test.ts` covers both a failed D1 write with pending snapshot and a legacy DO-only stroke with feature gate off/on. Run exact-head GitHub Verify and retain #252 open pending signed Dev two-role test and backfill reconciliation.

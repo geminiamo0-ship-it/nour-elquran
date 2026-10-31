@@ -1,3 +1,9 @@
+## #244 atomic owner trial reschedule (candidate PR #298, 2026-11-01)
+- `workers/api/migrations/0025_trial_owner_reschedule.sql`: immutable owner reschedule event + guarded atomic old-lesson cancellation, temporary grant revocation and replacement booking. **Requires** PR #280's distinct `0024_trial_slot_close_booking_guard.sql` to be reviewed/merged/tested on Dev first.
+- `workers/api/src/trial-rescheduling.ts`, `workers/api/src/auth/routes.ts`: signed owner alternatives/read and idempotent replace write; no browser-supplied role, teacher, price or credits.
+- `apps/web/src/features/student/components/StudentTrialReschedule.tsx`, `ConnectedClassroomLessons.tsx`, `apps/web/src/features/shared/trial-booking-client.ts`: actual owner-facing reschedule UX and signed API DTO.
+- `workers/api/tests/test_trial_owner_reschedule.py`, `workers/api/tests/trial-rescheduling.test.ts`, `apps/web/src/features/shared/trial-booking-client.test.ts`: synthetic SQL atomicity/role/collision and client contract checks. `scripts/cloudflare-local-smoke.sh` excludes all migrations >=0023 when reconstructing pre-0023 populated D1, then applies the available forward upgrade. Not remote Dev acceptance.
+
 ## Final Classroom runtime evidence — #240
 Classroom Dev accepted in the single synthetic run: https://github.com/geminiamo0-ship-it/santoreno/actions/runs/41140055151
 App commit: 57c59518a544672fa4c213d81b0e49208f5b2b70; test harness: 5875cc18344cc8871102499945ad8dd2cc3fc0f5.
