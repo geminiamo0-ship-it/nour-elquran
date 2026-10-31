@@ -168,8 +168,8 @@ assert.equal((await call(mushafPath+'?page=0',{cookie:cookieA})).response.status
 assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,
  body:{...note,operationId:randomUUID(),actorAuthSubject:a.data.user.id}})).response.status,400);
 console.log('Native private Quran: verified learner save/reload, pen, marker, note anchor, bookmark, position, tombstone, CAS, replay, CSRF and cross-owner denial passed');
-// ADR 0009 / #251 A2: real same-origin Better Auth + D1 composite page read.
-// Old private marks remain owner-only; no public canonical write API yet.
+// ADR 0009 / #251 A3: real signed Better Auth + D1 cumulative page
+// and private-only self-study event writes. Classroom/task writes stay closed.
 const cumulativePath='/v1/me/learners/'+learner+'/cumulative-quran';
 const cumulative=await call(cumulativePath+'?page=1',{cookie:cookieA});
 assert.equal(cumulative.response.status,200,JSON.stringify(cumulative.data));
@@ -182,12 +182,57 @@ assert.equal((await call(cumulativePath+'?page=1',{cookie:cookieB})).response.st
 assert.equal((await call(cumulativePath+'?page=1')).response.status,401);
 assert.equal((await call(cumulativePath+'?page=0',{cookie:cookieA})).response.status,400);
 assert.equal((await call(cumulativePath+'?page=1&index=1',{cookie:cookieA})).response.status,400);
-assert.equal((await call(cumulativePath,{method:'POST',cookie:cookieA,body:{action:'put'}})).response.status,405);
+assert.equal((await call(cumulativePath,{method:'POST',cookie:cookieA,body:{action:'put'}})).response.status,400);
+const canonicalOp={operationId:randomUUID(),itemId:'canonical-self-001',
+ action:'put',kind:'pen',originType:'self_study',originId:null,
+ page:1,surah:null,ayah:null,wordIndex:null,expectedRevision:0,
+ payload:{color:'#aabbcc',width:3,points:[{x:10,y:20},{x:30,y:40}]}};
+assert.equal((await call(cumulativePath,{method:'POST',cookie:cookieB,body:canonicalOp})).response.status,404);
+assert.equal((await call(cumulativePath,{method:'POST',body:canonicalOp})).response.status,401);
+assert.equal((await call(cumulativePath,{method:'POST',cookie:cookieA,
+ origin:'https://attacker.invalid',body:canonicalOp})).response.status,403);
+for(const forged of [
+ {...canonicalOp,actorSubject:a.data.user.id},
+ {...canonicalOp,learnerId:learner},
+ {...canonicalOp,audience:'shared'},
+ {...canonicalOp,originType:'lesson',originId:'forged-lesson'},
+ {...canonicalOp,originType:'assignment',originId:'forged-task'},
+ {...canonicalOp,page:605}
+])assert.equal((await call(cumulativePath,{method:'POST',cookie:cookieA,body:forged})).response.status,400);
+assert.equal((await call(cumulativePath+'?page=1',{method:'POST',cookie:cookieA,body:canonicalOp})).response.status,400);
+const canonicalPut=await call(cumulativePath,{method:'POST',cookie:cookieA,body:canonicalOp});
+assert.equal(canonicalPut.response.status,201,JSON.stringify(canonicalPut.data));
+assert.equal(canonicalPut.data.code,'QURAN_EVENT_COMMITTED');
+assert.equal(canonicalPut.data.item.revision,1);
+assert.equal(canonicalPut.data.item.audience,'private');
+assert.equal(canonicalPut.data.item.authorSubject,undefined);
+const canonicalRead=await call(cumulativePath+'?page=1',{cookie:cookieA});
+assert.equal(canonicalRead.response.status,200,JSON.stringify(canonicalRead.data));
+assert.equal(canonicalRead.data.current.find(x=>x.itemId===canonicalOp.itemId)?.revision,1);
+assert.equal(canonicalRead.data.current.find(x=>x.itemId===canonicalOp.itemId)?.authorSubject,undefined);
+assert(canonicalRead.data.legacyPrivate.some(x=>x.itemId==='stroke-1'));
+assert.equal((await call(cumulativePath+'?page=1',{cookie:cookieB})).response.status,404);
+const canonicalReplay=await call(cumulativePath,{method:'POST',cookie:cookieA,body:canonicalOp});
+assert.equal(canonicalReplay.response.status,200,JSON.stringify(canonicalReplay.data));
+assert.equal(canonicalReplay.data.code,'QURAN_EVENT_REPLAY');
+assert.equal((await call(cumulativePath,{method:'POST',cookie:cookieA,
+ body:{...canonicalOp,payload:{...canonicalOp.payload,width:4}}})).response.status,409);
+assert.equal((await call(cumulativePath,{method:'POST',cookie:cookieA,
+ body:{...canonicalOp,operationId:randomUUID()}})).response.status,409);
+const canonicalHide=await call(cumulativePath,{method:'POST',cookie:cookieA,
+ body:{...canonicalOp,operationId:randomUUID(),action:'hide',expectedRevision:1,payload:{}}});
+assert.equal(canonicalHide.response.status,201,JSON.stringify(canonicalHide.data));
+assert.equal(canonicalHide.data.item.visible,false);
+assert.equal(canonicalHide.data.item.authorSubject,undefined);
+assert.equal((await call(cumulativePath+'?page=1',{cookie:cookieA})).data.current.some(
+ x=>x.itemId===canonicalOp.itemId),false);
+assert.equal((await call(cumulativePath+'?page=1',{cookie:cookieA})).data.legacyPrivate.some(
+ x=>x.itemId==='stroke-1'),true);
 const teacherOverlay='/v1/teacher/learners/'+learner+'/cumulative-quran';
 assert.equal((await call(teacherOverlay+'?page=1',{cookie:cookieA})).response.status,404);
 assert.equal((await call(teacherOverlay+'?page=1')).response.status,401);
 assert.equal((await call(teacherOverlay,{method:'POST',cookie:cookieA,body:{action:'put'}})).response.status,405);
-console.log('Native cumulative Quran: owner legacy+new composite, foreign 404, unauth 401, invalid page 400, no write route, teacher-private isolation PASS');
+console.log('Native cumulative Quran: owner private event ACK/replay/CAS/hide, legacy isolation, forgery and cross-owner denial PASS');
 
 
 assert.equal((await call('/v1/learners/'+learner,{cookie:cookieB,headers:{'x-account-id':'forged-owner-a'}})).response.status,404);
