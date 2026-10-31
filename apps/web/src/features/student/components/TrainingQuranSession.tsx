@@ -6,12 +6,24 @@ import { QuranRecitationPlayer } from './QuranRecitationPlayer';
 import { TrainingVoicePractice } from './TrainingVoicePractice';
 import { quranChapterUrl,parseQuranChapter,type QuranAyahReference } from '../quranSource';
 import { referencesForRange,type QuranAssignmentRange } from '../quranAssignment';
+import {validTrainingPages,moveTrainingPage} from '../training-page-window';
 import type { QuranTarget } from '../quranAnnotations';
 import css from './TrainingWorkspace.module.css';
 
-type Props={range:QuranAssignmentRange;title:string;onClose:()=>void};
+type Props={range:QuranAssignmentRange;title:string;onClose:()=>void;endPage?:number};
 
-export function TrainingQuranSession({range,title,onClose}:Props){
+export function TrainingQuranSession({range,title,onClose,endPage}:Props){
+  const lastPage=endPage??range.page;
+  const validPages=validTrainingPages(range.page,lastPage);
+  const [viewPage,setViewPage]=useState(range.page);
+  const multiplePages=validPages&&lastPage>range.page;
+  function move(direction:-1|1){
+    if(!validPages)return;
+    setViewPage(current=>moveTrainingPage(range.page,lastPage,current,direction));
+    // A fresh printed page must not keep a playing audio/selected verse
+    // that appears to belong to the previous page.
+    setCurrentAudio(null);setShowAudio(false);setNoteMessage('');
+  }
   const {selected:activeLearner}=useStudent();
   const cumulativeLearnerId=!activeLearner.profile.demo&&process.env.NEXT_PUBLIC_ACCOUNT_UI==='true'?
     activeLearner.profile.id:undefined;
@@ -66,15 +78,28 @@ export function TrainingQuranSession({range,title,onClose}:Props){
   const practiceRevealedKeys=useMemo(()=>hidden?
     new Set(revealed.map(ayah=>range.surah+':'+ayah)):undefined,
     [hidden,revealed,range.surah]);
+  if(!validPages)return <section className={css.studySession} role="alert">
+    <p>نطاق صفحات الواجب غير صالح. حدّث واجباتك المنشورة قبل التدريب.</p>
+    <button className={css.outlineButton} type="button" onClick={onClose}>إغلاق</button>
+  </section>;
   return <section className={css.studySession} aria-label={'عارض تدريب القرآن: '+title}>
     <header className={css.studyHeader}>
       <div><span className={css.overline}>عارض المصحف نفسه · وضع التدريب</span>
-        <h3>{title}</h3><p>سورة {range.surah} · الآيات {range.fromAyah}–{range.toAyah} · صفحة {range.page}</p></div>
+        <h3>{title}</h3><p>سورة {range.surah} · الآيات {range.fromAyah}–{range.toAyah} · صفحة {viewPage}{multiplePages?' من '+range.page+' إلى '+lastPage:''}</p></div>
       <button type="button" className={css.outlineButton} onClick={onClose}>إغلاق التدريب</button>
     </header>
+    {multiplePages&&<nav className={css.actions} aria-label="التنقل بين صفحات الواجب">
+      <button className={css.outlineButton} type="button"
+       disabled={viewPage<=range.page} onClick={()=>move(-1)}>الصفحة السابقة</button>
+      <strong aria-live="polite">صفحة {viewPage} · {viewPage-range.page+1} من {lastPage-range.page+1}</strong>
+      <button className={css.outlineButton} type="button"
+       disabled={viewPage>=lastPage} onClick={()=>move(1)}>الصفحة التالية</button>
+      <span className={css.subtle}>التنقل داخل صفحات الواجب المنشورة فقط؛
+       علامات المصحف الموحد محفوظة في مصدرها الأصلي.</span>
+    </nav>}
     <div className={css.studyGrid}>
       <div className={css.printedPane}>
-        <ReaderPrintedPage page={range.page} inkMode="off" color="#f6cd46"
+        <ReaderPrintedPage page={viewPage} inkMode="off" color="#f6cd46"
           strokes={[]} selectedKey={currentAudio ? currentAudio.surah+':'+currentAudio.ayah : selected}
           noteKeys={new Set()} focusKeys={keys} allowedKeys={keys}
           practiceRevealedKeys={practiceRevealedKeys}
@@ -114,7 +139,7 @@ export function TrainingQuranSession({range,title,onClose}:Props){
             onClick={()=>{setHidden(true);setRevealed([]);}}>ابدأ اختبارًا جديدًا</button>
         </div>
         {noteMessage&&<p role="status" className={css.subtle}>{noteMessage}</p>}
-        {showAudio&&<QuranRecitationPlayer request={{token:audioToken,scope:'ayah',page:range.page,ayah:active}}
+        {showAudio&&<QuranRecitationPlayer request={{token:audioToken,scope:'ayah',page:viewPage,ayah:active}}
           pageVerses={refs} surahs={[]} onVerseChange={setCurrentAudio} onClose={()=>{setShowAudio(false);setCurrentAudio(null);}}/>}
         <TrainingVoicePractice />
       </div>
