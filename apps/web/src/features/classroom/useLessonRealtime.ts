@@ -29,7 +29,8 @@ export function useLessonRealtime(
  const onHintRef=useRef(onHint),onReconnectRef=useRef(onReconnect);
  onHintRef.current=onHint;onReconnectRef.current=onReconnect;
  useEffect(()=>{
-  if(!identity||!joined||typeof WebSocket==='undefined')return;
+  if(process.env.NEXT_PUBLIC_NOOR_REALTIME_HINTS_ENABLED!=='true'||
+     !identity||!joined||typeof WebSocket==='undefined')return;
   let stopped=false,socket:WebSocket|null=null,timer:number|undefined,backoff=500;
   const lastSeen=new Map<string,number>();
   const clear=()=>{if(timer!==undefined){window.clearTimeout(timer);timer=undefined;}};
