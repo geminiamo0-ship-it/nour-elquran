@@ -1,3 +1,9 @@
+## 2026-10-31 / #244 — booked trial slot withdrawal guard (candidate, NOT merged)
+- Found that migration 0021 allowed staff to close an advertised trial slot even after a confirmed booking; the lesson remained scheduled, contradicting the documented *unfilled slot only* withdrawal contract.
+- Branch `fix/244-reject-closing-booked-trial-slot-20261031` adds append-only migration 0023: existing staff/time checks remain, and an active booked lesson now blocks slot closure with `TRIAL_SLOT_ALREADY_BOOKED`. Cancellation of the actual lesson must be explicit and authorized first; no automatic cancellations, fees or provider effects.
+- Added full-migration SQLite regression in `workers/api/tests/test_free_trial_booking.py`: booked withdrawal denied with no side effects; after staff cancels the lesson, withdrawal is allowed and new booking is rejected.
+- **Candidate only:** exact-head Verify, independent PR review and signed Cloudflare Dev acceptance pending. No Production migration, no payment activation, no real child data; #244 remains OPEN.
+
 ## 2026-10-31 / #252 — ink snapshot ACK semantics candidate (NOT merged)
 - Branch `fix/252-ink-snapshot-ack-semantics-20261031` removes a false global-save signal from classroom DO ink **snapshots**: an empty pending outbox is not proof that legacy DO strokes reached canonical D1. Only the actual append/replay response may say `persistence:'saved'`; snapshots still report `pending` when a durable delivery is outstanding.
 - Added a regression for historical room-only ink after feature-flag enablement and a pending D1 outage snapshot. Exact-head CI, review and Cloudflare Dev acceptance are **pending**; flag remains OFF and #252 stays OPEN. No Production or real learner data changed.
