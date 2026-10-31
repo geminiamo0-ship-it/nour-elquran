@@ -1,3 +1,8 @@
+## #244 native D1 0023→0024 booked trial guard (PR #280 candidate)
+- `scripts/fixtures/trial-slot-native-pre0024.sql`: disposable verified-staff and owner booking fixture, real synthetic 40-minute scheduled lesson seeded after native 0023 and before 0024. No personal data.
+- `scripts/cloudflare-local-smoke.sh`: correctly stages historical 0022 then 0023 then 0024, rejects booked withdrawal atomically, permits closure only after owner cancellation, verifies replay and FK integrity. Existing Sheikh pen/highlight and sibling regression preserved.
+- This is **native local D1 CI only**, not signed Cloudflare Dev acceptance. #244/#286 remain OPEN; 0024 is not approved for remote deployment until review and #286 Dev gate.
+
 ## #244 / 0024 booked trial closure guard after merged 0023 (candidate)
 - `workers/api/migrations/0024_trial_slot_close_booking_guard.sql` replaces only the trial-slot closure trigger, denying booked slots without altering lessons. `workers/api/tests/test_free_trial_booking.py` checks full 0023→0024 migration metadata, trigger presence, booking denial and post-cancel closure. Remote Dev acceptance is pending.
 
