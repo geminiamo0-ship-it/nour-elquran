@@ -24,6 +24,34 @@ echo "Applying D1 migration to disposable LOCAL state"
 echo "Checking migration is replay-safe in local Wrangler"
 "${wrangler[@]}" d1 migrations apply noor-core-local --local --persist-to "$state"
 
+# #244: native D1 test the *actual nested trigger chain* rather than
+# inferring atomic replacement behavior from Python SQLite unit tests.
+echo "Checking native D1 trial replacement: collision rollback then new booking"
+"${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/trial-reschedule-native-seed.sql > "$state/trial-reschedule-seed.log"
+if ! grep -q 'NATIVE_TRIAL_RESCHEDULE_SEEDED' "$state/trial-reschedule-seed.log"; then
+  echo "Native D1 synthetic trial booking seed failed" >&2
+  exit 1
+fi
+if "${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/trial-reschedule-native-conflict.sql > "$state/trial-reschedule-conflict.log" 2>&1; then
+  echo "Native D1 unexpectedly accepted occupied replacement slot" >&2
+  exit 1
+fi
+if ! grep -q 'TRIAL_RESCHEDULE_SLOT_OCCUPIED' "$state/trial-reschedule-conflict.log"; then
+  echo "Native D1 occupied replacement failed for unexpected reason" >&2
+  exit 1
+fi
+"${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/trial-reschedule-native-success.sql > "$state/trial-reschedule-success.log"
+for proof in NATIVE_TRIAL_RESCHEDULE_CONFLICT_ATOMIC NATIVE_TRIAL_RESCHEDULE_COMMITTED; do
+  if ! grep -q "$proof" "$state/trial-reschedule-success.log"; then
+    echo "Native D1 trial replacement acceptance missing: $proof" >&2
+    exit 1
+  fi
+done
+echo "PASS: native D1 original booked slot preserved on failure, replacement atomic, sibling unaffected"
+
 # #286: prove a REAL native Wrangler D1 forward upgrade from an existing
 # populated 0022 database, not only a fresh schema / Python SQLite copy.
 # All resources, config, data, and the stub Worker are temporary LOCAL files.
