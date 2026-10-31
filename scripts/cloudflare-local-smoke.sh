@@ -24,6 +24,16 @@ echo "Applying D1 migration to disposable LOCAL state"
 echo "Checking migration is replay-safe in local Wrangler"
 "${wrangler[@]}" d1 migrations apply noor-core-local --local --persist-to "$state"
 
+# Issue #286: exercise the exact pen+highlight draft INSERT in native local D1,
+# not Python's SQLite engine. Fixture is synthetic and this state is disposable.
+echo "Checking native D1 teacher marked-homework write (synthetic only)"
+"${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/teacher-draft-native-d1.sql > "$state/draft-smoke.log"
+if ! grep -q 'NATIVE_DRAFT_WRITE_OK' "$state/draft-smoke.log"; then
+  echo "Native D1 teacher draft write did not return the expected confirmation" >&2
+  exit 1
+fi
+
 echo "Starting LOCAL Worker + D1 (no publish)"
 "${wrangler[@]}" dev --local --ip 127.0.0.1 --port 8793 --persist-to "$state" > "$state/worker.log" 2>&1 &
 worker_pid=$!
