@@ -191,8 +191,14 @@ export async function teacherLifecycleAction(env:Env,subject:string,lessonId:str
   const fresh=await teacherRow(db,subject,lessonId,now);
   if(!fresh)return {status:404,code:'NOT_FOUND'};
   const state=await safe(db,fresh);
+  // D1 reports SQLite total_changes in meta: the lesson UPDATE can also
+  // create owner/teacher inbox notifications through immutable SQL triggers.
+  // Those extra rows do not invalidate the single guarded lifecycle UPDATE.
+  // The paired INSERT SELECT ... changes()=1 and unique source constraints
+  // enforce the exact direct transition within the atomic D1 batch.
   const eventWritten=results[0]?.success===true&&results[1]?.success===true&&
-   results[0]?.meta.changes===1&&results[1]?.meta.changes===1;
+   Number.isInteger(results[0]?.meta.changes)&&Number.isInteger(results[1]?.meta.changes)&&
+   (results[0]?.meta.changes??0)>=1&&(results[1]?.meta.changes??0)>=1;
   if(!eventWritten){
    // May be a competing request. Require a real prior Start audit, and never
    // report a newly committed transition if its paired audit is absent.

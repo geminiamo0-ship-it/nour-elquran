@@ -16,7 +16,7 @@ test('accept only explicit teacher command with strict V4 operation ID',()=>{
   assert.equal(parseLifecycleAction(value),null);
 });
 function harness(config:{both?:boolean;authorized?:boolean;noBatch?:boolean;owner?:boolean;
- inkEnabled?:boolean;failEndOnce?:boolean}={}){
+ inkEnabled?:boolean;failEndOnce?:boolean;inboxTriggerWrites?:number}={}){
  let status:'scheduled'|'live'|'completed'='scheduled',endedAtMs:null|number=null;
  let startedAtMs:null|number=null,events=0,failedEnd=false,inkClosed=false;
  const statements:string[]=[];
@@ -46,9 +46,13 @@ function harness(config:{both?:boolean;authorized?:boolean;noBatch?:boolean;owne
     failedEnd=true;throw Error('SYNTHETIC_END_D1_OUTAGE');
    }
    events++;
+   const ending=status==='live';
    if(status==='scheduled'){status='live';startedAtMs=now;}
    else if(status==='live'){status='completed';endedAtMs=now+20_000;}
-   return [{success:true,meta:{changes:1}},{success:true,meta:{changes:1}}];
+   // Cloudflare D1 meta reports total changes including source-triggered
+   // inbox rows. The guarded event SELECT still sees direct changes()=1.
+   return [{success:true,meta:{changes:ending?1+(config.inboxTriggerWrites??0):1}},
+           {success:true,meta:{changes:1}}];
   }}:{}),
  };
  const calls:string[]=[];
@@ -130,4 +134,19 @@ test('End D1 failure releases same signed DO writer fence before retry',async()=
  assert.equal(retried.code,'LESSON_ENDED');
  assert.equal(h.isInkClosed(),true,'successful End permanently closes writes');
  assert.equal(h.events(),2);
+});
+
+test('D1 trigger-generated inbox notices cannot make a genuinely committed End appear replayed',async()=>{
+ const h=harness({inboxTriggerWrites:2});
+ const startId='1145a6fa-1d94-4994-91e7-5819692ba3b6';
+ const endId='2145a6fa-1d94-4994-91e7-5819692ba3b6';
+ assert.equal((await teacherLifecycleAction(h.env,teacherSubject,lessonId,
+  'start',startId,now)).code,'LESSON_STARTED');
+ const completed=await teacherLifecycleAction(h.env,teacherSubject,lessonId,
+  'end',endId,now+20_000);
+ assert.equal(completed.code,'LESSON_ENDED');
+ assert.equal(completed.lifecycle?.phase,'completed');
+ assert.equal(h.events(),2);
+ assert.equal((await teacherLifecycleAction(h.env,teacherSubject,lessonId,
+  'end',endId,now+21_000)).code,'LESSON_ALREADY_ENDED');
 });

@@ -616,7 +616,7 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     const result=request.method==='GET'
       ?await readTeacherInkDrafts(env.DB,session.user.id,learnerId)
       :await saveTeacherInkDraft(env.DB,session.user.id,learnerId,
-        await readObject(request,180000));
+        await readObject(request,180000),Date.now(),env.NOOR_ENVIRONMENT==='staging');
     const {status,...body}=result;
     return reply(status,body,requestId);
   }

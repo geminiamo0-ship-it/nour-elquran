@@ -124,4 +124,18 @@ class FreeTrialD1(unittest.TestCase):
    self.book(slot)
   self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
 
+ def test_full_migration_chain_includes_both_0023_and_0024(self):
+  # The fixture applies all migrations in order, including the merged
+  # ink compatibility guard and this branch's trial closure guard.
+  versions=dict(self.db.execute("""SELECT component,version FROM noor_schema_meta
+    WHERE component IN ('quran_ink_color_d1_compat',
+                        'trial_slot_close_booking_guard')""").fetchall())
+  self.assertEqual(versions,{
+   'quran_ink_color_d1_compat':1,
+   'trial_slot_close_booking_guard':1})
+  self.assertEqual(self.db.execute("""SELECT COUNT(*) FROM sqlite_master
+    WHERE type='trigger' AND name IN
+    ('teacher_assignment_draft_guard','learner_quran_event_guard',
+     'trial_slot_close_guard')""").fetchone(),(3,))
+
 if __name__=='__main__':unittest.main()

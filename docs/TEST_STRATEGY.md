@@ -1,10 +1,5 @@
-## #244/#286 concurrent D1 migration sequence (2026-10-31; NOT runtime accepted)
-- Two open PRs independently claimed `0023`: P0 #286 D1 native ink guard and #244 booked-trial slot closure. PR #280 now uses `0024_trial_slot_close_booking_guard.sql` and remains blocked on PR #288/0023.
-- After approved #288 merges, rebase #280 and run the *combined* full forward migration sequence 0022→0023→0024 on native Wrangler/D1, including existing private Sheikh draft, canonical ink publish and booked trial withdrawal rejection; check schema metadata and idempotent SQL protections. Python SQLite alone is not remote Dev proof. Run exact-head CI and signed Cloudflare Dev acceptance; no Production or feature flag change.
-
-## #244 staff trial slot withdrawal after booking — source regression (candidate)
-- Full D1 migration test `test_free_trial_booking.py::FreeTrialD1::test_staff_cannot_withdraw_an_actively_booked_trial_slot` verifies active booked trial cannot be withdrawn by staff (atomic `TRIAL_SLOT_ALREADY_BOOKED`), original lesson stays scheduled, and no closure event appears.
-- After separately authorized staff cancellation, the same slot may be withdrawn; a later trial booking must be denied. Run exact-head Verify (native SQLite/migration suites) and isolated signed Cloudflare Dev before claiming runtime acceptance. This does not implement subscriptions or payments.
+## #244 combined 0023→0024 source gate (2026-10-31; candidate)
+- With P0 ink migration 0023 merged into main, apply this branch's forward-only 0024 via full sorted migrations. Python SQLite asserts both schema markers and all three guards; native Wrangler/D1 CI must run all migrations too. Signed remote Dev 0023 upgrade and signed staff/owner 0024 withdrawal are **not** established by source tests. Independent review, remote Dev acceptance and production permission remain separate.
 
 ## #252 ink snapshot truthfulness regression (candidate; no runtime acceptance)
 - A DO snapshot must never claim `persistence:'saved'` solely from an empty outbox: historical room-only marks may not have a D1 event. Pending D1 delivery must remain `pending`; only a confirmed append/replay may report `saved`.
