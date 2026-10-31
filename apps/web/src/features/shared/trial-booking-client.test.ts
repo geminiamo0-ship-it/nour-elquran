@@ -44,4 +44,27 @@ describe('signed first free trial API',()=>{
     '2145a6fa-1d94-4994-91e7-5819692ba3b6'))
    .rejects.toThrow('INVALID_TRIAL_RESPONSE');
  });
+ it('owner cancellation has exact child URL, immutable lesson and operation only',async()=>{
+  const mock=vi.fn().mockResolvedValue(respond(201,{
+   code:'TRIAL_CANCELLED',lessonId:'7145a6fa-1d94-4994-91e7-5819692ba3b6'}));
+  vi.stubGlobal('fetch',mock);
+  expect(await trialBookingClient.cancel('child-a',
+   '7145a6fa-1d94-4994-91e7-5819692ba3b6',
+   '2145a6fa-1d94-4994-91e7-5819692ba3b6'))
+   .toBe('7145a6fa-1d94-4994-91e7-5819692ba3b6');
+  expect(mock.mock.calls[0]?.[0]).toBe('/v1/me/learners/child-a/trial-cancellations');
+  expect(JSON.parse(mock.mock.calls[0]?.[1]?.body)).toEqual({
+   lessonId:'7145a6fa-1d94-4994-91e7-5819692ba3b6',
+   operationId:'2145a6fa-1d94-4994-91e7-5819692ba3b6'});
+ });
+ it('denied or incorrect cancellation ACK cannot remove lesson optimistically',async()=>{
+  const mock=vi.fn().mockResolvedValueOnce(respond(409,{code:'TRIAL_CANCELLATION_WINDOW_CLOSED'}))
+   .mockResolvedValueOnce(respond(200,{code:'TRIAL_CANCELLED',lessonId:'different'}));
+  vi.stubGlobal('fetch',mock);
+  const a=['child-a','7145a6fa-1d94-4994-91e7-5819692ba3b6',
+   '2145a6fa-1d94-4994-91e7-5819692ba3b6'] as const;
+  await expect(trialBookingClient.cancel(...a)).rejects.toThrow('TRIAL_CANCELLATION_WINDOW_CLOSED');
+  await expect(trialBookingClient.cancel(...a)).rejects.toThrow('INVALID_TRIAL_RESPONSE');
+ });
+
 });

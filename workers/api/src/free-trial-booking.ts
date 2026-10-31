@@ -170,3 +170,49 @@ export async function closeTrialSlot(db:CoreDatabase,subject:string,slotId:strin
  }
  return {status:200,code:'TRIAL_SLOT_CLOSED'} as const;
 }
+
+export type TrialCancellationCommand=Readonly<{operationId:string;lessonId:string}>;
+export function parseTrialCancellation(raw:unknown):TrialCancellationCommand|null{
+ if(!isObject(raw)||!exact(raw,['operationId','lessonId'])||
+  typeof raw.operationId!=='string'||!uuid.test(raw.operationId)||
+  typeof raw.lessonId!=='string'||!uuid.test(raw.lessonId))return null;
+ return raw as TrialCancellationCommand;
+}
+type PriorCancel={lesson_id:string;learner_id:string;actor_subject:string};
+export async function cancelOwnerTrial(db:CoreDatabase,subject:string,learnerId:string,
+ raw:unknown,now=Date.now()){
+ const cmd=parseTrialCancellation(raw);
+ if(!cmd)return {status:400,code:'INVALID_TRIAL_CANCELLATION'} as const;
+ if(!await verifiedOwner(db,subject,learnerId))
+  return {status:404,code:'NOT_FOUND'} as const;
+ const find=()=>db.prepare(`SELECT lesson_id,learner_id,actor_subject
+  FROM trial_owner_cancellation_events WHERE operation_id=?`)
+ .bind(cmd.operationId).first<PriorCancel>();
+ const replay=(v:PriorCancel)=>v.lesson_id===cmd.lessonId&&
+  v.learner_id===learnerId&&v.actor_subject===subject?
+   {status:200,code:'TRIAL_ALREADY_CANCELLED',lessonId:v.lesson_id} as const:
+   {status:409,code:'TRIAL_OPERATION_CONFLICT'} as const;
+ const previous=await find();
+ if(previous)return replay(previous);
+ const row=await db.prepare(`SELECT l.id,l.starts_at_ms AS startsAtMs
+  FROM lessons l JOIN trial_booking_events t ON t.lesson_id=l.id
+  WHERE l.id=? AND l.learner_id=? AND l.kind='trial'
+  AND l.status='scheduled'`)
+ .bind(cmd.lessonId,learnerId).first<{id:string;startsAtMs:number}>();
+ if(!row)return {status:404,code:'NOT_FOUND'} as const;
+ if(row.startsAtMs<now+21600000)
+  return {status:409,code:'TRIAL_CANCELLATION_WINDOW_CLOSED'} as const;
+ try{
+  await db.prepare(`INSERT INTO trial_owner_cancellation_events(
+   id,operation_id,lesson_id,learner_id,actor_subject,at_ms)
+   VALUES(?,?,?,?,?,?)`)
+   .bind(crypto.randomUUID(),cmd.operationId,cmd.lessonId,learnerId,subject,now).run();
+ }catch(e){
+  const raced=await find();
+  if(raced)return replay(raced);
+  if(e instanceof Error&&/constraint|TRIAL_|FOREIGN KEY|UNIQUE/i.test(e.message))
+   return {status:409,code:'TRIAL_CANCELLATION_DENIED'} as const;
+  throw e;
+ }
+ return {status:201,code:'TRIAL_CANCELLED',lessonId:cmd.lessonId} as const;
+}
