@@ -125,7 +125,7 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
      <button type="button" onClick={()=>{setRetry(x=>x+1);setUncertain(false);setEditor(null);}} disabled={saving}>تحديث الواجبات</button>
     </div>
    </form>
-   {(currentLoaded&&state.draftsUnavailable)&&<p role="alert">
+   {(state.status==='loaded'&&currentLoaded&&state.draftsUnavailable)&&<p role="alert">
       تعذّر تحميل علامات الواجب للطالب المختار؛ لم نفعّل نشر العلامات حتى يرد الخادم بشكل سليم.
       السبب: <code>{state.draftsError??'DRAFT_UNAVAILABLE'}</code>.
       {state.draftsError==='DRAFT_SCHEMA_NOT_READY'
