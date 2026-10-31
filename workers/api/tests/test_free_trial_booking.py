@@ -61,10 +61,10 @@ class FreeTrialD1(unittest.TestCase):
   with self.assertRaisesRegex(sqlite3.IntegrityError,'TRIAL_SLOT_OVERLAP'):
    self.open(starts=T+SLOT+1200000)
   self.fixture.action('assign',start=T,end=T+366*86400000)
-  booked=self.fixture.action('book',kind='standard')
+  booked=self.fixture.action('book',start=T+3*SLOT,kind='standard')
   self.assertIsNotNone(booked)
   with self.assertRaisesRegex(sqlite3.IntegrityError,'TRIAL_SLOT_OCCUPIED'):
-   self.open(starts=T+SLOT)
+   self.open(starts=T+3*SLOT)
  def test_early_authorized_cancel_allows_rebook_not_second_attended_trial(self):
   firstSlot=self.open(starts=T+7*3600000)
   lesson=self.book(firstSlot)
