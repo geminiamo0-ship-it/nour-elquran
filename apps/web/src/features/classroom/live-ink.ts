@@ -52,7 +52,9 @@ export async function fetchLiveInk(id:ConnectedIdentity,page:number,change?:InkC
   return {code:String(body.code),ink:body.ink,
    ...(body.persistence==='pending'||body.persistence==='saved'?{persistence:body.persistence}:{}),
    ...(typeof body.canWrite==='boolean'?{canWrite:body.canWrite}:{})};
- throw Error(typeof body?.code==='string'?body.code:'CLASSROOM_INK_UNAVAILABLE');
+ // Reject a malformed successful snapshot instead of surfacing its success code.
+ if(!response.ok&&typeof body?.code==='string')throw Error(body.code);
+ throw Error('CLASSROOM_INK_UNAVAILABLE');
 }
 /** One drawn stroke can be 2500 pointer points; the server enforces <=600. */
 export function compactStroke(stroke:QuranInkStroke):QuranInkStroke{
