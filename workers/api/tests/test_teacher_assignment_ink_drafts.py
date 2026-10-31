@@ -83,6 +83,9 @@ class TeacherDraftD1(unittest.TestCase):
  def test_versioning_publishes_latest_only_and_freezes_draft(self):
   self.draft()
   self.draft(rev=2,marks=[NOTE_MARK],at=2100)
+  # Keep accepted revisions outside the negative-case transaction: sqlite3
+  # rolls back all uncommitted setup writes if that expected insert aborts.
+  self.db.commit()
   with self.assertRaisesRegex(sqlite3.IntegrityError,'DRAFT_REVISION_CONFLICT'):
    self.draft(rev=4,marks=[],at=2200)
   with self.assertRaisesRegex(sqlite3.IntegrityError,'DRAFT_REVISION_CONFLICT'):
