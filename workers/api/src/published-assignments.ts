@@ -107,10 +107,19 @@ export async function publishAssignment(db:CoreDatabase,subject:string,learnerId
     return {status:409,code:'ASSIGNMENT_OPERATION_CONFLICT'} as const;
   return {status:200,code:'ASSIGNMENT_ALREADY_PUBLISHED',assignmentId:row.assignment_id} as const;
  };
+ // Legacy text-only assignment replay must work before the optional draft
+ // migration has been installed in a given environment.
+ const boundDraft=async()=>{
+  const schema=await db.prepare(
+   "SELECT version FROM noor_schema_meta WHERE component='teacher_assignment_drafts'"
+  ).first<{version:number}>();
+  if(schema?.version!==1)return null;
+  return db.prepare(`SELECT draft_id FROM teacher_assignment_draft_publications
+    WHERE operation_id=?`).bind(command.operationId).first<{draft_id:string}>();
+ };
  const prior=await find();
  if(prior){
-  const binding=await db.prepare(`SELECT draft_id FROM teacher_assignment_draft_publications
-   WHERE operation_id=?`).bind(command.operationId).first<{draft_id:string}>();
+  const binding=await boundDraft();
   if((binding?.draft_id??undefined)!==command.draftId)
    return {status:409,code:'ASSIGNMENT_OPERATION_CONFLICT'} as const;
   return replay(prior);
@@ -150,8 +159,7 @@ export async function publishAssignment(db:CoreDatabase,subject:string,learnerId
  }catch(error){
   const other=await find();
   if(other){
-   const binding=await db.prepare(`SELECT draft_id FROM teacher_assignment_draft_publications
-     WHERE operation_id=?`).bind(command.operationId).first<{draft_id:string}>();
+   const binding=await boundDraft();
    if((binding?.draft_id??undefined)!==command.draftId)
     return {status:409,code:'ASSIGNMENT_OPERATION_CONFLICT'} as const;
    return replay(other);
