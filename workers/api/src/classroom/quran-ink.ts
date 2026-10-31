@@ -4,7 +4,7 @@ export type InkStroke=Readonly<{
  id:string;page:number;color:string;width:number;kind:'pen'|'marker';points:readonly InkPoint[];
 }>;
 export type InkRecord=Readonly<{
- stroke:InkStroke;author:'teacher';subject:string;visible:boolean;revision:number;
+ stroke:InkStroke;author:'teacher'|'learner';subject:string;visible:boolean;revision:number;
 }>;
 export type InkPage=Readonly<{
  page:number;revision:number;records:readonly InkRecord[];
@@ -46,7 +46,7 @@ export function parseInkCommand(value:unknown):VerifiedInkCommand|null{
   (r.role!=='teacher'&&r.role!=='learner')||
   !Number.isInteger(r.page)||Number(r.page)<1||Number(r.page)>604)return null;
  if(r.action==='snapshot')return keys.length===6?r as VerifiedInkCommand:null;
- if(r.role!=='teacher'||!['add','hide'].includes(String(r.action))||keys.length!==9||
+ if(!['add','hide'].includes(String(r.action))||keys.length!==9||
   !Number.isSafeInteger(r.expectedRevision)||Number(r.expectedRevision)<0||
   typeof r.requestId!=='string'||!rid.test(r.requestId))return null;
  if(r.action==='add'&&
@@ -71,10 +71,14 @@ export function applyInk(s:InkPage,c:VerifiedInkCommand):
   s.records.some(x=>x.stroke.id===c.stroke!.id)))
   return {code:s.records.length>=MAX_PAGE_MARKS?'INK_LIMIT':'INK_CONFLICT',next:s};
  const target=c.action==='hide'?s.records.find(x=>x.stroke.id===c.strokeId):null;
- if(c.action==='hide'&&(!target||!target.visible))return {code:'INK_CONFLICT',next:s};
+ // The learner can erase only their own ink. The verified Sheikh can moderate
+ // any shared lesson ink without changing its original author attribution.
+ if(c.action==='hide'&&(!target||!target.visible||
+    (c.role==='learner'&&target.subject!==c.actorSubject)))
+  return {code:'INK_CONFLICT',next:s};
  const revision=s.revision+1;
  const records=c.action==='add'?
-  [...s.records,{stroke:c.stroke!,author:'teacher' as const,subject:c.actorSubject,visible:true,revision}]:
+  [...s.records,{stroke:c.stroke!,author:c.role,subject:c.actorSubject,visible:true,revision}]:
   s.records.map(x=>x.stroke.id===c.strokeId?{...x,visible:false,revision}:x);
  return {code:'INK_APPLIED',next:{page:s.page,revision,records,
   receipts:[...s.receipts.slice(-31),{requestId:c.requestId!,subject:c.actorSubject,

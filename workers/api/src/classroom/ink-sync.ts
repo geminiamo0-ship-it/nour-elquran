@@ -17,7 +17,9 @@ export function parseClientInk(value:unknown,role:'teacher'|'learner'):InkAction
    action,page:x.page});
   return cmd?{action:'snapshot',page:x.page as number}:null;
  }
- if(role!=='teacher'||(action!=='add'&&action!=='hide')||Object.keys(x).length!==5)return null;
+ // The Worker may still expose learner GET only until canonical D1 sync is ready.
+ // This internal parser keeps the signed role and never accepts browser actor IDs.
+ if((action!=='add'&&action!=='hide')||Object.keys(x).length!==5)return null;
  const cmd=parseInkCommand({lessonId:'validated',learnerId:'validated',actorSubject:'validated',
   role,action,page:x.page,expectedRevision:x.expectedRevision,requestId:x.requestId,
   ...(action==='add'?{stroke:x.stroke}:{strokeId:x.strokeId})});
@@ -50,7 +52,7 @@ export function validInk(raw:unknown):raw is InkView{
  if(Object.keys(s).length!==3||!Number.isInteger(s.page)||Number(s.page)<1||Number(s.page)>604||
   !Number.isSafeInteger(s.revision)||Number(s.revision)<0||
   !Array.isArray(s.strokes)||s.strokes.length>200)return false;
- // Reuse the same canonical strict stroke validator via a teacher-only add command.
+ // Reuse the same strict stroke validator; snapshots contain no client identities.
  return s.strokes.every((stroke:unknown)=>parseInkCommand({
   lessonId:'validated',learnerId:'validated',actorSubject:'validated',role:'teacher',
   action:'add',page:s.page,expectedRevision:0,requestId:'ink-check-0001',stroke
