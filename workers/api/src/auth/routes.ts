@@ -13,6 +13,7 @@ import {readOwnerPlan,readTeacherPlan,writeTeacherPlan,parsePlanAction} from '..
 import {readOwnerAssignments,readTeacherAssignments,getAssignmentCatalog,publishAssignment,parsePublishAssignment} from '../published-assignments.ts';
 import {listInbox,changeInboxRead} from '../in-app-inbox.ts';
 import {reportAttendanceIncident,submitAttendanceAppeal,listOwnerAttendance,listTeacherAttendance,listStaffAttendanceAppeals,reviewAttendanceAppeal} from '../attendance-cases.ts';
+import {publishTrialSlot,listOwnerTrialSlots,bookOwnerTrial} from '../free-trial-booking.ts';
 import {readTeacherInkDrafts,saveTeacherInkDraft,teacherAssignmentPageRange} from '../teacher-assignment-ink-drafts.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
@@ -111,6 +112,20 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
     const result=await applyLearnerProfileAction(db,accountId,authSubject,profileMatch[1]!,input);
     const {status,...body}=result;
     return reply(status,body,requestId);
+  }
+  const trialRoute=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/(trial-slots|trial-bookings)$/.exec(path);
+  if(trialRoute){
+    const learnerId=trialRoute[1]!,mode=trialRoute[2]!;
+    if(request.method!==(mode==='trial-slots'?'GET':'POST'))
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await db.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='free_trial_booking'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'TRIAL_SCHEMA_NOT_READY'},requestId);
+    const result=mode==='trial-slots'
+      ?await listOwnerTrialSlots(db,authSubject,learnerId)
+      :await bookOwnerTrial(db,authSubject,learnerId,await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
   }
   const ownedAttendance=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/(attendance-cases|attendance-appeals)$/.exec(path);
   if(ownedAttendance){
@@ -441,6 +456,15 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // The library re-reads the signed session from D1; cookie cache and unverified token auth are disabled.
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return reply(401, { code: 'UNAUTHENTICATED' }, requestId);
+  if(path==='/v1/staff/trial-slots'){
+    if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='free_trial_booking'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'TRIAL_SCHEMA_NOT_READY'},requestId);
+    const result=await publishTrialSlot(env.DB,session.user.id,await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
   if(path==='/v1/staff/attendance-appeals'||path==='/v1/staff/attendance-appeals/review'){
     const list=path==='/v1/staff/attendance-appeals';
     if(request.method!==(list?'GET':'POST'))
