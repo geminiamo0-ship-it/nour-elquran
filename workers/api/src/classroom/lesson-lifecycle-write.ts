@@ -7,7 +7,7 @@ import {forwardVerifiedPresence} from './presence.ts';
 import {wakeLessonMediaReconciliation} from './media-enforcement.ts';
 import {forwardCorrections,type Correction} from './live-corrections.ts';
 import {applyTeacherReport} from '../lesson-reports.ts';
-import {fenceLessonCumulativeInk} from './quran-ink-end-fence.ts';
+import {fenceLessonCumulativeInk,releaseLessonCumulativeInk} from './quran-ink-end-fence.ts';
 
 const id=/^[A-Za-z0-9-]{1,128}$/;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -123,6 +123,11 @@ export async function teacherLifecycleAction(env:Env,subject:string,lessonId:str
  if(!env.DB)return {status:503,code:'DATABASE_UNAVAILABLE'};
  const db=env.DB;
  if(!id.test(lessonId)||!uuid.test(operationId))return {status:404,code:'NOT_FOUND'};
+ // A successful prepare is held until D1 confirms the final End. If End
+ // fails or has an ambiguous result, DO may release only after its own fresh
+ // D1 read proves the lesson remains live.
+ let fencedLearner:string|undefined;
+ let endCommitted=false;
  try{
   const row=await teacherRow(db,subject,lessonId,now);
   if(!row)return {status:404,code:'NOT_FOUND'};
@@ -139,8 +144,10 @@ export async function teacherLifecycleAction(env:Env,subject:string,lessonId:str
   // BEFORE committing D1 completion. Pending/unacknowledged Quran strokes
   // keep the lesson open, never become a silent 'completed' report.
   if(action==='end'&&env.NOOR_CUMULATIVE_INK_ENABLED==='true'){
-   const fence=await fenceLessonCumulativeInk(env,lessonId,row.learnerId,subject);
+   const fence=await fenceLessonCumulativeInk(env,lessonId,row.learnerId,subject,
+    operationId);
    if(fence.status!==200)return {status:fence.status,code:fence.code};
+   fencedLearner=row.learnerId;
   }
   if(action==='start'){
    const p=await forwardVerifiedPresence(env,{lessonId,learnerId:row.learnerId,
@@ -196,6 +203,7 @@ export async function teacherLifecycleAction(env:Env,subject:string,lessonId:str
    return {status:409,code:'LESSON_STATE_CONFLICT'};
   }
   if(action==='end'){
+   endCommitted=true;
    // Ending is already committed. A missing report service must never silently
    // roll back or reopen the lesson. Draft remains PRIVATE until Sheikh publish.
    let reportDraft:'created'|'empty'|'retry_needed'='retry_needed';
@@ -219,4 +227,12 @@ export async function teacherLifecycleAction(env:Env,subject:string,lessonId:str
   }
   return {status:200,code:'LESSON_STARTED',lifecycle:state};
  }catch{return {status:503,code:'LIFECYCLE_UNAVAILABLE'};}
+ finally{
+  if(fencedLearner&&!endCommitted){
+   // Never reopen after an unknown D1 outcome; the DO checks live status
+   // and exact End operation before releasing the room write barrier.
+   try{await releaseLessonCumulativeInk(env,lessonId,fencedLearner,subject,operationId);}
+   catch{ /* fail closed; a verified Sheikh may safely retry End */ }
+  }
+ }
 }
