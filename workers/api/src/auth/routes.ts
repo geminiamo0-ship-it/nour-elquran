@@ -11,6 +11,7 @@ import { listOwnedLearnerLessons, listVerifiedTeacherLessons } from '../lesson-c
 import { listVerifiedTeacherLearners } from '../teacher-roster.ts';
 import {readOwnerPlan,readTeacherPlan,writeTeacherPlan,parsePlanAction} from '../academic-plans.ts';
 import {readOwnerAssignments,readTeacherAssignments,getAssignmentCatalog,publishAssignment,parsePublishAssignment} from '../published-assignments.ts';
+import {readTeacherInkDrafts,saveTeacherInkDraft,teacherAssignmentPageRange} from '../teacher-assignment-ink-drafts.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
 import {getTeacherReport,getStudentReports,applyTeacherReport,parseReportAction} from '../lesson-reports.ts';
@@ -502,6 +503,34 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     const {status,...body}=result;
     return reply(status,body,requestId);
   }
+  // Sheikh-only private annotations: unpublished versions never reach a student.
+  const teacherDraftRange=/^\/v1\/teacher\/learners\/([a-zA-Z0-9-]{1,128})\/assignment-page-range$/.exec(path);
+  if(teacherDraftRange){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const params=new URL(request.url).searchParams;
+    if(params.size!==4||!['editionId','surah','fromAyah','toAyah'].every(k=>params.has(k)))
+      return reply(400,{code:'DRAFT_INVALID_RANGE'},requestId);
+    const result=await teacherAssignmentPageRange(env.DB,session.user.id,teacherDraftRange[1]!,
+      params.get('editionId')??'',Number(params.get('surah')),
+      Number(params.get('fromAyah')),Number(params.get('toAyah')));
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
+  const teacherDrafts=/^\/v1\/teacher\/learners\/([a-zA-Z0-9-]{1,128})\/assignment-drafts$/.exec(path);
+  if(teacherDrafts){
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const version=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='teacher_assignment_drafts'"
+    ).first<{version:number}>();
+    if(version?.version!==1)return reply(503,{code:'DRAFT_SCHEMA_NOT_READY'},requestId);
+    const learnerId=teacherDrafts[1]!;
+    const result=request.method==='GET'
+      ?await readTeacherInkDrafts(env.DB,session.user.id,learnerId)
+      :await saveTeacherInkDraft(env.DB,session.user.id,learnerId,
+        await readObject(request,180000));
+    const {status,...body}=result;
+    return reply(status,body,requestId);
+  }
   const teacherAssignmentsMatch=/^\/v1\/teacher\/learners\/([a-zA-Z0-9-]{1,128})\/assignments$/.exec(path);
   if(teacherAssignmentsMatch){
     if(request.method!=='GET'&&request.method!=='POST')
@@ -517,6 +546,13 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     }
     const command=parsePublishAssignment(await readObject(request));
     if(!command)return reply(400,{code:'INVALID_ASSIGNMENT'},requestId);
+    if(command.draftId){
+      const draftVersion=await env.DB.prepare(
+        "SELECT version FROM noor_schema_meta WHERE component='teacher_assignment_drafts'"
+      ).first<{version:number}>();
+      if(draftVersion?.version!==1)
+        return reply(503,{code:'DRAFT_SCHEMA_NOT_READY'},requestId);
+    }
     const result=await publishAssignment(env.DB,session.user.id,learnerId,command);
     const {status,...body}=result;
     return reply(status,body,requestId);

@@ -4,16 +4,20 @@ import {assignmentClient,assignmentMessage,type AssignmentDraft,type AssignmentS
  type PublishedAssignment} from '../shared';
 import type {TeacherRosterRow} from './teacher-read-api';
 import {TeacherAssignmentReview} from './TeacherAssignmentReview';
+import {TeacherAssignmentInkEditor} from './TeacherAssignmentInkEditor';
+import {teacherInkDraftClient,type SavedInkDraft} from './teacher-ink-draft-client';
 import css from './TeacherReadOnly.module.css';
 const client=assignmentClient();
 const kinds={memorization:'حفظ',revision:'مراجعة',recitation:'تلاوة'} as const;
-type Loaded={status:'loaded';catalog:readonly AssignmentSource[];assignments:readonly PublishedAssignment[]};
+type Loaded={status:'loaded';catalog:readonly AssignmentSource[];assignments:readonly PublishedAssignment[];
+ drafts:readonly SavedInkDraft[];draftsUnavailable:boolean};
 type State=Loaded|{status:'loading'|'error'};
 export function TeacherConnectedAssignments({learners}:{learners:readonly TeacherRosterRow[]}){
  const [learnerId,setLearnerId]=useState(learners[0]?.id??'');
  const [state,setState]=useState<State>({status:'loading'});
  const [retry,setRetry]=useState(0);
  const [openReview,setOpenReview]=useState<string|null>(null);
+ const [editor,setEditor]=useState<{key:string;input:AssignmentDraft;existing?:SavedInkDraft}|null>(null);
  const [kind,setKind]=useState<AssignmentDraft['kind']>('memorization');
  const [surah,setSurah]=useState(1),[from,setFrom]=useState(1),[to,setTo]=useState(1);
  const [due,setDue]=useState(''),[instructions,setInstructions]=useState('');
@@ -24,11 +28,12 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
  useEffect(()=>{
   let active=true;const abort=new AbortController();
   setState({status:'loading'});setMessage('');setUncertain(false);setOpenReview(null);
-  if(!selected){setState({status:'loaded',catalog:[],assignments:[]});return()=>abort.abort();}
+  if(!selected){setState({status:'loaded',catalog:[],assignments:[],drafts:[],draftsUnavailable:false});return()=>abort.abort();}
   void Promise.all([client.catalog(abort.signal),client.teacher(selected,abort.signal)])
-   .then(([catalog,assignments])=>{
+   .then(async ([catalog,assignments])=>{
+     const drafts=await teacherInkDraftClient.list(selected,abort.signal).catch(()=>null);
      if(active&&!abort.signal.aborted){
-      setState({status:'loaded',catalog,assignments});
+      setState({status:'loaded',catalog,assignments,drafts:drafts??[],draftsUnavailable:drafts===null});
       setSurah(catalog[0]?.surah??1);
      }
    }).catch(err=>{
@@ -40,6 +45,7 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
   <p>لا يوجد طلاب مسندون حاليًا. لا يمكن إصدار واجب من حساب غير مخول.</p></section>;
  const catalog=state.status==='loaded'?state.catalog:[];
  const assignments=state.status==='loaded'?state.assignments:[];
+ const drafts=state.status==='loaded'?state.drafts:[];
  const unique=Array.from(new Set(catalog.map(x=>x.editionId)));
  const editionId=unique[0]??'';
  const editionSurahs=catalog.filter(x=>x.editionId===editionId);
@@ -64,7 +70,7 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
   <div className={css.heading}><h1>الواجبات والتسميعات</h1><span>تكليف رسمي لكل طالب</span></div>
   <p>كل واجب ينشر لطالب واحد بعد التحقق من صلاحية الشيخ ونطاق القرآن. يمكن مراجعة التسليمات المكتوبة واعتمادها أو طلب إعادتها؛ التسجيلات الصوتية لم تُربط بعد.</p>
   <label>اختر الطالب المسند
-    <select value={selected} onChange={e=>setLearnerId(e.target.value)}>
+    <select value={selected} onChange={e=>{setLearnerId(e.target.value);setEditor(null);}}>
       {learners.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}
     </select></label>
   {state.status==='loading'?<p role="status">جارٍ تحميل الآيات والواجبات...</p>:
@@ -93,9 +99,33 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
     <div className={css.actions}>
      <button type="submit" disabled={saving||uncertain||!current||!due||!instructions.trim()}>
        {saving?'جارٍ تأكيد النشر…':'نشر الواجب لهذا الطالب'}</button>
-     <button type="button" onClick={()=>{setRetry(x=>x+1);setUncertain(false);}} disabled={saving}>تحديث الواجبات</button>
+     <button type="button" onClick={()=>{
+       if(!current||!due||!instructions.trim()||uncertain)return;
+       const dueAtMs=new Date(due+'T23:59:00').getTime();
+       if(!Number.isFinite(dueAtMs)||dueAtMs<=Date.now()){setMessage('حدد موعدًا صحيحًا للواجب.');return;}
+       setEditor({key:crypto.randomUUID(),input:{
+        kind,editionId:current.editionId,surah:current.surah,fromAyah:from,
+        toAyah:to,dueAtMs,instructions:instructions.trim()}});
+      }} disabled={saving||uncertain||(state.status==='loaded'&&state.draftsUnavailable)||!current||!due||!instructions.trim()}>
+       تحضير علامات المصحف قبل النشر</button>
+     <button type="button" onClick={()=>{setRetry(x=>x+1);setUncertain(false);setEditor(null);}} disabled={saving}>تحديث الواجبات</button>
     </div>
-   </form><h2>السجل المنشور</h2>
+   </form>
+   {(state.status==='loaded'&&state.draftsUnavailable)&&<p role="alert">خدمة مسودات العلامات غير متاحة على هذه البيئة؛ نشر الواجبات النصية ما زال يعمل.</p>}
+   {editor&&<TeacherAssignmentInkEditor key={editor.key} learnerId={selected}
+    initial={editor.input} existing={editor.existing}
+    onCancel={()=>setEditor(null)}
+    onSaved={saved=>setState(prev=>prev.status==='loaded'?
+      {...prev,drafts:[saved,...prev.drafts.filter(d=>d.draftId!==saved.draftId)]}:prev)}
+    onPublished={()=>{setEditor(null);setRetry(n=>n+1);}}/>}
+   <h2>مسودات الشيخ الخاصة</h2>
+   {drafts.length?<div className={css.list}>{drafts.map(d=><article key={d.draftId} className={css.row}>
+     <strong>سورة {d.surah} · الآيات {d.fromAyah}–{d.toAyah}</strong>
+     <p>{d.marks.length} علامة · آخر حفظ {new Date(d.updatedAtMs).toLocaleString('ar-EG')}</p>
+     <button type="button" disabled={saving||uncertain} onClick={()=>setEditor({
+      key:d.draftId+'-'+d.revision,input:d,existing:d})}>فتح المسودة وتعديل العلامات</button>
+   </article>)}</div>:<p className={css.empty}>لا توجد مسودات محفوظة لهذا الطالب.</p>}
+   <h2>السجل المنشور</h2>
    {assignments.length?<div className={css.list}>{assignments.map(t=><article key={t.id} className={css.row}>
      <strong>{kinds[t.kind]} · سورة {t.surah} ({t.fromAyah}–{t.toAyah})</strong>
      <small>الموعد {new Date(t.dueAtMs).toLocaleDateString('ar-EG')} · منشور للخادم</small>

@@ -83,9 +83,9 @@ export function assignmentClient(transport:typeof fetch=fetch){
     return q as AssignmentSource;
    });
   },
-  publish:async(id:string,draft:AssignmentDraft,operationId:string)=>{
+  publish:async(id:string,draft:AssignmentDraft,operationId:string,draftId?:string)=>{
    const body=await request('/v1/teacher/learners/'+checkId(id)+'/assignments',
-      {...draft,operationId});
+      {...draft,operationId,...(draftId?{draftId}:{})});
    if(body.code!=='ASSIGNMENT_PUBLISHED'&&body.code!=='ASSIGNMENT_ALREADY_PUBLISHED')
      throw new AssignmentError('INVALID_RESPONSE');
    if(typeof body.assignmentId!=='string'||!/^[-a-f\d]{36}$/i.test(body.assignmentId))
