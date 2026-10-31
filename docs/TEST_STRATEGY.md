@@ -1,3 +1,11 @@
+## #251 A3 native D1 regression (migration 0018)
+
+First signed native Wrangler smoke failed [#41150302660](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41150302660) because the old six-class hex GLOB exceeded the D1 runtime pattern limit; Python SQLite tests alone had missed it. Forward-only migration 0018 keeps immutable ledger and actor rules, replaces the guard's color predicate, and adds valid/invalid hex SQL tests. Require successful exact-head `cloudflare-local-d1` with real signed write/replay/hide before review. No temporary diagnostic response/log code may remain in the reviewed diff.
+
+## #251 A3 signed cumulative owner write — exact-head gate (2026-10-31)
+
+The local Cloudflare Better Auth/D1 smoke tests owner-only canonical self-study put, DB-confirmed ACK, replay/conflict/CAS/hide, owner refresh, legacy private preservation, foreign/anonymous/Origin/forged actor and forged lesson/task denial. Run as part of Verify `cloudflare-local-d1` on the exact branch HEAD. No browser or Dev claim from source checks; DO classroom forwarding, cross-role staging and historical backfill remain #252/#253.
+
 ## 2026-10-31 Signed Student & Sheikh portal Dev acceptance — PASS (scope limited)
 - Noor code PR #243 merged main at 604ce1103e824fddb52f16b6621ec04266fbb6da; exact postmerge Verify #41142697961 succeeded 4/4.
 - Santoreno QA PR #298 merged as f6eb3f3ae3dfbfa91f098667e78d9f1d4675eada. Full isolated Dev run: https://github.com/geminiamo0-ship-it/santoreno/actions/runs/41143167533 — SUCCESS.
