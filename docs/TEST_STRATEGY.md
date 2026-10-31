@@ -1,3 +1,7 @@
+## #251 A3 — D1 idempotency ACK race regression (2026-10-31)
+- A D1 INSERT can fail at the caller after another concurrent attempt has already committed the identical operation. The service must return `QURAN_EVENT_REPLAY` (200) after matching the immutable prior event, not `QURAN_EVENT_COMMITTED` (201). A different payload under the same operation ID must still fail closed (409).
+- Regression: `workers/api/tests/learner-quran-ledger.test.ts` simulates both insert-error/lookup races. Run exact-head Verify, including strict TypeScript, backend unit tests and native Wrangler D1 smoke; this is not a remote Cloudflare Dev or Production acceptance claim.
+
 ## #251 A3 native D1 regression (migration 0018)
 
 First signed native Wrangler smoke failed [#41150302660](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41150302660) because the old six-class hex GLOB exceeded the D1 runtime pattern limit; Python SQLite tests alone had missed it. Forward-only migration 0018 keeps immutable ledger and actor rules, replaces the guard's color predicate, and adds valid/invalid hex SQL tests. Require successful exact-head `cloudflare-local-d1` with real signed write/replay/hide before review. No temporary diagnostic response/log code may remain in the reviewed diff.
