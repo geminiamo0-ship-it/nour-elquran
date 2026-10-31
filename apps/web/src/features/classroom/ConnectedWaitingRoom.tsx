@@ -113,6 +113,8 @@ export function ConnectedWaitingRoom(){
  const [pageBusy,setPageBusy]=useState(false);
  const [ink,setInk]=useState<InkView|null>(null);
  const [inkBusy,setInkBusy]=useState(false);
+ const [inkWriteAuthorized,setInkWriteAuthorized]=useState(false);
+ const inkPostBusy=useRef(false);
  const [inkError,setInkError]=useState('');
  const [inkMode,setInkMode]=useState<'off'|'pen'|'marker'|'eraser'>('off');
  const [inkColor,setInkColor]=useState('#d0a94c');
@@ -203,11 +205,11 @@ export function ConnectedWaitingRoom(){
  },[identity,joined]);
  useEffect(()=>{
   if(!identity||!joined||!sharedPage){
-   setInk(null);setInkMode('off');setInkError('');return;
+   setInk(null);setInkMode('off');setInkWriteAuthorized(false);setInkError('');return;
   }
   const currentPage=sharedPage.page;
   let enabled=true;
-  setInk(null);setInkMode('off');
+  setInk(null);setInkMode('off');setInkWriteAuthorized(false);
   const poll=async()=>{
    if(inkPollBusy.current||document.visibilityState==='hidden')return;
    inkPollBusy.current=true;
@@ -216,10 +218,13 @@ export function ConnectedWaitingRoom(){
     if(!enabled)return;
     setInk(previous=>previous&&previous.page===response.ink.page&&
       previous.revision>response.ink.revision?previous:response.ink);
+    // Read the capability from the signed Worker response, never from URL role.
+    setInkWriteAuthorized(response.canWrite===true);
     setInkError(response.persistence==='pending'?
      'الرسم ظاهر في الحصة لكنه ينتظر تأكيد الحفظ في المصحف الدائم؛ لا تُنهِ الحصة قبل اكتمال الحفظ.':'');
    }catch{
-    if(enabled)setInkError('تعذّر تحديث علامات الحصة؛ سنعيد المحاولة.');
+    if(enabled){setInkWriteAuthorized(false);setInkMode('off');
+     setInkError('تعذّر تحديث علامات الحصة؛ سنعيد المحاولة.');}
    }finally{inkPollBusy.current=false;}
   };
   void poll();
@@ -230,8 +235,9 @@ export function ConnectedWaitingRoom(){
    document.removeEventListener('visibilitychange',visibility);};
  },[identity,joined,sharedPage?.page]);
  const updateSharedInk=useCallback(async(onPage:number,next:QuranInkStroke[])=>{
-  if(identity?.role!=='teacher'||!joined||!sharedPage||sharedPage.page!==onPage||
-    !ink||ink.page!==onPage||inkBusy||inkMode==='off')return;
+  if(!identity||!joined||lessonPhase!=='live'||!inkWriteAuthorized||
+    !sharedPage||sharedPage.page!==onPage||!ink||ink.page!==onPage||
+    inkPostBusy.current||inkMode==='off')return;
   const current=new Set(ink.strokes.map(s=>s.id));
   const desired=new Set(next.map(s=>s.id));
   const added=next.filter(s=>!current.has(s.id));
@@ -242,7 +248,7 @@ export function ConnectedWaitingRoom(){
     requestId:crypto.randomUUID(),stroke:compactStroke(added[0]!)}:
    {action:'hide' as const,page:onPage,expectedRevision:ink.revision,
     requestId:crypto.randomUUID(),strokeId:removed[0]!.id};
-  setInkBusy(true);setInkError('');
+  inkPostBusy.current=true;setInkBusy(true);setInkError('');
   try{
    const result=await fetchLiveInk(identity,onPage,operation);
    if(!alive.current)return;
@@ -252,9 +258,12 @@ export function ConnectedWaitingRoom(){
    if(result.code==='INK_LIMIT')setInkError('بلغت الصفحة الحد الآمن للعلامات.');
    if(result.persistence==='pending')
     setInkError('تم حفظ العلامة مؤقتًا في غرفة الحصة، وجارٍ تأكيدها في المصحف الدائم. لا تُنهِ الحصة الآن.');
-  }catch{if(alive.current)setInkError('تعذّر حفظ الرسم. لم تتم إضافة علامة غير مؤكدة.');}
-  finally{if(alive.current)setInkBusy(false);}
- },[identity,joined,sharedPage,ink,inkBusy,inkMode]);
+  }catch{
+   // A network failure can occur AFTER the DO accepted the stroke. Avoid
+   // claiming a definitive failure; the signed snapshot will reconcile.
+   if(alive.current)setInkError('تعذّر تأكيد حفظ الرسم؛ سيتم تحديث العلامات من السيرفر. قد تكون العملية قيد الحفظ.');
+  }finally{inkPostBusy.current=false;if(alive.current)setInkBusy(false);}
+ },[identity,joined,lessonPhase,inkWriteAuthorized,sharedPage,ink,inkMode]);
  const changeSharedPage=useCallback(async(next:number,verse?:VerseSelection):Promise<boolean>=>{
   if(identity?.role!=='teacher'||!joined||!sharedPage||pageBusy)return false;
   const page=clampQuranPage(next);
@@ -288,7 +297,8 @@ export function ConnectedWaitingRoom(){
  const role=identity.role==='learner'?'student':'teacher';
  const page=sharedPage?.page??1;
  const teacherCanTurn=identity.role==='teacher'&&joined&&!!sharedPage&&!pageBusy;
- const teacherCanDraw=teacherCanTurn&&!!ink&&ink.page===page&&!inkBusy;
+ const canDraw=joined&&lessonPhase==='live'&&inkWriteAuthorized&&
+  !!sharedPage&&!!ink&&ink.page===page&&!inkBusy;
  const currentStrokes=ink?.page===page?ink.strokes:[];
  const selectedVerse:QuranTarget|null=sharedPage?.verse?
   {page,surah:sharedPage.verse.surah,ayah:sharedPage.verse.ayah,wordIndex:null}:null;
@@ -387,9 +397,9 @@ export function ConnectedWaitingRoom(){
         {id:'marker',symbol:'▰',name:'تظليل'},{id:'eraser',symbol:'⌫',name:'ممحاة'}] as const).map(item=>
         <button key={item.id} type="button"
          title={item.id==='off'?'تحديد آية للقراءة فقط':
-          teacherCanDraw?item.name:item.name+' متاح للشيخ بعد الانضمام وتأكيد الصفحة'}
+          canDraw?item.name:item.name+' متاح للطرفين أثناء الحصة مع تفعيل الحفظ الدائم'}
          aria-label={item.name} aria-pressed={inkMode===item.id}
-         disabled={item.id!=='off'&&!teacherCanDraw}
+         disabled={item.id!=='off'&&!canDraw}
          onClick={()=>setInkMode(item.id)}>
          <span aria-hidden="true">{item.symbol}</span>
          <span className={css.toolLabel}>{item.name}</span>
@@ -400,7 +410,7 @@ export function ConnectedWaitingRoom(){
         {color:'#e2604e',name:'أحمر'},{color:'#397ca7',name:'أزرق'},
         {color:'#8d67b0',name:'بنفسجي'}] as const).map(({color,name})=>
         <button key={color} type="button" className={css.color} style={{background:color}}
-         disabled={!teacherCanDraw} aria-pressed={inkColor===color}
+         disabled={!canDraw} aria-pressed={inkColor===color}
          onClick={()=>setInkColor(color)} title={'لون '+name}
          aria-label={'اختر لون '+name}/>)}
       </div>
@@ -423,7 +433,7 @@ export function ConnectedWaitingRoom(){
        selected={sharedPage?.verse??null} onNavigate={changeSharedPage}/>}
      <button type="button" className={css.pageEdgePrev} title="الصفحة السابقة" aria-label="الصفحة السابقة"
       disabled={!teacherCanTurn||page<=1} onClick={()=>void changeSharedPage(page-1)}>‹</button>
-     <ReaderPrintedPage page={page} viewportFit inkMode={teacherCanDraw?inkMode:'off'} color={inkColor}
+     <ReaderPrintedPage page={page} viewportFit inkMode={canDraw?inkMode:'off'} color={inkColor}
       strokes={currentStrokes} selectedKey={selectedVerse?targetKey(selectedVerse):null}
       noteKeys={new Set<string>()}
       onSelect={target=>{if(teacherCanTurn)void changeSharedPage(page,
@@ -445,7 +455,7 @@ export function ConnectedWaitingRoom(){
    </div>
   </div>
   <p className={[css.disclaimer,liveCss.disclaimer].join(' ')}>
-   الصفحات والرسم موثّقان على Cloudflare؛ رسم الطالب والتصحيحات والتقارير لم تُفعّل بعد. الصوت والفيديو عبر LiveKit بموافقتك.
+   الصفحة المشتركة موثّقة؛ رسم الطرفين يُتاح فقط أثناء الحصة مع تفعيل الحفظ الدائم، والحفظ المعلّق يُعرض بوضوح. الصوت والفيديو عبر LiveKit بموافقتك.
   </p>
  </div>;
 }
