@@ -20,3 +20,6 @@ export type {InboxNotice} from './inbox-client';
 
 export {attendanceClient,parseAttendanceCases,AttendanceApiError} from './attendance-cases-client';
 export type {AttendanceCase,TeacherAttendanceCase} from './attendance-cases-client';
+
+export {trialBookingClient,parseTrialAvailability,TrialBookingError} from './trial-booking-client';
+export type {TrialSlot,TrialAvailability} from './trial-booking-client';
