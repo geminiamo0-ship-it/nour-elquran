@@ -38,6 +38,32 @@ BEGIN SELECT RAISE(ABORT,'TRIAL_SLOT_IMMUTABLE'); END;
 CREATE TRIGGER trial_slots_immutable_delete BEFORE DELETE ON trial_open_slot_events
 BEGIN SELECT RAISE(ABORT,'TRIAL_SLOT_IMMUTABLE'); END;
 
+-- Staff may withdraw an unfilled advertised slot; a withdrawal does
+-- NOT cancel an already booked lesson (that needs a separate staff decision).
+CREATE TABLE trial_slot_closure_events (
+ id TEXT NOT NULL PRIMARY KEY CHECK(length(id)=36),
+ operation_id TEXT NOT NULL UNIQUE CHECK(length(operation_id)=36),
+ slot_id TEXT NOT NULL UNIQUE REFERENCES trial_open_slot_events(id) ON DELETE RESTRICT,
+ actor_subject TEXT NOT NULL REFERENCES auth_users(id) ON DELETE RESTRICT,
+ reason TEXT NOT NULL CHECK(length(trim(reason)) BETWEEN 8 AND 500),
+ at_ms INTEGER NOT NULL CHECK(at_ms>=0)
+) STRICT;
+CREATE TRIGGER trial_slot_close_guard BEFORE INSERT ON trial_slot_closure_events
+BEGIN
+ SELECT RAISE(ABORT,'TRIAL_STAFF_DENIED') WHERE NOT EXISTS(
+  SELECT 1 FROM staff_grants g JOIN auth_users u ON u.id=g.auth_subject
+  JOIN accounts a ON a.auth_subject=u.id WHERE g.auth_subject=NEW.actor_subject
+   AND g.permission='roles.manage' AND g.revoked_at_ms IS NULL
+   AND u.phone_number_verified=1 AND a.status='active');
+ SELECT RAISE(ABORT,'TRIAL_SLOT_TOO_LATE') WHERE NOT EXISTS (
+  SELECT 1 FROM trial_open_slot_events s WHERE s.id=NEW.slot_id
+  AND NEW.at_ms<s.starts_at_ms);
+END;
+CREATE TRIGGER trial_slot_closure_no_update BEFORE UPDATE ON trial_slot_closure_events
+BEGIN SELECT RAISE(ABORT,'TRIAL_SLOT_CLOSURE_IMMUTABLE'); END;
+CREATE TRIGGER trial_slot_closure_no_delete BEFORE DELETE ON trial_slot_closure_events
+BEGIN SELECT RAISE(ABORT,'TRIAL_SLOT_CLOSURE_IMMUTABLE'); END;
+
 CREATE TABLE trial_booking_events (
  id TEXT NOT NULL PRIMARY KEY CHECK(length(id)=36),
  operation_id TEXT NOT NULL UNIQUE CHECK(length(operation_id)=36),
@@ -58,6 +84,7 @@ BEGIN
  SELECT RAISE(ABORT,'TRIAL_SLOT_UNAVAILABLE') WHERE NOT EXISTS(
   SELECT 1 FROM trial_open_slot_events s JOIN teachers t ON t.id=s.teacher_id
   WHERE s.id=NEW.slot_id AND t.status='active' AND t.qualified=1
+   AND NOT EXISTS(SELECT 1 FROM trial_slot_closure_events c WHERE c.slot_id=s.id)
    AND s.starts_at_ms>=NEW.booked_at_ms AND
    s.starts_at_ms<=NEW.booked_at_ms+2592000000);
  SELECT RAISE(ABORT,'TRIAL_ALREADY_CONSUMED') WHERE EXISTS(
