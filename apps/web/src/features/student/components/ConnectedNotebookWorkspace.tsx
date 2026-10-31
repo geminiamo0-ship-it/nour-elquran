@@ -4,6 +4,7 @@ import {notebookClient,notebookError,lessonReportsClient,
  type LessonRow,type PrivateNote,type StudentReport} from '../../shared';
 import styles from '../StudentPortal.module.css';
 import {PublishedLessonArchive} from './PublishedLessonArchive';
+import {LessonQuranHistory} from './LessonQuranHistory';
 
 type Loaded={status:'ready';lessons:readonly LessonRow[];reports:readonly StudentReport[]};
 type State=Loaded|{status:'loading'|'error'};
@@ -100,6 +101,7 @@ export function ConnectedNotebookWorkspace({learnerId}:{learnerId:string}){
       </div>:<p>انتهت الحصة، وتقرير الشيخ قيد الإعداد أو لم يُنشر بعد.</p>}
       <p className={styles.muted}>تنزيل PDF/PNG غير متاح حتى اكتمال ختم المصدر والتصدير الخاص.</p>
      </div>
+     <LessonQuranHistory learnerId={learnerId} lessonId={lessonId}/>
      <PublishedLessonArchive learnerId={learnerId} lessonId={lessonId}
       reportRevision={report?.revision??null}/>
      <h3>ملاحظاتي الخاصة</h3>
