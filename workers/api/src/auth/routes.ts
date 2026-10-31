@@ -315,16 +315,28 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
   }
   const learnerInk=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/quran-ink$/.exec(path);
   if(learnerInk){
-    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
     const learnerId=learnerInk[1]!,lessonId=learnerInk[2]!;
+    // Both GET and POST re-check the signed household and exact learner/lesson
+    // relationship; the browser cannot claim an actor, owner, or teacher role.
     const access=await checkOwnedLearnerClassroomAccess(db,accountId,learnerId,lessonId);
     if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
-    const page=Number(new URL(request.url).searchParams.get('page'));
-    const action=parseClientInk({action:'snapshot',page},'learner');
-    if(!action)return reply(400,{code:'INVALID_INK_COMMAND'},requestId);
+    const canWrite=env.NOOR_CUMULATIVE_INK_ENABLED==='true'&&access.status==='live';
+    // Never accept a room-only learner stroke as canonical Quran persistence.
+    if(request.method==='POST'&&!canWrite)
+      return reply(access.status==='live'?503:409,
+        {code:access.status==='live'?'CUMULATIVE_INK_DISABLED':'LESSON_NOT_LIVE'},requestId);
+    const params=new URL(request.url).searchParams;
+    const action=request.method==='GET'?
+      (params.size===1?parseClientInk({action:'snapshot',page:Number(params.get('page'))},'learner'):null):
+      parseClientInk(await readObject(request),'learner');
+    if(!action||(request.method==='POST'&&action.action==='snapshot'))
+      return reply(400,{code:'INVALID_INK_COMMAND'},requestId);
     const outcome=await forwardVerifiedInk(env,{lessonId,learnerId,
       actorSubject:authSubject,role:'learner'},action);
-    const {status,...body}=outcome;return reply(status,body,requestId);
+    const {status,...body}=outcome;
+    return reply(status,{...body,...(request.method==='GET'?{canWrite}:{})},requestId);
   }
   const learnerQuran=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/lessons\/([a-zA-Z0-9-]{1,128})\/quran-page$/.exec(path);
   if(learnerQuran){
@@ -651,14 +663,21 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     const lessonId=teacherInk[1]!;
     const access=await checkTeacherClassroomAccess(env.DB,session.user.id,lessonId);
     if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    const canWrite=env.NOOR_CUMULATIVE_INK_ENABLED==='true'&&access.status==='live';
+    if(request.method==='POST'&&!canWrite)
+      return reply(access.status==='live'?503:409,
+        {code:access.status==='live'?'CUMULATIVE_INK_DISABLED':'LESSON_NOT_LIVE'},requestId);
+    const params=new URL(request.url).searchParams;
     const action=request.method==='GET'?
-      parseClientInk({action:'snapshot',
-        page:Number(new URL(request.url).searchParams.get('page'))},'teacher'):
+      (params.size===1?parseClientInk({action:'snapshot',
+        page:Number(params.get('page'))},'teacher'):null):
       parseClientInk(await readObject(request),'teacher');
-    if(!action)return reply(400,{code:'INVALID_INK_COMMAND'},requestId);
+    if(!action||(request.method==='POST'&&action.action==='snapshot'))
+      return reply(400,{code:'INVALID_INK_COMMAND'},requestId);
     const outcome=await forwardVerifiedInk(env,{lessonId,learnerId:access.learnerId,
       actorSubject:session.user.id,role:'teacher'},action);
-    const {status,...body}=outcome;return reply(status,body,requestId);
+    const {status,...body}=outcome;
+    return reply(status,{...body,...(request.method==='GET'?{canWrite}:{})},requestId);
   }
   const teacherQuran=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/quran-page$/.exec(path);
   if(teacherQuran){
