@@ -1,3 +1,7 @@
+## 2026-10-31 / #251 A3 — D1 raced insert ACK regression (PR #259, pending exact-head CI)
+- On the existing owner-only self-study draft PR #259, fixed a false `QURAN_EVENT_COMMITTED` (HTTP 201) when an INSERT response fails but an identical operation already committed concurrently in D1. The verified post-error operation lookup now returns `QURAN_EVENT_REPLAY` (HTTP 200). Conflicting raced payloads remain rejected; no new write authority, schema or production configuration.
+- Added a focused typed unit regression for both same-operation and conflicting-operation races. **New branch-head Verify and independent review pending**; #251 stays OPEN, no Dev/Production deployment.
+
 ## 2026-10-31 / #251 A3 — native D1 GLOB runtime blocker and forward fix (pending verification)
 
 - PR [#259](https://github.com/geminiamo0-ship-it/nour-elquran/pull/259) initial native CI [#41150302660](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41150302660) **failed**: D1 `LIKE or GLOB pattern too complex` from historical 0017 hex-color insert guard; code-quality/governance/repository policy succeeded. Confirmed through temporary synthetic local diagnostics, removed before final branch.
