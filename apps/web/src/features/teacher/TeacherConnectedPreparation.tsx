@@ -8,8 +8,8 @@ import css from './TeacherReadOnly.module.css';
 const client=assignmentClient();
 const clock=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',
  dateStyle:'medium',timeStyle:'short'});
-type Read={status:'loading'}|{status:'failed'}|
- {status:'ready';tasks:readonly PublishedAssignment[]};
+type Read={status:'loading'}|{status:'failed';learnerId:string}|
+ {status:'ready';learnerId:string;tasks:readonly PublishedAssignment[]};
 export function TeacherConnectedPreparation({learners,lessons}:{
  learners:readonly TeacherRosterRow[];
  lessons:readonly TeacherCalendarRow[];
@@ -22,14 +22,16 @@ export function TeacherConnectedPreparation({learners,lessons}:{
  const lesson=relevant.find(l=>l.id===selectedId)??relevant[0];
  const learnerId=lesson?.learnerId;
  useEffect(()=>{
-  if(!learnerId){setData({status:'ready',tasks:[]});return;}
+  if(!learnerId){setData({status:'ready',learnerId:'',tasks:[]});return;}
   const controller=new AbortController();setData({status:'loading'});
   void client.teacher(learnerId,controller.signal).then(tasks=>{
-   if(!controller.signal.aborted)setData({status:'ready',tasks});
-  }).catch(()=>{if(!controller.signal.aborted)setData({status:'failed'});});
+   if(!controller.signal.aborted)setData({status:'ready',learnerId,tasks});
+  }).catch(()=>{if(!controller.signal.aborted)setData({status:'failed',learnerId});});
   return()=>controller.abort();
  },[learnerId,retry]);
  const name=learners.find(l=>l.id===learnerId)?.name??lesson?.learnerName??'طالب الحصة';
+ const currentLoaded=data.status==='ready'&&data.learnerId===learnerId;
+ const currentFailed=data.status==='failed'&&data.learnerId===learnerId;
  return <section className={css.card} aria-label="تحضير الحصة الموثقة">
   <div className={css.heading}><h1>التحضير للحصة</h1>
    <span>من الجدول المعتمد على D1</span></div>
@@ -54,8 +56,8 @@ export function TeacherConnectedPreparation({learners,lessons}:{
    {learnerId&&<TeacherAcademicPlanEditor key={learnerId}
     learnerId={learnerId} learnerName={name}/>}
    <h2>واجبات الطالب المنشورة</h2>
-   {data.status==='loading'?<p role="status">جارٍ تحميل واجبات الطالب…</p>:
-    data.status==='failed'?<div role="alert">
+   {!currentLoaded&&!currentFailed?<p role="status">جارٍ تحميل واجبات هذا الطالب…</p>:
+    currentFailed?<div role="alert">
      <p>تعذر التحقق من واجبات الطالب؛ لن نعرض واجبات قديمة أو مفترضة.</p>
      <button type="button" onClick={()=>setRetry(n=>n+1)}>إعادة التحميل</button>
     </div>:data.tasks.length?<div className={css.list}>{data.tasks.map(t=>
