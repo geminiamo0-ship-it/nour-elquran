@@ -4,6 +4,8 @@ export type AssignmentPublish=Readonly<{
  operationId:string; kind:'memorization'|'revision'|'recitation';
  editionId:string;surah:number;fromAyah:number;toAyah:number;
  dueAtMs:number;instructions:string;
+ /** Optional saved private teacher ink snapshot, published atomically with the assignment. */
+ draftId?:string;
 }>;
 type EventRow={assignment_id:string;learner_id:string;actor_auth_subject:string;
  kind:string;edition_id:string;surah:number;from_ayah:number;to_ayah:number;
@@ -15,10 +17,14 @@ type AssignmentRow={id:string;learner_id:string;kind:AssignmentPublish['kind'];
 const operationId=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const edition=/^[a-zA-Z0-9_.:-]{1,80}$/;
 const keys=['operationId','kind','editionId','surah','fromAyah','toAyah','dueAtMs','instructions'];
+const draftIdPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function parsePublishAssignment(raw:unknown):AssignmentPublish|null{
  if(!raw||typeof raw!=='object'||Array.isArray(raw))return null;
  const v=raw as Record<string,unknown>;
- if(Object.keys(v).length!==keys.length||!keys.every(k=>k in v)||
+ if((Object.keys(v).length!==keys.length&&
+     !(Object.keys(v).length===keys.length+1&&typeof v.draftId==='string'&&draftIdPattern.test(v.draftId)))||
+    !keys.every(k=>Object.hasOwn(v,k))||
+    Object.keys(v).some(k=>!keys.includes(k)&&k!=='draftId')||
     !operationId.test(String(v.operationId))||!['memorization','revision','recitation'].includes(String(v.kind))||
     !edition.test(String(v.editionId))||![v.surah,v.fromAyah,v.toAyah,v.dueAtMs].every(Number.isSafeInteger)||
     Number(v.surah)<1||Number(v.surah)>114||Number(v.fromAyah)<1||
@@ -28,7 +34,8 @@ export function parsePublishAssignment(raw:unknown):AssignmentPublish|null{
    return null;
  return {operationId:v.operationId as string,kind:v.kind as AssignmentPublish['kind'],
   editionId:v.editionId as string,surah:v.surah as number,fromAyah:v.fromAyah as number,
-  toAyah:v.toAyah as number,dueAtMs:v.dueAtMs as number,instructions:v.instructions.trim()};
+  toAyah:v.toAyah as number,dueAtMs:v.dueAtMs as number,instructions:v.instructions.trim(),
+  ...(typeof v.draftId==='string'?{draftId:v.draftId}:{})};
 }
 export async function verifiedCurrentTeacher(db:CoreDatabase,subject:string,learnerId:string,now:number) {
  const row=await db.prepare(`SELECT 1 AS allowed FROM learners l JOIN accounts owner ON owner.id=l.account_id
@@ -101,7 +108,13 @@ export async function publishAssignment(db:CoreDatabase,subject:string,learnerId
   return {status:200,code:'ASSIGNMENT_ALREADY_PUBLISHED',assignmentId:row.assignment_id} as const;
  };
  const prior=await find();
- if(prior)return replay(prior);
+ if(prior){
+  const binding=await db.prepare(`SELECT draft_id FROM teacher_assignment_draft_publications
+   WHERE operation_id=?`).bind(command.operationId).first<{draft_id:string}>();
+  if((binding?.draft_id??undefined)!==command.draftId)
+   return {status:409,code:'ASSIGNMENT_OPERATION_CONFLICT'} as const;
+  return replay(prior);
+ }
  if(command.dueAtMs<=now||command.dueAtMs>now+15552000000)
    return {status:400,code:'ASSIGNMENT_BAD_DUE_DATE'} as const;
  const canon=await db.prepare(`SELECT 1 AS valid FROM quran_ayah_anchors a
@@ -111,16 +124,41 @@ export async function publishAssignment(db:CoreDatabase,subject:string,learnerId
  .first<{valid:number}>();
  if(canon?.valid!==1)return {status:400,code:'ASSIGNMENT_INVALID_RANGE'} as const;
  const id=crypto.randomUUID();
+ if(command.draftId&&!db.batch)return {status:503,code:'ATOMIC_D1_BATCH_UNAVAILABLE'} as const;
  try{
-  await db.prepare(`INSERT INTO assignment_publish_events(operation_id,assignment_id,learner_id,
+  const publish=db.prepare(`INSERT INTO assignment_publish_events(operation_id,assignment_id,learner_id,
    actor_auth_subject,kind,edition_id,surah,from_ayah,to_ayah,due_at_ms,instructions,published_at_ms)
    VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`)
   .bind(command.operationId,id,learnerId,subject,command.kind,command.editionId,command.surah,
-    command.fromAyah,command.toAyah,command.dueAtMs,command.instructions,now).run();
+    command.fromAyah,command.toAyah,command.dueAtMs,command.instructions,now);
+  if(command.draftId){
+   const draft=await db.prepare(`SELECT revision FROM teacher_assignment_draft_versions
+     WHERE draft_id=? AND teacher_subject=? AND learner_id=?
+     ORDER BY revision DESC LIMIT 1`)
+    .bind(command.draftId,subject,learnerId).first<{revision:number}>();
+   if(!draft)return {status:404,code:'DRAFT_NOT_FOUND'} as const;
+   // Cloudflare D1 batch is a single transaction; a failure in canonical
+   // projection rolls back the published task and its private draft binding.
+   await db.batch!([
+    db.prepare(`INSERT INTO teacher_assignment_draft_publications(
+      draft_id,operation_id,revision,learner_id,teacher_subject,at_ms)
+      VALUES(?,?,?,?,?,?)`).bind(command.draftId,command.operationId,
+       draft.revision,learnerId,subject,now),
+    publish
+   ]);
+  }else await publish.run();
  }catch(error){
   const other=await find();
-  if(other)return replay(other);
+  if(other){
+   const binding=await db.prepare(`SELECT draft_id FROM teacher_assignment_draft_publications
+     WHERE operation_id=?`).bind(command.operationId).first<{draft_id:string}>();
+   if((binding?.draft_id??undefined)!==command.draftId)
+    return {status:409,code:'ASSIGNMENT_OPERATION_CONFLICT'} as const;
+   return replay(other);
+  }
   if(error instanceof Error){
+   if(/DRAFT_|QURAN_LEDGER_|constraint|FOREIGN KEY/i.test(error.message))
+    return {status:409,code:'DRAFT_PUBLICATION_REJECTED'} as const;
    if(error.message.includes('ASSIGNMENT_ACCESS_DENIED'))
     return {status:404,code:'NOT_FOUND'} as const;
    if(error.message.includes('ASSIGNMENT_CAP'))
