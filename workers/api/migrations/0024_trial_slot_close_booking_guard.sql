@@ -1,3 +1,5 @@
+-- #244 follow-up migration 0024; sequence after #286 ink compatibility 0023.
+-- Do not deploy this branch before #288 is merged and Dev 0023 is verified.
 -- #244: A staff slot withdrawal is only for UNBOOKED future availability.
 -- A booked trial remains a real lesson; withdrawing its advertised slot
 -- must not silently hide that commitment or pretend to cancel it.

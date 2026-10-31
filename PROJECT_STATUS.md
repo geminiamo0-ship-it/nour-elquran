@@ -1,6 +1,9 @@
+## 2026-10-31 / #244 — migration number collision removed (PR #280; blocked on #288)
+- Renumbered the *unmerged* trial-slot closure guard migration from `0023_trial_slot_close_booking_guard.sql` to `0024_trial_slot_close_booking_guard.sql`, reserving `0023_quran_ink_color_d1_compat.sql` for P0 #286 / PR #288. The SQL guard and existing booking regression are unchanged. The PR must NOT merge or deploy before #288 merges and 0023 is applied on isolated Dev; then rebase #280, run the complete 0023→0024 chain on native D1 and exact-head CI, obtain independent review and signed Dev booking/withdrawal checks. Neither migration was applied remotely in this change.
+
 ## 2026-10-31 / #244 — booked trial slot withdrawal guard (candidate, NOT merged)
 - Found that migration 0021 allowed staff to close an advertised trial slot even after a confirmed booking; the lesson remained scheduled, contradicting the documented *unfilled slot only* withdrawal contract.
-- Branch `fix/244-reject-closing-booked-trial-slot-20261031` adds append-only migration 0023: existing staff/time checks remain, and an active booked lesson now blocks slot closure with `TRIAL_SLOT_ALREADY_BOOKED`. Cancellation of the actual lesson must be explicit and authorized first; no automatic cancellations, fees or provider effects.
+- Branch `fix/244-reject-closing-booked-trial-slot-20261031` adds append-only migration 0024 (after the P0 #286 migration 0023): existing staff/time checks remain, and an active booked lesson now blocks slot closure with `TRIAL_SLOT_ALREADY_BOOKED`. Cancellation of the actual lesson must be explicit and authorized first; no automatic cancellations, fees or provider effects.
 - Added full-migration SQLite regression in `workers/api/tests/test_free_trial_booking.py`: booked withdrawal denied with no side effects; after staff cancels the lesson, withdrawal is allowed and new booking is rejected.
 - **Candidate only:** exact-head Verify, independent PR review and signed Cloudflare Dev acceptance pending. No Production migration, no payment activation, no real child data; #244 remains OPEN.
 

@@ -1,6 +1,9 @@
+## 2026-10-31 / #244 — forward-only migration sequence coordination
+- PR #280's trial-slot withdrawal guard is now numbered `0024_trial_slot_close_booking_guard.sql`, not competing with P0 #286 / PR #288 `0023_quran_ink_color_d1_compat.sql`. No SQL semantics changed. **Blocked:** do not merge #280 before #288's approved 0023; rebase #280 after #288 merges, run native Wrangler/D1 full migrations and exact-head CI, then signed Dev booking/withdrawal with authorized staff. Keep #244/#286 OPEN until their separate acceptance gates; no Production, payments, child media or cumulative flag changes.
+
 ## 2026-10-31 — #244 booked trial slot closure safety candidate
 - Current branch: `fix/244-reject-closing-booked-trial-slot-20261031`, based on main `5d8bc59b584f31d7cb961abbe95d3e485db6d941`.
-- Concrete defect: `trial_slot_close_guard` in 0021 allowed closing a published slot after a live booking, despite explicit unfilled-only semantics. 0023 replaces only that trigger, retaining staff and future-time checks, and denies closure while any linked lesson is non-cancelled. Test covers booked denial, no phantom closure, explicit staff cancellation, then valid withdrawal.
+- Concrete defect: `trial_slot_close_guard` in 0021 allowed closing a published slot after a live booking, despite explicit unfilled-only semantics. 0024 replaces only that trigger, after #286's D1 ink compatibility migration 0023, retaining staff and future-time checks, and denies closure while any linked lesson is non-cancelled. Test covers booked denial, no phantom closure, explicit staff cancellation, then valid withdrawal.
 - Draft PR: https://github.com/geminiamo0-ship-it/nour-elquran/pull/280. First CI detected PR description missing the exact `Refs #N` syntax; PR body was corrected to `Refs #244, #155` before this follow-up commit. Verify the **new** exact HEAD, not the first failed run.
 - Next: inspect exact-head GitHub Verify, resolve any failures, independent PR review, then signed two-account Cloudflare Dev test before merge/issue acceptance. Do not change Production, payment/WhatsApp/audio policy or `NOOR_CUMULATIVE_INK_ENABLED` (OFF). #244 and #155 stay OPEN.
 

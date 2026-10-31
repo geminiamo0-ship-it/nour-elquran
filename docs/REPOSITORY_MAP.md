@@ -1,5 +1,5 @@
 ## #244 booked trial slot withdrawal safety — candidate 2026-10-31
-- `workers/api/migrations/0023_trial_slot_close_booking_guard.sql`: additive migration replacing 0021's slot closure trigger; refuses to close an advertised trial slot while an associated non-cancelled lesson exists, without changing existing bookings.
+- `workers/api/migrations/0024_trial_slot_close_booking_guard.sql`: additive migration replacing 0021's slot closure trigger; refuses to close an advertised trial slot while an associated non-cancelled lesson exists, without changing existing bookings.
 - `workers/api/tests/test_free_trial_booking.py`: full-migration SQLite regression for booked denial and post-cancel withdrawal. No new API/flags/provider; source candidate requires exact-head CI, review and signed Dev verification.
 
 ## Final Classroom runtime evidence — #240
