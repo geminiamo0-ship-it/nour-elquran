@@ -11,6 +11,7 @@ import { listOwnedLearnerLessons, listVerifiedTeacherLessons } from '../lesson-c
 import { listVerifiedTeacherLearners } from '../teacher-roster.ts';
 import {readOwnerPlan,readTeacherPlan,writeTeacherPlan,parsePlanAction} from '../academic-plans.ts';
 import {readOwnerAssignments,readTeacherAssignments,getAssignmentCatalog,publishAssignment,parsePublishAssignment} from '../published-assignments.ts';
+import {listInbox,changeInboxRead} from '../in-app-inbox.ts';
 import {readTeacherInkDrafts,saveTeacherInkDraft,teacherAssignmentPageRange} from '../teacher-assignment-ink-drafts.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
@@ -109,6 +110,20 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
     const result=await applyLearnerProfileAction(db,accountId,authSubject,profileMatch[1]!,input);
     const {status,...body}=result;
     return reply(status,body,requestId);
+  }
+  const ownedInbox=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/(inbox|inbox-actions)$/.exec(path);
+  if(ownedInbox){
+    const learnerId=ownedInbox[1]!,kind=ownedInbox[2]!;
+    if(request.method!==(kind==='inbox'?'GET':'POST'))
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await db.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='inbox'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'INBOX_SCHEMA_NOT_READY'},requestId);
+    const result=kind==='inbox'
+      ?await listInbox(db,authSubject,'owner',learnerId)
+      :await changeInboxRead(db,authSubject,'owner',learnerId,await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
   }
   const myAttempts=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/assignments\/([a-zA-Z0-9-]{1,128})\/submissions$/.exec(path);
   if(myAttempts){
@@ -755,6 +770,19 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     return lessons === null
       ? reply(403, { code: 'TEACHER_ACCESS_DENIED' }, requestId)
       : reply(200, { lessons }, requestId);
+  }
+  if(path==='/v1/teacher/inbox'||path==='/v1/teacher/inbox-actions'){
+    const list=path==='/v1/teacher/inbox';
+    if(request.method!==(list?'GET':'POST'))
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='inbox'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'INBOX_SCHEMA_NOT_READY'},requestId);
+    const result=list
+      ?await listInbox(env.DB,session.user.id,'teacher',null)
+      :await changeInboxRead(env.DB,session.user.id,'teacher',null,await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
   }
   if (path === '/v1/teacher/learners') {
     if (request.method !== 'GET') return reply(405, { code: 'METHOD_NOT_ALLOWED' }, requestId);
