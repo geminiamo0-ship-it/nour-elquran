@@ -13,7 +13,7 @@ import {readOwnerPlan,readTeacherPlan,writeTeacherPlan,parsePlanAction} from '..
 import {readOwnerAssignments,readTeacherAssignments,getAssignmentCatalog,publishAssignment,parsePublishAssignment} from '../published-assignments.ts';
 import {listInbox,changeInboxRead} from '../in-app-inbox.ts';
 import {reportAttendanceIncident,submitAttendanceAppeal,listOwnerAttendance,listTeacherAttendance,listStaffAttendanceAppeals,reviewAttendanceAppeal} from '../attendance-cases.ts';
-import {publishTrialSlot,listOwnerTrialSlots,bookOwnerTrial} from '../free-trial-booking.ts';
+import {publishTrialSlot,listOwnerTrialSlots,bookOwnerTrial,closeTrialSlot} from '../free-trial-booking.ts';
 import {readTeacherInkDrafts,saveTeacherInkDraft,teacherAssignmentPageRange} from '../teacher-assignment-ink-drafts.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
@@ -456,6 +456,17 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // The library re-reads the signed session from D1; cookie cache and unverified token auth are disabled.
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return reply(401, { code: 'UNAUTHENTICATED' }, requestId);
+  const staffTrialClose=/^\/v1\/staff\/trial-slots\/([a-zA-Z0-9-]{1,128})\/close$/.exec(path);
+  if(staffTrialClose){
+    if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='free_trial_booking'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'TRIAL_SCHEMA_NOT_READY'},requestId);
+    const result=await closeTrialSlot(env.DB,session.user.id,
+      staffTrialClose[1]!,await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
   if(path==='/v1/staff/trial-slots'){
     if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
     const schema=await env.DB.prepare(
