@@ -43,7 +43,7 @@ export function ReaderPrintedPage({ page, viewportFit = false, inkMode, color, s
   const combinedNoteKeys=useMemo(()=>new Set([...noteKeys,...academic.academicNotes.map(n=>n.surah+':'+n.ayah)]),
    [noteKeys,academic.academicNotes]);
   function showAcademicNote(target:QuranTarget):boolean{
-   const entry=academic.academicNotes.find(n=>n.kind==='note'&&
+   const entry=academic.academicNotes.find(n=>n.kind==='note'&&n.authorRole==='teacher'&&
     n.surah===target.surah&&n.ayah===target.ayah&&typeof n.payload.text==='string');
    if(!entry)return false;
    setActiveNote({page,learnerId:cumulativeLearnerId,text:String(entry.payload.text)});
