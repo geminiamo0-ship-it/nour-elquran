@@ -1,3 +1,8 @@
+## 2026-10-31 / #244 — trial rebooking availability refresh candidate (NOT merged)
+- Signed Student /student/lessons has real D1 booking and cancellation, but after a confirmed cancellation it refreshed only the lesson list. The separately mounted StudentTrialBooking retained its prior eligible:false/slot snapshot until the user manually clicked Update. This incorrectly hid newly re-eligible first-trial slots.
+- Branch fix/244-refresh-trial-after-cancel-20261031 passes a monotonically increasing availability revision to the existing server-backed booking component ONLY after cancellation ACK; its existing AbortController and loading state re-fetch authoritative selected-learner slots. Booking ACK still refreshes via its own existing path. No new client eligibility assumptions, payment, teacher assignment or backend write.
+- Added connected SSR boundary smoke; exact-head CI, independent review and signed Cloudflare Dev cancellation→rebook acceptance are PENDING. No Production or flag changes; #244/#155 remain OPEN.
+
 ## 2026-10-31 / #252 — ink snapshot ACK semantics candidate (NOT merged)
 - Branch `fix/252-ink-snapshot-ack-semantics-20261031` removes a false global-save signal from classroom DO ink **snapshots**: an empty pending outbox is not proof that legacy DO strokes reached canonical D1. Only the actual append/replay response may say `persistence:'saved'`; snapshots still report `pending` when a durable delivery is outstanding.
 - Added a regression for historical room-only ink after feature-flag enablement and a pending D1 outage snapshot. Exact-head CI, review and Cloudflare Dev acceptance are **pending**; flag remains OFF and #252 stays OPEN. No Production or real learner data changed.
