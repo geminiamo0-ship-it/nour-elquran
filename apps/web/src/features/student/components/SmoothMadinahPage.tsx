@@ -71,7 +71,7 @@ export function preloadNeighborPages(page: number, radius: number): void {
   advance();
 }
 
-export function SmoothMadinahPage({ page, overlay, viewportFit = false }: { page: number; overlay?: ReactNode; viewportFit?: boolean }) {
+export function SmoothMadinahPage({ page, overlay, viewportFit = false, concealArtwork = false }: { page: number; overlay?: ReactNode; viewportFit?: boolean; concealArtwork?: boolean }) {
   const [shown, setShown] = useState<{ page: number; url: string } | null>(null);
   const [pending, setPending] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -100,7 +100,8 @@ export function SmoothMadinahPage({ page, overlay, viewportFit = false }: { page
         <img className={css.image} src={shown.url}
           alt={'صفحة ' + shown.page + ' من مصحف المدينة'}
           width={345} height={550} draggable={false} />
-        {shown.page === page && overlay}
+        {shown.page === page ? overlay : concealArtwork ?
+         <span className={css.privacyCover} aria-label="المصحف مخفي أثناء تحميل الصفحة المطلوبة"/> : null}
         <span className={css.turnSheen} aria-hidden="true" />
       </div>}
       {!shown && <div className={css.placeholder} role="status">جار تجهيز صفحة المصحف…</div>}

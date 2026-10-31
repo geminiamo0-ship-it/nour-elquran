@@ -57,6 +57,11 @@ export function TrainingQuranSession({range,title,onClose}:Props){
     setAudioToken(v=>v+1);setShowAudio(true);
   }
   const selected=active?.surah+':'+active?.ayah;
+  // Hiding is a presentation-only mask on BOTH the original printed page and
+  // verse list. Revealed verses must be explicitly selected, never auto-leaked.
+  const practiceRevealedKeys=useMemo(()=>hidden?
+    new Set(revealed.map(ayah=>range.surah+':'+ayah)):undefined,
+    [hidden,revealed,range.surah]);
   return <section className={css.studySession} aria-label={'عارض تدريب القرآن: '+title}>
     <header className={css.studyHeader}>
       <div><span className={css.overline}>عارض المصحف نفسه · وضع التدريب</span>
@@ -68,12 +73,13 @@ export function TrainingQuranSession({range,title,onClose}:Props){
         <ReaderPrintedPage page={range.page} inkMode="off" color="#f6cd46"
           strokes={[]} selectedKey={currentAudio ? currentAudio.surah+':'+currentAudio.ayah : selected}
           noteKeys={new Set()} focusKeys={keys} allowedKeys={keys}
+          practiceRevealedKeys={practiceRevealedKeys}
           onSelect={pick} onOpenNote={target=>{
             pick(target);
             setNoteMessage('الملاحظات الدائمة تُكتب في المصحف الشخصي؛ لا ننشئ نسخة ملاحظات منفصلة داخل الواجب.');
           }}
           onInkChange={()=>undefined}/>
-        <span>الآيات المطلوبة مميزة داخل صفحة المصحف الأصلية، دون تغيير النص القرآني.</span>
+        <span>{hidden?'المصحف الأصلي مخفي أثناء الاختبار، ويُكشف فقط الموضع الذي تختاره من القائمة بعد تحقق الخريطة القرآنية.':'الآيات المطلوبة مميزة داخل صفحة المصحف الأصلية، دون تغيير النص القرآني.'}</span>
       </div>
       <div className={css.drillPane}>
         <div className={css.rowBetween}><strong>اختبر حفظك</strong>
