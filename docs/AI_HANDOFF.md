@@ -1,3 +1,7 @@
+## Current #251 A3 — owner-only cumulative self-study writes (candidate, 2026-10-31)
+
+Branch `feat/251-owner-cumulative-self-study-write` adds a narrow signed owner POST to `/v1/me/learners/:id/cumulative-quran`, with strict `self_study` origin and no actor/role/learner body authority, D1 event ACK, replay/CAS/hide and response subject redaction. `scripts/cloudflare-auth-smoke.mjs` now covers real local Better Auth/D1 write/read, isolation, forgery and legacy coexistence. **Next exact action:** inspect PR/Verify on branch HEAD, fix failing checks, then independent review; do not merge without gates. No UI, Classroom DO bridge, historical backfill, Dev or Production release. #251, #252, #253 OPEN.
+
 ## 2026-10-31 Signed Student & Sheikh portal Dev acceptance — PASS (scope limited)
 
 ## CURRENT NEW PRODUCT APPROVAL — 2026-10-31 / ADR 0009 / #250
