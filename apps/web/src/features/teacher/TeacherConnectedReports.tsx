@@ -24,6 +24,7 @@ export function TeacherConnectedReports({learners,lessons}:{
  const selected=completed.find(l=>l.id===chosen)??completed[0];
  const lessonId=selected?.id??'';
  const [loading,setLoading]=useState(true);
+ const [loadedLessonId,setLoadedLessonId]=useState('');
  const [server,setServer]=useState<TeacherReport|null>(null);
  const [draft,setDraft]=useState<ReportContent>(blankReport);
  const [editing,setEditing]=useState(false);
@@ -35,16 +36,17 @@ export function TeacherConnectedReports({learners,lessons}:{
  const inFlight=useRef(false);
  useEffect(()=>{
   let alive=true;const abort=new AbortController();
-  setLoading(true);setMessage('');setUncertain(false);setEditing(false);setDirty(false);
+  setLoading(true);setLoadedLessonId('');setMessage('');setUncertain(false);setEditing(false);setDirty(false);
   setServer(null);setDraft(blankReport());
   if(!lessonId){setLoading(false);return()=>abort.abort();}
   void lessonReportsClient.teacher(lessonId,abort.signal).then(report=>{
    if(!alive||abort.signal.aborted)return;
    setServer(report);setDraft(report?pick(report):blankReport());
-   setLoading(false);
+   setLoadedLessonId(lessonId);setLoading(false);
   }).catch(err=>{
    if(!alive||abort.signal.aborted)return;
-   setMessage(reportErrorMessage(err));setLoading(false);setUncertain(true);
+   setMessage(reportErrorMessage(err));setLoadedLessonId(lessonId);
+   setLoading(false);setUncertain(true);
   });
   return()=>{alive=false;abort.abort();};
  },[lessonId,retry]);
@@ -55,10 +57,12 @@ export function TeacherConnectedReports({learners,lessons}:{
  function change<K extends keyof ReportContent>(key:K,value:ReportContent[K]){
   setDraft(prev=>({...prev,[key]:value}));setDirty(true);setMessage('');
  }
+ // A lesson switch must hide the old report before its new fetch effect runs.
+ const currentLoading=loading||loadedLessonId!==lessonId;
  const isPublished=server?.status==='published'&&!editing;
- const canEdit=!loading&&!busy&&!uncertain&&!isPublished;
+ const canEdit=!currentLoading&&!busy&&!uncertain&&!isPublished;
  async function action(kind:'save'|'publish'){
-  if(!lessonId||loading||uncertain||inFlight.current)return;
+  if(!lessonId||currentLoading||uncertain||inFlight.current)return;
   if(kind==='publish'&&(dirty||server?.status!=='draft'||!server.scope.trim()))return;
   if(kind==='save'&&!dirty)return;
   inFlight.current=true;setBusy(true);setMessage('');
@@ -89,7 +93,7 @@ export function TeacherConnectedReports({learners,lessons}:{
     </option>)}
    </select>
   </label>
-  {loading?<p role="status">جارٍ تحميل حالة التقرير وصلاحيات الحصة...</p>:
+  {currentLoading?<p role="status">جارٍ تحميل حالة التقرير وصلاحيات الحصة...</p>:
    uncertain&&server===null?<div role="alert"><p>{message}</p>
     <button type="button" onClick={()=>setRetry(n=>n+1)}>إعادة التحقق</button></div>:
    <div style={{display:'grid',gap:12}}>
