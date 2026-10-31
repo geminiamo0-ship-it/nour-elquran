@@ -63,11 +63,18 @@ export function StudentTrialReschedule({learnerId,lessonId,startsAtMs,onReschedu
        disabled={busy||uncertain} onClick={()=>void choose(slot.slotId)}>
        {busy?'جارٍ التأكيد…':'تأكيد الموعد الجديد'}</button>
      </div>)}</div>}
-   <button type="button" className={styles.outlineButton} disabled={busy}
-    onClick={()=>{setOpen(false);setMessage('');setUncertain(false);attempt.current=null;}}>
-     العودة للموعد الحالي</button>
-   {!uncertain&&<button type="button" className={styles.outlineButton} disabled={busy}
-    onClick={()=>setRetry(n=>n+1)}>تحديث البدائل</button>}
+   {uncertain?
+    <button type="button" className={styles.outlineButton} disabled={busy}
+     onClick={()=>{setOpen(false);setMessage('');setUncertain(false);
+      attempt.current=null;onRescheduled();}}>
+     تحديث حصصي والتحقق من الحجز</button>:
+    <>
+     <button type="button" className={styles.outlineButton} disabled={busy}
+      onClick={()=>{setOpen(false);setMessage('');attempt.current=null;}}>
+      الاحتفاظ بالموعد الحالي</button>
+     <button type="button" className={styles.outlineButton} disabled={busy}
+      onClick={()=>setRetry(n=>n+1)}>تحديث البدائل</button>
+    </>}
    {message&&<p role="alert">{message}</p>}
   </div>}
  </div>;
