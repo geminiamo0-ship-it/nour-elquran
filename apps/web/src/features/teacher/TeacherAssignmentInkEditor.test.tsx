@@ -15,6 +15,16 @@ describe('private Sheikh Quran marks must not be silently discarded',()=>{
   expect(inkEditorExitDecision(true,true)).toBe('blocked');
   expect(inkEditorExitDecision(false,true)).toBe('blocked');
  });
+ it('allows safe exit from an already saved private draft while range reloads',()=>{
+  const existing={...initial,draftId:'32a8e27c-400a-4cfe-aee7-81bf2895bdeb',
+   learnerId:'synthetic-learner',revision:1,marks:[],updatedAtMs:0};
+  const html=renderToStaticMarkup(<TeacherAssignmentInkEditor
+   learnerId="synthetic-learner" initial={initial} existing={existing}
+   onSaved={()=>undefined} onPublished={()=>undefined} onCancel={()=>undefined}/>);
+  expect(html).toContain('جارٍ التحقق من نطاق المصحف المعتمد');
+  expect(html).toContain('إغلاق المحرر');
+  expect(html).not.toContain('تجاهل التغييرات وإغلاق المحرر');
+ });
  it('shows a safe close even when authorized page range is still loading',()=>{
   const html=renderToStaticMarkup(<TeacherAssignmentInkEditor
    learnerId="synthetic-learner" initial={initial} onSaved={()=>undefined}
