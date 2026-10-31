@@ -6,6 +6,7 @@ import { useStudent } from '../StudentContext';
 import { nextBookedLesson, validAssignmentRange, VOLUNTARY_SAMPLES } from '../quranAssignment';
 import { TrainingQuranSession } from './TrainingQuranSession';
 import {StudentPublishedAssignments} from './StudentPublishedAssignments';
+import {StudentConnectedPreparation} from './StudentConnectedPreparation';
 import css from './TrainingWorkspace.module.css';
 
 type Tab = 'homework' | 'prepare' | 'practice';
@@ -131,7 +132,11 @@ export function TrainingWorkspace(){
       </div>}
     </section>}
 
-    {tab==='prepare'&&<section id="training-panel-prepare" role="tabpanel" aria-labelledby="training-tab-prepare" className={css.content}>
+    {tab==='prepare'&&!selected.profile.demo&&
+      <StudentConnectedPreparation key={selected.profile.id}
+       learnerId={selected.profile.id} onHomework={()=>changeTab('homework')}
+       onPractice={()=>changeTab('practice')}/>}
+    {tab==='prepare'&&selected.profile.demo&&<section id="training-panel-prepare" role="tabpanel" aria-labelledby="training-tab-prepare" className={css.content}>
       <div className={css.sectionHeading}><div>
         <p className={css.overline}>قبل اللقاء القادم</p>
         <h3>الاستعداد للحصة</h3></div>
