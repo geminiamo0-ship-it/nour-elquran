@@ -1,3 +1,8 @@
+## 2026-10-31 — #244 booked trial slot closure safety candidate
+- Current branch: `fix/244-reject-closing-booked-trial-slot-20261031`, based on main `5d8bc59b584f31d7cb961abbe95d3e485db6d941`.
+- Concrete defect: `trial_slot_close_guard` in 0021 allowed closing a published slot after a live booking, despite explicit unfilled-only semantics. 0023 replaces only that trigger, retaining staff and future-time checks, and denies closure while any linked lesson is non-cancelled. Test covers booked denial, no phantom closure, explicit staff cancellation, then valid withdrawal.
+- Next: inspect exact-head GitHub Verify, resolve any failures, independent PR review, then signed two-account Cloudflare Dev test before merge/issue acceptance. Do not change Production, payment/WhatsApp/audio policy or `NOOR_CUMULATIVE_INK_ENABLED` (OFF). #244 and #155 stay OPEN.
+
 ## #252 classroom snapshot ACK safety — 2026-10-31 (branch candidate)
 - Branch `fix/252-ink-snapshot-ack-semantics-20261031`: `LessonRoom` no longer calls an ink snapshot `saved` merely because `pendingQuranInk` is empty; old DO-only strokes can exist without any canonical ledger event. A pending outbox still reports `pending`. Write ACK behavior is unchanged.
 - Tests in `classroom-cumulative-delivery.test.ts` cover pending outage snapshot and pre-bridge DO stroke before/after enabling the gated bridge; D1 event count remains zero for the latter.
