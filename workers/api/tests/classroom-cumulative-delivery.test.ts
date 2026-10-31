@@ -75,6 +75,10 @@ test('D1 outage: room ink and ordered pending outbox commit atomically; reboot r
  assert.equal(result.status,202);
  assert.equal((await result.json() as {code:string}).code,'INK_PENDING_PERSISTENCE');
  assert.equal((items.get('pendingQuranInk') as unknown[]).length,1);
+ const pendingSnapshot=await roomRequest(first,{lessonId:op.lessonId,
+  learnerId:op.learnerId,actorSubject:op.actorSubject,role:op.role,
+  action:'snapshot',page:35});
+ assert.equal((await pendingSnapshot.json() as {persistence?:string}).persistence,'pending');
  assert.equal((items.get('quranInk:35') as {records:unknown[]}).records.length,1);
  assert.ok(alarms.length>0);
  const namespace={idFromName:()=>({}),get:()=>({fetch:(req:Request)=>first.fetch(req)})};
@@ -98,6 +102,31 @@ test('D1 outage: room ink and ordered pending outbox commit atomically; reboot r
  assert.equal(rejected.status,409);
  assert.equal(db.events.size,1);
 });
+test('a room-only legacy stroke never masquerades as a canonical D1 ACK on snapshot',async()=>{
+ const {store}=memory(),db=dbStub();
+ await store.put('room',{lessonId:'lesson-ink',revision:1,
+  teacher:{subject:'signed-sheikh',learnerId:'learner-ink',expiresAtMs:Date.now()+60000},
+  learner:null});
+ await store.put('quranPage',{edition:'hafs-kfqc-v1.1.1',page:35,revision:1,receipts:[]});
+ const legacyRoom=new LessonRoom({storage:store});
+ const applied=await roomRequest(legacyRoom,op);
+ assert.equal(applied.status,200);
+ assert.equal((await applied.json() as {persistence?:string}).persistence,undefined);
+ const snapshot={lessonId:op.lessonId,learnerId:op.learnerId,
+  actorSubject:op.actorSubject,role:op.role,action:'snapshot',page:35};
+ const local=await roomRequest(legacyRoom,snapshot);
+ assert.equal(local.status,200);
+ assert.equal((await local.json() as {persistence?:string}).persistence,undefined);
+ // Turning on the gated bridge does not retroactively commit historical DO ink.
+ const gated=new LessonRoom({storage:store},{DB:db.db,NOOR_CUMULATIVE_INK_ENABLED:'true'});
+ const afterFlag=await roomRequest(gated,snapshot);
+ assert.equal(afterFlag.status,200);
+ const body=await afterFlag.json() as {persistence?:string;ink:{strokes:unknown[]}};
+ assert.equal(body.ink.strokes.length,1);
+ assert.equal(body.persistence,undefined,'empty outbox is not a D1 write ACK');
+ assert.equal(db.events.size,0);
+});
+
 test('missing D1 or revoked identity denies gated room write without local stroke',async()=>{
  const {store,items}=memory();
  await store.put('room',{lessonId:'lesson-ink',revision:1,
