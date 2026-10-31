@@ -1,3 +1,7 @@
+## #244 staff trial slot withdrawal after booking — source regression (candidate)
+- Full D1 migration test `test_free_trial_booking.py::FreeTrialD1::test_staff_cannot_withdraw_an_actively_booked_trial_slot` verifies active booked trial cannot be withdrawn by staff (atomic `TRIAL_SLOT_ALREADY_BOOKED`), original lesson stays scheduled, and no closure event appears.
+- After separately authorized staff cancellation, the same slot may be withdrawn; a later trial booking must be denied. Run exact-head Verify (native SQLite/migration suites) and isolated signed Cloudflare Dev before claiming runtime acceptance. This does not implement subscriptions or payments.
+
 ## #252 ink snapshot truthfulness regression (candidate; no runtime acceptance)
 - A DO snapshot must never claim `persistence:'saved'` solely from an empty outbox: historical room-only marks may not have a D1 event. Pending D1 delivery must remain `pending`; only a confirmed append/replay may report `saved`.
 - Targeted `classroom-cumulative-delivery.test.ts` covers both a failed D1 write with pending snapshot and a legacy DO-only stroke with feature gate off/on. Run exact-head GitHub Verify and retain #252 open pending signed Dev two-role test and backfill reconciliation.
