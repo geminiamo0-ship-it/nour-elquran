@@ -1,5 +1,5 @@
 import {strict as assert} from 'node:assert';
-import {test} from 'node:test';
+import {test} from 'vitest';
 import {parseLessonQuranHistory} from './lesson-quran-history-client';
 
 const learner='learner-1',lesson='lesson-1';
