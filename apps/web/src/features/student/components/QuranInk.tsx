@@ -2,7 +2,12 @@
 
 import { useRef, useState, type PointerEvent } from 'react';
 import type { QuranInkStroke } from '../quranAnnotations';
-import type { PreviewFrame } from '@/features/classroom/ink-preview';
+/** Feature-local shape; classroom integration is intentionally one-way. */
+export type PreviewFrame=Readonly<{
+ type:'ink-preview';phase:'start'|'move'|'end'|'cancel';strokeId:string;
+ page:number;seq:number;kind:'pen'|'marker';color:string;width:3|16;
+ points:ReadonlyArray<Readonly<{x:number;y:number}>>;
+}>;
 import { pointToPath } from '../quranAnnotations';
 import css from './QuranInk.module.css';
 
