@@ -11,9 +11,11 @@ type Props = {
   mode: InkMode;
   color: string;
   strokes: readonly QuranInkStroke[];
+  /** Teacher/classroom academic overlay: never editable by personal eraser. */
+  fixedStrokes?: readonly QuranInkStroke[];
   onChange: (strokes: QuranInkStroke[]) => void;
 };
-export function QuranInk({ page, mode, color, strokes, onChange }: Props) {
+export function QuranInk({ page, mode, color, strokes, fixedStrokes = [], onChange }: Props) {
   const active = useRef<{ pointerId:number; points:{x:number;y:number}[] } | null>(null);
   const [draft, setDraft] = useState<readonly {x:number;y:number}[]>([]);
   const enabled = mode !== 'off';
@@ -67,6 +69,10 @@ export function QuranInk({ page, mode, color, strokes, onChange }: Props) {
     {strokes.map(s=><path key={s.id} d={pointToPath(s.points)}
       stroke={s.color} strokeWidth={s.width} opacity={s.kind==='marker'?0.36:0.9}
       fill="none" strokeLinecap="round" strokeLinejoin="round"/> )}
+    {fixedStrokes.map(s=><path key={'academic-'+s.id} d={pointToPath(s.points)}
+      stroke={s.color} strokeWidth={s.width} opacity={s.kind==='marker'?0.36:0.9}
+      fill="none" strokeLinecap="round" strokeLinejoin="round"
+      pointerEvents="none" aria-label="علامة تعليمية مشتركة"/>)}
     {draft.length>1 && <path d={pointToPath(draft)} stroke={color}
       strokeWidth={mode==='marker'?16:3} opacity={mode==='marker'?0.36:0.9}
       fill="none" strokeLinecap="round" strokeLinejoin="round"/>}

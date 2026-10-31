@@ -352,6 +352,7 @@ export function MadinahReader() {
               }}>
               <ReaderPrintedPage page={leaf} color={color} inkMode={privateSave.canEditPage(leaf)?inkMode:'off'}
                 strokes={inkByPage[leaf]??[]} onInkChange={changeInkFor}
+                cumulativeLearnerId={privateEnabled?selected.profile.id:undefined}
                 selectedKey={audioVerse ? quranAudioKey(audioVerse) : selectedKey} noteKeys={noteByKey}
                 onSelect={handleVerseTap} onOpenNote={selectTarget}/>
               </div>)}

@@ -1,0 +1,11 @@
+.note{position:absolute;inset-inline:5%;bottom:6%;z-index:7;max-height:32%;
+ overflow-y:auto;display:grid;grid-template-columns:1fr auto;gap:4px 8px;
+ background:#fffdf4f8;border:1px solid #af935a;border-radius:7px;
+ padding:10px 12px;color:#254332;text-align:right;direction:rtl;
+ box-shadow:0 5px 18px #0002;font-size:12px;line-height:1.7}
+.note strong{grid-column:1}.note span{grid-column:1;white-space:pre-line}
+.note button{grid-column:2;grid-row:1;border:0;background:transparent;cursor:pointer;
+ font-size:18px;color:#46584b;align-self:start}
+.status{position:absolute;z-index:4;inset-inline:5%;bottom:3%;pointer-events:none;
+ background:#fff5e8ed;color:#843b32;border:1px solid #d9b0a5;border-radius:5px;
+ padding:6px 8px;font-size:10px;line-height:1.6;text-align:center}

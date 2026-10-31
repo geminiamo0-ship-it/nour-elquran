@@ -1,0 +1,12 @@
+# ADR 0009 / #253 — Owner read-only academic overlay in real Mushaf & Training
+
+**Scope:** view-only integration of the already-authorized `GET /v1/me/learners/:id/cumulative-quran?page=N` on existing verified Hafs printed-page `ReaderPrintedPage`. No new public mutation or teacher access.
+
+- Real signed student (not demo) on a connected account fetches canonical `learner_quran_current` + legacy owner-private marks per page, with `no-store`, exact learner/page checks and bounded response validation.
+- In **personal Mushaf**, existing owner-private pen, marker and notes continue in their independently editable `usePrivateMushafSave` layer. The shared teacher/classroom academic ink is rendered as **fixed readonly strokes** in the same `QuranInk` SVG coordinate space. The user's eraser, undo and sync only operate on their personal strokes, never on teacher marks; no private event is copied to academic D1.
+- In **TrainingQuranSession** (homework and self-study of real signed users), both shared academic strokes and **legacy personal ink from the owner composite read** are shown read-only. The training page still uses the same `ReaderPrintedPage`, not a separate Quran image. The existing practice verse concealment stays *above* ink and note elements when hidden. 
+- Shared academic notes/highlights add verse note indicators; tapping an annotated verse presents the Sheikh note as read-only, with source originally preserved in D1. Do not misattribute a learner-only mark as teacher-authored if owner shared classroom contributions are present: the generic 'ملاحظة الشيخ' display applies to teacher-created notes only. Render pen/marker with author provenance for eventual fine-grained filters.
+- Response is never synthesized when API fails, page switched or user switches siblings. A small truthful error on the Quran page reports missing academic marks, while preserving scripture reading. Existing plain demo routes intentionally have no academic fetch.
+- This PR does **not** turn on DO→D1 flag, does not activate learner public classroom writing, does not backfill unexported historical DO ink, does not implement task draft mark publishing nor a Notebook historical filter. Those remain #252/#253 gates before full product acceptance.
+
+Tests include wrong sibling, wrong-page academic mark, teacher-only response rejection, forged payload and max-page cap. All actual D1/Better Auth authorization remains enforced server-side per #256.
