@@ -1,3 +1,8 @@
+## 2026-10-31 / #286 — native D1 rejects unassigned sibling Sheikh ink drafts (candidate)
+- Draft PR #288 adds `teacher-draft-native-d1-unassigned-sibling.sql` and a fail-closed check in `cloudflare-local-smoke.sh`: same-household sibling B has no Sheikh grant, so its otherwise-valid highlight draft must return `DRAFT_ACCESS_DENIED`, persist no draft, and create no sibling Quran event/projection. This complements the existing positive A publication and zero B projection tests; all fixtures are synthetic and disposable.
+- Commits `5a1e1c1b` / `2b683710` on `test/286-native-d1-ink-draft-repro`; exact-head CI and signed Cloudflare Dev acceptance **not yet established** for this addition. No merge, no Dev migration, no Production, no feature flag changes. #286 remains OPEN.
+- NEXT: inspect latest exact-head Verify, correct failures, obtain independent review; then controlled Dev migration 0023 and signed Sheikh draft save/replay → publish → owner readback and sibling denial. Keep cumulative ink OFF.
+
 ## 2026-10-31 / #286 — native D1 same-household sibling isolation gate (PR #288; NOT merged)
 - Draft PR #288 adds a second synthetic learner under the same owner in `scripts/fixtures/teacher-draft-native-d1.sql`. After publishing a Sheikh pen+highlight draft for learner A, the native D1 fixture requires exactly two canonical events/current marks for A and zero for sibling B. `scripts/cloudflare-local-smoke.sh` now fails unless `NATIVE_DRAFT_SIBLING_ISOLATED_OK` is present. No real learner data.
 - Earlier exact-head Verify [41188758711](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41188758711) passed **4/4** on `552bddae` (before this addition). **New exact-head CI pending** for the sibling assertion; do not claim it passed yet.
