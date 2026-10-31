@@ -13,8 +13,7 @@ CREATE TABLE noor_inbox_items (
  detail TEXT NOT NULL CHECK(length(trim(detail)) BETWEEN 1 AND 240),
  created_at_ms INTEGER NOT NULL CHECK(created_at_ms>=0),
  CHECK ((kind='assignment_published' AND recipient_kind='owner') OR
-        (kind<>'assignment_published')),
- UNIQUE(recipient_subject,kind,source_id,created_at_ms)
+        (kind<>'assignment_published'))
 ) STRICT;
 CREATE INDEX noor_inbox_recipient ON noor_inbox_items(
  recipient_subject,recipient_kind,created_at_ms DESC,id DESC);
@@ -44,14 +43,14 @@ BEGIN
    kind,source_id,title,detail,created_at_ms)
  SELECT lower(hex(randomblob(16))),NEW.learner_id,a.auth_subject,'owner',
   'lesson_booked',NEW.id,'حصة مؤكدة','أُضيفت حصة جديدة إلى جدولك',
-  NEW.starts_at_ms
+  CAST(strftime('%s','now') AS INTEGER)*1000
  FROM learners l JOIN accounts a ON a.id=l.account_id
  WHERE l.id=NEW.learner_id AND l.status='active' AND a.status='active';
  INSERT INTO noor_inbox_items(id,learner_id,recipient_subject,recipient_kind,
    kind,source_id,title,detail,created_at_ms)
  SELECT lower(hex(randomblob(16))),NEW.learner_id,t.auth_subject,'teacher',
   'lesson_booked',NEW.id,'حصة جديدة','أُضيفت حصة إلى جدول الشيخ',
-  NEW.starts_at_ms
+  CAST(strftime('%s','now') AS INTEGER)*1000
  FROM teachers t WHERE t.id=NEW.actual_teacher_id
   AND t.status='active' AND t.qualified=1;
 END;
