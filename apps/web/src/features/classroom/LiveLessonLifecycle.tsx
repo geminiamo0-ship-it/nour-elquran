@@ -3,12 +3,14 @@ import Link from 'next/link';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import css from './ClassroomSessionHeader.module.css';
 import live from './ConnectedClassroom.module.css';
+import {elapsedLessonLabel} from './lesson-elapsed';
 type Phase='scheduled'|'live'|'completed'|'cancelled';
 type Result=Readonly<{phase:Phase;lessonId:string;startedAtMs:number|null;
  endedAtMs:number|null;reservedUntilMs:number;instructionMinutes:30;reservationMinutes:40}>;
 type Props=Readonly<{
  role:'teacher'|'learner';lessonId:string;learnerId?:string;
  joined:boolean;bothPresent:boolean;onPhase:(phase:Phase)=>void;
+ refreshVersion?:number;
 }>;
 function endpoint(p:Props){
  const id=encodeURIComponent(p.lessonId);
@@ -46,6 +48,7 @@ export function LiveLessonLifecycle(props:Props){
  const [confirm,setConfirm]=useState(false);
  const [error,setError]=useState('');
  const [loading,setLoading]=useState(true);
+ const [now,setNow]=useState(()=>Date.now());
  const inflight=useRef(false);
  const last=useRef<Phase|null>(null);
  const onPhaseRef=useRef(onPhase);
@@ -74,7 +77,16 @@ export function LiveLessonLifecycle(props:Props){
   document.addEventListener('visibilitychange',visible);
   return()=>{active=false;controller.abort();window.clearInterval(interval);
    document.removeEventListener('visibilitychange',visible);};
- },[base]);
+ },[base,props.refreshVersion]);
+ useEffect(()=>{
+  if(result?.phase!=='live')return;
+  const tick=()=>setNow(Date.now());
+  tick();
+  const interval=window.setInterval(tick,1000);
+  document.addEventListener('visibilitychange',tick);
+  return()=>{window.clearInterval(interval);
+   document.removeEventListener('visibilitychange',tick);};
+ },[result?.phase,result?.startedAtMs]);
  const submit=useCallback(async(action:'start'|'end')=>{
   if(role!=='teacher'||busy||!result||(!joined&&action==='start'))return;
   if(inflight.current)return;
@@ -94,10 +106,13 @@ export function LiveLessonLifecycle(props:Props){
   finally{inflight.current=false;setBusy(false);}
  },[role,busy,result,joined,base]);
  const phase=result?.phase;
+ const elapsed=phase==='live'?elapsedLessonLabel(result?.startedAtMs??null,now):null;
  return <div className={live.lifecycleControls} aria-label="حالة وبدء وإنهاء الحصة">
   {loading?<span role="status">جارٍ التحقق…</span>:
    phase==='completed'?<span className={live.lifecycleDone}>انتهت الحصة</span>:
-   phase==='live'?<span className={live.lifecycleRunning}>الحصة جارية</span>:
+   phase==='live'?<><span className={live.lifecycleRunning}>الحصة جارية</span>
+    <span className={css.clock} role="timer" aria-label="الوقت المنقضي منذ بداية الحصة">
+     {elapsed??'جارٍ تأكيد البداية'}</span></>:
    <span className={live.lifecycleWaiting}>غرفة الانتظار</span>}
   {role==='teacher'&&phase==='scheduled'&&<button className={css.start}
    type="button" disabled={!joined||!bothPresent||busy||loading}

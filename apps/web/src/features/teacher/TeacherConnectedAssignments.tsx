@@ -5,12 +5,12 @@ import {assignmentClient,assignmentMessage,type AssignmentDraft,type AssignmentS
 import type {TeacherRosterRow} from './teacher-read-api';
 import {TeacherAssignmentReview} from './TeacherAssignmentReview';
 import {TeacherAssignmentInkEditor} from './TeacherAssignmentInkEditor';
-import {teacherInkDraftClient,type SavedInkDraft} from './teacher-ink-draft-client';
+import {teacherInkDraftClient,TeacherDraftError,type SavedInkDraft} from './teacher-ink-draft-client';
 import css from './TeacherReadOnly.module.css';
 const client=assignmentClient();
 const kinds={memorization:'حفظ',revision:'مراجعة',recitation:'تلاوة'} as const;
 type Loaded={status:'loaded';learnerId:string;catalog:readonly AssignmentSource[];assignments:readonly PublishedAssignment[];
- drafts:readonly SavedInkDraft[];draftsUnavailable:boolean};
+ drafts:readonly SavedInkDraft[];draftsUnavailable:boolean;draftsError?:string};
 type State=Loaded|{status:'loading'|'error'};
 export function TeacherConnectedAssignments({learners}:{learners:readonly TeacherRosterRow[]}){
  const [learnerId,setLearnerId]=useState(learners[0]?.id??'');
@@ -31,9 +31,14 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
   if(!selected){setState({status:'loaded',learnerId:'',catalog:[],assignments:[],drafts:[],draftsUnavailable:false});return()=>abort.abort();}
   void Promise.all([client.catalog(abort.signal),client.teacher(selected,abort.signal)])
    .then(async ([catalog,assignments])=>{
-     const drafts=await teacherInkDraftClient.list(selected,abort.signal).catch(()=>null);
+     let draftsError:string|undefined;
+     const drafts=await teacherInkDraftClient.list(selected,abort.signal).catch(error=>{
+      draftsError=error instanceof TeacherDraftError?error.code:'DRAFT_UNAVAILABLE';
+      return null;
+     });
      if(active&&!abort.signal.aborted){
-      setState({status:'loaded',learnerId:selected,catalog,assignments,drafts:drafts??[],draftsUnavailable:drafts===null});
+      setState({status:'loaded',learnerId:selected,catalog,assignments,drafts:drafts??[],
+       draftsUnavailable:drafts===null,...(draftsError?{draftsError}:{})});
       setSurah(catalog[0]?.surah??1);
      }
    }).catch(err=>{
@@ -120,7 +125,16 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
      <button type="button" onClick={()=>{setRetry(x=>x+1);setUncertain(false);setEditor(null);}} disabled={saving}>تحديث الواجبات</button>
     </div>
    </form>
-   {(state.status==='loaded'&&state.draftsUnavailable)&&<p role="alert">خدمة مسودات العلامات غير متاحة على هذه البيئة؛ نشر الواجبات النصية ما زال يعمل.</p>}
+   {(state.status==='loaded'&&currentLoaded&&state.draftsUnavailable)&&<p role="alert">
+      تعذّر تحميل علامات الواجب للطالب المختار؛ لم نفعّل نشر العلامات حتى يرد الخادم بشكل سليم.
+      السبب: <code>{state.draftsError??'DRAFT_UNAVAILABLE'}</code>.
+      {state.draftsError==='DRAFT_SCHEMA_NOT_READY'
+       ?' تحتاج قاعدة بيانات Dev إلى مراجعة ترحيلات مسودات الواجب.'
+       :state.draftsError==='NETWORK_FAILURE'
+       ?' تعذّر الاتصال بالشبكة؛ جرّب تحديث الواجبات.'
+       :' راجع صلاحية الشيخ والرد الفعلي من الخدمة ثم أعد المحاولة.'}
+      <button type="button" disabled={saving} onClick={()=>setRetry(n=>n+1)}>إعادة فحص المسودات</button>
+     </p>}
    {editor&&<TeacherAssignmentInkEditor key={editor.key} learnerId={selected}
     initial={editor.input} existing={editor.existing}
     onCancel={()=>setEditor(null)}
