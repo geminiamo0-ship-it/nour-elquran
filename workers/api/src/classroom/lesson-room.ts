@@ -38,6 +38,20 @@ export type RoomResult=
  | {ok:false;code:'NOT_JOINED'|'ROOM_ID_MISMATCH'|'ROOM_ACTOR_CONFLICT'|'ROOM_EVICTION_PENDING'};
 export const ROOM_LEASE_MS=25_000;
 const allowed=/^[a-zA-Z0-9-]{1,128}$/;
+const endOp=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+type InkEndToken=Readonly<{operationId:string;subject:string;learnerId:string}>;
+function parseInkEndToken(value:unknown):({lessonId:string;learnerId:string;
+ actorSubject:string;operationId:string})|null{
+ if(!value||typeof value!=='object'||Array.isArray(value))return null;
+ const input=value as Record<string,unknown>;
+ if(Object.keys(input).length!==4||
+  typeof input.lessonId!=='string'||!allowed.test(input.lessonId)||
+  typeof input.learnerId!=='string'||!allowed.test(input.learnerId)||
+  typeof input.actorSubject!=='string'||!allowed.test(input.actorSubject)||
+  typeof input.operationId!=='string'||!endOp.test(input.operationId))return null;
+ return {lessonId:input.lessonId,learnerId:input.learnerId,
+  actorSubject:input.actorSubject,operationId:input.operationId};
+}
 
 export function validVerifiedRoomCommand(v:unknown):v is VerifiedRoomCommand {
  if(!v||typeof v!=='object'||Array.isArray(v))return false;
@@ -359,21 +373,24 @@ export class LessonRoom {
   // The authenticated Worker fences the room BEFORE D1 lesson End. Room
   // transactions serialize this fence with ink additions; a pending D1 row
   // prevents End and the alarm can safely retry while lesson remains live.
-  if(path==='/internal/quran-ink-end-fence'){
+  if(path==='/internal/quran-ink-end-fence'||path==='/internal/quran-ink-end-release'){
    if(request.method!=='POST'||!this.cumulativeInkEnabled)
     return Response.json({code:'NOT_FOUND'},{status:404});
    let value:unknown;
    try{value=await request.json();}catch{return Response.json({code:'INVALID_INK_FENCE'},{status:400});}
-   if(!value||typeof value!=='object'||Array.isArray(value))
-    return Response.json({code:'INVALID_INK_FENCE'},{status:400});
-   const input=value as Record<string,unknown>;
-   if(Object.keys(input).length!==3||
-    typeof input.lessonId!=='string'||!allowed.test(input.lessonId)||
-    typeof input.learnerId!=='string'||!allowed.test(input.learnerId)||
-    typeof input.actorSubject!=='string'||!allowed.test(input.actorSubject))
-    return Response.json({code:'INVALID_INK_FENCE'},{status:400});
+   const input=parseInkEndToken(value);
+   if(!input)return Response.json({code:'INVALID_INK_FENCE'},{status:400});
    try{
-    await this.flushQuranInk();
+    // Only failed/uncommitted End may reopen drawing. Never trust the Worker's
+    // failure diagnosis: confirm the authoritative D1 phase is STILL live.
+    if(path==='/internal/quran-ink-end-release'){
+     if(!this.env?.DB)return Response.json({code:'QURAN_INK_FENCE_UNAVAILABLE'},{status:503});
+     const lesson=await this.env.DB.prepare(
+      "SELECT status FROM lessons WHERE id=? AND learner_id=?"
+     ).bind(input.lessonId,input.learnerId).first<{status:string}>();
+     if(lesson?.status!=='live')
+      return Response.json({code:'QURAN_INK_FENCE_UNAVAILABLE'},{status:503});
+    }else await this.flushQuranInk();
     return await this.ctx.storage.transaction(async txn=>{
      const room=await txn.get<RoomRecord>('room');
      const teacher=room?.teacher;
@@ -381,10 +398,26 @@ export class LessonRoom {
       teacher.subject!==input.actorSubject||
       teacher.learnerId!==input.learnerId)
       return Response.json({code:'NOT_JOINED'},{status:404});
+     const closing=await txn.get<InkEndToken|boolean>('quranInkClosing');
+     if(path==='/internal/quran-ink-end-release'){
+      if(!closing||typeof closing!=='object'||
+       closing.operationId!==input.operationId||
+       closing.subject!==input.actorSubject||
+       closing.learnerId!==input.learnerId)
+       return Response.json({code:'QURAN_INK_FENCE_CONFLICT'},{status:409});
+      await txn.put('quranInkClosing',false);
+      return Response.json({code:'QURAN_INK_FENCE_RELEASED'});
+     }
      const pending=await txn.get<PendingQuranInk[]>('pendingQuranInk')??[];
      if(pending.length)
       return Response.json({code:'QURAN_INK_PENDING',pending:pending.length},{status:409});
-     await txn.put('quranInkClosing',true);
+     // A retry of End by the same verified Sheikh may replace an interrupted
+     // fence; an unknown legacy lock must never be unlocked on a guess.
+     if(closing&&(typeof closing!=='object'||closing.subject!==input.actorSubject||
+       closing.learnerId!==input.learnerId))
+      return Response.json({code:'QURAN_INK_FENCE_CONFLICT'},{status:409});
+     await txn.put('quranInkClosing',{operationId:input.operationId,
+      subject:input.actorSubject,learnerId:input.learnerId} satisfies InkEndToken);
      return Response.json({code:'QURAN_INK_FENCED'});
     });
    }catch{return Response.json({code:'QURAN_INK_FENCE_UNAVAILABLE'},{status:503});}
