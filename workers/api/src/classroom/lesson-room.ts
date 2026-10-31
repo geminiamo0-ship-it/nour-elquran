@@ -14,6 +14,7 @@ import {prepareCumulativeInkDelivery,queueCumulativeInk,
  type PendingQuranInk} from './ink-cumulative-outbox.ts';
 import {parseVerifiedMicCommand,initialMicPolicy,applyMicPolicy,type MicPolicy} from './mic-policy.ts';
 import {validVerifiedRealtimeActor,validRealtimeHint,type VerifiedRealtimeActor,type RealtimeHint} from './realtime.ts';
+import {parseInkPreview,MAX_PREVIEW_BYTES,type InkPreviewFrame} from './ink-preview.ts';
 import {parseVerifiedCorrection,initialCorrections,appendCorrection,type CorrectionsState} from './live-corrections.ts';
 
 export type RoomAction='join'|'heartbeat'|'leave'|'snapshot'|'media-intent';
@@ -146,6 +147,7 @@ function enqueue(outbox:PendingMediaEviction[],room:RoomRecord,role:RoomRole,lea
 export class LessonRoom {
  private readonly ctx:LessonRoomContext;
  private readonly env:Env|undefined;
+ private readonly previewRates=new WeakMap<WebSocket,{at:number;strokeId:string;seq:number}>();
  constructor(ctx:LessonRoomContext,env?:Env){this.ctx=ctx;this.env=env;}
  private get cumulativeInkEnabled(){return this.env?.NOOR_CUMULATIVE_INK_ENABLED==='true';}
  /** Only a verified Worker can reach this internal upgrade path. DO separately
@@ -213,11 +215,78 @@ export class LessonRoom {
   if(!this.ctx.waitUntil||!this.ctx.getWebSockets)return;
   this.ctx.waitUntil(this.pushRealtime(hint).catch(()=>undefined));
  }
- /** Receive-only channel. Privileged drawing/page writes must remain signed
-  * HTTP requests with CAS, idempotency, D1 gates and durable outbox. */
- webSocketMessage(socket:WebSocket,_message:string|ArrayBuffer):void{
-  void _message;
-  try{socket.close(1008,'read only');}catch{/* socket already closed; continue best-effort cleanup */}
+ /** A provisional preview is *not* a Quran ink write or saved receipt.
+  * Explicitly require the separate D1 cumulative gate before live previews;
+  * disabled by default even if read-only page hints are enabled. */
+ private async sendPreview(socket:WebSocket,message:string|ArrayBuffer):Promise<void>{
+  if(this.env?.NOOR_REALTIME_HINTS_ENABLED!=='true'||
+     !this.cumulativeInkEnabled||typeof message!=='string'||
+     message.length>MAX_PREVIEW_BYTES){
+   try{socket.close(1008,'preview disabled');}catch{/* already closed */}return;
+  }
+  let parsed:unknown;
+  try{parsed=JSON.parse(message);}catch{parsed=null;}
+  const frame=parseInkPreview(parsed);
+  if(!frame){try{socket.close(1008,'invalid preview');}catch{/* already closed */}return;}
+  const sender=socket as RealtimeSocket;
+  let actor:unknown;
+  try{actor=sender.deserializeAttachment();}catch{actor=null;}
+  const now=Date.now(),room=await this.ctx.storage.get<RoomRecord>('room');
+  if(!validVerifiedRealtimeActor(actor)||!room||room.lessonId!==actor.lessonId){
+   try{socket.close(1008,'unauthorized');}catch{/* already closed */}return;
+  }
+  const lease=room[actor.role];
+  if(!lease||lease.expiresAtMs<=now||lease.subject!==actor.actorSubject||
+     lease.learnerId!==actor.learnerId||
+     !await this.authorized(lease,actor.role,actor.lessonId,now)){
+   try{socket.close(1008,'authorization expired');}catch{/* already closed */}return;
+  }
+  if(!this.env?.DB)return;
+  try{
+   const state=await this.env.DB.prepare(
+    'SELECT status FROM lessons WHERE id=? AND learner_id=?'
+   ).bind(actor.lessonId,actor.learnerId).first<{status:string}>();
+   if(state?.status!=='live'){
+    try{socket.close(1008,'lesson not live');}catch{/* already closed */}return;
+   }
+  }catch{return;} // Fail closed; no provisional content on D1 uncertainty.
+  const current=await this.ctx.storage.get<SharedPageRecord>('quranPage')??initialPage();
+  if(current.page!==frame.page)return;
+  const prev=this.previewRates.get(socket);
+  // Per-socket 20ms frame budget; network may drop previews but canonical ink
+  // is still reliably reconciled with the signed snapshot after final POST.
+  if(prev&&now-prev.at<20&&frame.phase==='move')return;
+  if(prev&&prev.strokeId===frame.strokeId&&frame.seq<=prev.seq)return;
+  if(frame.phase!=='start'&&(!prev||prev.strokeId!==frame.strokeId))return;
+  this.previewRates.set(socket,{at:now,strokeId:frame.strokeId,seq:frame.seq});
+  if(!this.ctx.getWebSockets)return;
+  const outbound=JSON.stringify({...frame,source:actor.role});
+  for(const candidate of this.ctx.getWebSockets()){
+   if(candidate===socket)continue;
+   const dest=candidate as RealtimeSocket;
+   let receiver:unknown;
+   try{receiver=dest.deserializeAttachment();}catch{receiver=null;}
+   if(!validVerifiedRealtimeActor(receiver)||receiver.lessonId!==actor.lessonId||
+      receiver.learnerId!==actor.learnerId||
+      (receiver.role===actor.role&&receiver.actorSubject===actor.actorSubject))
+    continue;
+   const receiverLease=room[receiver.role];
+   if(!receiverLease||receiverLease.subject!==receiver.actorSubject||
+      receiverLease.learnerId!==receiver.learnerId||receiverLease.expiresAtMs<=now||
+      !await this.authorized(receiverLease,receiver.role,receiver.lessonId,now)){
+    try{candidate.close(1008,'authorization expired');}catch{/* already closed */}
+    continue;
+   }
+   try{
+    if(candidate.readyState===1&&candidate.bufferedAmount<64*1024)
+     candidate.send(outbound);
+   }catch{/* frame is ephemeral; signed final snapshot repairs drops */}
+  }
+ }
+ /** Transport can accept only bounded provisional pen fragments.
+  * Permanent writes still require signed HTTP, DO CAS and D1 outbox. */
+ async webSocketMessage(socket:WebSocket,message:string|ArrayBuffer):Promise<void>{
+  await this.sendPreview(socket,message);
  }
 
  private async scheduleNext(now:number):Promise<void>{
