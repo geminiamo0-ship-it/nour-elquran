@@ -18,3 +18,8 @@
 5. Source QA: dual-role authorship on durable DO state, user-only erase, teacher moderation, tampered identity rejection, replay under DO restart, old teacher behavior unchanged.
 
 Owner-approved context: [ADR 0009](adr/0009-unified-cumulative-learner-mushaf.md), Epic #250, #251 canonical ledger, #252 live bridge, #253 unified reader/homework/Notebook. No Production change.
+
+## A2 — deterministic canonical D1 delivery contract (pending DO integration)
+- `classroom/ink-cumulative-outbox.ts` converts an already Worker-verified / DO-lease-checked room add/hide to **the existing #251 D1 event command**, with a deterministic valid UUID from trusted lesson+learner+actor+source request ID, and a separate stable item ID from learner+lesson+stroke ID. Distinct lesson IDs never alias the same cumulative item. Hiding uses the same item ID and revision 1; teacher moderation keeps the original creation record author unchanged.
+- Events include the authentic actor role, child ID, lesson ID, original bounded pen/marker payload and accepted timestamp. `queueCumulativeInk` models a strict in-order, at-most-64, never-evict-unacked pending ledger; replay of the same op keeps its first accepted time, a conflicting payload is rejected, and overflow blocks new acceptance rather than dropping acknowledged marks.
+- **Not yet connected:** no write to actual DO storage, D1 publisher, retry/alarm, or lifecycle End gate is enabled in this slice. This pure bridge cannot itself guarantee durability. DO storage + atomic enqueue and authenticated canonical flush still require implementation; until then learner POST/toolbar remain closed. Do not call this a successfully persisted annotation.
