@@ -14,6 +14,7 @@ import {readOwnerAssignments,readTeacherAssignments,getAssignmentCatalog,publish
 import {listInbox,changeInboxRead} from '../in-app-inbox.ts';
 import {reportAttendanceIncident,submitAttendanceAppeal,listOwnerAttendance,listTeacherAttendance,listStaffAttendanceAppeals,reviewAttendanceAppeal} from '../attendance-cases.ts';
 import {publishTrialSlot,listOwnerTrialSlots,bookOwnerTrial,closeTrialSlot,cancelOwnerTrial} from '../free-trial-booking.ts';
+import {listOwnerRescheduleSlots,rescheduleOwnerTrial} from '../trial-rescheduling.ts';
 import {readTeacherInkDrafts,saveTeacherInkDraft,teacherAssignmentPageRange} from '../teacher-assignment-ink-drafts.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
@@ -123,6 +124,27 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
     if(schema?.version!==1)return reply(503,{code:'TRIAL_CANCEL_SCHEMA_NOT_READY'},requestId);
     const result=await cancelOwnerTrial(db,authSubject,ownerTrialCancel[1]!,
       await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
+  // #244: single D1 transaction replaces a scheduled FREE trial, never a
+  // client-side cancel+rebook sequence that might lose the original slot.
+  const trialReplacement=/^\\/v1\\/me\\/learners\\/([a-zA-Z0-9-]{1,128})\\/(trial-reschedule-slots|trial-reschedules)$/.exec(path);
+  if(trialReplacement){
+    const learnerId=trialReplacement[1]!,mode=trialReplacement[2]!;
+    if(request.method!==(mode==='trial-reschedule-slots'?'GET':'POST'))
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await db.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='trial_owner_reschedule'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'TRIAL_RESCHEDULE_SCHEMA_NOT_READY'},requestId);
+    if(mode==='trial-reschedule-slots'){
+      const params=new URL(request.url).searchParams;
+      if(params.size!==1||!params.get('lessonId'))
+        return reply(400,{code:'INVALID_TRIAL_RESCHEDULE'},requestId);
+      const result=await listOwnerRescheduleSlots(db,authSubject,learnerId,params.get('lessonId')!);
+      const {status,...body}=result;return reply(status,body,requestId);
+    }
+    const result=await rescheduleOwnerTrial(db,authSubject,learnerId,await readObject(request));
     const {status,...body}=result;return reply(status,body,requestId);
   }
   const trialRoute=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/(trial-slots|trial-bookings)$/.exec(path);
