@@ -5,6 +5,7 @@ import {LiveLessonMedia} from './LiveLessonMedia';
 import {LiveLessonLifecycle} from './LiveLessonLifecycle';
 import {ReaderPrintedPage,clampQuranPage,targetKey,type QuranTarget,type QuranInkStroke} from '@/features/student';
 import {fetchLiveInk,compactStroke,type InkView} from './live-ink';
+import {useLessonRealtime} from './useLessonRealtime';
 import {ConnectedClassroomNotes} from './ConnectedClassroomNotes';
 import {QuranVersePicker} from './QuranVersePicker';
 import {isVerseSelection,type VerseSelection} from './quran-verse-selection';
@@ -120,6 +121,8 @@ export function ConnectedWaitingRoom(){
  const [inkMode,setInkMode]=useState<'off'|'pen'|'marker'|'eraser'>('off');
  const [inkColor,setInkColor]=useState('#d0a94c');
  const inkPollBusy=useRef(false);
+ const inkRefreshRef=useRef<(()=>void)|null>(null);
+ const pageRefreshRef=useRef<(()=>void)|null>(null);
  const [pageError,setPageError]=useState('');
  const pagePollBusy=useRef(false);
  const [panelOpen,setPanelOpen]=useState(false);
@@ -127,6 +130,14 @@ export function ConnectedWaitingRoom(){
  const stageRef=useRef<HTMLDivElement>(null);
  const running=useRef(false);
  const alive=useRef(true);
+ // Hint-only push from the signed DO. Each notification immediately reads the
+ // authoritative HTTP snapshot; the 1s polling path remains as safe fallback.
+ useLessonRealtime(identity,joined,hint=>{
+  if(hint.type==='quran-page')pageRefreshRef.current?.();
+  if(hint.type==='quran-ink')inkRefreshRef.current?.();
+ },()=>{
+  pageRefreshRef.current?.();inkRefreshRef.current?.();
+ });
  useEffect(()=>{
   const id=readIdentity();
   setIdentity(id);
@@ -198,11 +209,12 @@ export function ConnectedWaitingRoom(){
    }catch{if(enabled)setPageError('تعذّر تحديث الصفحة المشتركة، وسنعيد المحاولة تلقائيًا.');}
    finally{pagePollBusy.current=false;}
   };
+  pageRefreshRef.current=()=>{void poll();};
   void poll();
   const timer=window.setInterval(()=>void poll(),1_000);
   const visible=()=>{if(document.visibilityState==='visible')void poll();};
   document.addEventListener('visibilitychange',visible);
-  return()=>{enabled=false;window.clearInterval(timer);document.removeEventListener('visibilitychange',visible);};
+  return()=>{enabled=false;pageRefreshRef.current=null;window.clearInterval(timer);document.removeEventListener('visibilitychange',visible);};
  },[identity,joined]);
  useEffect(()=>{
   if(!identity||!joined||!sharedPage){
@@ -228,11 +240,12 @@ export function ConnectedWaitingRoom(){
      setInkError('تعذّر تحديث علامات الحصة؛ سنعيد المحاولة.');}
    }finally{inkPollBusy.current=false;}
   };
+  inkRefreshRef.current=()=>{void poll();};
   void poll();
   const timer=window.setInterval(()=>void poll(),1_000);
   const visibility=()=>{if(document.visibilityState==='visible')void poll();};
   document.addEventListener('visibilitychange',visibility);
-  return()=>{enabled=false;window.clearInterval(timer);
+  return()=>{enabled=false;inkRefreshRef.current=null;window.clearInterval(timer);
    document.removeEventListener('visibilitychange',visibility);};
  },[identity,joined,sharedPage?.page]);
  const updateSharedInk=useCallback(async(onPage:number,next:QuranInkStroke[])=>{
