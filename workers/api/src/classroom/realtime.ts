@@ -6,7 +6,7 @@ export type VerifiedRealtimeActor=Readonly<{
  lessonId:string;learnerId:string;actorSubject:string;role:'teacher'|'learner';
 }>;
 export type RealtimeHint=Readonly<{
- type:'quran-page'|'quran-ink';page:number;revision:number;
+ type:'quran-page'|'quran-ink'|'corrections'|'presence';page:number;revision:number;
 }>;
 const validId=/^[A-Za-z0-9-]{1,128}$/;
 export function validVerifiedRealtimeActor(value:unknown):value is VerifiedRealtimeActor{
@@ -21,7 +21,7 @@ export function validRealtimeHint(value:unknown):value is RealtimeHint{
  if(!value||typeof value!=='object'||Array.isArray(value))return false;
  const r=value as Record<string,unknown>;
  return Object.keys(r).length===3&&
-  (r.type==='quran-page'||r.type==='quran-ink')&&
+  (['quran-page','quran-ink','corrections','presence'].includes(String(r.type)))&&
   Number.isInteger(r.page)&&Number(r.page)>=1&&Number(r.page)<=604&&
   Number.isSafeInteger(r.revision)&&Number(r.revision)>=0;
 }
