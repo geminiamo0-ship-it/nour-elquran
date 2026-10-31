@@ -6,13 +6,13 @@ import type {ConnectedIdentity} from './live-ink';
 /** Authoritative revision hints and provisional peer ink only. Every final
  * change remains a signed HTTP DO/D1 operation, never a WebSocket ACK. */
 export type LessonHint=Readonly<{
- type:'quran-page'|'quran-ink';page:number;revision:number;
+ type:'quran-page'|'quran-ink'|'corrections'|'presence';page:number;revision:number;
 }>;
 export function validLessonHint(value:unknown):value is LessonHint{
  if(!value||typeof value!=='object'||Array.isArray(value))return false;
  const x=value as Record<string,unknown>;
  return Object.keys(x).length===3&&
-  (x.type==='quran-page'||x.type==='quran-ink')&&
+  (['quran-page','quran-ink','corrections','presence'].includes(String(x.type)))&&
   Number.isInteger(x.page)&&Number(x.page)>=1&&Number(x.page)<=604&&
   Number.isSafeInteger(x.revision)&&Number(x.revision)>=0;
 }
