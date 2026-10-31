@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { StudentProvider } from './StudentContext';
 import { StudentDashboard } from './StudentDashboard';
 import { StudentSection } from './StudentSection';
+import { ConnectedClassroomLessons } from './components/ConnectedClassroomLessons';
 import { DEMO_PROFILES, getMockLearnerSnapshot, readSessionDemoProfiles } from './mock-adapter';
 import { isLearnerProfile, sanitizeStudyNote, scopedSnapshot, validateGrade, validatePublishedReport } from './domain';
 
@@ -96,5 +97,16 @@ describe('connected learner isolation', () => {
     expect(html).not.toContain('شيخ تجريبي');
     expect(html).not.toContain('طالبة منتظمة');
     expect(html).not.toContain('8 / 10');
+  });
+});
+
+
+describe('connected trial lessons server boundary (#244)', () => {
+  it('renders real signed loading states rather than a local booking preview', () => {
+    const html = renderToStaticMarkup(<ConnectedClassroomLessons learnerId="synthetic-child" />);
+    expect(html).toContain('جارٍ تحميل مواعيدك من الخادم');
+    expect(html).toContain('جارٍ التحقق من استحقاق التجربة والمواعيد');
+    expect(html).not.toContain('معاينة طلب حصة تجريبية');
+    expect(html).not.toContain('حصة تجريبية مدرجة كمثال');
   });
 });

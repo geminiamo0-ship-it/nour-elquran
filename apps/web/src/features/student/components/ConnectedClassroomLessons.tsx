@@ -11,6 +11,7 @@ export function ConnectedClassroomLessons({learnerId}:{learnerId:string}){
  const [status,setStatus]=useState<'loading'|'ready'|'error'>('loading');
  const [lessons,setLessons]=useState<readonly LessonRow[]>([]);
  const [retry,setRetry]=useState(0);
+ const [availabilityRevision,setAvailabilityRevision]=useState(0);
  useEffect(()=>{
   const abort=new AbortController();
   setStatus('loading');setLessons([]);
@@ -42,10 +43,14 @@ export function ConnectedClassroomLessons({learnerId}:{learnerId:string}){
       l.status==='completed'?<Link href="/student/notebook">دفتر الحصة</Link>:<span>غير متاح</span>}
      {l.kind==='trial'&&l.status==='scheduled'&&
       <StudentTrialCancellation key={l.id} learnerId={learnerId} lessonId={l.id}
-       startsAtMs={l.startsAtMs} onCancelled={()=>setRetry(n=>n+1)}/>}
+       startsAtMs={l.startsAtMs} onCancelled={()=>{
+        // Cancellation was confirmed by D1: refresh both lesson list and slot eligibility.
+        setRetry(n=>n+1);setAvailabilityRevision(n=>n+1);
+       }}/>}
     </article>)}</div>}
   </section>
-  <StudentTrialBooking key={learnerId} learnerId={learnerId} onBooked={()=>setRetry(x=>x+1)}/>
+  <StudentTrialBooking key={learnerId} learnerId={learnerId}
+   refreshRevision={availabilityRevision} onBooked={()=>setRetry(x=>x+1)}/>
   <StudentConnectedAttendanceCases key={learnerId} learnerId={learnerId}/>
  </div>;
 }
