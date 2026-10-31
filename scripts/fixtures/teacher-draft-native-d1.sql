@@ -6,7 +6,8 @@ INSERT INTO auth_users(id,name,email,created_at,updated_at)
 INSERT INTO accounts(id,auth_subject,created_at_ms)
  VALUES('draft-test-account','draft-test-owner',0);
 INSERT INTO learners(id,account_id,display_name,learner_type,created_at_ms)
- VALUES('draft-test-learner','draft-test-account','Synthetic Learner','child',0);
+ VALUES('draft-test-learner','draft-test-account','Synthetic Learner','child',0),
+       ('draft-test-sibling','draft-test-account','Synthetic Sibling','child',0);
 INSERT INTO teachers(id,auth_subject,qualified,status)
  VALUES('draft-test-teacher-id','draft-test-teacher',1,'active');
 INSERT INTO teacher_assignments(id,learner_id,teacher_id,starts_at_ms,ends_at_ms)
@@ -66,3 +67,11 @@ SELECT CASE WHEN
   WHERE learner_id='draft-test-learner' AND kind='highlight'
     AND author_role='teacher' AND origin_id='10000000-0000-4000-8000-000000000001')
  THEN 'NATIVE_DRAFT_PUBLICATION_OK' ELSE 'NATIVE_DRAFT_PUBLICATION_MISSING' END AS result;
+-- Same-account siblings are distinct authorization scopes: publishing one learner's
+-- teacher draft must never project events or marks into the sibling's Mushaf.
+SELECT CASE WHEN
+ (SELECT count(*) FROM learner_quran_events WHERE learner_id='draft-test-learner')=2
+ AND (SELECT count(*) FROM learner_quran_current WHERE learner_id='draft-test-learner')=2
+ AND (SELECT count(*) FROM learner_quran_events WHERE learner_id='draft-test-sibling')=0
+ AND (SELECT count(*) FROM learner_quran_current WHERE learner_id='draft-test-sibling')=0
+ THEN 'NATIVE_DRAFT_SIBLING_ISOLATED_OK' ELSE 'NATIVE_DRAFT_SIBLING_SCOPE_LEAK' END AS result;
