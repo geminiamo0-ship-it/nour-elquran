@@ -7,19 +7,19 @@ const actor={lessonId:'lesson-realtime',learnerId:'learner-a',
  actorSubject:'signed-teacher',role:'teacher' as const};
 function storage(room:RoomRecord):LessonRoomStorage{
  return {async get<T>(key:string){return (key==='room'?room:undefined) as T|undefined;},
-  async put<T>(_key:string,_value:T){},
+  async put<T>(_key:string,_value:T){void _key;void _value;},
   async transaction<T>(fn:(s:Pick<LessonRoomStorage,'get'|'put'>)=>Promise<T>){
    return fn(this);
   }};
 }
 function environment(allowed:boolean):Env{
  const now=Date.now();
- return {DB:{prepare:(_sql:string)=>({
+ return {DB:{prepare:(_sql:string)=>{void _sql;return {
   bind:()=>({first:async()=>allowed?{
    id:actor.lessonId,learnerId:actor.learnerId,role:'teacher',
    kind:'standard',status:'live',startsAtMs:now-10000,endsAtMs:now+10000
   }:null})
- })}} as unknown as Env;
+ };}}} as unknown as Env;
 }
 type SocketDouble={
  readyState:number;deserializeAttachment:()=>unknown;send:(x:string)=>void;
