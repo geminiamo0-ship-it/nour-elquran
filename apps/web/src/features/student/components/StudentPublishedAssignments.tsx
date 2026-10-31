@@ -1,6 +1,5 @@
 'use client';
 import {useEffect,useState} from 'react';
-import Link from 'next/link';
 import {assignmentClient,assignmentMessage,type PublishedAssignment} from '../../shared';
 import {TrainingQuranSession} from './TrainingQuranSession';
 import {StudentAssignmentSubmission} from './StudentAssignmentSubmission';
@@ -32,7 +31,7 @@ export function StudentPublishedAssignments({learnerId}:{learnerId:string}){
     <strong>لا توجد واجبات منشورة من الشيخ لهذا الطالب بعد.</strong>
     <p>التدريب الذاتي متاح، لكنه ليس واجبًا معتمدًا.</p>
    </div>:<div className={css.cards}>{data.tasks.map(task=>{
-     const open=task.id===opened,onePage=task.startPage===task.endPage;
+     const open=task.id===opened;
      return <article key={task.id} className={open?css.cardExpanded:css.card}>
       <div className={css.rowBetween}><span className={css.tag}>{kinds[task.kind]}</span>
        <span className={css.statusPending}>تكليف منشور</span></div>
@@ -40,14 +39,15 @@ export function StudentPublishedAssignments({learnerId}:{learnerId:string}){
       <p>{task.instructions}</p>
       <small>آخر موعد {new Date(task.dueAtMs).toLocaleString('ar-EG')} · صفحة {task.startPage}{onePage?'':' إلى '+task.endPage}</small>
       <div className={css.actions}>
-       {onePage?<button type="button" className={css.primaryButton} aria-expanded={open}
-        onClick={()=>setOpened(open?null:task.id)}>{open?'إغلاق التدريب':'ابدأ الواجب على المصحف'}</button>:
-        <Link href="/student/mushaf" className={css.primaryButton}>افتح المصحف الكامل للمراجعة</Link>}
+       <button type="button" className={css.primaryButton} aria-expanded={open}
+        onClick={()=>setOpened(open?null:task.id)}>
+        {open?'إغلاق التدريب':'ابدأ الواجب على المصحف'}
+       </button>
       </div>
-      {open&&onePage&&<TrainingQuranSession key={task.id}
+      {open&&<TrainingQuranSession key={task.id}
         title={'واجب سورة '+task.surah}
         range={{surah:task.surah,fromAyah:task.fromAyah,toAyah:task.toAyah,page:task.startPage}}
-        onClose={()=>setOpened(null)}/>}
+        endPage={task.endPage} onClose={()=>setOpened(null)}/>}
       <StudentAssignmentSubmission key={task.id} learnerId={learnerId} assignmentId={task.id}/>
       <p className={css.subtle}>إرسال المحاولة يرسل الملاحظة المكتوبة فقط؛ التسجيل الصوتي لا يغادر الجهاز.</p>
      </article>;
