@@ -1,9 +1,10 @@
 'use client';
-import {useEffect,useRef} from 'react';
+import {useCallback,useEffect,useRef} from 'react';
+import {validPreview,type PeerPreview,type PreviewFrame} from './ink-preview';
 import type {ConnectedIdentity} from './live-ink';
 
-/** Read-only authenticated hints: never send strokes, cookies or role grants
- * over this socket. All writes remain signed HTTP + DO CAS and D1 outbox. */
+/** Authoritative revision hints and provisional peer ink only. Every final
+ * change remains a signed HTTP DO/D1 operation, never a WebSocket ACK. */
 export type LessonHint=Readonly<{
  type:'quran-page'|'quran-ink';page:number;revision:number;
 }>;
@@ -24,10 +25,19 @@ export function realtimePath(id:ConnectedIdentity):string{
  * Signed polling stays enabled as a fallback for interruption/revocation. */
 export function useLessonRealtime(
  identity:ConnectedIdentity|null|undefined,joined:boolean,
- onHint:(hint:LessonHint)=>void,onReconnect:()=>void
-):void{
+ onHint:(hint:LessonHint)=>void,onReconnect:()=>void,
+ onPreview?:(frame:PeerPreview)=>void
+):(frame:PreviewFrame)=>void{
  const onHintRef=useRef(onHint),onReconnectRef=useRef(onReconnect);
+ const onPreviewRef=useRef(onPreview),socketRef=useRef<WebSocket|null>(null);
  onHintRef.current=onHint;onReconnectRef.current=onReconnect;
+ onPreviewRef.current=onPreview;
+ const sendPreview=useCallback((frame:PreviewFrame)=>{
+  if(process.env.NEXT_PUBLIC_NOOR_REALTIME_PREVIEW_ENABLED!=='true')return;
+  const ws=socketRef.current;
+  if(ws?.readyState===WebSocket.OPEN&&ws.bufferedAmount<64*1024)
+   ws.send(JSON.stringify(frame));
+ },[]);
  useEffect(()=>{
   if(process.env.NEXT_PUBLIC_NOOR_REALTIME_HINTS_ENABLED!=='true'||
      !identity||!joined||typeof WebSocket==='undefined')return;
@@ -42,6 +52,7 @@ export function useLessonRealtime(
    try{ws=new WebSocket(protocol+'//'+window.location.host+realtimePath(identity));}
    catch{schedule();return;}
    socket=ws;
+   socketRef.current=ws;
    ws.onopen=()=>{
     if(stopped||socket!==ws)return;
     backoff=500;
@@ -49,16 +60,19 @@ export function useLessonRealtime(
     lastSeen.clear();onReconnectRef.current();
    };
    ws.onmessage=(event)=>{
-    if(stopped||socket!==ws||typeof event.data!=='string'||event.data.length>240)return;
+    if(stopped||socket!==ws||typeof event.data!=='string'||event.data.length>4300)return;
     let value:unknown;
     try{value=JSON.parse(event.data);}catch{return;}
+    if(validPreview(value)){
+     onPreviewRef.current?.(value);return;
+    }
     if(!validLessonHint(value))return;
     const key=value.type+':'+value.page;
     if((lastSeen.get(key)??-1)>=value.revision)return;
     lastSeen.set(key,value.revision);
     onHintRef.current(value);
    };
-   ws.onclose=()=>{if(socket===ws)socket=null;schedule();};
+   ws.onclose=()=>{if(socket===ws)socket=null;if(socketRef.current===ws)socketRef.current=null;schedule();};
    ws.onerror=()=>{/* close handler retries; polling remains active */};
   };
   const schedule=()=>{
@@ -68,7 +82,7 @@ export function useLessonRealtime(
   };
   const visible=()=>{
    if(document.visibilityState==='hidden'){
-    clear();const old=socket;socket=null;
+    clear();const old=socket;socket=null;socketRef.current=null;
     if(old)old.close(1000,'hidden');
    }else if(!socket)connect();
   };
@@ -76,8 +90,9 @@ export function useLessonRealtime(
   connect();
   return()=>{
    stopped=true;clear();document.removeEventListener('visibilitychange',visible);
-   const old=socket;socket=null;
+   const old=socket;socket=null;socketRef.current=null;
    if(old)old.close(1000,'left lesson');
   };
  },[identity?.lessonId,identity?.learnerId,identity?.role,joined]);
+ return sendPreview;
 }
