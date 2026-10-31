@@ -43,6 +43,15 @@ function mark(raw:unknown):DraftMark|null{
  }
  return raw as DraftMark;
 }
+/** Stable, non-sensitive D1 reason for staging QA: no SQL, IDs or payloads. */
+export function draftStorageFailureKind(error:unknown):'D1_JSON'|'D1_SCHEMA'|'D1_CONSTRAINT'|'D1_NETWORK'|'D1_UNKNOWN'{
+ const msg=error instanceof Error?error.message.toLowerCase():'';
+ if(/json|malformed|path error/.test(msg))return 'D1_JSON';
+ if(/no such table|no such column|migration|schema/.test(msg))return 'D1_SCHEMA';
+ if(/constraint|foreign key|unique|check failed/.test(msg))return 'D1_CONSTRAINT';
+ if(/timeout|unavailable|connection|network|busy/.test(msg))return 'D1_NETWORK';
+ return 'D1_UNKNOWN';
+}
 const saveFields=['draftId','revision','kind','editionId','surah','fromAyah',
  'toAyah','dueAtMs','instructions','marks'] as const;
 export function parseTeacherDraftSave(raw:unknown):DraftSave|null{
@@ -103,7 +112,7 @@ export async function readTeacherInkDrafts(db:CoreDatabase,subject:string,
  return {status:200,drafts:rows.results.map(project)} as const;
 }
 export async function saveTeacherInkDraft(db:CoreDatabase,subject:string,
- learnerId:string,raw:unknown,now=Date.now()){
+ learnerId:string,raw:unknown,now=Date.now(),diagnostics=false){
  const c=parseTeacherDraftSave(raw);
  if(!c)return {status:400,code:'INVALID_DRAFT'} as const;
  if(!await verifiedCurrentTeacher(db,subject,learnerId,now))
@@ -131,7 +140,10 @@ export async function saveTeacherInkDraft(db:CoreDatabase,subject:string,
    return {status:200,code:'DRAFT_ALREADY_SAVED',draft:project(raced)} as const;
   if(error instanceof Error&&/constraint|abort|conflict|denied|range|marks|published/i.test(error.message))
    return {status:409,code:'DRAFT_WRITE_REJECTED'} as const;
-  throw error;
+  // Keep raw SQL, mark coordinates and auth subjects private. Do not pretend
+  // a D1 write exception is a generic sign-in failure.
+  return {status:503,code:'DRAFT_STORAGE_UNAVAILABLE',
+   ...(diagnostics?{reason:draftStorageFailureKind(error)}:{})} as const;
  }
  return {status:201,code:'DRAFT_SAVED',draft:{...c,learnerId,updatedAtMs:now}} as const;
 }
