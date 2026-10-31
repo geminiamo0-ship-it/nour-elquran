@@ -65,7 +65,7 @@ export function TeacherAssignmentInkEditor({learnerId,initial,existing,onCancel,
   if(!chosen||busy)return;
   if(marks.length>=24){setError('بلغت الحد الأقصى لعلامات الواجب.');return;}
   if(kind==='note'&&!noteText.trim()){setError('اكتب ملاحظة الشيخ أولًا.');return;}
-  setMarks(v=>[...v,{id:'mark-'+crypto.randomUUID(),kind,page,
+  setMarks(v=>[...v,{id:'mk-'+crypto.randomUUID(),kind,page,
    surah:chosen.surah,ayah:chosen.ayah,
    payload:kind==='note'?{color,text:noteText.trim()}:{color}}]);
   setDirty(true);setSuccess('');setError('');setNoteText('');
