@@ -111,7 +111,7 @@ BEGIN
      OR (n.recipient_kind='owner' AND EXISTS(
       SELECT 1 FROM learners l JOIN accounts a ON a.id=l.account_id
       WHERE l.id=n.learner_id AND a.auth_subject=NEW.actor_subject
-        AND l.status='active' AND a.status='active')));
+        AND l.status='active' AND a.status='active'))));
  SELECT RAISE(ABORT,'INBOX_REVISION_CONFLICT') WHERE NEW.expected_revision<>
   COALESCE((SELECT MAX(e.revision) FROM noor_inbox_read_events e
     WHERE e.notification_id=NEW.notification_id),0);
