@@ -12,7 +12,7 @@ describe('signed first free trial API',()=>{
   expect(()=>parseTrialAvailability({code:'TRIAL_SLOTS',eligible:false,slots:[slot]})).toThrow();
   expect(()=>parseTrialAvailability({code:'TRIAL_SLOTS',eligible:true,slots:[slot,slot]})).toThrow();
   expect(()=>parseTrialAvailability({code:'TRIAL_SLOTS',eligible:true,slots:[{...slot,endsAtMs:slot.startsAtMs+1800000}]})).toThrow();
-  expect(()=>parseTrialAvailability({code:'TRIAL_SLOTS',eligible:true,slots:[{...slot,teacherName:'Anonymous'}]})).not.toThrow();
+  expect(()=>parseTrialAvailability({code:'TRIAL_SLOTS',eligible:true,slots:[{...slot,teacherName:'Anonymous'}]})).toThrow();
  });
  it('guardian scoped GET has no client-supplied teacher or payment information',async()=>{
   const mock=vi.fn().mockResolvedValue(respond(200,{code:'TRIAL_SLOTS',eligible:true,slots:[slot]}));
