@@ -12,6 +12,7 @@ import { listVerifiedTeacherLearners } from '../teacher-roster.ts';
 import {readOwnerPlan,readTeacherPlan,writeTeacherPlan,parsePlanAction} from '../academic-plans.ts';
 import {readOwnerAssignments,readTeacherAssignments,getAssignmentCatalog,publishAssignment,parsePublishAssignment} from '../published-assignments.ts';
 import {listInbox,changeInboxRead} from '../in-app-inbox.ts';
+import {reportAttendanceIncident,submitAttendanceAppeal,listOwnerAttendance,listTeacherAttendance,listStaffAttendanceAppeals,reviewAttendanceAppeal} from '../attendance-cases.ts';
 import {readTeacherInkDrafts,saveTeacherInkDraft,teacherAssignmentPageRange} from '../teacher-assignment-ink-drafts.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
@@ -110,6 +111,20 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
     const result=await applyLearnerProfileAction(db,accountId,authSubject,profileMatch[1]!,input);
     const {status,...body}=result;
     return reply(status,body,requestId);
+  }
+  const ownedAttendance=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/(attendance-cases|attendance-appeals)$/.exec(path);
+  if(ownedAttendance){
+    const learnerId=ownedAttendance[1]!,mode=ownedAttendance[2]!;
+    if(request.method!==(mode==='attendance-cases'?'GET':'POST'))
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await db.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='attendance_cases'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'ATTENDANCE_SCHEMA_NOT_READY'},requestId);
+    const result=mode==='attendance-cases'
+      ?await listOwnerAttendance(db,authSubject,learnerId)
+      :await submitAttendanceAppeal(db,authSubject,learnerId,await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
   }
   const ownedInbox=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/(inbox|inbox-actions)$/.exec(path);
   if(ownedInbox){
@@ -426,6 +441,19 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // The library re-reads the signed session from D1; cookie cache and unverified token auth are disabled.
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return reply(401, { code: 'UNAUTHENTICATED' }, requestId);
+  if(path==='/v1/staff/attendance-appeals'||path==='/v1/staff/attendance-appeals/review'){
+    const list=path==='/v1/staff/attendance-appeals';
+    if(request.method!==(list?'GET':'POST'))
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='attendance_cases'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'ATTENDANCE_SCHEMA_NOT_READY'},requestId);
+    const result=list
+      ?await listStaffAttendanceAppeals(env.DB,session.user.id)
+      :await reviewAttendanceAppeal(env.DB,session.user.id,await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
   if (path === '/v1/staff/schedule-actions') {
     if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
     // No client-asserted staff grant, account or teacher identity is trusted.
@@ -770,6 +798,26 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     return lessons === null
       ? reply(403, { code: 'TEACHER_ACCESS_DENIED' }, requestId)
       : reply(200, { lessons }, requestId);
+  }
+  const teacherAttendance=/^\/v1\/teacher\/lessons\/([a-zA-Z0-9-]{1,128})\/attendance-report$/.exec(path);
+  if(teacherAttendance){
+    if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='attendance_cases'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'ATTENDANCE_SCHEMA_NOT_READY'},requestId);
+    const result=await reportAttendanceIncident(env,session.user.id,
+      teacherAttendance[1]!,await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
+  if(path==='/v1/teacher/attendance-cases'){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='attendance_cases'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'ATTENDANCE_SCHEMA_NOT_READY'},requestId);
+    const result=await listTeacherAttendance(env.DB,session.user.id);
+    const {status,...body}=result;return reply(status,body,requestId);
   }
   if(path==='/v1/teacher/inbox'||path==='/v1/teacher/inbox-actions'){
     const list=path==='/v1/teacher/inbox';
