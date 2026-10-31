@@ -356,6 +356,38 @@ export class LessonRoom {
     });
    }catch{return Response.json({code:'CLASSROOM_CORRECTIONS_UNAVAILABLE'},{status:503});}
   }
+  // The authenticated Worker fences the room BEFORE D1 lesson End. Room
+  // transactions serialize this fence with ink additions; a pending D1 row
+  // prevents End and the alarm can safely retry while lesson remains live.
+  if(path==='/internal/quran-ink-end-fence'){
+   if(request.method!=='POST'||!this.cumulativeInkEnabled)
+    return Response.json({code:'NOT_FOUND'},{status:404});
+   let value:unknown;
+   try{value=await request.json();}catch{return Response.json({code:'INVALID_INK_FENCE'},{status:400});}
+   if(!value||typeof value!=='object'||Array.isArray(value))
+    return Response.json({code:'INVALID_INK_FENCE'},{status:400});
+   const input=value as Record<string,unknown>;
+   if(Object.keys(input).length!==3||
+    typeof input.lessonId!=='string'||!allowed.test(input.lessonId)||
+    typeof input.learnerId!=='string'||!allowed.test(input.learnerId)||
+    typeof input.actorSubject!=='string'||!allowed.test(input.actorSubject))
+    return Response.json({code:'INVALID_INK_FENCE'},{status:400});
+   try{
+    await this.flushQuranInk();
+    return await this.ctx.storage.transaction(async txn=>{
+     const room=await txn.get<RoomRecord>('room');
+     if(!room||room.lessonId!==input.lessonId||
+      room.teacher?.subject!==input.actorSubject||
+      room.teacher.learnerId!==input.learnerId)
+      return Response.json({code:'NOT_JOINED'},{status:404});
+     const pending=await txn.get<PendingQuranInk[]>('pendingQuranInk')??[];
+     if(pending.length)
+      return Response.json({code:'QURAN_INK_PENDING',pending:pending.length},{status:409});
+     await txn.put('quranInkClosing',true);
+     return Response.json({code:'QURAN_INK_FENCED'});
+    });
+   }catch{return Response.json({code:'QURAN_INK_FENCE_UNAVAILABLE'},{status:503});}
+  }
   if(path==='/internal/quran-ink'){
    if(request.method!=='POST')return Response.json({code:'NOT_FOUND'},{status:404});
    let raw:unknown;
@@ -386,6 +418,8 @@ export class LessonRoom {
      if(!lease||lease.expiresAtMs<=now||lease.subject!==cmd.actorSubject||
       lease.learnerId!==cmd.learnerId)return {code:'NOT_JOINED',status:404} as const;
      const state=await txn.get<InkPage>('quranInk:'+cmd.page)??initialInk(cmd.page);
+     if(durable&&cmd.action!=='snapshot'&&await txn.get<boolean>('quranInkClosing'))
+      return {code:'LESSON_INK_CLOSING',status:409} as const;
      if(cmd.action==='snapshot')
       return {code:'INK_SNAPSHOT',status:200,ink:visibleInk(state)} as const;
      const current=await txn.get<SharedPageRecord>('quranPage')??initialPage();
