@@ -263,7 +263,7 @@ export class LessonRoom {
     return {code:'NOT_JOINED',status:404};
    const old=await txn.get<{operationId:string;subject:string;completed:boolean}>('inkEndFence');
    if(c.action==='release'){
-    if(old?.operationId===c.operationId&&old.subject===c.actorSubject&&!old.completed)
+    if(old&&old.operationId===c.operationId&&old.subject===c.actorSubject&&!old.completed)
      await txn.put('inkEndFence',null);
     return {code:'INK_FENCE_RELEASED',status:200};
    }
