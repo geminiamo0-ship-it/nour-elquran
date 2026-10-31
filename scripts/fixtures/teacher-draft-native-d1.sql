@@ -34,6 +34,14 @@ INSERT INTO teacher_assignment_draft_versions(
 SELECT CASE WHEN (SELECT count(*) FROM teacher_assignment_draft_versions
  WHERE draft_id='7145a6fa-1d94-4994-91e7-5819692ba3b6')=1
  THEN 'NATIVE_DRAFT_WRITE_OK' ELSE 'NATIVE_DRAFT_WRITE_MISSING' END AS result;
+-- A private Sheikh draft must not become a learner-visible Quran event.
+-- The same synthetic learner is checked before any publication event exists.
+SELECT CASE WHEN
+ (SELECT count(*) FROM learner_quran_events
+  WHERE learner_id='draft-test-learner')=0
+ AND (SELECT count(*) FROM learner_quran_current
+  WHERE learner_id='draft-test-learner')=0
+ THEN 'NATIVE_DRAFT_PRIVATE_OK' ELSE 'NATIVE_DRAFT_LEAKED' END AS result;
 -- Publication must project both marks into the owner-only cumulative ledger.
 INSERT INTO teacher_assignment_draft_publications(
  draft_id,operation_id,revision,learner_id,teacher_subject,at_ms)
@@ -51,4 +59,10 @@ SELECT CASE WHEN
  (SELECT count(*) FROM learner_quran_current
   WHERE learner_id='draft-test-learner' AND visible=1
   AND origin_type='assignment' AND audience='shared')=2
+ AND EXISTS (SELECT 1 FROM learner_quran_current
+  WHERE learner_id='draft-test-learner' AND kind='pen'
+    AND author_role='teacher' AND origin_id='10000000-0000-4000-8000-000000000001')
+ AND EXISTS (SELECT 1 FROM learner_quran_current
+  WHERE learner_id='draft-test-learner' AND kind='highlight'
+    AND author_role='teacher' AND origin_id='10000000-0000-4000-8000-000000000001')
  THEN 'NATIVE_DRAFT_PUBLICATION_OK' ELSE 'NATIVE_DRAFT_PUBLICATION_MISSING' END AS result;
