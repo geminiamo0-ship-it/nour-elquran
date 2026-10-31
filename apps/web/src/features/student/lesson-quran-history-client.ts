@@ -17,8 +17,8 @@ export function parseLessonQuranHistory(raw:unknown,learnerId:string,lessonId:st
  if(!obj(raw)||raw.code!=='QURAN_LESSON_HISTORY'||raw.learnerId!==learnerId||
     raw.lessonId!==lessonId||!Number.isSafeInteger(raw.asOfMs)||Number(raw.asOfMs)<0||
     !Array.isArray(raw.pages)||raw.pages.length>604||
-    !raw.pages.every((p,i)=>Number.isSafeInteger(p)&&p>=1&&p<=604&&
-      (i===0||p>raw.pages[i-1]))||
+    !raw.pages.every((p,i,all)=>Number.isSafeInteger(p)&&p>=1&&p<=604&&
+      (i===0||p>all[i-1]))||
     !Array.isArray(raw.marks)||raw.marks.length>300)
    throw new LessonQuranHistoryError('INVALID_HISTORY_RESPONSE');
  const pages=raw.pages as number[];
