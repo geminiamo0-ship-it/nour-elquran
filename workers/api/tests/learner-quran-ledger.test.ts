@@ -88,3 +88,40 @@ test('service does not treat a teacher self-study command as a granted edit',asy
   {subject:'teacher-a',role:'teacher'},'learner-a',command);
  assert.deepEqual(response,{status:404,code:'NOT_FOUND'});
 });
+test('D1 insert response lost after commit is an idempotent replay, never a new-write ACK',async()=>{
+ for(const conflicting of [false,true]){
+  let priorReads=0,insertAttempts=0;
+  const prior={actor_subject:'owner-a',actor_role:'learner',action:'put',
+   origin_type:'self_study',origin_id:null,item_id:command.itemId,
+   kind:'pen',page:1,surah:null,ayah:null,word_index:null,
+   expected_revision:0,payload_json:JSON.stringify(conflicting?
+    {...command.payload,width:4}:command.payload)};
+  const current={item_id:command.itemId,page:1,kind:'pen',
+   surah:null,ayah:null,word_index:null,visible:1,revision:1,
+   audience:'private',author_role:'learner',author_subject:'owner-a',
+   origin_type:'self_study',origin_id:null,payload_json:prior.payload_json};
+  const db={prepare:(sql:string)=>({
+   bind(){return this;},
+   async first(){
+    if(sql.includes('SELECT 1 AS allowed'))return {allowed:1};
+    if(sql.includes('FROM learner_quran_events'))
+     return ++priorReads===1?null:prior;
+    if(sql.includes('FROM learner_quran_current'))return current;
+    return null;
+   },
+   async run(){
+    insertAttempts++;
+    // Simulate a concurrent insert committed by D1 before this request's
+    // INSERT receives its UNIQUE-constraint response.
+    throw Error('D1_ERROR: UNIQUE constraint failed');
+   },
+  })} as unknown as CoreDatabase;
+  const result=await appendQuranLedgerEvent(db,
+   {subject:'owner-a',role:'learner'},'student-a',command,2500);
+  assert.deepEqual({status:result.status,code:result.code},
+   conflicting?{status:409,code:'QURAN_EVENT_REJECTED'}:
+    {status:200,code:'QURAN_EVENT_REPLAY'});
+  assert.equal(insertAttempts,1);
+  assert.equal(priorReads,2);
+ }
+});
