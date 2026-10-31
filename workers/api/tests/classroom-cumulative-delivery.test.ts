@@ -77,7 +77,8 @@ test('D1 outage: room ink and ordered pending outbox commit atomically; reboot r
  assert.equal((items.get('quranInk:35') as {records:unknown[]}).records.length,1);
  assert.ok(alarms.length>0);
  const namespace={idFromName:()=>({}),get:()=>({fetch:(req:Request)=>first.fetch(req)})};
- const pending=await fenceLessonCumulativeInk({...env,LESSON_ROOMS:namespace},...Object.values(signed));
+ const pending=await fenceLessonCumulativeInk({...env,LESSON_ROOMS:namespace},
+  signed.lessonId,signed.learnerId,signed.actorSubject);
  assert.deepEqual(pending,{status:409,code:'QURAN_INK_PENDING'});
  assert.equal(items.get('quranInkClosing'),undefined);
  db.setDown(false);
