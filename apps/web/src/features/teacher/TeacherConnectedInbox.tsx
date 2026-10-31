@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import {useEffect,useRef,useState} from 'react';
-import {inboxClient,type InboxNotice} from './connected-inbox-client';
+import {inboxClient,type InboxNotice} from '../shared';
 import css from './TeacherReadOnly.module.css';
 
 const client=inboxClient();
