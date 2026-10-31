@@ -4,6 +4,7 @@
  */
 import type {CoreDatabase,Env} from '../bindings.ts';
 import {forwardVerifiedPresence} from './presence.ts';
+import {forwardInkEndFence} from './ink-sync.ts';
 import {wakeLessonMediaReconciliation} from './media-enforcement.ts';
 import {forwardCorrections,type Correction} from './live-corrections.ts';
 import {applyTeacherReport} from '../lesson-reports.ts';
@@ -118,7 +119,7 @@ export async function readLearnerLifecycle(env:Env,subject:string,learnerId:stri
 export async function teacherLifecycleAction(env:Env,subject:string,lessonId:string,
  action:Action,operationId:string,now=Date.now()):Promise<
  {status:200|404|409|503;code:string;lifecycle?:SafeLifecycle;mediaRevocation?:string;
- reportDraft?:'created'|'empty'|'retry_needed'}>{
+ reportDraft?:'created'|'empty'|'retry_needed';inkFence?:'confirmed'|'retry_pending'}>{
  if(!env.DB)return {status:503,code:'DATABASE_UNAVAILABLE'};
  const db=env.DB;
  if(!id.test(lessonId)||!uuid.test(operationId))return {status:404,code:'NOT_FOUND'};
@@ -139,6 +140,18 @@ export async function teacherLifecycleAction(env:Env,subject:string,lessonId:str
     actorSubject:subject,role:'teacher'},'heartbeat');
    if(p.status!==200||!p.presence.bothPresent)
     return {status:409,code:'WAITING_FOR_PARTICIPANTS'};
+  }
+  // Close the DO writer gate *before* the D1 End transaction. This first
+  // drains outstanding ink to D1 and atomically fences against a concurrent
+  // teacher/learner stroke while the lifecycle batch commits.
+  let endFenced=false;
+  if(action==='end'){
+   const fence=await forwardInkEndFence(env,{lessonId,learnerId:row.learnerId,
+    actorSubject:subject},operationId,'prepare');
+   if(fence.code!=='INK_END_READY')
+    return {status:fence.status===409?409:503,
+     code:fence.code==='INK_END_PENDING'?'INK_END_PENDING':'INK_END_UNAVAILABLE'};
+   endFenced=true;
   }
   // Enforce teacher identity and learner status again inside D1 UPDATE, not
   // only against the earlier application-side read.
@@ -171,14 +184,26 @@ export async function teacherLifecycleAction(env:Env,subject:string,lessonId:str
       WHERE e.lesson_id=l.id AND e.action=?)`)
    .bind(crypto.randomUUID(),action,now,operationId,lessonId,
     action==='start'?'live':'completed',action);
-  const results=await db.batch([update,event]);
-  if(results.length!==2)return {status:503,code:'LIFECYCLE_UNAVAILABLE'};
+  let results;
+  try{results=await db.batch([update,event]);}
+  catch(error){
+   if(endFenced)await forwardInkEndFence(env,{lessonId,learnerId:row.learnerId,
+    actorSubject:subject},operationId,'release');
+   throw error;
+  }
+  if(results.length!==2){
+   if(endFenced)await forwardInkEndFence(env,{lessonId,learnerId:row.learnerId,
+    actorSubject:subject},operationId,'release');
+   return {status:503,code:'LIFECYCLE_UNAVAILABLE'};
+  }
   const fresh=await teacherRow(db,subject,lessonId,now);
   if(!fresh)return {status:404,code:'NOT_FOUND'};
   const state=await safe(db,fresh);
   const eventWritten=results[0]?.success===true&&results[1]?.success===true&&
    results[0]?.meta.changes===1&&results[1]?.meta.changes===1;
   if(!eventWritten){
+   if(endFenced)await forwardInkEndFence(env,{lessonId,learnerId:row.learnerId,
+    actorSubject:subject},operationId,'release');
    // May be a competing request. Require a real prior Start audit, and never
    // report a newly committed transition if its paired audit is absent.
    if((state.phase==='completed'&&state.startedAtMs!==null)||
@@ -188,6 +213,8 @@ export async function teacherLifecycleAction(env:Env,subject:string,lessonId:str
    return {status:409,code:'LESSON_STATE_CONFLICT'};
   }
   if(action==='end'){
+   const fenceCompletion=await forwardInkEndFence(env,{lessonId,
+    learnerId:row.learnerId,actorSubject:subject},operationId,'complete');
    // Ending is already committed. A missing report service must never silently
    // roll back or reopen the lesson. Draft remains PRIVATE until Sheikh publish.
    let reportDraft:'created'|'empty'|'retry_needed'='retry_needed';
@@ -207,7 +234,8 @@ export async function teacherLifecycleAction(env:Env,subject:string,lessonId:str
    }catch{reportDraft='retry_needed';}
    const wake=await wakeLessonMediaReconciliation(env,lessonId);
    return {status:200,code:'LESSON_ENDED',lifecycle:state,reportDraft,
-    mediaRevocation:wake==='sent'?'requested':'retry_pending'};
+    mediaRevocation:wake==='sent'?'requested':'retry_pending',
+    inkFence:fenceCompletion.code==='INK_FENCE_COMPLETED'?'confirmed':'retry_pending'};
   }
   return {status:200,code:'LESSON_STARTED',lifecycle:state};
  }catch{return {status:503,code:'LIFECYCLE_UNAVAILABLE'};}
