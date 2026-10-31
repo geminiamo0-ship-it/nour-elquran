@@ -1,3 +1,8 @@
+## 2026-10-31 / #286 — native D1 pen+highlight P0 reproduction (diagnostic PR #288; NOT a fix)
+- Verified Noor main `96e9c76bd5ba8bc8022d666a1af6705da8e5ba19`; Santoreno Dev run [#41170640624](https://github.com/geminiamo0-ship-it/santoreno/actions/runs/41170640624) still fails signed teacher marked-homework POST 503 `DRAFT_STORAGE_UNAVAILABLE / D1_UNKNOWN`. Previous #287 only classified failure; no publication or owner Quran readback succeeded.
+- Draft [PR #288](https://github.com/geminiamo0-ship-it/nour-elquran/pull/288) adds a disposable native Wrangler D1 migration/trigger write probe with the exact synthetic highlight+pen shape used in Dev. It runs inside existing local Cloudflare CI, no remote D1, real student data, secrets, production flags or deployment. **Exact-head CI pending.**
+- NEXT: inspect the `cloudflare-local-d1` result on #288. If it fails, isolate the SQL/trigger compatibility error and fix in a separate migration + regression; if it passes, investigate safe Dev D1 driver error cause/schema without logging raw SQL or identities. Then rerun signed Dev save→replay→publish→owner cumulative readback. Keep #286 OPEN and `NOOR_CUMULATIVE_INK_ENABLED` OFF.
+
 ## #252 classroom snapshot ACK safety — 2026-10-31 (branch candidate)
 - Branch `fix/252-ink-snapshot-ack-semantics-20261031`: `LessonRoom` no longer calls an ink snapshot `saved` merely because `pendingQuranInk` is empty; old DO-only strokes can exist without any canonical ledger event. A pending outbox still reports `pending`. Write ACK behavior is unchanged.
 - Tests in `classroom-cumulative-delivery.test.ts` cover pending outage snapshot and pre-bridge DO stroke before/after enabling the gated bridge; D1 event count remains zero for the latter.
