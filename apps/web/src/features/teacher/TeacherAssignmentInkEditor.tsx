@@ -164,10 +164,11 @@ export function TeacherAssignmentInkEditor({learnerId,initial,existing,onCancel,
      {busy?'جارٍ التحقق…':'حفظ مسودة العلامات'}</button>
     <button type="button" disabled={busy||dirty||!stored} onClick={()=>void publish()}>
      نشر الواجب وعلاماته للطالب</button>
-    <button type="button" disabled={busy} onClick={requestClose}
-     aria-expanded={confirmDiscard&&dirty}>إغلاق المحرر</button>
    </div>
   </>}
+  {/* Leave a way out even when the authorized Quran-page-range request fails. */}
+  <button type="button" disabled={busy} onClick={requestClose}
+   aria-expanded={confirmDiscard&&dirty}>إغلاق المحرر</button>
   {confirmDiscard&&dirty&&<div role="alertdialog"
    aria-labelledby="ink-discard-title" aria-describedby="ink-discard-detail">
    <strong id="ink-discard-title">تغييرات علامات المصحف غير محفوظة</strong>
