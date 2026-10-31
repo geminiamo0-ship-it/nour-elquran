@@ -1,10 +1,11 @@
 import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
 import {LessonRoom,type LessonRoomStorage,type RoomRecord} from '../src/classroom/lesson-room.ts';
-import {fenceLessonCumulativeInk} from '../src/classroom/quran-ink-end-fence.ts';
+import {fenceLessonCumulativeInk,releaseLessonCumulativeInk} from '../src/classroom/quran-ink-end-fence.ts';
 import type {Env,CoreDatabase} from '../src/bindings.ts';
 
 const now=Date.now();
+const endOp='2163d489-5a27-4af2-83d0-1c3b7f989eff';
 const ink={id:'ink-stroke-001',page:35,kind:'pen',color:'#aabbcc',width:3,
  points:[{x:12,y:30},{x:20,y:40}]};
 const op={lessonId:'lesson-ink',learnerId:'learner-ink',actorSubject:'signed-sheikh',
@@ -78,7 +79,7 @@ test('D1 outage: room ink and ordered pending outbox commit atomically; reboot r
  assert.ok(alarms.length>0);
  const namespace={idFromName:()=>({}),get:()=>({fetch:(req:Request)=>first.fetch(req)})};
  const pending=await fenceLessonCumulativeInk({...env,LESSON_ROOMS:namespace},
-  signed.lessonId,signed.learnerId,signed.actorSubject);
+  signed.lessonId,signed.learnerId,signed.actorSubject,endOp);
  assert.deepEqual(pending,{status:409,code:'QURAN_INK_PENDING'});
  assert.equal(items.get('quranInkClosing'),undefined);
  db.setDown(false);
@@ -90,7 +91,7 @@ test('D1 outage: room ink and ordered pending outbox commit atomically; reboot r
  assert.equal(db.events.size,1,'retry must not create another D1 event');
  const ns={idFromName:()=>({}),get:()=>({fetch:(req:Request)=>reboot.fetch(req)})};
  const fence=await fenceLessonCumulativeInk({...env,LESSON_ROOMS:ns},
-  signed.lessonId,signed.learnerId,signed.actorSubject);
+  signed.lessonId,signed.learnerId,signed.actorSubject,endOp);
  assert.deepEqual(fence,{status:200,code:'QURAN_INK_FENCED'});
  const rejected=await roomRequest(reboot,{...op,expectedRevision:1,
   requestId:'new-operation-001',stroke:{...ink,id:'ink-stroke-002'}});
@@ -110,4 +111,37 @@ test('missing D1 or revoked identity denies gated room write without local strok
   DB:{prepare(){throw Error('unauthorized');}}});
  assert.equal((await roomRequest(foreign,op)).status,503);
  assert.equal(items.get('pendingQuranInk'),undefined);
+});
+
+test('a failed End can release only the exact verified fence while D1 remains live',async()=>{
+ const {store,items}=memory(),db=dbStub();
+ await store.put('room',{lessonId:'lesson-ink',revision:1,
+  teacher:{subject:'signed-sheikh',learnerId:'learner-ink',expiresAtMs:Date.now()+60000},
+  learner:null});
+ await store.put('quranPage',{edition:'hafs-kfqc-v1.1.1',page:35,revision:1,receipts:[]});
+ const env:Env={DB:db.db,NOOR_CUMULATIVE_INK_ENABLED:'true'};
+ const room=new LessonRoom({storage:store},env);
+ const ns={idFromName:()=>({}),get:()=>({fetch:(req:Request)=>room.fetch(req)})};
+ const verified={...env,LESSON_ROOMS:ns};
+ const ready=await fenceLessonCumulativeInk(verified,signed.lessonId,
+  signed.learnerId,signed.actorSubject,endOp);
+ assert.deepEqual(ready,{status:200,code:'QURAN_INK_FENCED'});
+ assert.equal((items.get('quranInkClosing') as {operationId:string}).operationId,endOp);
+ assert.equal((await roomRequest(room,op)).status,409);
+ const wrong='1163d489-5a27-4af2-83d0-1c3b7f989eff';
+ assert.deepEqual(await releaseLessonCumulativeInk(verified,signed.lessonId,
+  signed.learnerId,signed.actorSubject,wrong),
+  {status:409,code:'QURAN_INK_FENCE_CONFLICT'});
+ assert.ok(items.get('quranInkClosing'));
+ db.setEnded(true);
+ assert.equal((await releaseLessonCumulativeInk(verified,signed.lessonId,
+  signed.learnerId,signed.actorSubject,endOp)).status,503);
+ assert.ok(items.get('quranInkClosing'),'D1 completed lesson must never be reopened');
+ db.setEnded(false);
+ assert.deepEqual(await releaseLessonCumulativeInk(verified,signed.lessonId,
+  signed.learnerId,signed.actorSubject,endOp),
+  {status:200,code:'QURAN_INK_FENCE_RELEASED'});
+ assert.equal(items.get('quranInkClosing'),false);
+ assert.equal((await roomRequest(room,op)).status,200);
+ assert.equal(db.events.size,1);
 });
