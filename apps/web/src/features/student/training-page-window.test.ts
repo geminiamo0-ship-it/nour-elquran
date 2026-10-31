@@ -15,8 +15,8 @@ describe('approved published homework page window',()=>{
  });
  it('rejects corrupted range, page, NaN, decimals and out-of-book pages',()=>{
   for(const [start,end] of [[0,3],[6,5],[600,605],[NaN,5],[10.5,11],[1,Infinity]]){
-   expect(validTrainingPages(start,end)).toBe(false);
-   expect(()=>moveTrainingPage(start,end,start,1)).toThrow('INVALID_TRAINING_PAGE');
+   expect(validTrainingPages(start!,end!)).toBe(false);
+   expect(()=>moveTrainingPage(start!,end!,start!,1)).toThrow('INVALID_TRAINING_PAGE');
   }
   expect(()=>moveTrainingPage(4,7,3,1)).toThrow('INVALID_TRAINING_PAGE');
   expect(()=>moveTrainingPage(4,7,8,-1)).toThrow('INVALID_TRAINING_PAGE');
