@@ -61,5 +61,14 @@ export const trialBookingClient={
     typeof payload.lessonId!=='string'||!uuid.test(payload.lessonId))
    throw new TrialBookingError('INVALID_TRIAL_RESPONSE');
   return payload.lessonId;
+ },
+ cancel:async(learnerId:string,lessonId:string,operationId:string)=>{
+  if(!uuid.test(lessonId)||!uuid.test(operationId))
+   throw new TrialBookingError('INVALID_TRIAL_CANCELLATION');
+  const payload=await request(ownerUrl(learnerId)+'/trial-cancellations',
+   {lessonId,operationId});
+  if(!['TRIAL_CANCELLED','TRIAL_ALREADY_CANCELLED'].includes(String(payload.code))||
+   payload.lessonId!==lessonId)throw new TrialBookingError('INVALID_TRIAL_RESPONSE');
+  return lessonId;
  }
 };
