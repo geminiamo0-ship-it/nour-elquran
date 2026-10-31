@@ -14,7 +14,7 @@ function storage(room:RoomRecord):LessonRoomStorage{
 }
 function environment(allowed:boolean):Env{
  const now=Date.now();
- return {DB:{prepare:(_sql:string)=>{void _sql;return {
+ return {NOOR_REALTIME_HINTS_ENABLED:'true',DB:{prepare:(_sql:string)=>{void _sql;return {
   bind:()=>({first:async()=>allowed?{
    id:actor.lessonId,learnerId:actor.learnerId,role:'teacher',
    kind:'standard',status:'live',startsAtMs:now-10000,endsAtMs:now+10000
