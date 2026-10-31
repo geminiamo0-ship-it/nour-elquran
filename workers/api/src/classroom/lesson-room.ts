@@ -318,9 +318,9 @@ export class LessonRoom {
     });
    }
   }
-  await this.dispatch(now);
+  // Canonical persistence must not depend on LiveKit provider availability.
   await this.flushQuranInk();
-  await this.scheduleNext(now);
+  try{await this.dispatch(now);}finally{await this.scheduleNext(now);}
  }
  async fetch(request:Request):Promise<Response>{
   const path=new URL(request.url).pathname;
@@ -435,6 +435,15 @@ export class LessonRoom {
    const cmd=parseInkCommand(raw);
    if(!cmd)return Response.json({code:'INVALID_INK_COMMAND'},{status:400});
    const now=Date.now();
+   // D1 phase lookup runs outside the DO storage transaction. A concurrent
+   // End is still fenced atomically against the subsequent room mutation.
+   if(cmd.action!=='snapshot'){
+    if(!this.env?.DB)return Response.json({code:'INK_D1_UNAVAILABLE'},{status:503});
+    try{
+     if(!await this.liveInkLesson(cmd.lessonId,cmd.learnerId))
+      return Response.json({code:'INK_LESSON_NOT_LIVE'},{status:409});
+    }catch{return Response.json({code:'INK_D1_UNAVAILABLE'},{status:503});}
+   }
    try{
     return await this.ctx.storage.transaction(async txn=>{
      const room=await txn.get<RoomRecord>('room');
@@ -443,10 +452,6 @@ export class LessonRoom {
      if(!lease||lease.expiresAtMs<=now||lease.subject!==cmd.actorSubject||
       lease.learnerId!==cmd.learnerId)return Response.json({code:'NOT_JOINED'},{status:404});
      const state=await txn.get<InkPage>('quranInk:'+cmd.page)??initialInk(cmd.page);
-     if(cmd.action!=='snapshot'&&!this.env?.DB)
-      return Response.json({code:'INK_D1_UNAVAILABLE'},{status:503});
-     if(cmd.action!=='snapshot'&&!await this.liveInkLesson(cmd.lessonId,cmd.learnerId))
-      return Response.json({code:'INK_LESSON_NOT_LIVE'},{status:409});
      if(cmd.action==='snapshot')return Response.json({code:'INK_SNAPSHOT',ink:visibleInk(state)},
       {headers:{'cache-control':'no-store'}});
      const current=await txn.get<SharedPageRecord>('quranPage')??initialPage();
