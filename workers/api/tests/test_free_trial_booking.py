@@ -152,6 +152,39 @@ class FreeTrialD1(unittest.TestCase):
    'SELECT COUNT(*) FROM trial_slot_closure_events WHERE slot_id=?',(slot,)).fetchone(),(1,))
   self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
 
+ def test_slot_withdrawal_rechecks_staff_grant_and_verified_identity_at_write(self):
+  # A previously authorized slot publisher must not keep withdrawal power
+  # after staff revocation, account disabling or identity de-verification.
+  slot=self.open(starts=T+7*3600000)
+  sql="""INSERT INTO trial_slot_closure_events
+    (id,operation_id,slot_id,actor_subject,reason,at_ms)
+    VALUES(?,?,?,?,?,?)"""
+  def try_withdraw():
+   self.db.execute(sql,(str(uuid4()),str(uuid4()),slot,'staff',
+    'Synthetic withdrawal after staff authorization change',T))
+  self.db.execute("UPDATE staff_grants SET revoked_at_ms=? WHERE auth_subject='staff'",(T,))
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'TRIAL_STAFF_DENIED'):
+   try_withdraw()
+  self.db.execute("UPDATE staff_grants SET revoked_at_ms=NULL WHERE auth_subject='staff'")
+  self.db.execute("UPDATE auth_users SET phone_number_verified=0 WHERE id='staff'")
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'TRIAL_STAFF_DENIED'):
+   try_withdraw()
+  self.db.execute("UPDATE auth_users SET phone_number_verified=1 WHERE id='staff'")
+  self.db.execute("UPDATE accounts SET status='disabled' WHERE auth_subject='staff'")
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'TRIAL_STAFF_DENIED'):
+   try_withdraw()
+  self.assertEqual(self.db.execute(
+   "SELECT COUNT(*) FROM trial_slot_closure_events WHERE slot_id=?",(slot,)
+   ).fetchone(),(0,))
+  self.assertEqual(self.db.execute(
+   "SELECT COUNT(*) FROM trial_open_slot_events WHERE id=?",(slot,)
+   ).fetchone(),(1,))
+  self.db.execute("UPDATE accounts SET status='active' WHERE auth_subject='staff'")
+  try_withdraw()
+  self.assertEqual(self.db.execute(
+   "SELECT COUNT(*) FROM trial_slot_closure_events WHERE slot_id=?",(slot,)
+   ).fetchone(),(1,))
+
  def test_full_migration_chain_includes_both_0023_and_0024(self):
   # The fixture applies all migrations in order, including the merged
   # ink compatibility guard and this branch's trial closure guard.
