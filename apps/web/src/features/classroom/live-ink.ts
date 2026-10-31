@@ -1,6 +1,6 @@
 import type {QuranInkStroke} from '@/features/student';
 export type InkView=Readonly<{page:number;revision:number;strokes:readonly QuranInkStroke[]}>;
-export type InkResult=Readonly<{code:string;ink:InkView}>;
+export type InkResult=Readonly<{code:string;ink:InkView;persistence?:'pending'|'saved'}>;
 export type ConnectedIdentity=Readonly<{role:'teacher'|'learner';lessonId:string;learnerId?:string}>;
 export type InkChange=
  |Readonly<{action:'add';page:number;expectedRevision:number;requestId:string;stroke:QuranInkStroke}>
@@ -45,8 +45,10 @@ export async function fetchLiveInk(id:ConnectedIdentity,page:number,change?:InkC
  try{raw=await response.json();}catch{throw Error('INVALID_INK_RESPONSE');}
  const body=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw as Record<string,unknown>:null;
  if(body&&validInk(body.ink)&&(response.ok||response.status===409||response.status===413)&&
-  ['INK_SNAPSHOT','INK_APPLIED','INK_REPLAY','INK_CONFLICT','INK_LIMIT'].includes(String(body.code)))
-  return {code:String(body.code),ink:body.ink};
+  ['INK_SNAPSHOT','INK_APPLIED','INK_REPLAY','INK_CONFLICT','INK_LIMIT',
+   'INK_PENDING_PERSISTENCE'].includes(String(body.code)))
+  return {code:String(body.code),ink:body.ink,
+   ...(body.persistence==='pending'||body.persistence==='saved'?{persistence:body.persistence}:{})};
  throw Error(typeof body?.code==='string'?body.code:'CLASSROOM_INK_UNAVAILABLE');
 }
 /** One drawn stroke can be 2500 pointer points; the server enforces <=600. */
