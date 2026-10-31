@@ -37,6 +37,25 @@ if ! grep -q 'NATIVE_DRAFT_WRITE_OK' "$state/draft-smoke.log" || \
   exit 1
 fi
 
+# #286: the same household does not grant a Sheikh access to a sibling who
+# is not assigned to that Sheikh. Check the real native D1 access trigger.
+echo "Checking native D1 denies unassigned sibling ink drafts (synthetic only)"
+if "${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/teacher-draft-native-d1-unassigned-sibling.sql > "$state/draft-sibling-denied.log" 2>&1; then
+  echo "Native D1 unexpectedly accepted a Sheikh draft for an unassigned sibling" >&2
+  exit 1
+fi
+if ! grep -q 'DRAFT_ACCESS_DENIED' "$state/draft-sibling-denied.log"; then
+  echo "Native D1 unassigned sibling draft failed for an unexpected reason" >&2
+  exit 1
+fi
+"${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --command "SELECT CASE WHEN (SELECT count(*) FROM teacher_assignment_draft_versions WHERE draft_id='d145a6fa-1d94-4994-91e7-5819692ba3b6')=0 AND (SELECT count(*) FROM learner_quran_events WHERE learner_id='draft-test-sibling')=0 AND (SELECT count(*) FROM learner_quran_current WHERE learner_id='draft-test-sibling')=0 THEN 'NATIVE_DRAFT_UNASSIGNED_SIBLING_DENIED' ELSE 'NATIVE_DRAFT_UNASSIGNED_SIBLING_LEAK' END AS result" > "$state/draft-sibling-denied-check.log"
+if ! grep -q 'NATIVE_DRAFT_UNASSIGNED_SIBLING_DENIED' "$state/draft-sibling-denied-check.log"; then
+  echo "Native D1 unassigned sibling attempt persisted draft or Quran marks" >&2
+  exit 1
+fi
+
 # Issue #286: native D1 must reject malformed colors and leave no draft row.
 # This deliberately failing fixture uses synthetic IDs only.
 echo "Checking native D1 rejects invalid teacher ink color (synthetic only)"
