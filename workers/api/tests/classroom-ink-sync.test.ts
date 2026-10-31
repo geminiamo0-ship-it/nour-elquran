@@ -212,3 +212,31 @@ test('D1 write outage retains queued room mark through restart, alarm replays ex
  assert.equal((await cmd(reboot,{...add,expectedRevision:1,
   requestId:'fresh-after-end-01',stroke:{...mark,id:'new-stroke-0001'}})).status,409);
 });
+
+test('signed DO End fence rejects new strokes and waits for canonical D1 delivery',async()=>{
+ const {api,ledger,env}=memory();
+ await api.put('room',{lessonId:'lesson-ink',revision:2,
+  teacher:{subject:'signed-sheikh',learnerId:'learner-ink',expiresAtMs:Date.now()+60000},
+  learner:{subject:'signed-owner',learnerId:'learner-ink',expiresAtMs:Date.now()+60000}});
+ await api.put('quranPage',{edition:'hafs-kfqc-v1.1.1',page:35,revision:1,receipts:[]});
+ const room=new LessonRoom({storage:api},env);
+ const opId='2163d489-5a27-4af2-83d0-1c3b7f989eff';
+ const fence=(action:string)=>room.fetch(new Request(
+  'https://room.internal/internal/ink-end-fence',{method:'POST',
+   headers:{'content-type':'application/json'},
+   body:JSON.stringify({lessonId:'lesson-ink',learnerId:'learner-ink',
+    actorSubject:'signed-sheikh',operationId:opId,action})}));
+ ledger.setAvailable(false);
+ assert.equal((await cmd(room,add)).status,503);
+ const blocked=await fence('prepare');
+ assert.equal(blocked.status,409);
+ assert.equal((await blocked.json()).code,'INK_END_PENDING');
+ ledger.setAvailable(true);
+ assert.equal((await fence('prepare')).status,200);
+ assert.equal(ledger.operations.size,1);
+ const newStroke={...add,expectedRevision:1,requestId:'another-stroke-00001',
+  stroke:{...mark,id:'new-stroke-0001'}};
+ assert.equal((await cmd(room,newStroke)).status,409);
+ assert.equal((await fence('complete')).status,200);
+ assert.equal((await cmd(room,newStroke)).status,409);
+});
