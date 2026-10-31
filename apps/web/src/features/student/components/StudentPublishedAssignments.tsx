@@ -37,7 +37,7 @@ export function StudentPublishedAssignments({learnerId}:{learnerId:string}){
        <span className={css.statusPending}>تكليف منشور</span></div>
       <h4>سورة {task.surah} · الآيات {task.fromAyah}–{task.toAyah}</h4>
       <p>{task.instructions}</p>
-      <small>آخر موعد {new Date(task.dueAtMs).toLocaleString('ar-EG')} · صفحة {task.startPage}{onePage?'':' إلى '+task.endPage}</small>
+      <small>آخر موعد {new Date(task.dueAtMs).toLocaleString('ar-EG')} · صفحة {task.startPage}{task.startPage===task.endPage?'':' إلى '+task.endPage}</small>
       <div className={css.actions}>
        <button type="button" className={css.primaryButton} aria-expanded={open}
         onClick={()=>setOpened(open?null:task.id)}>
