@@ -17,3 +17,6 @@ export {fetchPublishedQuranArchive,parsePublishedQuranArchive,archiveStrokes,Arc
 export type {PublishedQuranArchive,ArchiveMark} from './lesson-archive-client';
 export {inboxClient,parseInboxItems,InboxError} from './inbox-client';
 export type {InboxNotice} from './inbox-client';
+
+export {attendanceClient,parseAttendanceCases,AttendanceApiError} from './attendance-cases-client';
+export type {AttendanceCase,TeacherAttendanceCase} from './attendance-cases-client';

@@ -8,6 +8,7 @@ import {TeacherConnectedAssignments} from './TeacherConnectedAssignments';
 import {TeacherConnectedReports} from './TeacherConnectedReports';
 import {TeacherConnectedPreparation} from './TeacherConnectedPreparation';
 import {TeacherConnectedInbox} from './TeacherConnectedInbox';
+import {TeacherConnectedAttendanceCases} from './TeacherConnectedAttendanceCases';
 import {teacherRoute} from './teacher-route';
 import css from './TeacherReadOnly.module.css';
 
@@ -82,6 +83,7 @@ export function TeacherReadOnlyView({pathname}:{pathname:string}) {
   if(route==='/teacher/students')return <TeacherConnectedStudents learners={learners} lessons={lessons}/>;
   if(route==='/teacher/preparation')return <TeacherConnectedPreparation learners={learners} lessons={lessons}/>;
   if(route==='/teacher/notifications')return <TeacherConnectedInbox/>;
+  if(route==='/teacher/cases')return <TeacherConnectedAttendanceCases learners={learners} lessons={lessons}/>;
   if(route==='/teacher/schedule')return <section className={css.card}>
     <div className={css.heading}><h1>جدولي الفعلي</h1><span>آخر {lessons.length} حصة</span></div>
     <p>المواعيد المقروءة من D1. فتح غرفة الانتظار لا يبدأ الحصة أو يشغّل الميكروفون تلقائيًا؛ الشيخ يبدأ الحصة رسميًا من الفصل.</p>
@@ -105,7 +107,6 @@ export function TeacherReadOnlyView({pathname}:{pathname:string}) {
     </section>;
   }
   return <section className={css.card}><h1>{
-   route==='/teacher/cases'?'الحضور والبلاغات غير متصلة بعد':
    'هذه الخدمة غير متاحة حاليًا'}</h1>
     <p>الخدمة المطلوبة لم تُربط بعد بـBackend آمن ومصدر موثّق؛
      لا تظهر أعداد أو تنبيهات أو حالات حضور افتراضية، ولا يمكن إرسال أو اعتماد
