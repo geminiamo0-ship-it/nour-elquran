@@ -1,3 +1,7 @@
+## 2026-10-31 / #286 — SQL NULL guard hardening (candidate, NOT merged)
+- During PR #288 review, confirmed SQLite `json_type(...,'$.payload.color') <> 'text'` evaluates to NULL for a missing color and could bypass the private Sheikh draft guard. Same issue affected other required JSON properties and pen coordinates in draft/canonical event guards.
+- Updated the **unapplied candidate migration 0023** to `COALESCE` required JSON types before validation; added missing-field Python regression and synthetic native Wrangler D1 missing-color rejection/no-row smoke. This is a candidate on `test/286-native-d1-ink-draft-repro`; exact-head CI and signed remote Dev proof are still required. Do not merge or enable cumulative ink until review and two-role Dev acceptance. No Production changes.
+
 ## 2026-10-31 / #286 — native canonical-ink invalid-color regression (candidate)
 - Extended Draft PR #288 with a **second** native Wrangler D1 negative fixture: a synthetic learner self-study pen event with malformed `#gg0000` must fail `QURAN_LEDGER_PAYLOAD_DENIED` and leave **neither** a canonical event nor a projected current item. The earlier teacher-draft invalid-color check and positive draft→publication→canonical projection remain.
 - This commit is **pending exact-head CI**; prior verified head `110400fc` passed [Verify #41177632597](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41177632597) 4/4. No signed remote Cloudflare Dev success, migration 0023 deployment, PR merge or Production claim. Keep #286 OPEN, cumulative ink flag OFF.
