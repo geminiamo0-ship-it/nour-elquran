@@ -1,3 +1,9 @@
+## A3 candidate — signed owner-only self-study canonical write (#251)
+
+Draft branch `feat/251-owner-cumulative-self-study-write` adds **POST** to the already signed owner `/v1/me/learners/:learnerId/cumulative-quran` endpoint. The Worker derives the account subject from Better Auth, checks exact learner ownership and schema version, validates the full bounded event, and **only accepts `originType=self_study`**. The browser cannot assert a role, actor, learner, visibility or shared classroom/assignment origin. Existing Origin/CSRF protection applies. D1 event insertion and current projection are transactional via migration 0017 triggers; return an ACK only after D1 confirms the write. Responses omit internal `authorSubject`. The old `/mushaf` private records are not migrated or removed.
+
+The native local Wrangler/Better Auth/D1 smoke now exercises owner put, replay, conflicting operation, stale revision, hide, composite refresh, private legacy preservation, foreign owner 404, anonymous 401, bad Origin 403, forged actor/role and forged lesson/assignment origin 400. **This is a source candidate until exact-head CI finishes; it is not a Classroom DO bridge, a new Reader UI, a real Dev deployment, or Production approval.**
+
 # #251 / A1 — additive D1 cumulative Mushaf ledger foundation
 
 **Status:** implemented as a server-only schema/typed adapter and isolated tests. **NOT connected to live classroom, published task editor, or the browser**. Production and existing customer data are unchanged. Parent decision: [ADR 0009](adr/0009-unified-cumulative-learner-mushaf.md).
