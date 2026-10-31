@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import {useEffect,useState} from 'react';
 import {notebookClient,type LessonRow} from '../../shared';
+import {StudentConnectedAttendanceCases} from './StudentConnectedAttendanceCases';
 import styles from '../StudentPortal.module.css';
 const formatter=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short'});
 export function ConnectedClassroomLessons({learnerId}:{learnerId:string}){
@@ -39,5 +40,6 @@ export function ConnectedClassroomLessons({learnerId}:{learnerId:string}){
       l.status==='completed'?<Link href="/student/notebook">دفتر الحصة</Link>:<span>غير متاح</span>}
     </article>)}</div>}
   </section>
+  <StudentConnectedAttendanceCases key={learnerId} learnerId={learnerId}/>
  </div>;
 }
