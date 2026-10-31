@@ -51,6 +51,8 @@ test('teacher read query never includes student-private store or private items',
  }})} as unknown as CoreDatabase;
  const response=await readTeacherSharedPage(db,'teacher-a','learner-a',1,1250);
  assert.equal(response.status,200);
+ assert.ok('items' in response);
+ if(!('items' in response))throw new Error('Expected authorized teacher read');
  assert.deepEqual(response.items,[]);
  assert.equal(seen.length,2);
  assert.ok(seen[1]?.sql.includes("audience='shared'"));
