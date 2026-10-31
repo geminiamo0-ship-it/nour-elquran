@@ -134,7 +134,7 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
        ?' تعذّر الاتصال بالشبكة؛ جرّب تحديث الواجبات.'
        :' راجع صلاحية الشيخ والرد الفعلي من الخدمة ثم أعد المحاولة.'}
       <button type="button" disabled={saving} onClick={()=>setRetry(n=>n+1)}>إعادة فحص المسودات</button>
-     </p>
+     </p>}
    {editor&&<TeacherAssignmentInkEditor key={editor.key} learnerId={selected}
     initial={editor.input} existing={editor.existing}
     onCancel={()=>setEditor(null)}
