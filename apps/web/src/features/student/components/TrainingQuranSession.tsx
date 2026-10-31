@@ -12,9 +12,9 @@ import css from './TrainingWorkspace.module.css';
 type Props={range:QuranAssignmentRange;title:string;onClose:()=>void};
 
 export function TrainingQuranSession({range,title,onClose}:Props){
-  const {selected}=useStudent();
-  const cumulativeLearnerId=!selected.profile.demo&&process.env.NEXT_PUBLIC_ACCOUNT_UI==='true'?
-    selected.profile.id:undefined;
+  const {selected:activeLearner}=useStudent();
+  const cumulativeLearnerId=!activeLearner.profile.demo&&process.env.NEXT_PUBLIC_ACCOUNT_UI==='true'?
+    activeLearner.profile.id:undefined;
   const refs=useMemo(()=>referencesForRange(range),[range]);
   const keys=useMemo(()=>new Set(refs.map(r=>r.surah+':'+r.ayah)),[refs]);
   const [text,setText]=useState<Map<number,string>>(new Map());
