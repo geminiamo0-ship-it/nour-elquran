@@ -1,4 +1,4 @@
-import type {AssignmentDraft} from '../shared/published-assignment-client';
+import type {AssignmentDraft} from '../shared';
 
 export type TeacherInkMark=Readonly<{
  id:string;kind:'pen'|'marker'|'note'|'highlight';page:number;
