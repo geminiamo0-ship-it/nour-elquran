@@ -83,4 +83,20 @@ class FreeTrialD1(unittest.TestCase):
    self.db.execute('DELETE FROM trial_booking_events')
   with self.assertRaisesRegex(sqlite3.IntegrityError,'TRIAL_SLOT_IMMUTABLE'):
    self.db.execute('UPDATE trial_open_slot_events SET starts_at_ms=0')
+ def test_staff_can_withdraw_advertised_slot_without_canceling_lessons(self):
+  slot=self.open(starts=T+7*3600000)
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'TRIAL_STAFF_DENIED'):
+   self.db.execute("""INSERT INTO trial_slot_closure_events
+    (id,operation_id,slot_id,actor_subject,reason,at_ms)
+    VALUES(?,?,?,?,?,?)""",(str(uuid4()),str(uuid4()),slot,'other',
+     'Not authorized staff member',T))
+  self.db.execute("""INSERT INTO trial_slot_closure_events
+    (id,operation_id,slot_id,actor_subject,reason,at_ms)
+    VALUES(?,?,?,?,?,?)""",(str(uuid4()),str(uuid4()),slot,'staff',
+     'Teacher is no longer available',T))
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'TRIAL_SLOT_UNAVAILABLE'):
+   self.book(slot)
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'TRIAL_SLOT_CLOSURE_IMMUTABLE'):
+   self.db.execute('DELETE FROM trial_slot_closure_events')
+  self.assertEqual(self.db.execute('SELECT COUNT(*) FROM lessons').fetchone(),(0,))
 if __name__=='__main__':unittest.main()
