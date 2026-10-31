@@ -1,3 +1,9 @@
+## 2026-10-31 — #244 native D1 forward-upgrade trial slot protection (PR #280; candidate)
+- Source branch `fix/244-reject-closing-booked-trial-slot-20261031` now fixes a smoke-test sequencing bug: previous legacy 0022 setup accidentally included future 0024. Native Wrangler local state is migrated 0022→0023→0024 in order, with a synthetic real booked trial seeded between 0023 and 0024.
+- New `scripts/fixtures/trial-slot-native-pre0024.sql`; native checks require `TRIAL_SLOT_ALREADY_BOOKED`, unchanged scheduled lesson and no closure event on failed withdrawal; a genuine owner cancellation event then permits staff closure with FK integrity. No remote resources, secrets or real children used.
+- Exact-head CI on this addition is **not yet accepted**. Read latest PR #280 HEAD and Verify before any PASS claim. #280 Draft, #244 OPEN. #286 signed Dev 503 acceptance and independent security review are blockers for remote migration 0024; no Production or feature flags changed.
+- NEXT EXACT ACTION: inspect PR #280 Verify; fix any native D1 fixture/SQL failures. Then independent reviewer and controlled signed Cloudflare Dev tests, never self-approve or close #244 based on local-only checks.
+
 ## 2026-10-31 / #244 — combined migration sequence candidate on main
 - Noor #288 merged 0023; this branch is synchronized with that main commit and proposes only additive 0024 booked-trial slot closure guard. #286 was reopened because the signed remote Dev 503 fix is still unverified.
 - Run full migrations in numeric order with synthetic data, then test the booked-slot withdrawal denial and post-cancellation success. Source CI is not a remote Cloudflare Dev migration. Obtain independent review and signed staff/owner Dev acceptance before merge. No Production, audio, payments, WhatsApp or cumulative-ink flag changes.
