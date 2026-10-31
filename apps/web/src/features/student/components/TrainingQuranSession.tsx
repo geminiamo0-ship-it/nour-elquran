@@ -1,6 +1,7 @@
 'use client';
 import { useEffect,useMemo,useState } from 'react';
 import { ReaderPrintedPage } from './ReaderPrintedPage';
+import {useStudent} from '../StudentContext';
 import { QuranRecitationPlayer } from './QuranRecitationPlayer';
 import { TrainingVoicePractice } from './TrainingVoicePractice';
 import { quranChapterUrl,parseQuranChapter,type QuranAyahReference } from '../quranSource';
@@ -11,6 +12,9 @@ import css from './TrainingWorkspace.module.css';
 type Props={range:QuranAssignmentRange;title:string;onClose:()=>void};
 
 export function TrainingQuranSession({range,title,onClose}:Props){
+  const {selected}=useStudent();
+  const cumulativeLearnerId=!selected.profile.demo&&process.env.NEXT_PUBLIC_ACCOUNT_UI==='true'?
+    selected.profile.id:undefined;
   const refs=useMemo(()=>referencesForRange(range),[range]);
   const keys=useMemo(()=>new Set(refs.map(r=>r.surah+':'+r.ayah)),[refs]);
   const [text,setText]=useState<Map<number,string>>(new Map());
@@ -74,6 +78,7 @@ export function TrainingQuranSession({range,title,onClose}:Props){
           strokes={[]} selectedKey={currentAudio ? currentAudio.surah+':'+currentAudio.ayah : selected}
           noteKeys={new Set()} focusKeys={keys} allowedKeys={keys}
           practiceRevealedKeys={practiceRevealedKeys}
+          cumulativeLearnerId={cumulativeLearnerId} includeLegacyPrivate
           onSelect={pick} onOpenNote={target=>{
             pick(target);
             setNoteMessage('الملاحظات الدائمة تُكتب في المصحف الشخصي؛ لا ننشئ نسخة ملاحظات منفصلة داخل الواجب.');
