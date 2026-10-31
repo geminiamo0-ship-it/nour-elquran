@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
-import {LOCAL_REHEARSAL_MAX_BYTES,LOCAL_REHEARSAL_MAX_MS,
+import {LOCAL_REHEARSAL_MAX_MS,
  localRehearsalLimit,type LocalRehearsalLimit} from './local-rehearsal-limits';
 import css from './TrainingWorkspace.module.css';
 
