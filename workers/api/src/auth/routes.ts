@@ -6,7 +6,8 @@ import { ownerAccount } from './accounts.ts';
 import { getOwnedLearner, listOwnedLearners } from '../owner-learners.ts';
 import { applyLearnerProfileAction, parseLearnerProfileAction } from '../learner-profile-actions.ts';
 import {applyPrivateMushaf,parsePrivateMushafOp,readPrivateMushaf} from '../private-mushaf.ts';
-import {readOwnerCumulativePage,readTeacherSharedPage} from '../learner-quran-ledger.ts';
+import {appendQuranLedgerEvent,parseQuranLedgerCommand,
+ readOwnerCumulativePage,readTeacherSharedPage} from '../learner-quran-ledger.ts';
 import { listOwnedLearnerLessons, listVerifiedTeacherLessons } from '../lesson-calendar.ts';
 import { listVerifiedTeacherLearners } from '../teacher-roster.ts';
 import {readOwnerPlan,readTeacherPlan,writeTeacherPlan,parsePlanAction} from '../academic-plans.ts';
@@ -175,23 +176,40 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
     const {status,...body}=result;
     return reply(status,body,requestId);
   }
-  // ADR 0009 / #251 A2: authenticated cumulative reader only. The old
-  // student-private Mushaf is included ONLY for its verified owner; teachers
-  // cannot read any private marks or claim another account's learner.
+  // ADR 0009 / #251 A3: signed owner self-study only. Classroom/assignment
+  // marks require separate trusted DO/task flows, never a browser role claim.
+  // Existing private Mushaf remains owner-only and is not silently migrated.
   const cumulative=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/cumulative-quran$/.exec(path);
   if(cumulative){
-    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
     const learnerId=cumulative[1]!;
     if(!await getOwnedLearner(db,{authSubject},learnerId))
       return reply(404,{code:'NOT_FOUND'},requestId);
-    const params=new URL(request.url).searchParams;
-    if(params.size!==1||!/^([1-9]\d{0,2})$/.test(params.get('page')??'')||
-       Number(params.get('page'))>604)
-      return reply(400,{code:'INVALID_QURAN_PAGE'},requestId);
     const version=await db.prepare(
       "SELECT version FROM noor_schema_meta WHERE component='learner_quran_ledger'",
     ).first<{version:number}>();
     if(version?.version!==1)return reply(503,{code:'QURAN_LEDGER_SCHEMA_NOT_READY'},requestId);
+    if(request.method==='POST'){
+      if(new URL(request.url).searchParams.size!==0)
+        return reply(400,{code:'INVALID_QURAN_EVENT'},requestId);
+      const command=parseQuranLedgerCommand(await readObject(request,120000));
+      if(!command||command.originType!=='self_study')
+        return reply(400,{code:'INVALID_QURAN_EVENT'},requestId);
+      const result=await appendQuranLedgerEvent(db,
+        {subject:authSubject,role:'learner'},learnerId,command);
+      const {status,...body}=result;
+      if('item' in body&&body.item){
+        const {authorSubject,...safe}=body.item;
+        void authorSubject;
+        return reply(status,{learnerId,...body,item:safe},requestId);
+      }
+      return reply(status,{learnerId,...body},requestId);
+    }
+    const params=new URL(request.url).searchParams;
+    if(params.size!==1||!/^([1-9]\d{0,2})$/.test(params.get('page')??'')||
+       Number(params.get('page'))>604)
+      return reply(400,{code:'INVALID_QURAN_PAGE'},requestId);
     const result=await readOwnerCumulativePage(db,authSubject,learnerId,Number(params.get('page')));
     const {status,...body}=result;
     // Never expose internal auth subject ids in web read responses.
