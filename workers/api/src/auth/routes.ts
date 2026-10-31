@@ -28,6 +28,7 @@ import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '.
 import {forwardVerifiedPresence,parseClientPresenceAction} from '../classroom/presence.ts';
 import {forwardVerifiedPage,parsePageAction} from '../classroom/quran-sync.ts';
 import {forwardVerifiedInk,parseClientInk} from '../classroom/ink-sync.ts';
+import {openVerifiedRealtime} from '../classroom/realtime.ts';
 import {createMediaToken,mediaLessonWindow} from '../classroom/livekit-token.ts';
 import {checkLiveKitProvider} from '../classroom/livekit-provider-check.ts';
 import {wakeActingTeacherMedia,wakeLessonMediaReconciliation} from '../classroom/media-enforcement.ts';
@@ -467,6 +468,27 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // The library re-reads the signed session from D1; cookie cache and unverified token auth are disabled.
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return reply(401, { code: 'UNAUTHENTICATED' }, requestId);
+  // Same-origin signed, read-only realtime hints. Neither role nor identity
+  // comes from a WebSocket payload or client-asserted request headers.
+  const teacherRealtime=/^\\/v1\\/teacher\\/lessons\\/([a-zA-Z0-9-]{1,128})\\/realtime$/.exec(path);
+  if(teacherRealtime){
+    const lessonId=teacherRealtime[1]!;
+    const access=await checkTeacherClassroomAccess(env.DB,session.user.id,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    return openVerifiedRealtime(env,{lessonId,learnerId:access.learnerId,
+      actorSubject:session.user.id,role:'teacher'},request);
+  }
+  const learnerRealtime=/^\\/v1\\/me\\/learners\\/([a-zA-Z0-9-]{1,128})\\/lessons\\/([a-zA-Z0-9-]{1,128})\\/realtime$/.exec(path);
+  if(learnerRealtime){
+    const learnerId=learnerRealtime[1]!,lessonId=learnerRealtime[2]!;
+    const owner=await ownerAccount(env.DB,session.user.id);
+    if(!owner)return reply(404,{code:'NOT_FOUND'},requestId);
+    const access=await checkOwnedLearnerClassroomAccess(env.DB,owner.id,learnerId,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    return openVerifiedRealtime(env,{lessonId,learnerId,
+      actorSubject:session.user.id,role:'learner'},request);
+  }
+
   const staffTrialClose=/^\/v1\/staff\/trial-slots\/([a-zA-Z0-9-]{1,128})\/close$/.exec(path);
   if(staffTrialClose){
     if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
