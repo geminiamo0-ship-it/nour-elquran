@@ -9,6 +9,7 @@ import { QuranConcealmentOverlay } from './QuranConcealmentOverlay';
 import { useCumulativeQuranPage } from '../useCumulativeQuranPage';
 import css from './ReaderAcademicOverlay.module.css';
 import { QuranInk, type InkMode } from './QuranInk';
+import type {PreviewFrame} from '@/features/classroom/ink-preview';
 
 type Props = {
   page: number;
@@ -29,10 +30,12 @@ type Props = {
   onSelect: (target: QuranTarget) => void;
   onOpenNote: (target: QuranTarget) => void;
   onInkChange: (page: number, strokes: QuranInkStroke[]) => void;
+  onInkPreview?: (frame:PreviewFrame) => void;
+  previewStrokes?: readonly QuranInkStroke[];
 };
 
 /** Every visible printed page owns its own verified polygons, including both sides of a spread. */
-export function ReaderPrintedPage({ page, viewportFit = false, inkMode, color, strokes, selectedKey, noteKeys, focusKeys, allowedKeys, cumulativeLearnerId, includeLegacyPrivate = false, practiceRevealedKeys, onSelect, onOpenNote, onInkChange }: Props) {
+export function ReaderPrintedPage({ page, viewportFit = false, inkMode, color, strokes, selectedKey, noteKeys, focusKeys, allowedKeys, cumulativeLearnerId, includeLegacyPrivate = false, practiceRevealedKeys, onSelect, onOpenNote, onInkChange, onInkPreview, previewStrokes }: Props) {
   const [regions, setRegions] = useState<QuranAyahRegion[]>([]);
   const [loading, setLoading] = useState(true);
   const [regionsForPage,setRegionsForPage] = useState<number|null>(null);
@@ -77,7 +80,8 @@ export function ReaderPrintedPage({ page, viewportFit = false, inkMode, color, s
   return <SmoothMadinahPage page={page} viewportFit={viewportFit}
    concealArtwork={practiceRevealedKeys!==undefined} overlay={<>
     <QuranInk page={page} mode={inkMode} color={color} strokes={strokes}
-      fixedStrokes={readonlyInk} onChange={next => onInkChange(page, next)} />
+      fixedStrokes={readonlyInk} previewStrokes={previewStrokes}
+      onPreview={onInkPreview} onChange={next => onInkChange(page, next)} />
     <QuranAyahOverlay page={page} regions={verifiedRegions} selectedKey={selectedKey}
       noteKeys={combinedNoteKeys} focusKeys={focusKeys} allowedKeys={allowedKeys} enabled={!loading && regionsForPage===page && inkMode === 'off' && practiceRevealedKeys===undefined}
       onSelect={target=>{showAcademicNote(target);onSelect(target);}}
