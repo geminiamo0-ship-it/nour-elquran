@@ -216,7 +216,7 @@ export class LessonRoom {
     try{
      const result=await appendQuranLedgerEvent(this.env.DB,
       {subject:head.actorSubject,role:head.actorRole},
-      head.learnerId,head.command,Date.now());
+      head.learnerId,head.command,head.acceptedAtMs);
      if(result.code!=='QURAN_EVENT_COMMITTED'&&result.code!=='QURAN_EVENT_REPLAY')
       break;
      // Idempotent D1 operation ID makes replay safe if the DO crashes between
@@ -274,7 +274,8 @@ export class LessonRoom {
     await txn.put('inkEndFence',{...old,completed:true});
     return {code:'INK_FENCE_COMPLETED',status:200};
    }
-   if(old&&(old.completed||old.subject!==c.actorSubject))
+   if(old&&(old.completed||old.subject!==c.actorSubject||
+     old.operationId!==c.operationId))
     return {code:'INK_END_FENCE_CONFLICT',status:409};
    if((await txn.get<PendingQuranInk[]>('pendingQuranInk')??[]).length)
     return {code:'INK_END_PENDING',status:409};
