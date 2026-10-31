@@ -9,7 +9,7 @@ import {teacherInkDraftClient,type SavedInkDraft} from './teacher-ink-draft-clie
 import css from './TeacherReadOnly.module.css';
 const client=assignmentClient();
 const kinds={memorization:'حفظ',revision:'مراجعة',recitation:'تلاوة'} as const;
-type Loaded={status:'loaded';catalog:readonly AssignmentSource[];assignments:readonly PublishedAssignment[];
+type Loaded={status:'loaded';learnerId:string;catalog:readonly AssignmentSource[];assignments:readonly PublishedAssignment[];
  drafts:readonly SavedInkDraft[];draftsUnavailable:boolean};
 type State=Loaded|{status:'loading'|'error'};
 export function TeacherConnectedAssignments({learners}:{learners:readonly TeacherRosterRow[]}){
@@ -28,12 +28,12 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
  useEffect(()=>{
   let active=true;const abort=new AbortController();
   setState({status:'loading'});setMessage('');setUncertain(false);setOpenReview(null);
-  if(!selected){setState({status:'loaded',catalog:[],assignments:[],drafts:[],draftsUnavailable:false});return()=>abort.abort();}
+  if(!selected){setState({status:'loaded',learnerId:'',catalog:[],assignments:[],drafts:[],draftsUnavailable:false});return()=>abort.abort();}
   void Promise.all([client.catalog(abort.signal),client.teacher(selected,abort.signal)])
    .then(async ([catalog,assignments])=>{
      const drafts=await teacherInkDraftClient.list(selected,abort.signal).catch(()=>null);
      if(active&&!abort.signal.aborted){
-      setState({status:'loaded',catalog,assignments,drafts:drafts??[],draftsUnavailable:drafts===null});
+      setState({status:'loaded',learnerId:selected,catalog,assignments,drafts:drafts??[],draftsUnavailable:drafts===null});
       setSurah(catalog[0]?.surah??1);
      }
    }).catch(err=>{
@@ -43,15 +43,19 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
  },[selected,retry]);
  if(!learners.length)return <section className={css.card}><h1>الواجبات والتسميعات</h1>
   <p>لا يوجد طلاب مسندون حاليًا. لا يمكن إصدار واجب من حساب غير مخول.</p></section>;
- const catalog=state.status==='loaded'?state.catalog:[];
- const assignments=state.status==='loaded'?state.assignments:[];
- const drafts=state.status==='loaded'?state.drafts:[];
+ // Source rows are only usable for the exact selected learner. During a
+ // profile switch the old React state must not flash or publish for the new ID.
+ const currentLoaded=state.status==='loaded'&&state.learnerId===selected;
+ const catalog=currentLoaded?state.catalog:[];
+ const assignments=currentLoaded?state.assignments:[];
+ const drafts=currentLoaded?state.drafts:[];
  const unique=Array.from(new Set(catalog.map(x=>x.editionId)));
  const editionId=unique[0]??'';
  const editionSurahs=catalog.filter(x=>x.editionId===editionId);
  const current=editionSurahs.find(x=>x.surah===surah)??editionSurahs[0];
  async function publish(e:FormEvent<HTMLFormElement>){
-  e.preventDefault();if(!selected||inFlight.current||uncertain||state.status!=='loaded')return;
+  e.preventDefault();if(!selected||inFlight.current||uncertain||state.status!=='loaded'||
+   state.learnerId!==selected)return;
   inFlight.current=true;setSaving(true);setMessage('');
   try{
    if(!current||!due||!instructions.trim())throw new Error('Input missing');
@@ -70,10 +74,15 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
   <div className={css.heading}><h1>الواجبات والتسميعات</h1><span>تكليف رسمي لكل طالب</span></div>
   <p>كل واجب ينشر لطالب واحد بعد التحقق من صلاحية الشيخ ونطاق القرآن. يمكن مراجعة التسليمات المكتوبة واعتمادها أو طلب إعادتها؛ التسجيلات الصوتية لم تُربط بعد.</p>
   <label>اختر الطالب المسند
-    <select value={selected} onChange={e=>{setLearnerId(e.target.value);setEditor(null);}}>
+    <select value={selected} disabled={saving} onChange={e=>{
+       setLearnerId(e.target.value);setEditor(null);setOpenReview(null);
+       setInstructions('');setDue('');setFrom(1);setTo(1);
+       setMessage('');setUncertain(false);
+      }}>
       {learners.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}
     </select></label>
-  {state.status==='loading'?<p role="status">جارٍ تحميل الآيات والواجبات...</p>:
+  {(state.status==='loading'||(state.status==='loaded'&&!currentLoaded))?
+    <p role="status">جارٍ تحميل الآيات والواجبات لهذا الطالب...</p>:
    state.status==='error'?<p role="alert">{message}</p>:
    <><form onSubmit={publish} style={{display:'grid',gap:10}}>
     <label>نوع الواجب <select value={kind} disabled={saving||uncertain}
@@ -106,7 +115,7 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
        setEditor({key:crypto.randomUUID(),input:{
         kind,editionId:current.editionId,surah:current.surah,fromAyah:from,
         toAyah:to,dueAtMs,instructions:instructions.trim()}});
-      }} disabled={saving||uncertain||(state.status==='loaded'&&state.draftsUnavailable)||!current||!due||!instructions.trim()}>
+      }} disabled={saving||uncertain||(currentLoaded&&state.draftsUnavailable)||!current||!due||!instructions.trim()}>
        تحضير علامات المصحف قبل النشر</button>
      <button type="button" onClick={()=>{setRetry(x=>x+1);setUncertain(false);setEditor(null);}} disabled={saving}>تحديث الواجبات</button>
     </div>
@@ -115,7 +124,8 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
    {editor&&<TeacherAssignmentInkEditor key={editor.key} learnerId={selected}
     initial={editor.input} existing={editor.existing}
     onCancel={()=>setEditor(null)}
-    onSaved={saved=>setState(prev=>prev.status==='loaded'?
+    onSaved={saved=>setState(prev=>prev.status==='loaded'&&
+       prev.learnerId===selected&&saved.learnerId===selected?
       {...prev,drafts:[saved,...prev.drafts.filter(d=>d.draftId!==saved.draftId)]}:prev)}
     onPublished={()=>{setEditor(null);setRetry(n=>n+1);}}/>}
    <h2>مسودات الشيخ الخاصة</h2>
@@ -134,7 +144,7 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
       aria-expanded={openReview===t.id}>{openReview===t.id?'إغلاق المراجعة':'فتح محاولات الطالب'}</button>
      {openReview===t.id&&<TeacherAssignmentReview key={t.id} learnerId={selected} assignmentId={t.id}/>}
    </article>)}</div>:<p className={css.empty}>لا توجد واجبات منشورة لهذا الطالب.</p>}</>}
-  {message&&state.status!=='error'&&<p role="status">{message}</p>}
+  {message&&state.status!=='error'&&currentLoaded&&<p role="status">{message}</p>}
   {uncertain&&<p>نتيجة النشر غير مؤكدة. حدّث السجل قبل أي محاولة جديدة لمنع تكرار التكليف.</p>}
  </section>;
 }
