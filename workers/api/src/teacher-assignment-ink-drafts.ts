@@ -143,3 +143,22 @@ export async function latestTeacherDraft(db:CoreDatabase,draftId:string){
  WHERE v.draft_id=? ORDER BY v.revision DESC LIMIT 1`).bind(draftId).first<Stored>();
  return v;
 }
+
+export async function teacherAssignmentPageRange(db:CoreDatabase,subject:string,learnerId:string,
+ editionId:string,surah:number,fromAyah:number,toAyah:number,now=Date.now()){
+ if(!await verifiedCurrentTeacher(db,subject,learnerId,now))
+  return {status:404,code:'NOT_FOUND'} as const;
+ if(!/^[A-Za-z0-9_.:-]{1,80}$/.test(editionId)||
+  !Number.isInteger(surah)||surah<1||surah>114||
+  !Number.isInteger(fromAyah)||fromAyah<1||
+  !Number.isInteger(toAyah)||toAyah<fromAyah)
+  return {status:400,code:'DRAFT_INVALID_RANGE'} as const;
+ const pages=await db.prepare(`SELECT a.page AS startPage,b.page AS endPage FROM
+  quran_ayah_anchors a JOIN quran_ayah_anchors b
+  ON b.edition_id=a.edition_id AND b.surah=a.surah
+  WHERE a.edition_id=? AND a.surah=? AND a.ayah=? AND b.ayah=? LIMIT 1`)
+  .bind(editionId,surah,fromAyah,toAyah)
+  .first<{startPage:number;endPage:number}>();
+ if(!pages||pages.startPage>pages.endPage)return {status:400,code:'DRAFT_INVALID_RANGE'} as const;
+ return {status:200,code:'DRAFT_RANGE',...pages} as const;
+}
