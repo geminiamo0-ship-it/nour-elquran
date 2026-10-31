@@ -34,3 +34,21 @@ INSERT INTO teacher_assignment_draft_versions(
 SELECT CASE WHEN (SELECT count(*) FROM teacher_assignment_draft_versions
  WHERE draft_id='7145a6fa-1d94-4994-91e7-5819692ba3b6')=1
  THEN 'NATIVE_DRAFT_WRITE_OK' ELSE 'NATIVE_DRAFT_WRITE_MISSING' END AS result;
+-- Publication must project both marks into the owner-only cumulative ledger.
+INSERT INTO teacher_assignment_draft_publications(
+ draft_id,operation_id,revision,learner_id,teacher_subject,at_ms)
+ VALUES('7145a6fa-1d94-4994-91e7-5819692ba3b6',
+ '00000000-0000-4000-8000-000000000001',1,
+ 'draft-test-learner','draft-test-teacher',2500);
+INSERT INTO assignment_publish_events(
+ operation_id,assignment_id,learner_id,actor_auth_subject,kind,edition_id,
+ surah,from_ayah,to_ayah,due_at_ms,instructions,published_at_ms)
+ VALUES('00000000-0000-4000-8000-000000000001',
+ '10000000-0000-4000-8000-000000000001','draft-test-learner',
+ 'draft-test-teacher','revision','hafs-kfqc:v1.1.1',1,1,7,5000,
+ 'Synthetic marked Quran review, no child data',2500);
+SELECT CASE WHEN
+ (SELECT count(*) FROM learner_quran_current
+  WHERE learner_id='draft-test-learner' AND visible=1
+  AND origin_type='assignment' AND audience='shared')=2
+ THEN 'NATIVE_DRAFT_PUBLICATION_OK' ELSE 'NATIVE_DRAFT_PUBLICATION_MISSING' END AS result;
