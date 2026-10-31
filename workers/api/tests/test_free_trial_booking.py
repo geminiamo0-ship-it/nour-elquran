@@ -99,4 +99,29 @@ class FreeTrialD1(unittest.TestCase):
   with self.assertRaisesRegex(sqlite3.IntegrityError,'TRIAL_SLOT_CLOSURE_IMMUTABLE'):
    self.db.execute('DELETE FROM trial_slot_closure_events')
   self.assertEqual(self.db.execute('SELECT COUNT(*) FROM lessons').fetchone(),(0,))
+ def test_staff_cannot_withdraw_an_actively_booked_trial_slot(self):
+  slot=self.open(starts=T+7*3600000)
+  lesson=self.book(slot)
+  close="""INSERT INTO trial_slot_closure_events
+   (id,operation_id,slot_id,actor_subject,reason,at_ms)
+   VALUES(?,?,?,?,?,?)"""
+  def withdraw():
+   self.db.execute(close,(str(uuid4()),str(uuid4()),slot,'staff',
+    'Withdraw an unused published time slot',T))
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'TRIAL_SLOT_ALREADY_BOOKED'):
+   withdraw()
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM trial_slot_closure_events WHERE slot_id=?',(slot,)).fetchone(),(0,))
+  self.assertEqual(self.db.execute(
+   'SELECT status FROM lessons WHERE id=?',(lesson,)).fetchone(),('scheduled',))
+  # Staff must explicitly cancel the actual lesson first; a cancelled
+  # trial no longer blocks withdrawal of its previously published slot.
+  self.fixture.action('cancel',resource=lesson,now=T)
+  withdraw()
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM trial_slot_closure_events WHERE slot_id=?',(slot,)).fetchone(),(1,))
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'TRIAL_SLOT_UNAVAILABLE'):
+   self.book(slot)
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
+
 if __name__=='__main__':unittest.main()
