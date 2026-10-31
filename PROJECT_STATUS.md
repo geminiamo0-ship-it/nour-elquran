@@ -1,3 +1,8 @@
+## 2026-10-31 / #251 A3 — signed cumulative self-study event write candidate (not merged)
+
+- Branch `feat/251-owner-cumulative-self-study-write`: owner-only POST to existing cumulative Quran endpoint, restricted to `self_study`; Better Auth + learner D1 ownership, schema gate, strict payload and Origin, DB ACK, idempotent replay/CAS/hide, no internal actor IDs in browser response. Native local signed D1 smoke added. **Exact-head CI/PR review pending**, no Dev/Production deployment.
+- Existing legacy private marks remain separate; lesson and assignment writes from browsers are still denied. #251 remains OPEN; DO durable outbox/backfill #252 and task/unified views #253 not implemented.
+
 ## 2026-10-31 Signed Student & Sheikh portal Dev acceptance — PASS (scope limited)
 
 ## 2026-10-31 — OWNER-APPROVED cumulative Quran architecture (implementation pending)
