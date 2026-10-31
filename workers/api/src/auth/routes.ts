@@ -197,7 +197,7 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
     // Never expose internal auth subject ids in web read responses.
     if('current' in body&&Array.isArray(body.current))
       return reply(status,{learnerId,...body,
-        current:body.current.map(({authorSubject: _actor,...safe})=>safe)},requestId);
+        current:body.current.map(({authorSubject,...safe})=>{void authorSubject;return safe;})},requestId);
     return reply(status,{learnerId,...body},requestId);
   }
   const mushafMatch = /^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/mushaf$/.exec(path);
@@ -439,7 +439,7 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     const {status,...body}=result;
     if('items' in body&&Array.isArray(body.items))
       return reply(status,{learnerId,...body,
-        items:body.items.map(({authorSubject: _actor,...safe})=>safe)},requestId);
+        items:body.items.map(({authorSubject,...safe})=>{void authorSubject;return safe;})},requestId);
     return reply(status,{learnerId,...body},requestId);
   }
   if(path==='/v1/teacher/assignment-catalog'){
