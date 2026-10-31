@@ -29,8 +29,9 @@ echo "Checking migration is replay-safe in local Wrangler"
 echo "Checking native D1 teacher marked-homework write (synthetic only)"
 "${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
   --file ../../scripts/fixtures/teacher-draft-native-d1.sql > "$state/draft-smoke.log"
-if ! grep -q 'NATIVE_DRAFT_WRITE_OK' "$state/draft-smoke.log"; then
-  echo "Native D1 teacher draft write did not return the expected confirmation" >&2
+if ! grep -q 'NATIVE_DRAFT_WRITE_OK' "$state/draft-smoke.log" || \
+   ! grep -q 'NATIVE_DRAFT_PUBLICATION_OK' "$state/draft-smoke.log"; then
+  echo "Native D1 draft write/publication did not return the expected confirmations" >&2
   exit 1
 fi
 
