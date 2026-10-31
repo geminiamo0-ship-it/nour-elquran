@@ -8,7 +8,7 @@ import { TrainingQuranSession } from './TrainingQuranSession';
 import {StudentPublishedAssignments} from './StudentPublishedAssignments';
 import css from './TrainingWorkspace.module.css';
 
-type Tab = 'homework' | 'practice' | 'prepare';
+type Tab = 'homework' | 'prepare' | 'practice';
 export function TrainingWorkspace(){
   const {selected,finished,toggleTask,taskDrafts,updateTaskDraft,preparedTasks,markTaskPrepared}=useStudent();
   const [tab,setTab]=useState<Tab>('homework');
@@ -18,7 +18,7 @@ export function TrainingWorkspace(){
   const upcoming=nextBookedLesson(selected.lessons);
   const total=selected.tasks.length;
   const done=selected.tasks.filter(t=>finished.includes(t.id)).length;
-  const counts={homework:total,practice:VOLUNTARY_SAMPLES.length,prepare:upcoming?1:0};
+  const counts={homework:total,prepare:upcoming?1:0,practice:VOLUNTARY_SAMPLES.length};
 
   function changeTab(next:Tab){
     setTab(next);setOpenTask(null);setOpenPractice(-1);setNotice('');
@@ -28,7 +28,7 @@ export function TrainingWorkspace(){
       <div>
         <p className={css.overline}>مسار التعلم · واجباتي ومراجعتي</p>
         <h2>كل تدريب له هدف واضح، ونفس المصحف لعرض الآيات</h2>
-        <p>الواجب من الشيخ، والتدريب الحر بمبادرتك، والاستعداد للحصة القادمة. أما دفتر الحصص فيحتفظ بما تعلّمته في اللقاءات السابقة.</p>
+        <p>ابدأ بواجبات الشيخ، ثم استعد للحصة القادمة، وبعدها تدرب على الحفظ والمراجعة الذاتية كما تحب. دفتر الحصص يحتفظ بما تعلّمته في اللقاءات السابقة.</p>
       </div>
       <div className={css.summaryBox}>
         <span>{selected.profile.demo?'الواجبات في المعاينة':'الواجبات المعتمدة'}</span><strong>{selected.profile.demo?done+' / '+total:'من الشيخ'}</strong>
@@ -39,8 +39,8 @@ export function TrainingWorkspace(){
     <nav className={css.tabs} aria-label="أقسام تدريباتي" role="tablist">
       {([
         {id:'homework',label:'واجباتي',caption:'المطلوب من الشيخ'},
-        {id:'practice',label:'الحفظ والمراجعة',caption:'تدريب ذاتي'},
         {id:'prepare',label:'الاستعداد للحصة',caption:'خطوات اللقاء القادم'},
+        {id:'practice',label:'الحفظ والمراجعة',caption:'تدريب ذاتي'},
       ] as const).map(item=><button key={item.id} type="button" role="tab"
         id={'training-tab-'+item.id} aria-selected={tab===item.id}
         aria-controls={'training-panel-'+item.id}
