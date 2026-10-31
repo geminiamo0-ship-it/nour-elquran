@@ -249,7 +249,7 @@ export function ConnectedWaitingRoom(){
     previous.revision>result.ink.revision?previous:result.ink);
    if(result.code==='INK_CONFLICT')setInkError('تغيّرت العلامات أثناء الرسم؛ استعدنا الإصدار المحفوظ.');
    if(result.code==='INK_LIMIT')setInkError('بلغت الصفحة الحد الآمن للعلامات.');
-  }catch{if(alive.current)setInkError('تعذّر حفظ الرسم. لم تتم إضافة علامة غير مؤكدة.');}
+  }catch{if(alive.current)setInkError('تعذّر تأكيد حفظ الرسم الدائم؛ قد تكون العلامة معلّقة وسنعيد المحاولة تلقائيًا. لا تُنهِ الحصة قبل تأكيد الحفظ.');}
   finally{if(alive.current)setInkBusy(false);}
  },[identity,joined,sharedPage,ink,inkBusy,inkMode]);
  const changeSharedPage=useCallback(async(next:number,verse?:VerseSelection):Promise<boolean>=>{
