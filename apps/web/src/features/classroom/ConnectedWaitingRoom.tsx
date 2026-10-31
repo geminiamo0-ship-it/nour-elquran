@@ -216,7 +216,8 @@ export function ConnectedWaitingRoom(){
     if(!enabled)return;
     setInk(previous=>previous&&previous.page===response.ink.page&&
       previous.revision>response.ink.revision?previous:response.ink);
-    setInkError('');
+    setInkError(response.persistence==='pending'?
+     'الرسم ظاهر في الحصة لكنه ينتظر تأكيد الحفظ في المصحف الدائم؛ لا تُنهِ الحصة قبل اكتمال الحفظ.':'');
    }catch{
     if(enabled)setInkError('تعذّر تحديث علامات الحصة؛ سنعيد المحاولة.');
    }finally{inkPollBusy.current=false;}
@@ -249,6 +250,8 @@ export function ConnectedWaitingRoom(){
     previous.revision>result.ink.revision?previous:result.ink);
    if(result.code==='INK_CONFLICT')setInkError('تغيّرت العلامات أثناء الرسم؛ استعدنا الإصدار المحفوظ.');
    if(result.code==='INK_LIMIT')setInkError('بلغت الصفحة الحد الآمن للعلامات.');
+   if(result.persistence==='pending')
+    setInkError('تم حفظ العلامة مؤقتًا في غرفة الحصة، وجارٍ تأكيدها في المصحف الدائم. لا تُنهِ الحصة الآن.');
   }catch{if(alive.current)setInkError('تعذّر حفظ الرسم. لم تتم إضافة علامة غير مؤكدة.');}
   finally{if(alive.current)setInkBusy(false);}
  },[identity,joined,sharedPage,ink,inkBusy,inkMode]);
