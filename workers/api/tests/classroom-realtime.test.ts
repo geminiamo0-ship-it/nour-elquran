@@ -34,11 +34,13 @@ test('handshake is exact same origin, GET upgrade only, and closed if binding un
  assert.equal((await openVerifiedRealtime(none,actor,request({Origin:'https://evil.example',Upgrade:'websocket'}))).status,403);
  assert.equal((await openVerifiedRealtime(none,actor,request({Upgrade:'websocket'}))).status,403);
  assert.equal((await openVerifiedRealtime(none,actor,request({Origin:origin}))).status,426);
- assert.equal((await openVerifiedRealtime(none,actor,request({Origin:origin,Upgrade:'websocket'}))).status,503);
+ assert.equal((await openVerifiedRealtime(none,actor,request({Origin:origin,Upgrade:'websocket'}))).status,404);
+ assert.equal((await openVerifiedRealtime({NOOR_REALTIME_HINTS_ENABLED:'true'} as Env,
+  actor,request({Origin:origin,Upgrade:'websocket'}))).status,503);
 });
 test('only server-derived actor envelope reaches the exact lesson DO; no browser cookie forwarded',async()=>{
  let called=false,stubReq:Request|undefined;
- const env={LESSON_ROOMS:{
+ const env={NOOR_REALTIME_HINTS_ENABLED:'true',LESSON_ROOMS:{
   idFromName:(name:string)=>{assert.equal(name,'lesson-35');return name;},
   get:(id:string)=>{assert.equal(id,'lesson-35');return{fetch:async(r:Request)=>{
    called=true;stubReq=r;return new Response('forwarded');
