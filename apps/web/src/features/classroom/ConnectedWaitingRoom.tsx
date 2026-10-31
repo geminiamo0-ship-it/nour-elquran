@@ -110,6 +110,7 @@ export function ConnectedWaitingRoom(){
  const [joined,setJoined]=useState(false);
  const [lessonPhase,setLessonPhase]=useState<'scheduled'|'live'|'completed'|'cancelled'|null>(null);
  const [lifecycleRefresh,setLifecycleRefresh]=useState(0);
+ const [notesRefresh,setNotesRefresh]=useState(0);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [sharedPage,setSharedPage]=useState<SharedPage|null>(null);
@@ -124,6 +125,7 @@ export function ConnectedWaitingRoom(){
  const [inkColor,setInkColor]=useState('#d0a94c');
  const inkPollBusy=useRef(false);
  const inkRefreshRef=useRef<(()=>void)|null>(null);
+ const presenceRefreshRef=useRef<(()=>void)|null>(null);
  const pageRefreshRef=useRef<(()=>void)|null>(null);
  const [pageError,setPageError]=useState('');
  const pagePollBusy=useRef(false);
@@ -138,6 +140,11 @@ export function ConnectedWaitingRoom(){
   if(hint.type==='quran-page'){
    setPreviewDrawings([]);
    pageRefreshRef.current?.();
+  }
+  if(hint.type==='corrections')setNotesRefresh(v=>v+1);
+  if(hint.type==='presence'){
+   presenceRefreshRef.current?.();
+   setLifecycleRefresh(v=>v+1);
   }
   if(hint.type==='quran-ink'){
    setPreviewDrawings(prev=>prev.filter(d=>d.stroke.page!==hint.page));
@@ -198,6 +205,7 @@ export function ConnectedWaitingRoom(){
    if(action==='heartbeat'&&code==='NOT_JOINED')setPresence(null);
   }finally{running.current=false;if(alive.current)setBusy(false);}
  },[identity]);
+ presenceRefreshRef.current=()=>{void refresh('snapshot');};
  useEffect(()=>{
   if(!identity||!joined)return;
   const timer=window.setInterval(()=>{
@@ -493,7 +501,8 @@ export function ConnectedWaitingRoom(){
    </main>
    <div className={css.panelSlot} id="lesson-notes" data-open={panelOpen?'true':'false'}>
     <ConnectedClassroomNotes role={role} page={page} lessonId={identity.lessonId}
-     joined={joined&&lessonPhase!=='completed'} selectedVerse={selectedVerse}/>
+     joined={joined&&lessonPhase!=='completed'} selectedVerse={selectedVerse}
+     refreshVersion={notesRefresh}/>
    </div>
   </div>
   <p className={[css.disclaimer,liveCss.disclaimer].join(' ')}>
