@@ -20,13 +20,17 @@ export function parseTrialAvailability(raw:unknown):TrialAvailability{
   (!raw.eligible&&raw.slots.length!==0))
   throw new TrialBookingError('INVALID_TRIAL_RESPONSE');
  const slots=raw.slots.map((row:unknown):TrialSlot=>{
-  if(!obj(row)||typeof row.slotId!=='string'||!uuid.test(row.slotId)||
+  if(!obj(row)||Object.keys(row).length!==5||
+   !['slotId','startsAtMs','endsAtMs','instructionMinutes','reservationMinutes']
+    .every(k=>Object.hasOwn(row,k))||
+   typeof row.slotId!=='string'||!uuid.test(row.slotId)||
     !Number.isSafeInteger(row.startsAtMs)||Number(row.startsAtMs)<0||
     !Number.isSafeInteger(row.endsAtMs)||
     Number(row.endsAtMs)-Number(row.startsAtMs)!==2400000||
     row.instructionMinutes!==30||row.reservationMinutes!==40)
    throw new TrialBookingError('INVALID_TRIAL_RESPONSE');
-  return row as TrialSlot;
+  return {slotId:row.slotId,startsAtMs:row.startsAtMs,
+    endsAtMs:row.endsAtMs,instructionMinutes:30,reservationMinutes:40} as TrialSlot;
  });
  if(new Set(slots.map(s=>s.slotId)).size!==slots.length)
   throw new TrialBookingError('INVALID_TRIAL_RESPONSE');
