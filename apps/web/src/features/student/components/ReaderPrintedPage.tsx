@@ -8,8 +8,7 @@ import { QuranAyahOverlay } from './QuranAyahOverlay';
 import { QuranConcealmentOverlay } from './QuranConcealmentOverlay';
 import { useCumulativeQuranPage } from '../useCumulativeQuranPage';
 import css from './ReaderAcademicOverlay.module.css';
-import { QuranInk, type InkMode } from './QuranInk';
-import type {PreviewFrame} from '@/features/classroom/ink-preview';
+import { QuranInk, type InkMode, type PreviewFrame } from './QuranInk';
 
 type Props = {
   page: number;
