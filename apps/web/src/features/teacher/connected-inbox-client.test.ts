@@ -1,5 +1,5 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
-import {inboxClient,parseInboxItems} from './connected-inbox-client';
+import {inboxClient,parseInboxItems} from '../shared';
 const item={id:'a'.repeat(32),learnerId:'child-a',kind:'lesson_booked',
  sourceId:'lesson-1',title:'حصة مؤكدة',detail:'حصة جديدة',
  createdAtMs:1799990000000,read:false,revision:0};
