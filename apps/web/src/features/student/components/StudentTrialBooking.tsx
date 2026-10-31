@@ -6,7 +6,9 @@ type View={phase:'loading'|'ready'|'error';availability:TrialAvailability|null};
 const format=new Intl.DateTimeFormat('ar-EG',{
  timeZone:'Africa/Cairo',dateStyle:'full',timeStyle:'short'
 });
-export function StudentTrialBooking({learnerId,onBooked}:{learnerId:string;onBooked:()=>void}){
+export function StudentTrialBooking({learnerId,onBooked,refreshRevision}:{
+ learnerId:string;onBooked:()=>void;refreshRevision:number;
+}){
  const [view,setView]=useState<View>({phase:'loading',availability:null});
  const [retry,setRetry]=useState(0),[busy,setBusy]=useState<string|null>(null);
  const [uncertain,setUncertain]=useState(false),[message,setMessage]=useState('');
@@ -20,7 +22,7 @@ export function StudentTrialBooking({learnerId,onBooked}:{learnerId:string;onBoo
    if(!abort.signal.aborted)setView({phase:'error',availability:null});
   });
   return()=>abort.abort();
- },[learnerId,retry]);
+ },[learnerId,retry,refreshRevision]);
  async function book(slotId:string){
   if(busy||uncertain||view.phase!=='ready'||!view.availability?.eligible||
    !view.availability.slots.some(s=>s.slotId===slotId))return;
