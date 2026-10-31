@@ -5,7 +5,7 @@
 
 ## 2026-11-01 / #244 — atomic free-trial rescheduling candidate (PR pending CI)
 - Approved owner continuation of #244. Existing real trial slot/book/cancel source in migrations 0021/0022 and signed student pages was **already merged**, so this slice adds only one missing function: replace a scheduled trial with a different published slot without losing the original on collision.
-- Branch `feat/244-atomic-trial-reschedule-20261101`: forward-only D1 migration 0024 `trial_owner_reschedule_events` with atomic cancel/rebook triggers, only own temporary grant revoked, six-hour server/D1 cut-off and immutable idempotent provenance. Signed owner GET alternatives + POST replace, actual Student Lessons action and TS/Python regressions. See `docs/TRIAL_ATOMIC_RESCHEDULE_244_CONTRACT.md`.
+- Branch `feat/244-atomic-trial-reschedule-20261101`: forward-only D1 migration 0025 `trial_owner_reschedule_events` with atomic cancel/rebook triggers, only own temporary grant revoked, six-hour server/D1 cut-off and immutable idempotent provenance. Signed owner GET alternatives + POST replace, actual Student Lessons action and TS/Python regressions. See `docs/TRIAL_ATOMIC_RESCHEDULE_244_CONTRACT.md`.
 - **Candidate only:** exact-head GitHub Verify and remote signed two-role Cloudflare Dev acceptance are still pending. No merge, no Production, no payment provider/price/credits activation, no WhatsApp, no real child data. #244 remains OPEN for full subscription & entitlement ledger and operational Admin dependencies.
 - NEXT: inspect PR Verify and fix any errors; after review, do isolated Dev synthetic guardian replacement: refresh old/new, collision rollback, sibling denial, calendar reconciliation. Do not infer subscription balance from any trial state.
 

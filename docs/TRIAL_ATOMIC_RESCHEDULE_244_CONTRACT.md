@@ -3,7 +3,10 @@
 ## Scope
 An eligible guardian/account owner may replace one currently **scheduled free trial**
 with one currently published **alternative** slot in one D1 transaction.
-This builds on migrations 0021–0022, 0023 ink compatibility, and the\n**0024 booked-slot withdrawal guard** proposed in PR #280. Apply 0024\nfirst and verify its populated Dev upgrade before enabling 0025.\nSigned Better Auth routes are required; it is
+This builds on migrations 0021–0022, 0023 ink compatibility, and the
+**0024 booked-slot withdrawal guard** proposed in PR #280. Apply 0024
+first and verify its populated Dev upgrade before enabling 0025.
+Signed Better Auth routes are required; it is
 not an administrator dashboard, subscription activation, provider payment,
 free-trial reset, WhatsApp dispatch, or Production readiness.
 
