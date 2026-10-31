@@ -456,8 +456,11 @@ export class LessonRoom {
       return {code:'LESSON_INK_CLOSING',status:409} as const;
      if(cmd.action==='snapshot'){
       const pending=durable?(await txn.get<PendingQuranInk[]>('pendingQuranInk')??[]):[];
+      // A room snapshot is not proof of canonical D1 persistence: older DO
+      // strokes may predate the outbox, even when no delivery is pending.
+      // Only an actual append/replay ACK can report 'saved'.
       return {code:'INK_SNAPSHOT',status:200,ink:visibleInk(state),
-       persistence:pending.length?'pending' as const:'saved' as const} as const;
+       ...(pending.length?{persistence:'pending' as const}:{})} as const;
      }
      const current=await txn.get<SharedPageRecord>('quranPage')??initialPage();
      if(current.page!==cmd.page)

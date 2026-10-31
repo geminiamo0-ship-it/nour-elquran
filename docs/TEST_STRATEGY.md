@@ -1,3 +1,7 @@
+## #252 ink snapshot truthfulness regression (candidate; no runtime acceptance)
+- A DO snapshot must never claim `persistence:'saved'` solely from an empty outbox: historical room-only marks may not have a D1 event. Pending D1 delivery must remain `pending`; only a confirmed append/replay may report `saved`.
+- Targeted `classroom-cumulative-delivery.test.ts` covers both a failed D1 write with pending snapshot and a legacy DO-only stroke with feature gate off/on. Run exact-head GitHub Verify and retain #252 open pending signed Dev two-role test and backfill reconciliation.
+
 ## 2026-10-31 Signed Student & Sheikh portal Dev acceptance — PASS (scope limited)
 - Noor code PR #243 merged main at 604ce1103e824fddb52f16b6621ec04266fbb6da; exact postmerge Verify #41142697961 succeeded 4/4.
 - Santoreno QA PR #298 merged as f6eb3f3ae3dfbfa91f098667e78d9f1d4675eada. Full isolated Dev run: https://github.com/geminiamo0-ship-it/santoreno/actions/runs/41143167533 — SUCCESS.

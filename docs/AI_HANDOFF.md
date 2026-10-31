@@ -1,3 +1,8 @@
+## #252 classroom snapshot ACK safety — 2026-10-31 (branch candidate)
+- Branch `fix/252-ink-snapshot-ack-semantics-20261031`: `LessonRoom` no longer calls an ink snapshot `saved` merely because `pendingQuranInk` is empty; old DO-only strokes can exist without any canonical ledger event. A pending outbox still reports `pending`. Write ACK behavior is unchanged.
+- Tests in `classroom-cumulative-delivery.test.ts` cover pending outage snapshot and pre-bridge DO stroke before/after enabling the gated bridge; D1 event count remains zero for the latter.
+- NEXT: inspect exact branch-head Verify (four jobs), resolve any failure, request independent PR review. Do not merge or enable `NOOR_CUMULATIVE_INK_ENABLED` without signed two-role Dev, historical reconciliation and owner approval. #252 remains OPEN.
+
 ## 2026-10-31 Signed Student & Sheikh portal Dev acceptance — PASS (scope limited)
 
 ## CURRENT NEW PRODUCT APPROVAL — 2026-10-31 / ADR 0009 / #250

@@ -1,3 +1,7 @@
+## 2026-10-31 / #252 — ink snapshot ACK semantics candidate (NOT merged)
+- Branch `fix/252-ink-snapshot-ack-semantics-20261031` removes a false global-save signal from classroom DO ink **snapshots**: an empty pending outbox is not proof that legacy DO strokes reached canonical D1. Only the actual append/replay response may say `persistence:'saved'`; snapshots still report `pending` when a durable delivery is outstanding.
+- Added a regression for historical room-only ink after feature-flag enablement and a pending D1 outage snapshot. Exact-head CI, review and Cloudflare Dev acceptance are **pending**; flag remains OFF and #252 stays OPEN. No Production or real learner data changed.
+
 ## 2026-10-31 Signed Student & Sheikh portal Dev acceptance — PASS (scope limited)
 
 ## 2026-10-31 — OWNER-APPROVED cumulative Quran architecture (implementation pending)
