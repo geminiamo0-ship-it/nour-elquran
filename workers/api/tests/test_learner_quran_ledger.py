@@ -77,6 +77,10 @@ class CumulativeQuranLedgerD1(unittest.TestCase):
    self.db.execute("UPDATE learner_quran_events SET at_ms=0")
   with self.assertRaisesRegex(sqlite3.IntegrityError,'IMMUTABLE'):
    self.db.execute("DELETE FROM learner_quran_current")
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'PROJECTION_IMMUTABLE'):
+   self.db.execute("UPDATE learner_quran_current SET visible=1 WHERE item_id='item-0001'")
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'PROJECTION_IMMUTABLE'):
+   self.db.execute("UPDATE learner_quran_current SET payload_json='{}' WHERE item_id='item-0001'")
 
  def test_owner_sibling_foreign_disabled_denied(self):
   self.event()
