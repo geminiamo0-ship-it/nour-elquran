@@ -14,7 +14,7 @@ import {prepareCumulativeInkDelivery,queueCumulativeInk,
  type PendingQuranInk} from './ink-cumulative-outbox.ts';
 import {parseVerifiedMicCommand,initialMicPolicy,applyMicPolicy,type MicPolicy} from './mic-policy.ts';
 import {validVerifiedRealtimeActor,validRealtimeHint,type VerifiedRealtimeActor,type RealtimeHint} from './realtime.ts';
-import {parseInkPreview,MAX_PREVIEW_BYTES,type InkPreviewFrame} from './ink-preview.ts';
+import {parseInkPreview,MAX_PREVIEW_BYTES} from './ink-preview.ts';
 import {parseVerifiedCorrection,initialCorrections,appendCorrection,type CorrectionsState} from './live-corrections.ts';
 
 export type RoomAction='join'|'heartbeat'|'leave'|'snapshot'|'media-intent';
