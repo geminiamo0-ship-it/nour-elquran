@@ -185,7 +185,7 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
     if(!await getOwnedLearner(db,{authSubject},learnerId))
       return reply(404,{code:'NOT_FOUND'},requestId);
     const params=new URL(request.url).searchParams;
-    if(params.size!==1||!/^([1-9]\\d{0,2})$/.test(params.get('page')??'')||
+    if(params.size!==1||!/^([1-9]\d{0,2})$/.test(params.get('page')??'')||
        Number(params.get('page'))>604)
       return reply(400,{code:'INVALID_QURAN_PAGE'},requestId);
     const version=await db.prepare(
@@ -427,7 +427,7 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   if(teacherCumulative){
     if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
     const params=new URL(request.url).searchParams;
-    if(params.size!==1||!/^([1-9]\\d{0,2})$/.test(params.get('page')??'')||
+    if(params.size!==1||!/^([1-9]\d{0,2})$/.test(params.get('page')??'')||
        Number(params.get('page'))>604)
       return reply(400,{code:'INVALID_QURAN_PAGE'},requestId);
     const version=await env.DB.prepare(
