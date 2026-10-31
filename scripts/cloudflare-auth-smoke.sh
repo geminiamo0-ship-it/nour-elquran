@@ -42,10 +42,5 @@ PY
   exit 1
 fi
 cd "$root"
-if ! NOOR_AUTH_STATE="$state" node scripts/cloudflare-auth-smoke.mjs; then
-  # Synthetic local CI only: show only our narrow diagnostic marker, never
-  # raw worker logs or .dev.vars (which contain the generated auth secret).
-  grep 'NOOR_LOCAL_QURAN_DIAGNOSTIC' "$state/worker.log" | tail -n 5 || true
-  exit 1
-fi
+NOOR_AUTH_STATE="$state" node scripts/cloudflare-auth-smoke.mjs
 
