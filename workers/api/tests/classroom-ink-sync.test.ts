@@ -137,3 +137,28 @@ test('learner shared ink preserves provenance and Sheikh moderation across DO re
  assert.equal((await cmd(booted,moderation)).status,200);
  assert.equal((await cmd(booted,{...childAdd,stroke:{...childMark,id:'other-child-001'}})).status,409);
 });
+
+test('signed learner erases own stroke, never the Sheikh stroke; verified Sheikh can moderate',()=>{
+ const page=35;
+ const child={...add,role:'learner' as const,actorSubject:'signed-owner',
+  requestId:'child-create-01',stroke:{...mark,id:'ink-child-own-01'}};
+ const childApplied=applyInk(initialInk(page),child);
+ assert.equal(childApplied.code,'INK_APPLIED');
+ const teacherApplied=applyInk(childApplied.next,{...add,expectedRevision:1,
+  requestId:'teacher-add-02',stroke:{...mark,id:'ink-sheikh-own-01'}});
+ assert.equal(teacherApplied.code,'INK_APPLIED');
+ const badHide=applyInk(teacherApplied.next,{...hide,role:'learner',
+  actorSubject:'signed-owner',strokeId:'ink-sheikh-own-01',expectedRevision:2,
+  requestId:'child-foreign-01'});
+ assert.equal(badHide.code,'INK_CONFLICT');
+ assert.equal(badHide.next.revision,2);
+ const ownHide=applyInk(badHide.next,{...hide,role:'learner',
+  actorSubject:'signed-owner',strokeId:'ink-child-own-01',expectedRevision:2,
+  requestId:'child-own-hide-01'});
+ assert.equal(ownHide.code,'INK_APPLIED');
+ assert.deepEqual(visibleInk(ownHide.next).strokes.map(s=>s.id),['ink-sheikh-own-01']);
+ const teacherHide=applyInk(ownHide.next,{...hide,strokeId:'ink-sheikh-own-01',
+  expectedRevision:3,requestId:'teacher-own-hide-01'});
+ assert.equal(teacherHide.code,'INK_APPLIED');
+ assert.deepEqual(visibleInk(teacherHide.next).strokes,[]);
+});
