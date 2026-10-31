@@ -106,12 +106,12 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
        setEditor({key:crypto.randomUUID(),input:{
         kind,editionId:current.editionId,surah:current.surah,fromAyah:from,
         toAyah:to,dueAtMs,instructions:instructions.trim()}});
-      }} disabled={saving||uncertain||state.draftsUnavailable||!current||!due||!instructions.trim()}>
+      }} disabled={saving||uncertain||(state.status==='loaded'&&state.draftsUnavailable)||!current||!due||!instructions.trim()}>
        تحضير علامات المصحف قبل النشر</button>
      <button type="button" onClick={()=>{setRetry(x=>x+1);setUncertain(false);setEditor(null);}} disabled={saving}>تحديث الواجبات</button>
     </div>
    </form>
-   {state.draftsUnavailable&&<p role="alert">خدمة مسودات العلامات غير متاحة على هذه البيئة؛ نشر الواجبات النصية ما زال يعمل.</p>}
+   {(state.status==='loaded'&&state.draftsUnavailable)&&<p role="alert">خدمة مسودات العلامات غير متاحة على هذه البيئة؛ نشر الواجبات النصية ما زال يعمل.</p>}
    {editor&&<TeacherAssignmentInkEditor key={editor.key} learnerId={selected}
     initial={editor.input} existing={editor.existing}
     onCancel={()=>setEditor(null)}
