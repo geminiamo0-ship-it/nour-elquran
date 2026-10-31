@@ -254,7 +254,6 @@ export class LessonRoom {
     typeof c.operationId!=='string'||!allowed.test(c.operationId)||
     !['prepare','release','complete'].includes(String(c.action)))
    return Response.json({code:'INVALID_INK_FENCE'},{status:400});
-  const now=Date.now();
   if(c.action==='prepare')await this.flushQuranInk();
   const result=await this.ctx.storage.transaction(async txn=>{
    const room=await txn.get<RoomRecord>('room');
