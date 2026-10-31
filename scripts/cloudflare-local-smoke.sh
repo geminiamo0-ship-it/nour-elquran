@@ -24,6 +24,82 @@ echo "Applying D1 migration to disposable LOCAL state"
 echo "Checking migration is replay-safe in local Wrangler"
 "${wrangler[@]}" d1 migrations apply noor-core-local --local --persist-to "$state"
 
+# #286: prove a REAL native Wrangler D1 forward upgrade from an existing
+# populated 0022 database, not only a fresh schema / Python SQLite copy.
+# All resources, config, data, and the stub Worker are temporary LOCAL files.
+echo "Checking populated native D1 0022 -> 0023 forward upgrade (synthetic only)"
+upgrade="$state/native-upgrade"
+mkdir -p "$upgrade/migrations" "$upgrade/data"
+for migration in migrations/[0-9][0-9][0-9][0-9]_*.sql; do
+  case "$(basename "$migration")" in
+    0023_*) continue ;;
+    *) cp -- "$migration" "$upgrade/migrations/" ;;
+  esac
+done
+cat > "$upgrade/wrangler.json" <<'JSON'
+{
+  "name": "noor-native-upgrade-local-only",
+  "main": "stub.ts",
+  "compatibility_date": "2026-10-29",
+  "workers_dev": false,
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "noor-core-local",
+    "database_id": "00000000-0000-0000-0000-000000000000",
+    "migrations_dir": "migrations"
+  }]
+}
+JSON
+printf '%s\n' 'export default {fetch(){return new Response("local only")}};' > "$upgrade/stub.ts"
+legacy=(${wrangler[@]} d1)
+"${legacy[@]}" migrations apply noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" > "$upgrade/legacy-migrations.log"
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --file ../../scripts/fixtures/teacher-draft-native-preupgrade.sql > "$upgrade/legacy-seed.log"
+if ! grep -q 'NATIVE_UPGRADE_PRESTATE_OK' "$upgrade/legacy-seed.log"; then
+  echo "Pre-0023 historical private draft did not persist" >&2
+  exit 1
+fi
+# The exact valid pen+highlight revision-2 INSERT must reproduce old GLOB
+# failure; never silently treat a different failure (or success) as proof.
+if "${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --file ../../scripts/fixtures/teacher-draft-native-upgrade.sql > "$upgrade/old-trigger.log" 2>&1; then
+  echo "Pre-0023 D1 unexpectedly accepted the old hex GLOB" >&2
+  exit 1
+fi
+if ! grep -q 'LIKE or GLOB pattern too complex' "$upgrade/old-trigger.log"; then
+  echo "Pre-0023 D1 failed for a reason other than the known native hex GLOB" >&2
+  exit 1
+fi
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --command "SELECT CASE WHEN (SELECT COUNT(*) FROM teacher_assignment_draft_versions WHERE draft_id='c145a6fa-1d94-4994-91e7-5819692ba3b6' AND revision=1 AND marks_json='[]')=1 AND (SELECT COUNT(*) FROM teacher_assignment_draft_versions WHERE draft_id='c145a6fa-1d94-4994-91e7-5819692ba3b6')=1 THEN 'NATIVE_UPGRADE_FAILED_WRITE_ATOMIC' ELSE 'NATIVE_UPGRADE_FAILED_WRITE_LEAK' END AS result" > "$upgrade/atomic.log"
+if ! grep -q 'NATIVE_UPGRADE_FAILED_WRITE_ATOMIC' "$upgrade/atomic.log"; then
+  echo "Native pre-upgrade failed write modified historical draft" >&2
+  exit 1
+fi
+
+# Apply exactly the forward-only 0023 through native Wrangler migration
+# tracking, with the ORIGINAL populated 0022 D1 state still in place.
+cp -- migrations/0023_quran_ink_color_d1_compat.sql "$upgrade/migrations/"
+"${legacy[@]}" migrations apply noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" > "$upgrade/forward.log"
+"${legacy[@]}" migrations apply noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" > "$upgrade/replay.log"
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --file ../../scripts/fixtures/teacher-draft-native-upgrade.sql > "$upgrade/forward-acceptance.log"
+for label in NATIVE_UPGRADE_REVISION_2_OK NATIVE_UPGRADE_PRIVATE_OK \
+             NATIVE_UPGRADE_PUBLICATION_OK NATIVE_UPGRADE_SIBLING_ISOLATED_OK; do
+  if ! grep -q "$label" "$upgrade/forward-acceptance.log"; then
+    echo "Native D1 forward migration failed required acceptance: $label" >&2
+    exit 1
+  fi
+done
+echo "PASS: native populated D1 0022 -> 0023, old GLOB repro, private draft retained, pen+highlight published, sibling isolated"
+
 # Issue #286: exercise the exact pen+highlight draft INSERT in native local D1,
 # not Python's SQLite engine. Fixture is synthetic and this state is disposable.
 echo "Checking native D1 teacher marked-homework write (synthetic only)"
