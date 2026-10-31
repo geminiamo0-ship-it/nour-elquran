@@ -33,7 +33,8 @@ test('D1 delivery keys are deterministic, strict UUID, and unique per lesson/str
 test('erase points at same immutable Quran item without stealing learner authorship',async()=>{
  const before=applyInk(initialInk(35),student).next;
  assert.equal(before.records[0]?.author,'learner');
- const teacherHide={...source,action:'hide' as const,stroke:undefined,
+ const teacherHide:VerifiedInkCommand={lessonId:source.lessonId,learnerId:source.learnerId,
+  actorSubject:source.actorSubject,role:'teacher',action:'hide',page:35,
   strokeId:stroke.id,requestId:'ink-teacher-erase-0001',expectedRevision:1};
  const removal=await prepareCumulativeInkDelivery(teacherHide,before,12000);
  const addition=await prepareCumulativeInkDelivery(student,initialInk(35),11000);
@@ -51,11 +52,12 @@ test('fail closed on incorrect source page, no existing erase target, or forged 
  assert.equal(await prepareCumulativeInkDelivery(source,initialInk(36),10000),null);
  assert.equal(await prepareCumulativeInkDelivery({...source,actorSubject:'../bad'},
   initialInk(35),10000),null);
- const erase={...source,action:'hide' as const,stroke:undefined,
-  strokeId:'not-here-001',expectedRevision:0};
+ const erase:VerifiedInkCommand={lessonId:source.lessonId,learnerId:source.learnerId,
+  actorSubject:source.actorSubject,role:'teacher',action:'hide',page:35,
+  strokeId:'not-here-001',requestId:'ink-erase-0001',expectedRevision:0};
  assert.equal(await prepareCumulativeInkDelivery(erase,initialInk(35),10000),null);
- assert.equal(await prepareCumulativeInkDelivery({...source,action:'snapshot',
-  requestId:undefined,stroke:undefined},initialInk(35),10000),null);
+ assert.equal(await prepareCumulativeInkDelivery({...source,action:'snapshot'},
+  initialInk(35),10000),null);
 });
 test('bounded ordered outbox never drops pending writes, rejects changed idempotency',async()=>{
  const first=await prepareCumulativeInkDelivery(source,initialInk(35),10);
