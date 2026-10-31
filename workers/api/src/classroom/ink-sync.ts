@@ -6,7 +6,8 @@ export type InkAction=Readonly<
  {action:'hide';page:number;expectedRevision:number;requestId:string;strokeId:string}
 >;
 export type InkView=Readonly<{page:number;revision:number;strokes:InkStroke[]}>;
-export type InkOutcome=Readonly<{status:200|404|409|413|503;code:string;ink?:InkView}>;
+export type InkOutcome=Readonly<{status:200|202|404|409|413|503;code:string;ink?:InkView;
+ persistence?:'pending'|'saved'}>;
 export function parseClientInk(value:unknown,role:'teacher'|'learner'):InkAction|null{
  if(!value||typeof value!=='object'||Array.isArray(value))return null;
  const x=value as Record<string,unknown>;
@@ -38,12 +39,15 @@ export async function forwardVerifiedInk(env:Env,verified:Readonly<{
   if(!raw||typeof raw!=='object'||Array.isArray(raw))throw Error('INVALID');
   const x=raw as Record<string,unknown>;
   if(res.status===404&&x.code==='NOT_JOINED')return {status:404,code:'NOT_JOINED'};
+  if(res.status===202&&x.code==='INK_PENDING_PERSISTENCE'&&validInk(x.ink))
+   return {status:202,code:'INK_PENDING_PERSISTENCE',ink:x.ink,persistence:'pending'};
   if((res.status===409||res.status===413)&&validInk(x.ink))
    return {status:res.status as 409|413,code:String(x.code),ink:x.ink};
   if(!res.ok)return {status:503,code:'CLASSROOM_INK_UNAVAILABLE'};
   if(!['INK_SNAPSHOT','INK_APPLIED','INK_REPLAY'].includes(String(x.code))||!validInk(x.ink))
    throw Error('INVALID');
-  return {status:200,code:String(x.code),ink:x.ink};
+  return {status:200,code:String(x.code),ink:x.ink,
+   ...(x.persistence==='pending'||x.persistence==='saved'?{persistence:x.persistence}:{})};
  }catch{return {status:503,code:'CLASSROOM_INK_UNAVAILABLE'};}
 }
 export function validInk(raw:unknown):raw is InkView{
