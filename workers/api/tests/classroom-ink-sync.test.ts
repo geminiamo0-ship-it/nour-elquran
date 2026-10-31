@@ -25,7 +25,6 @@ function ledgerDb(){
    const stmt:D1Statement={
     bind(...values){args=values;return this;},
     async first<T>(){
-     if(!available)throw Error('D1_OFFLINE');
      if(sql.startsWith('SELECT status FROM lessons'))return {status} as T;
      if(sql.includes('SELECT 1 AS allowed FROM learners')||
        sql.includes('SELECT 1 AS allowed FROM lessons')||
