@@ -29,6 +29,7 @@ export function TeacherAssignmentInkEditor({learnerId,initial,existing,onCancel,
  const [selected,setSelected]=useState<QuranTarget|null>(null);
  const [noteText,setNoteText]=useState('');
  const [dirty,setDirty]=useState(!existing);
+ const [confirmDiscard,setConfirmDiscard]=useState(false);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [success,setSuccess]=useState('');
@@ -36,6 +37,19 @@ export function TeacherAssignmentInkEditor({learnerId,initial,existing,onCancel,
  const draftIdRef=useRef<string>(existing?.draftId??'');
  const operationIdRef=useRef('');
  const input:AssignmentDraft=existing??initial;
+ // Do not silently discard private corrections when closing the editor.
+ // The caller must explicitly confirm loss of any unpublished changes.
+ const requestClose=()=>{
+  if(inFlight.current||busy)return;
+  if(dirty){setConfirmDiscard(true);return;}
+  onCancel();
+ };
+ useEffect(()=>{
+  if(!dirty)return;
+  const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};
+  window.addEventListener('beforeunload',warn);
+  return()=>window.removeEventListener('beforeunload',warn);
+ },[dirty]);
 
  useEffect(()=>{
   const abort=new AbortController();
@@ -80,7 +94,7 @@ export function TeacherAssignmentInkEditor({learnerId,initial,existing,onCancel,
    if(!draftIdRef.current)draftIdRef.current=crypto.randomUUID();
    const saved=await teacherInkDraftClient.save(learnerId,input,draftIdRef.current,
     (stored?.revision??0)+1,marks);
-   setStored(saved);setDirty(false);onSaved(saved);
+   setStored(saved);setDirty(false);setConfirmDiscard(false);onSaved(saved);
    setSuccess('المسودة والعلامات محفوظة للشيخ فقط، ولم تُنشر للطالب.');
   }catch(e){
    setError('تعذّر تأكيد حفظ المسودة. لا تعِد إنشاءها برقم جديد؛ حدّث المسودات للتحقق: '+safeError(e));
@@ -150,9 +164,22 @@ export function TeacherAssignmentInkEditor({learnerId,initial,existing,onCancel,
      {busy?'جارٍ التحقق…':'حفظ مسودة العلامات'}</button>
     <button type="button" disabled={busy||dirty||!stored} onClick={()=>void publish()}>
      نشر الواجب وعلاماته للطالب</button>
-    <button type="button" disabled={busy} onClick={onCancel}>إغلاق المحرر</button>
+    <button type="button" disabled={busy} onClick={requestClose}
+     aria-expanded={confirmDiscard&&dirty}>إغلاق المحرر</button>
    </div>
   </>}
+  {confirmDiscard&&dirty&&<div role="alertdialog"
+   aria-labelledby="ink-discard-title" aria-describedby="ink-discard-detail">
+   <strong id="ink-discard-title">تغييرات علامات المصحف غير محفوظة</strong>
+   <p id="ink-discard-detail">إغلاق المحرر الآن سيفقد آخر علامات أو ملاحظات
+    غير محفوظة. لن تُرسل للطالب أو تُحفظ على الخادم.</p>
+   <div className={css.actions}>
+    <button type="button" disabled={busy} onClick={()=>setConfirmDiscard(false)}>
+     متابعة تحرير العلامات</button>
+    <button type="button" disabled={busy} onClick={onCancel}>
+     تجاهل التغييرات وإغلاق المحرر</button>
+   </div>
+  </div>}
   {error&&<p role="alert">{error}</p>}
   {success&&<p role="status">{success}</p>}
   <small>لا تظهر أي علامة للطالب قبل نشر الواجب، ولا يتم تحويل مسودات الشيخ إلى بيانات الطالب تلقائيًا.</small>
