@@ -9,6 +9,9 @@ import {mediaLessonWindow} from './livekit-token.ts';
 import {evictVerifiedLiveKitActor} from './livekit-admin.ts';
 import {parseVerifiedPageCommand,initialPage,applyPageSet,safePage,type SharedPageRecord} from './quran-page.ts';
 import {parseInkCommand,initialInk,visibleInk,applyInk,type InkPage} from './quran-ink.ts';
+import {prepareCumulativeInkDelivery,queueCumulativeInk,type PendingQuranInk}
+ from './ink-cumulative-outbox.ts';
+import {appendQuranLedgerEvent} from '../learner-quran-ledger.ts';
 import {parseVerifiedMicCommand,initialMicPolicy,applyMicPolicy,type MicPolicy} from './mic-policy.ts';
 import {parseVerifiedCorrection,initialCorrections,appendCorrection,type CorrectionsState} from './live-corrections.ts';
 
@@ -82,7 +85,7 @@ export function applyRoomCommand(state:RoomRecord|null,command:VerifiedRoomComma
 export interface LessonRoomStorage {
  get<T>(name:string):Promise<T|undefined>;
  put<T>(name:string,value:T):Promise<void>;
- transaction<T>(fn:(txn:Pick<LessonRoomStorage,'get'|'put'>)=>Promise<T>):Promise<T>;
+ transaction<T>(fn:(txn:Pick<LessonRoomStorage,'get'|'put'|'setAlarm'>)=>Promise<T>):Promise<T>;
  setAlarm?(timeMs:number):Promise<void>;
 }
 export interface LessonRoomContext {storage:LessonRoomStorage;}
@@ -117,14 +120,17 @@ function enqueue(outbox:PendingMediaEviction[],room:RoomRecord,role:RoomRole,lea
 export class LessonRoom {
  private readonly ctx:LessonRoomContext;
  private readonly env:Env|undefined;
+ private inkFlush:Promise<void>|undefined;
  constructor(ctx:LessonRoomContext,env?:Env){this.ctx=ctx;this.env=env;}
  private async scheduleNext(now:number):Promise<void>{
   if(!this.ctx.storage.setAlarm)return;
-  const [room,outbox]=await Promise.all([
+  const [room,outbox,ink]=await Promise.all([
    this.ctx.storage.get<RoomRecord>('room'),
-   this.ctx.storage.get<PendingMediaEviction[]>('pendingEvictions')
+   this.ctx.storage.get<PendingMediaEviction[]>('pendingEvictions'),
+   this.ctx.storage.get<PendingQuranInk[]>('pendingQuranInk')
   ]);
-  if((outbox?.length??0)>0||room?.teacher?.mediaIntent||room?.learner?.mediaIntent)
+  if((outbox?.length??0)>0||(ink?.length??0)>0||
+   room?.teacher?.mediaIntent||room?.learner?.mediaIntent)
    await this.ctx.storage.setAlarm(now+RECONCILE_MS);
  }
  private async queued(now:number,command:VerifiedRoomCommand):Promise<RoomResult>{
@@ -194,6 +200,93 @@ export class LessonRoom {
    });
   }
  }
+
+ /** Only the real D1 ledger ACK, never a DO snapshot or successful enqueue,
+  * allows a browser to treat a mark as saved to the cumulative Mushaf.
+  * A failed/ambiguous write is retained at the queue head for alarm replay.
+  */
+ private async flushQuranInk():Promise<void>{
+  if(this.inkFlush)return this.inkFlush;
+  const work=(async()=>{
+   if(!this.env?.DB)return;
+   for(let i=0;i<64;i++){
+    const pending=await this.ctx.storage.get<PendingQuranInk[]>('pendingQuranInk')??[];
+    const head=pending[0];
+    if(!head)break;
+    try{
+     const result=await appendQuranLedgerEvent(this.env.DB,
+      {subject:head.actorSubject,role:head.actorRole},
+      head.learnerId,head.command,Date.now());
+     if(result.code!=='QURAN_EVENT_COMMITTED'&&result.code!=='QURAN_EVENT_REPLAY')
+      break;
+     // Idempotent D1 operation ID makes replay safe if the DO crashes between
+     // its D1 ACK and removing the event from SQLite-backed DO storage.
+     await this.ctx.storage.transaction(async txn=>{
+      const current=await txn.get<PendingQuranInk[]>('pendingQuranInk')??[];
+      if(current[0]?.operationId===head.operationId)
+       await txn.put('pendingQuranInk',current.slice(1));
+     });
+    }catch{break;}
+   }
+  })();
+  this.inkFlush=work;
+  try{await work;}finally{if(this.inkFlush===work)this.inkFlush=undefined;}
+ }
+ /** D1 is authoritative for phase: even a lost End callback cannot permit
+  * post-completion DO writes that the immutable D1 trigger would reject.
+  */
+ private async liveInkLesson(lessonId:string,learnerId:string):Promise<boolean>{
+  if(!this.env?.DB)return false;
+  const row=await this.env.DB.prepare(
+   "SELECT status FROM lessons WHERE id=? AND learner_id=?"
+  ).bind(lessonId,learnerId).first<{status:string}>();
+  return row?.status==='live';
+ }
+ private async inkEndFence(raw:unknown):Promise<Response>{
+  if(!raw||typeof raw!=='object'||Array.isArray(raw))
+   return Response.json({code:'INVALID_INK_FENCE'},{status:400});
+  const c=raw as Record<string,unknown>;
+  if(Object.keys(c).length!==5||
+    !['lessonId','learnerId','actorSubject','operationId','action'].every(k=>Object.hasOwn(c,k))||
+    typeof c.lessonId!=='string'||!allowed.test(c.lessonId)||
+    typeof c.learnerId!=='string'||!allowed.test(c.learnerId)||
+    typeof c.actorSubject!=='string'||!allowed.test(c.actorSubject)||
+    typeof c.operationId!=='string'||!allowed.test(c.operationId)||
+    !['prepare','release','complete'].includes(String(c.action)))
+   return Response.json({code:'INVALID_INK_FENCE'},{status:400});
+  const now=Date.now();
+  if(c.action==='prepare')await this.flushQuranInk();
+  const result=await this.ctx.storage.transaction(async txn=>{
+   const room=await txn.get<RoomRecord>('room');
+   if(!room||room.lessonId!==c.lessonId||
+     room.teacher?.subject!==c.actorSubject||
+     room.teacher?.learnerId!==c.learnerId)
+    return {code:'NOT_JOINED',status:404};
+   const old=await txn.get<{operationId:string;subject:string;completed:boolean}>('inkEndFence');
+   if(c.action==='release'){
+    if(old?.operationId===c.operationId&&old.subject===c.actorSubject&&!old.completed)
+     await txn.put('inkEndFence',null);
+    return {code:'INK_FENCE_RELEASED',status:200};
+   }
+   if(c.action==='complete'){
+    if(!old||old.operationId!==c.operationId||old.subject!==c.actorSubject)
+     return {code:'INK_END_FENCE_CONFLICT',status:409};
+    await txn.put('inkEndFence',{...old,completed:true});
+    return {code:'INK_FENCE_COMPLETED',status:200};
+   }
+   if(old&&(old.completed||old.subject!==c.actorSubject))
+    return {code:'INK_END_FENCE_CONFLICT',status:409};
+   if((await txn.get<PendingQuranInk[]>('pendingQuranInk')??[]).length)
+    return {code:'INK_END_PENDING',status:409};
+   // The fence and no-pending decision share one DO transaction, excluding
+   // a concurrent ink write from slipping between check and D1 End.
+   await txn.put('inkEndFence',{operationId:c.operationId,
+    subject:c.actorSubject as string,completed:false});
+   return {code:'INK_END_READY',status:200};
+  });
+  return Response.json({code:result.code},{status:result.status,
+   headers:{'cache-control':'no-store'}});
+ }
  async alarm():Promise<void>{
   const now=Date.now(),room=await this.ctx.storage.get<RoomRecord>('room');
   if(room){
@@ -226,6 +319,7 @@ export class LessonRoom {
    }
   }
   await this.dispatch(now);
+  await this.flushQuranInk();
   await this.scheduleNext(now);
  }
  async fetch(request:Request):Promise<Response>{
@@ -251,6 +345,13 @@ export class LessonRoom {
     return Response.json({code:'ROOM_RECONCILE_QUEUED'},
       {headers:{'cache-control':'no-store'}});
    }catch{return Response.json({code:'ROOM_RECONCILE_UNAVAILABLE'},{status:503});}
+  }
+  if(path==='/internal/ink-end-fence'){
+   if(request.method!=='POST')return Response.json({code:'NOT_FOUND'},{status:404});
+   let raw:unknown;
+   try{raw=await request.json();}catch{return Response.json({code:'INVALID_INK_FENCE'},{status:400});}
+   try{return await this.inkEndFence(raw);}
+   catch{return Response.json({code:'INK_END_FENCE_UNAVAILABLE'},{status:503});}
   }
   if(path==='/internal/learner-microphone-policy'){
    if(request.method!=='POST')return Response.json({code:'NOT_FOUND'},{status:404});
@@ -342,16 +443,48 @@ export class LessonRoom {
      if(!lease||lease.expiresAtMs<=now||lease.subject!==cmd.actorSubject||
       lease.learnerId!==cmd.learnerId)return Response.json({code:'NOT_JOINED'},{status:404});
      const state=await txn.get<InkPage>('quranInk:'+cmd.page)??initialInk(cmd.page);
+     if(cmd.action!=='snapshot'&&!this.env?.DB)
+      return Response.json({code:'INK_D1_UNAVAILABLE'},{status:503});
+     if(cmd.action!=='snapshot'&&!await this.liveInkLesson(cmd.lessonId,cmd.learnerId))
+      return Response.json({code:'INK_LESSON_NOT_LIVE'},{status:409});
      if(cmd.action==='snapshot')return Response.json({code:'INK_SNAPSHOT',ink:visibleInk(state)},
       {headers:{'cache-control':'no-store'}});
      const current=await txn.get<SharedPageRecord>('quranPage')??initialPage();
      if(current.page!==cmd.page)return Response.json({code:'INK_CONFLICT',ink:visibleInk(state)},
       {status:409,headers:{'cache-control':'no-store'}});
+     const fence=await txn.get<{completed:boolean}>('inkEndFence');
+     if(fence)return Response.json({code:'INK_LESSON_ENDING'},{status:409});
      const result=applyInk(state,cmd);
-     if(result.code==='INK_APPLIED')await txn.put('quranInk:'+cmd.page,result.next);
-     const status=result.code==='INK_CONFLICT'?409:result.code==='INK_LIMIT'?413:200;
+     if(result.code==='INK_APPLIED'){
+      const delivery=await prepareCumulativeInkDelivery(cmd,state,now);
+      if(!delivery)return Response.json({code:'INK_DELIVERY_INVALID'},{status:503});
+      const old=await txn.get<PendingQuranInk[]>('pendingQuranInk')??[];
+      const queued=queueCumulativeInk(old,delivery);
+      if(queued.code==='FULL'||queued.code==='CONFLICT')
+       return Response.json({code:'INK_OUTBOX_'+queued.code},{status:503});
+      if(!txn.setAlarm)
+       return Response.json({code:'INK_ALARM_UNAVAILABLE'},{status:503});
+      // SQLite-backed DO transaction commits page, outbox AND alarm together.
+      await txn.put('quranInk:'+cmd.page,result.next);
+      await txn.put('pendingQuranInk',[...queued.items]);
+      await txn.setAlarm(now+RECONCILE_MS);
+     }
      return Response.json({code:result.code,ink:visibleInk(result.next)},
-      {status,headers:{'cache-control':'no-store'}});
+      {status:result.code==='INK_CONFLICT'?409:result.code==='INK_LIMIT'?413:200,
+       headers:{'cache-control':'no-store'}});
+    }).then(async response=>{
+     if(response.status!==200)return response;
+     const body=await response.clone().json() as {code:string;ink?:unknown};
+     if(body.code==='INK_APPLIED'||body.code==='INK_REPLAY'){
+      await this.flushQuranInk();
+      // Every queued event must reach D1 before responding with a saved ACK,
+      // including an already accepted operation replayed after a lost reply.
+      const remaining=await this.ctx.storage.get<PendingQuranInk[]>('pendingQuranInk')??[];
+      if(remaining.length>0)return Response.json({code:'INK_SAVE_PENDING'},
+       {status:503,headers:{'cache-control':'no-store'}});
+      await this.scheduleNext(now);
+     }
+     return response;
     });
    }catch{return Response.json({code:'CLASSROOM_INK_UNAVAILABLE'},{status:503});}
   }
