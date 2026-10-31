@@ -11,7 +11,7 @@ import { listOwnedLearnerLessons, listVerifiedTeacherLessons } from '../lesson-c
 import { listVerifiedTeacherLearners } from '../teacher-roster.ts';
 import {readOwnerPlan,readTeacherPlan,writeTeacherPlan,parsePlanAction} from '../academic-plans.ts';
 import {readOwnerAssignments,readTeacherAssignments,getAssignmentCatalog,publishAssignment,parsePublishAssignment} from '../published-assignments.ts';
-import {readTeacherInkDrafts,saveTeacherInkDraft} from '../teacher-assignment-ink-drafts.ts';
+import {readTeacherInkDrafts,saveTeacherInkDraft,teacherAssignmentPageRange} from '../teacher-assignment-ink-drafts.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
 import {getTeacherReport,getStudentReports,applyTeacherReport,parseReportAction} from '../lesson-reports.ts';
@@ -504,6 +504,17 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     return reply(status,body,requestId);
   }
   // Sheikh-only private annotations: unpublished versions never reach a student.
+  const teacherDraftRange=/^\/v1\/teacher\/learners\/([a-zA-Z0-9-]{1,128})\/assignment-page-range$/.exec(path);
+  if(teacherDraftRange){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const params=new URL(request.url).searchParams;
+    if(params.size!==4||!['editionId','surah','fromAyah','toAyah'].every(k=>params.has(k)))
+      return reply(400,{code:'DRAFT_INVALID_RANGE'},requestId);
+    const result=await teacherAssignmentPageRange(env.DB,session.user.id,teacherDraftRange[1]!,
+      params.get('editionId')??'',Number(params.get('surah')),
+      Number(params.get('fromAyah')),Number(params.get('toAyah')));
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
   const teacherDrafts=/^\/v1\/teacher\/learners\/([a-zA-Z0-9-]{1,128})\/assignment-drafts$/.exec(path);
   if(teacherDrafts){
     if(request.method!=='GET'&&request.method!=='POST')
