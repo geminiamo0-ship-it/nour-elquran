@@ -169,6 +169,15 @@ class CumulativeQuranLedgerD1(unittest.TestCase):
   with self.assertRaisesRegex(sqlite3.IntegrityError,'REVISION_CONFLICT'):
    self.event(item_id='item-0001',expected_revision=0)
 
+ def test_forward_color_guard_accepts_hex_and_rejects_nonhex(self):
+  self.event(item_id='valid-hex-01',payload_json=json.dumps({
+   'color':'#aB09Ff','width':3,'points':[{'x':12,'y':45},{'x':90,'y':150}]}))
+  for color in ('#abc12g','#abcdef0','#abcd','#------','#ab cde'):
+   with self.subTest(color=color),self.assertRaisesRegex(sqlite3.IntegrityError,'PAYLOAD_DENIED'):
+    self.event(item_id='bad-color-'+str(self.counter),payload_json=json.dumps({
+     'color':color,'width':3,'points':[{'x':12,'y':45},{'x':90,'y':150}]}))
+  self.assertEqual(self.count(),1)
+
  def test_does_not_mutate_preexisting_private_store_or_create_faux_backfill(self):
   self.db.execute("""INSERT INTO private_mushaf_events(id,learner_id,actor_auth_subject,operation_id,
     action,item_id,kind,edition_id,page,expected_version,payload_json,at_ms)
