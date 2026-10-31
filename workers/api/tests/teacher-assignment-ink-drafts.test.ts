@@ -1,6 +1,6 @@
 import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
-import {parseTeacherDraftSave} from '../src/teacher-assignment-ink-drafts.ts';
+import {parseTeacherDraftSave,draftStorageFailureKind} from '../src/teacher-assignment-ink-drafts.ts';
 import {parsePublishAssignment} from '../src/published-assignments.ts';
 
 const draftId='6145a6fa-1d94-4994-91e7-5819692ba3b6';
@@ -40,4 +40,15 @@ test('assignment publishing allows only a signed snapshot UUID and rejects extra
   {...basic,draftId:'not-valid'},{...basic,draftId:3},
   {...basic,draftId,teacherId:'forged'},{...basic,marks:[pen]},
  ])assert.equal(parsePublishAssignment(bad),null);
+});
+
+test('private Sheikh Dev D1 diagnostics reveal categories, never raw SQL or auth values',()=>{
+ for(const [message,want] of [
+  ['D1_ERROR: malformed JSON','D1_JSON'],
+  ['D1_ERROR: no such column: marker','D1_SCHEMA'],
+  ['FOREIGN KEY constraint failed','D1_CONSTRAINT'],
+  ['Cloudflare connection timeout','D1_NETWORK'],
+  ['unexpected database driver error','D1_UNKNOWN']
+ ] as const)assert.equal(draftStorageFailureKind(new Error(message)),want);
+ assert.equal(draftStorageFailureKind(null),'D1_UNKNOWN');
 });
