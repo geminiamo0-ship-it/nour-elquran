@@ -1,3 +1,4 @@
+-- #244 migration 0025; requires reviewed 0024_trial_slot_close_booking_guard.sql (#280) before Dev rollout.
 -- #244: atomic first-free-trial reschedule. One INSERT either commits BOTH
 -- cancellation of the former scheduled trial and its replacement, or neither.
 -- No prices, payments, automatic penalties, provider messages or child media.

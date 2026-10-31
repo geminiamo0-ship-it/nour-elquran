@@ -3,7 +3,7 @@
 ## Scope
 An eligible guardian/account owner may replace one currently **scheduled free trial**
 with one currently published **alternative** slot in one D1 transaction.
-This builds on migrations 0021–0022 and signed Better Auth routes; it is
+This builds on migrations 0021–0022, 0023 ink compatibility, and the\n**0024 booked-slot withdrawal guard** proposed in PR #280. Apply 0024\nfirst and verify its populated Dev upgrade before enabling 0025.\nSigned Better Auth routes are required; it is
 not an administrator dashboard, subscription activation, provider payment,
 free-trial reset, WhatsApp dispatch, or Production readiness.
 
@@ -36,7 +36,7 @@ free-trial reset, WhatsApp dispatch, or Production readiness.
    rollback on occupied slot, 6-hour boundary, sibling/owner denial,
    original grant release and immutable audit.
 2. Exact-head GitHub Verify (all gates). Native Cloudflare local D1 smoke
-   should apply migration 0024 forward-only; don't call CI green a remote
+   should apply migration 0025 forward-only; don't call CI green a remote
    Cloudflare Dev proof.
 3. After review, deploy **isolated Dev only** with synthetic signed
    guardian + teacher, actual replacement, cross-owner 404, collision 409,

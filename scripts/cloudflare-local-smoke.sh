@@ -31,10 +31,11 @@ echo "Checking populated native D1 0022 -> 0023 forward upgrade (synthetic only)
 upgrade="$state/native-upgrade"
 mkdir -p "$upgrade/migrations" "$upgrade/data"
 for migration in migrations/[0-9][0-9][0-9][0-9]_*.sql; do
-  case "$(basename "$migration")" in
-    0023_*) continue ;;
-    *) cp -- "$migration" "$upgrade/migrations/" ;;
-  esac
+  # Build a genuine pre-0023 database: never seed future migrations 0024/0025.
+  number="$(basename "$migration")"
+  number="${number%%_*}"
+  if (( 10#$number >= 23 )); then continue; fi
+  cp -- "$migration" "$upgrade/migrations/"
 done
 cat > "$upgrade/wrangler.json" <<'JSON'
 {

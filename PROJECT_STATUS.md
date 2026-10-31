@@ -1,3 +1,8 @@
+## 2026-11-01 / #244 — PR #298 migration sequencing candidate (not merged)
+- Detected duplicate D1 `0024` names in open PR #280 (booked-slot withdrawal guard) and PR #298 (atomic trial rescheduling). PR #298 reserves **0025** instead, with an explicit dependency on independent review/merge and isolated Dev acceptance of #280's 0024. No migration was applied remotely.
+- Corrected native Wrangler pre-0023 upgrade fixture to exclude **all** future numbered migrations (not just 0023), so a populated historical DB cannot accidentally be seeded with 0024/0025. Full fresh-schema local smoke still applies available migrations in filename order.
+- Required before merge: exact-head GitHub Verify including native D1, independent SQL/security review, and signed isolated Dev owner/Sheikh E2E with 0023→0024→0025 migration order. Do not merge/deploy 0025 ahead of 0024; #244 remains OPEN. Production, payment, WhatsApp, child media and cumulative ink flag unchanged.
+
 ## 2026-11-01 / #244 — atomic free-trial rescheduling candidate (PR pending CI)
 - Approved owner continuation of #244. Existing real trial slot/book/cancel source in migrations 0021/0022 and signed student pages was **already merged**, so this slice adds only one missing function: replace a scheduled trial with a different published slot without losing the original on collision.
 - Branch `feat/244-atomic-trial-reschedule-20261101`: forward-only D1 migration 0024 `trial_owner_reschedule_events` with atomic cancel/rebook triggers, only own temporary grant revoked, six-hour server/D1 cut-off and immutable idempotent provenance. Signed owner GET alternatives + POST replace, actual Student Lessons action and TS/Python regressions. See `docs/TRIAL_ATOMIC_RESCHEDULE_244_CONTRACT.md`.
