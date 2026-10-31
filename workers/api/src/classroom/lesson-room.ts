@@ -420,8 +420,11 @@ export class LessonRoom {
      const state=await txn.get<InkPage>('quranInk:'+cmd.page)??initialInk(cmd.page);
      if(durable&&cmd.action!=='snapshot'&&await txn.get<boolean>('quranInkClosing'))
       return {code:'LESSON_INK_CLOSING',status:409} as const;
-     if(cmd.action==='snapshot')
-      return {code:'INK_SNAPSHOT',status:200,ink:visibleInk(state)} as const;
+     if(cmd.action==='snapshot'){
+      const pending=durable?(await txn.get<PendingQuranInk[]>('pendingQuranInk')??[]):[];
+      return {code:'INK_SNAPSHOT',status:200,ink:visibleInk(state),
+       persistence:pending.length?'pending' as const:'saved' as const} as const;
+     }
      const current=await txn.get<SharedPageRecord>('quranPage')??initialPage();
      if(current.page!==cmd.page)
       return {code:'INK_CONFLICT',status:409,ink:visibleInk(state)} as const;
@@ -445,7 +448,8 @@ export class LessonRoom {
     if(!('ink' in applied)||!applied.ink)
      return Response.json({code:applied.code},{status:applied.status});
     if(!durable||cmd.action==='snapshot'||applied.status!==200)
-     return Response.json({code:applied.code,ink:applied.ink},
+     return Response.json({code:applied.code,ink:applied.ink,
+      ...('persistence' in applied?{persistence:applied.persistence}:{})},
       {status:applied.status,headers:{'cache-control':'no-store'}});
     // Retained room-local stroke does NOT count as globally saved.
     // Attempt immediate D1 reconciliation, then report whether pending remains.
