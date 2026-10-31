@@ -66,10 +66,12 @@ class InboxD1(unittest.TestCase):
    WHERE recipient_kind='owner' LIMIT 1""").fetchone()[0]
   with self.assertRaisesRegex(sqlite3.IntegrityError,'INBOX_ACCESS_DENIED'):
    self.read(own)
- def test_actual_schedule_change_creates_notices_but_not_fake_other_sibling(self):
-  self.db.execute("UPDATE lessons SET starts_at_ms=2000,ends_at_ms=2402000 WHERE id='l1'")
+ def test_actual_completed_lesson_creates_notices_but_not_fake_other_sibling(self):
+  # The shared ledger fixture has already started l1, so the truthful
+  # source transition is live -> completed, not rescheduling a live lesson.
+  self.db.execute("UPDATE lessons SET status='completed',ended_at_ms=5000 WHERE id='l1'")
   self.assertEqual(self.db.execute(
-   "SELECT COUNT(*) FROM noor_inbox_items WHERE kind='lesson_rescheduled'").fetchone(),(2,))
+   "SELECT COUNT(*) FROM noor_inbox_items WHERE kind='lesson_completed'").fetchone(),(2,))
   self.assertEqual(self.db.execute(
    "SELECT COUNT(*) FROM noor_inbox_items WHERE learner_id='sibling'").fetchone(),(0,))
 if __name__=='__main__':unittest.main()
