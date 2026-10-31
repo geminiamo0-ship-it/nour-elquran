@@ -40,10 +40,10 @@ function harness(options:{permit?:boolean;expires?:boolean;wrongActor?:boolean}=
  const instance=new LessonRoom(ctx,environment(options.permit!==false));
  return {instance,sent,closed};
 }
-async function broadcast(h:ReturnType<typeof harness>,payload:unknown){
+async function broadcast(h:ReturnType<typeof harness>,payload:unknown,onlyRole?:'teacher'|'learner'){
  // Exercise the isolated DO hibernating-socket broadcast validator directly.
- const instance=h.instance as unknown as {pushRealtime:(hint:unknown)=>Promise<void>};
- await instance.pushRealtime(payload);
+ const instance=h.instance as unknown as {pushRealtime:(hint:unknown,role?:'teacher'|'learner')=>Promise<void>};
+ await instance.pushRealtime(payload,onlyRole);
 }
 test('authorized signed in-room viewer gets only committed bounded revision hint',async()=>{
  const h=harness();
@@ -75,4 +75,12 @@ test('no optimistic uncommitted ink data or saved receipt crosses socket',async(
  ])await broadcast(h,payload);
  assert.deepEqual(h.sent,[]);
  assert.deepEqual(h.closed,[]);
+});
+
+test('teacher-private corrections revision is not broadcast to learner sockets',async()=>{
+ const h=harness();
+ await broadcast(h,{type:'corrections',page:35,revision:2},'learner');
+ assert.deepEqual(h.sent,[]);
+ await broadcast(h,{type:'corrections',page:35,revision:2},'teacher');
+ assert.deepEqual(JSON.parse(h.sent[0]!),{type:'corrections',page:35,revision:2});
 });
