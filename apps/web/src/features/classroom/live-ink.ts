@@ -1,6 +1,8 @@
 import type {QuranInkStroke} from '@/features/student';
 export type InkView=Readonly<{page:number;revision:number;strokes:readonly QuranInkStroke[]}>;
-export type InkResult=Readonly<{code:string;ink:InkView;persistence?:'pending'|'saved'}>;
+export type InkResult=Readonly<{code:string;ink:InkView;persistence?:'pending'|'saved';
+ /** Server grants writes only for signed, live lessons with D1 durable mode enabled. */
+ canWrite?:boolean}>;
 export type ConnectedIdentity=Readonly<{role:'teacher'|'learner';lessonId:string;learnerId?:string}>;
 export type InkChange=
  |Readonly<{action:'add';page:number;expectedRevision:number;requestId:string;stroke:QuranInkStroke}>
@@ -48,7 +50,8 @@ export async function fetchLiveInk(id:ConnectedIdentity,page:number,change?:InkC
   ['INK_SNAPSHOT','INK_APPLIED','INK_REPLAY','INK_CONFLICT','INK_LIMIT',
    'INK_PENDING_PERSISTENCE'].includes(String(body.code)))
   return {code:String(body.code),ink:body.ink,
-   ...(body.persistence==='pending'||body.persistence==='saved'?{persistence:body.persistence}:{})};
+   ...(body.persistence==='pending'||body.persistence==='saved'?{persistence:body.persistence}:{}),
+   ...(typeof body.canWrite==='boolean'?{canWrite:body.canWrite}:{})};
  throw Error(typeof body?.code==='string'?body.code:'CLASSROOM_INK_UNAVAILABLE');
 }
 /** One drawn stroke can be 2500 pointer points; the server enforces <=600. */
