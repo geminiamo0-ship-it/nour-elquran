@@ -273,8 +273,9 @@ export class LessonRoom {
     await txn.put('inkEndFence',{...old,completed:true});
     return {code:'INK_FENCE_COMPLETED',status:200};
    }
-   if(old&&(old.completed||old.subject!==c.actorSubject||
-     old.operationId!==c.operationId))
+   // A verified same-Sheikh retry may replace a noncompleted fence left
+   // behind by a Worker crash. D1 still permits only one atomic End transition.
+   if(old&&(old.completed||old.subject!==c.actorSubject))
     return {code:'INK_END_FENCE_CONFLICT',status:409};
    if((await txn.get<PendingQuranInk[]>('pendingQuranInk')??[]).length)
     return {code:'INK_END_PENDING',status:409};
