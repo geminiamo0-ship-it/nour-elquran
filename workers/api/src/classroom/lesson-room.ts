@@ -152,6 +152,8 @@ export class LessonRoom {
   * checks the current lease and fresh D1 role on initial connection and every
   * broadcast. Sockets carry no credentials or writable user commands. */
  private async realtimeUpgrade(request:Request):Promise<Response>{
+  if(this.env?.NOOR_REALTIME_HINTS_ENABLED!=='true')
+   return Response.json({code:'REALTIME_NOT_ENABLED'},{status:404});
   if(request.method!=='GET'||request.headers.get('Upgrade')?.toLowerCase()!=='websocket')
    return Response.json({code:'NOT_FOUND'},{status:404});
   const actor:unknown={
@@ -207,6 +209,7 @@ export class LessonRoom {
   }
  }
  private notifyRealtime(hint:RealtimeHint):void{
+  if(this.env?.NOOR_REALTIME_HINTS_ENABLED!=='true')return;
   if(!this.ctx.waitUntil||!this.ctx.getWebSockets)return;
   this.ctx.waitUntil(this.pushRealtime(hint).catch(()=>undefined));
  }
