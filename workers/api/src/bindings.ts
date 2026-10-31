@@ -19,6 +19,8 @@ export interface Env {
   LIVEKIT_API_KEY?: string;
   LIVEKIT_API_SECRET?: string;
   DB?: CoreDatabase;
+  /** Off by default: full DO->D1 live ink delivery requires a lesson-end fence. */
+  NOOR_CUMULATIVE_INK_ENABLED?: string;
   AUTH_ENABLED?: string;
   AUTH_SECRET?: string;
   AUTH_ORIGIN?: string;

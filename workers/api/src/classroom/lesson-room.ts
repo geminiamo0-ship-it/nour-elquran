@@ -9,6 +9,9 @@ import {mediaLessonWindow} from './livekit-token.ts';
 import {evictVerifiedLiveKitActor} from './livekit-admin.ts';
 import {parseVerifiedPageCommand,initialPage,applyPageSet,safePage,type SharedPageRecord} from './quran-page.ts';
 import {parseInkCommand,initialInk,visibleInk,applyInk,type InkPage} from './quran-ink.ts';
+import {appendQuranLedgerEvent} from '../learner-quran-ledger.ts';
+import {prepareCumulativeInkDelivery,queueCumulativeInk,
+ type PendingQuranInk} from './ink-cumulative-outbox.ts';
 import {parseVerifiedMicCommand,initialMicPolicy,applyMicPolicy,type MicPolicy} from './mic-policy.ts';
 import {parseVerifiedCorrection,initialCorrections,appendCorrection,type CorrectionsState} from './live-corrections.ts';
 
@@ -118,13 +121,15 @@ export class LessonRoom {
  private readonly ctx:LessonRoomContext;
  private readonly env:Env|undefined;
  constructor(ctx:LessonRoomContext,env?:Env){this.ctx=ctx;this.env=env;}
+ private get cumulativeInkEnabled(){return this.env?.NOOR_CUMULATIVE_INK_ENABLED==='true';}
  private async scheduleNext(now:number):Promise<void>{
   if(!this.ctx.storage.setAlarm)return;
-  const [room,outbox]=await Promise.all([
+  const [room,outbox,pendingInk]=await Promise.all([
    this.ctx.storage.get<RoomRecord>('room'),
-   this.ctx.storage.get<PendingMediaEviction[]>('pendingEvictions')
+   this.ctx.storage.get<PendingMediaEviction[]>('pendingEvictions'),
+   this.cumulativeInkEnabled?this.ctx.storage.get<PendingQuranInk[]>('pendingQuranInk'):Promise.resolve(undefined)
   ]);
-  if((outbox?.length??0)>0||room?.teacher?.mediaIntent||room?.learner?.mediaIntent)
+  if((pendingInk?.length??0)>0||(outbox?.length??0)>0||room?.teacher?.mediaIntent||room?.learner?.mediaIntent)
    await this.ctx.storage.setAlarm(now+RECONCILE_MS);
  }
  private async queued(now:number,command:VerifiedRoomCommand):Promise<RoomResult>{
@@ -194,6 +199,29 @@ export class LessonRoom {
    });
   }
  }
+ /** FIFO durable reconciliation. Removing the pending event happens only AFTER
+  * a confirmed D1 commit/replay. Errors or role-revocation uncertainty retain
+  * all remaining records, not a false success or destructive retry. */
+ private async flushQuranInk():Promise<number>{
+  if(!this.cumulativeInkEnabled)return 0;
+  const pending=await this.ctx.storage.get<PendingQuranInk[]>('pendingQuranInk')??[];
+  if(!this.env?.DB)return pending.length;
+  for(const item of pending){
+   try{
+    const result=await appendQuranLedgerEvent(this.env.DB,
+     {subject:item.actorSubject,role:item.actorRole},item.learnerId,
+     item.command,item.acceptedAtMs);
+    if(result.code!=='QURAN_EVENT_COMMITTED'&&result.code!=='QURAN_EVENT_REPLAY')break;
+    await this.ctx.storage.transaction(async txn=>{
+     const current=await txn.get<PendingQuranInk[]>('pendingQuranInk')??[];
+     if(current[0]?.operationId!==item.operationId)
+      throw Error('QURAN_INK_OUTBOX_REORDERED');
+     await txn.put('pendingQuranInk',current.slice(1));
+    });
+   }catch{break;}
+  }
+  return (await this.ctx.storage.get<PendingQuranInk[]>('pendingQuranInk')??[]).length;
+ }
  async alarm():Promise<void>{
   const now=Date.now(),room=await this.ctx.storage.get<RoomRecord>('room');
   if(room){
@@ -226,6 +254,7 @@ export class LessonRoom {
    }
   }
   await this.dispatch(now);
+  await this.flushQuranInk();
   await this.scheduleNext(now);
  }
  async fetch(request:Request):Promise<Response>{
@@ -327,33 +356,115 @@ export class LessonRoom {
     });
    }catch{return Response.json({code:'CLASSROOM_CORRECTIONS_UNAVAILABLE'},{status:503});}
   }
+  // The authenticated Worker fences the room BEFORE D1 lesson End. Room
+  // transactions serialize this fence with ink additions; a pending D1 row
+  // prevents End and the alarm can safely retry while lesson remains live.
+  if(path==='/internal/quran-ink-end-fence'){
+   if(request.method!=='POST'||!this.cumulativeInkEnabled)
+    return Response.json({code:'NOT_FOUND'},{status:404});
+   let value:unknown;
+   try{value=await request.json();}catch{return Response.json({code:'INVALID_INK_FENCE'},{status:400});}
+   if(!value||typeof value!=='object'||Array.isArray(value))
+    return Response.json({code:'INVALID_INK_FENCE'},{status:400});
+   const input=value as Record<string,unknown>;
+   if(Object.keys(input).length!==3||
+    typeof input.lessonId!=='string'||!allowed.test(input.lessonId)||
+    typeof input.learnerId!=='string'||!allowed.test(input.learnerId)||
+    typeof input.actorSubject!=='string'||!allowed.test(input.actorSubject))
+    return Response.json({code:'INVALID_INK_FENCE'},{status:400});
+   try{
+    await this.flushQuranInk();
+    return await this.ctx.storage.transaction(async txn=>{
+     const room=await txn.get<RoomRecord>('room');
+     const teacher=room?.teacher;
+     if(!room||room.lessonId!==input.lessonId||!teacher||
+      teacher.subject!==input.actorSubject||
+      teacher.learnerId!==input.learnerId)
+      return Response.json({code:'NOT_JOINED'},{status:404});
+     const pending=await txn.get<PendingQuranInk[]>('pendingQuranInk')??[];
+     if(pending.length)
+      return Response.json({code:'QURAN_INK_PENDING',pending:pending.length},{status:409});
+     await txn.put('quranInkClosing',true);
+     return Response.json({code:'QURAN_INK_FENCED'});
+    });
+   }catch{return Response.json({code:'QURAN_INK_FENCE_UNAVAILABLE'},{status:503});}
+  }
   if(path==='/internal/quran-ink'){
    if(request.method!=='POST')return Response.json({code:'NOT_FOUND'},{status:404});
    let raw:unknown;
    try{raw=await request.json();}catch{return Response.json({code:'INVALID_INK_COMMAND'},{status:400});}
    const cmd=parseInkCommand(raw);
    if(!cmd)return Response.json({code:'INVALID_INK_COMMAND'},{status:400});
-   const now=Date.now();
+   const now=Date.now(),durable=this.cumulativeInkEnabled;
+   // Gate cannot be opened on a room without D1. Preflight *fresh* grant,
+   // live lesson state and current media authority; browser role is ignored.
+   if(durable&&cmd.action!=='snapshot'){
+    if(!this.env?.DB)return Response.json({code:'QURAN_D1_UNAVAILABLE'},{status:503});
+    const valid=await this.authorized({subject:cmd.actorSubject,learnerId:cmd.learnerId,
+     expiresAtMs:now+1},cmd.role,cmd.lessonId,now);
+    if(!valid)return Response.json({code:'INK_PERMISSION_NOT_VERIFIED'},{status:503});
+    try{
+     const lesson=await this.env.DB.prepare(
+      "SELECT status FROM lessons WHERE id=? AND learner_id=?"
+     ).bind(cmd.lessonId,cmd.learnerId).first<{status:string}>();
+     if(lesson?.status!=='live')
+      return Response.json({code:'LESSON_NOT_LIVE'},{status:409});
+    }catch{return Response.json({code:'QURAN_D1_UNAVAILABLE'},{status:503});}
+   }
    try{
-    return await this.ctx.storage.transaction(async txn=>{
+    const applied=await this.ctx.storage.transaction(async txn=>{
      const room=await txn.get<RoomRecord>('room');
-     if(!room||room.lessonId!==cmd.lessonId)return Response.json({code:'NOT_JOINED'},{status:404});
+     if(!room||room.lessonId!==cmd.lessonId)return {code:'NOT_JOINED',status:404} as const;
      const lease=room[cmd.role];
      if(!lease||lease.expiresAtMs<=now||lease.subject!==cmd.actorSubject||
-      lease.learnerId!==cmd.learnerId)return Response.json({code:'NOT_JOINED'},{status:404});
+      lease.learnerId!==cmd.learnerId)return {code:'NOT_JOINED',status:404} as const;
      const state=await txn.get<InkPage>('quranInk:'+cmd.page)??initialInk(cmd.page);
-     if(cmd.action==='snapshot')return Response.json({code:'INK_SNAPSHOT',ink:visibleInk(state)},
-      {headers:{'cache-control':'no-store'}});
+     if(durable&&cmd.action!=='snapshot'&&await txn.get<boolean>('quranInkClosing'))
+      return {code:'LESSON_INK_CLOSING',status:409} as const;
+     if(cmd.action==='snapshot'){
+      const pending=durable?(await txn.get<PendingQuranInk[]>('pendingQuranInk')??[]):[];
+      return {code:'INK_SNAPSHOT',status:200,ink:visibleInk(state),
+       persistence:pending.length?'pending' as const:'saved' as const} as const;
+     }
      const current=await txn.get<SharedPageRecord>('quranPage')??initialPage();
-     if(current.page!==cmd.page)return Response.json({code:'INK_CONFLICT',ink:visibleInk(state)},
-      {status:409,headers:{'cache-control':'no-store'}});
+     if(current.page!==cmd.page)
+      return {code:'INK_CONFLICT',status:409,ink:visibleInk(state)} as const;
      const result=applyInk(state,cmd);
-     if(result.code==='INK_APPLIED')await txn.put('quranInk:'+cmd.page,result.next);
-     const status=result.code==='INK_CONFLICT'?409:result.code==='INK_LIMIT'?413:200;
-     return Response.json({code:result.code,ink:visibleInk(result.next)},
-      {status,headers:{'cache-control':'no-store'}});
+     if(result.code==='INK_APPLIED'){
+      if(durable){
+       const event=await prepareCumulativeInkDelivery(cmd,state,now);
+       if(!event)return {code:'INK_DELIVERY_INVALID',status:503} as const;
+       const existing=await txn.get<PendingQuranInk[]>('pendingQuranInk')??[];
+       const queued=queueCumulativeInk(existing,event);
+       if(queued.code!=='QUEUED'&&queued.code!=='REPLAY')
+        return {code:'INK_DELIVERY_'+queued.code,status:queued.code==='FULL'?413:409} as const;
+       // DO transaction persists the stroke AND the recovery record atomically.
+       await txn.put('pendingQuranInk',[...queued.items]);
+      }
+      await txn.put('quranInk:'+cmd.page,result.next);
+     }
+     return {code:result.code,status:result.code==='INK_CONFLICT'?409:
+      result.code==='INK_LIMIT'?413:200,ink:visibleInk(result.next)} as const;
     });
-   }catch{return Response.json({code:'CLASSROOM_INK_UNAVAILABLE'},{status:503});}
+    if(!('ink' in applied)||!applied.ink)
+     return Response.json({code:applied.code},{status:applied.status});
+    if(!durable||cmd.action==='snapshot'||applied.status!==200)
+     return Response.json({code:applied.code,ink:applied.ink,
+      ...('persistence' in applied?{persistence:applied.persistence}:{})},
+      {status:applied.status,headers:{'cache-control':'no-store'}});
+    // Retained room-local stroke does NOT count as globally saved.
+    // Attempt immediate D1 reconciliation, then report whether pending remains.
+    const remaining=await this.flushQuranInk();
+    await this.scheduleNext(now);
+    return Response.json({code:remaining?'INK_PENDING_PERSISTENCE':applied.code,
+     persistence:remaining?'pending':'saved',ink:applied.ink},
+     {status:remaining?202:200,headers:{'cache-control':'no-store'}});
+   }catch{
+    // In the failure case an outbox row may already exist; alarm will replay.
+    // Never turn this into a fake commit response.
+    try{await this.scheduleNext(now);}catch{ /* still no global saved ack */ }
+    return Response.json({code:'CLASSROOM_INK_UNAVAILABLE'},{status:503});
+   }
   }
   if(path==='/internal/quran-page'){
    if(request.method!=='POST')return Response.json({code:'NOT_FOUND'},{status:404});
