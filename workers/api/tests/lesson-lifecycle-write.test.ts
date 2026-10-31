@@ -15,7 +15,7 @@ test('accept only explicit teacher command with strict V4 operation ID',()=>{
   {action:'start',operationId:requestId,teacherId:'forged'},null,[],{}])
   assert.equal(parseLifecycleAction(value),null);
 });
-function harness(config:{both?:boolean;authorized?:boolean;noBatch?:boolean;owner?:boolean}={}){
+function harness(config:{both?:boolean;authorized?:boolean;noBatch?:boolean;owner?:boolean;inkPending?:boolean}={}){
  let status:'scheduled'|'live'|'completed'='scheduled',endedAtMs:null|number=null;
  let startedAtMs:null|number=null,events=0;
  const statements:string[]=[];
@@ -100,4 +100,14 @@ test('unauthorized Sheikh/owner cannot see lesson and atomic D1 is mandatory',as
  assert.deepEqual(await teacherLifecycleAction(noBatch.env,teacherSubject,lessonId,
   'start',requestId,now),{status:503,code:'ATOMIC_D1_BATCH_REQUIRED'});
  assert.equal(noBatch.events(),0);
+});
+
+test('ink queue is a hard End barrier: no D1 End audit until canonical ACK',async()=>{
+ const h=harness({inkPending:true});
+ assert.equal((await teacherLifecycleAction(h.env,teacherSubject,lessonId,'start',
+  requestId,now)).code,'LESSON_STARTED');
+ const ended=await teacherLifecycleAction(h.env,teacherSubject,lessonId,'end',
+  '2163d489-5a27-4af2-83d0-1c3b7f989eff',now+20_000);
+ assert.deepEqual(ended,{status:409,code:'INK_END_PENDING'});
+ assert.equal(h.events(),1);
 });
