@@ -157,6 +157,9 @@ export async function appendQuranLedgerEvent(db:CoreDatabase,actor:VerifiedQuran
  const prior=()=>db.prepare(PRIOR).bind(learnerId,c.operationId).first<Prior>();
  const old=await prior();
  if(old&&!same(old,actor,c,body))return {status:409,code:'QURAN_OPERATION_CONFLICT'};
+ // A D1 write may commit even when the client loses the insert response.
+ // A subsequent exact-match lookup must be acknowledged as a replay.
+ let replay=!!old;
  if(!old) {
   try{
    await db.prepare(INSERT).bind(crypto.randomUUID(),learnerId,c.operationId,c.itemId,
@@ -170,11 +173,12 @@ export async function appendQuranLedgerEvent(db:CoreDatabase,actor:VerifiedQuran
      return {status:409,code:'QURAN_EVENT_REJECTED'};
     throw error;
    }
+   replay=true;
   }
  }
  const row=await db.prepare(ROW).bind(learnerId,c.itemId).first<Row>();
  if(!row)throw Error('Quran event committed without projection');
- return {status:old?200:201,code:old?'QURAN_EVENT_REPLAY':'QURAN_EVENT_COMMITTED',
+ return {status:replay?200:201,code:replay?'QURAN_EVENT_REPLAY':'QURAN_EVENT_COMMITTED',
   item:asCurrent(row)};
 }
 const PAGE_SQL=`SELECT item_id,page,kind,surah,ayah,word_index,visible,revision,audience,
