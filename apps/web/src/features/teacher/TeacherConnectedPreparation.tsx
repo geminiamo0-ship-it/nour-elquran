@@ -32,6 +32,7 @@ export function TeacherConnectedPreparation({learners,lessons}:{
  const name=learners.find(l=>l.id===learnerId)?.name??lesson?.learnerName??'طالب الحصة';
  const currentLoaded=data.status==='ready'&&data.learnerId===learnerId;
  const currentFailed=data.status==='failed'&&data.learnerId===learnerId;
+ const tasks=data.status==='ready'&&data.learnerId===learnerId?data.tasks:[];
  return <section className={css.card} aria-label="تحضير الحصة الموثقة">
   <div className={css.heading}><h1>التحضير للحصة</h1>
    <span>من الجدول المعتمد على D1</span></div>
@@ -60,7 +61,7 @@ export function TeacherConnectedPreparation({learners,lessons}:{
     currentFailed?<div role="alert">
      <p>تعذر التحقق من واجبات الطالب؛ لن نعرض واجبات قديمة أو مفترضة.</p>
      <button type="button" onClick={()=>setRetry(n=>n+1)}>إعادة التحميل</button>
-    </div>:data.tasks.length?<div className={css.list}>{data.tasks.map(t=>
+    </div>:tasks.length?<div className={css.list}>{tasks.map(t=>
      <div className={css.row} key={t.id}>
       <strong>سورة {t.surah} · {t.fromAyah}–{t.toAyah}</strong>
       <p>{t.instructions}</p>
