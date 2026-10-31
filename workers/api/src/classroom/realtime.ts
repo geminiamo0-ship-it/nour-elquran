@@ -37,6 +37,8 @@ export async function openVerifiedRealtime(
   return Response.json({code:'UPGRADE_REQUIRED'},{status:426});
  if(!validVerifiedRealtimeActor(actor))
   return Response.json({code:'INVALID_REALTIME_ACTOR'},{status:400});
+ if(env.NOOR_REALTIME_HINTS_ENABLED!=='true')
+  return Response.json({code:'REALTIME_NOT_ENABLED'},{status:404});
  if(!env.LESSON_ROOMS)
   return Response.json({code:'CLASSROOM_ROOM_NOT_CONFIGURED'},{status:503});
  try{
