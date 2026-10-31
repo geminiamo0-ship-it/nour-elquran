@@ -6,6 +6,7 @@ import {LiveLessonLifecycle} from './LiveLessonLifecycle';
 import {ReaderPrintedPage,clampQuranPage,targetKey,type QuranTarget,type QuranInkStroke} from '@/features/student';
 import {fetchLiveInk,compactStroke,type InkView} from './live-ink';
 import {useLessonRealtime} from './useLessonRealtime';
+import {reducePreview,type PreviewDrawing} from './ink-preview';
 import {ConnectedClassroomNotes} from './ConnectedClassroomNotes';
 import {QuranVersePicker} from './QuranVersePicker';
 import {isVerseSelection,type VerseSelection} from './quran-verse-selection';
@@ -114,6 +115,7 @@ export function ConnectedWaitingRoom(){
  const [sharedPage,setSharedPage]=useState<SharedPage|null>(null);
  const [pageBusy,setPageBusy]=useState(false);
  const [ink,setInk]=useState<InkView|null>(null);
+ const [previewDrawings,setPreviewDrawings]=useState<PreviewDrawing[]>([]);
  const [inkBusy,setInkBusy]=useState(false);
  const [inkWriteAuthorized,setInkWriteAuthorized]=useState(false);
  const inkPostBusy=useRef(false);
@@ -132,11 +134,21 @@ export function ConnectedWaitingRoom(){
  const alive=useRef(true);
  // Hint-only push from the signed DO. Each notification immediately reads the
  // authoritative HTTP snapshot; the 1s polling path remains as safe fallback.
- useLessonRealtime(identity,joined,hint=>{
-  if(hint.type==='quran-page')pageRefreshRef.current?.();
-  if(hint.type==='quran-ink')inkRefreshRef.current?.();
+ const sendPreview=useLessonRealtime(identity,joined,hint=>{
+  if(hint.type==='quran-page'){
+   setPreviewDrawings([]);
+   pageRefreshRef.current?.();
+  }
+  if(hint.type==='quran-ink'){
+   setPreviewDrawings(prev=>prev.filter(d=>d.stroke.page!==hint.page));
+   inkRefreshRef.current?.();
+  }
  },()=>{
+  setPreviewDrawings([]);
   pageRefreshRef.current?.();inkRefreshRef.current?.();
+ },frame=>{
+  if(joined&&lessonPhase==='live'&&sharedPage?.page===frame.page)
+   setPreviewDrawings(previous=>reducePreview(previous,frame));
  });
  useEffect(()=>{
   const id=readIdentity();
@@ -248,6 +260,15 @@ export function ConnectedWaitingRoom(){
   return()=>{enabled=false;inkRefreshRef.current=null;window.clearInterval(timer);
    document.removeEventListener('visibilitychange',visibility);};
  },[identity,joined,sharedPage?.page]);
+ useEffect(()=>{
+  if(!joined||lessonPhase!=='live'){setPreviewDrawings([]);return;}
+  if(!previewDrawings.length)return;
+  const timer=window.setTimeout(()=>{
+   const now=Date.now();
+   setPreviewDrawings(old=>old.filter(d=>now-d.seenAtMs<2400));
+  },500);
+  return()=>window.clearTimeout(timer);
+ },[joined,lessonPhase,previewDrawings]);
  const updateSharedInk=useCallback(async(onPage:number,next:QuranInkStroke[])=>{
   if(!identity||!joined||lessonPhase!=='live'||!inkWriteAuthorized||
     !sharedPage||sharedPage.page!==onPage||!ink||ink.page!==onPage||
@@ -453,7 +474,9 @@ export function ConnectedWaitingRoom(){
      <button type="button" className={css.pageEdgePrev} title="الصفحة السابقة" aria-label="الصفحة السابقة"
       disabled={!teacherCanTurn||page<=1} onClick={()=>void changeSharedPage(page-1)}>‹</button>
      <ReaderPrintedPage page={page} viewportFit inkMode={canDraw?inkMode:'off'} color={inkColor}
-      strokes={currentStrokes} selectedKey={selectedVerse?targetKey(selectedVerse):null}
+      strokes={currentStrokes}
+      previewStrokes={previewDrawings.filter(x=>x.stroke.page===page).map(x=>x.stroke)}
+      onInkPreview={canDraw?sendPreview:undefined} selectedKey={selectedVerse?targetKey(selectedVerse):null}
       noteKeys={new Set<string>()}
       onSelect={target=>{if(teacherCanTurn)void changeSharedPage(page,
         {surah:target.surah,ayah:target.ayah});}}
