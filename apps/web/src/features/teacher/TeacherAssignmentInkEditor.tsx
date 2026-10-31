@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useMemo,useRef,useState} from 'react';
-import type {AssignmentDraft} from '../shared/published-assignment-client';
-import {assignmentClient} from '../shared/published-assignment-client';
+import type {AssignmentDraft} from '../shared';
+import {assignmentClient} from '../shared';
 import {ReaderPrintedPage,targetKey,type QuranInkStroke,type QuranTarget} from '@/features/student';
 import {teacherInkDraftClient,type SavedInkDraft,type TeacherInkMark,
  type PageRange} from './teacher-ink-draft-client';
