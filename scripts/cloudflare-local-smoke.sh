@@ -129,6 +129,54 @@ for label in NATIVE_UPGRADE_REVISION_2_OK NATIVE_UPGRADE_PRIVATE_OK \
 done
 echo "PASS: native populated D1 0022 -> 0023, old GLOB repro, private draft retained, pen+highlight published, sibling isolated"
 
+# #244: this same populated native D1 must apply 0024 AFTER 0023.
+# A confirmed trial exists before 0024, so the forward-only close guard must
+# reject withdrawal atomically; only explicit owner cancellation can release it.
+echo "Checking native populated D1 0023 -> 0024 booked-trial withdrawal guard"
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --file ../../scripts/fixtures/trial-slot-native-pre0024.sql > "$upgrade/trial-pre0024.log"
+if ! grep -q 'NATIVE_TRIAL_BOOKED_PRE0024_OK' "$upgrade/trial-pre0024.log"; then
+  echo "Pre-0024 native D1 booked trial did not persist" >&2
+  exit 1
+fi
+cp -- migrations/0024_trial_slot_close_booking_guard.sql "$upgrade/migrations/"
+"${legacy[@]}" migrations apply noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" > "$upgrade/trial-forward.log"
+"${legacy[@]}" migrations apply noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" > "$upgrade/trial-replay.log"
+if "${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --command "INSERT INTO trial_slot_closure_events(id,operation_id,slot_id,actor_subject,reason,at_ms) VALUES('b645a6fa-1d94-4994-91e7-5819692ba3b6','b745a6fa-1d94-4994-91e7-5819692ba3b6','b145a6fa-1d94-4994-91e7-5819692ba3b6','trial-test-staff','Synthetic attempted booked withdrawal',0)" > "$upgrade/trial-denied.log" 2>&1; then
+  echo "Native D1 0024 unexpectedly allowed withdrawal of a booked trial" >&2
+  exit 1
+fi
+if ! grep -q 'TRIAL_SLOT_ALREADY_BOOKED' "$upgrade/trial-denied.log"; then
+  echo "Native D1 booked withdrawal failed for an unexpected reason" >&2
+  exit 1
+fi
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --command "SELECT CASE WHEN (SELECT COUNT(*) FROM trial_slot_closure_events WHERE slot_id='b145a6fa-1d94-4994-91e7-5819692ba3b6')=0 AND (SELECT status FROM lessons WHERE id='b545a6fa-1d94-4994-91e7-5819692ba3b6')='scheduled' THEN 'NATIVE_TRIAL_WITHDRAW_DENIED_ATOMIC' ELSE 'NATIVE_TRIAL_WITHDRAW_LEAK' END AS result" > "$upgrade/trial-denied-check.log"
+if ! grep -q 'NATIVE_TRIAL_WITHDRAW_DENIED_ATOMIC' "$upgrade/trial-denied-check.log"; then
+  echo "Native D1 rejected withdrawal changed the real lesson or closure history" >&2
+  exit 1
+fi
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --command "INSERT INTO trial_owner_cancellation_events(id,operation_id,lesson_id,learner_id,actor_subject,at_ms) VALUES('b845a6fa-1d94-4994-91e7-5819692ba3b6','b945a6fa-1d94-4994-91e7-5819692ba3b6','b545a6fa-1d94-4994-91e7-5819692ba3b6','draft-test-learner','draft-test-owner',0)" > "$upgrade/trial-cancel.log"
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --command "INSERT INTO trial_slot_closure_events(id,operation_id,slot_id,actor_subject,reason,at_ms) VALUES('ba45a6fa-1d94-4994-91e7-5819692ba3b6','bb45a6fa-1d94-4994-91e7-5819692ba3b6','b145a6fa-1d94-4994-91e7-5819692ba3b6','trial-test-staff','Synthetic closure after real cancellation',0)" > "$upgrade/trial-closed.log"
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --command "SELECT CASE WHEN (SELECT status FROM lessons WHERE id='b545a6fa-1d94-4994-91e7-5819692ba3b6')='cancelled' AND (SELECT COUNT(*) FROM trial_slot_closure_events WHERE slot_id='b145a6fa-1d94-4994-91e7-5819692ba3b6')=1 AND (SELECT version FROM noor_schema_meta WHERE component='trial_slot_close_booking_guard')=1 AND NOT EXISTS(SELECT 1 FROM pragma_foreign_key_check) THEN 'NATIVE_TRIAL_0024_FORWARD_OK' ELSE 'NATIVE_TRIAL_0024_FORWARD_BAD' END AS result" > "$upgrade/trial-final.log"
+if ! grep -q 'NATIVE_TRIAL_0024_FORWARD_OK' "$upgrade/trial-final.log"; then
+  echo "Native D1 0024 forward migration failed post-cancellation acceptance" >&2
+  exit 1
+fi
+echo "PASS: native populated D1 0022 -> 0023 -> 0024, booked withdrawal denied, cancellation then closure accepted"
+
 # Issue #286: exercise the exact pen+highlight draft INSERT in native local D1,
 # not Python's SQLite engine. Fixture is synthetic and this state is disposable.
 echo "Checking native D1 teacher marked-homework write (synthetic only)"
