@@ -111,4 +111,16 @@ class TeacherDraftD1(unittest.TestCase):
     self.draft(marks=marks,draft=str(n)+'145a6fa-1d94-4994-91e7-5819692ba3b6')
   self.assertEqual(self.db.execute('SELECT count(*) FROM teacher_assignment_draft_versions').fetchone(),(0,))
 
+ def test_hex_color_guard_rejects_bad_length_prefix_and_nonhex(self):
+  # D1's SQLite GLOB complexity cap requires a short negated-character test.
+  # The migration must still enforce the exact #RRGGBB contract.
+  for n,color in enumerate(('#fff','#0000000','0000000','#gg0000','#00000!'),1):
+   mark={**PEN_MARK,'payload':{**PEN_MARK['payload'],'color':color}}
+   with self.subTest(color=color),self.assertRaisesRegex(
+     sqlite3.IntegrityError,'DRAFT_MARKS_INVALID'):
+    self.draft(marks=[mark],
+     draft=str(n)+'145a6fa-1d94-4994-91e7-5819692ba3b6')
+  self.assertEqual(self.db.execute(
+   'SELECT count(*) FROM teacher_assignment_draft_versions').fetchone(),(0,))
+
 if __name__=='__main__':unittest.main()
