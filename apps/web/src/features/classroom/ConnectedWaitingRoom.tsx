@@ -107,6 +107,7 @@ export function ConnectedWaitingRoom(){
  const [presence,setPresence]=useState<Presence|null>(null);
  const [joined,setJoined]=useState(false);
  const [lessonPhase,setLessonPhase]=useState<'scheduled'|'live'|'completed'|'cancelled'|null>(null);
+ const [lifecycleRefresh,setLifecycleRefresh]=useState(0);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [sharedPage,setSharedPage]=useState<SharedPage|null>(null);
@@ -198,7 +199,7 @@ export function ConnectedWaitingRoom(){
    finally{pagePollBusy.current=false;}
   };
   void poll();
-  const timer=window.setInterval(()=>void poll(),2_000);
+  const timer=window.setInterval(()=>void poll(),1_000);
   const visible=()=>{if(document.visibilityState==='visible')void poll();};
   document.addEventListener('visibilitychange',visible);
   return()=>{enabled=false;window.clearInterval(timer);document.removeEventListener('visibilitychange',visible);};
@@ -228,7 +229,7 @@ export function ConnectedWaitingRoom(){
    }finally{inkPollBusy.current=false;}
   };
   void poll();
-  const timer=window.setInterval(()=>void poll(),2_000);
+  const timer=window.setInterval(()=>void poll(),1_000);
   const visibility=()=>{if(document.visibilityState==='visible')void poll();};
   document.addEventListener('visibilitychange',visibility);
   return()=>{enabled=false;window.clearInterval(timer);
@@ -325,13 +326,13 @@ export function ConnectedWaitingRoom(){
    <div className={barCss.actions}>
     <LiveLessonLifecycle role={identity.role} lessonId={identity.lessonId}
       learnerId={identity.learnerId} joined={joined}
-      bothPresent={presence?.bothPresent===true}
+      bothPresent={presence?.bothPresent===true} refreshVersion={lifecycleRefresh}
       onPhase={phase=>{setLessonPhase(phase);
        if(phase==='completed'||phase==='cancelled')setJoined(false);}}/>
     <button type="button" className={barCss.start}
      disabled={busy||status!=='ready'||lessonPhase==='completed'||lessonPhase==='cancelled'}
      onClick={()=>void refresh(joined?'leave':'join')}>
-     {busy?'جارٍ التأكيد…':joined?'مغادرة الحصة':'الانضمام لغرفة الانتظار'}
+     {busy?'جارٍ التأكيد…':joined?'مغادرة الحصة':lessonPhase==='live'?'العودة للحصة':'الانضمام لغرفة الانتظار'}
     </button>
     {role==='teacher'&&<button type="button" className={barCss.iconAction}
      aria-label="الأخطاء والتقييم" aria-expanded={panelOpen} aria-controls="lesson-notes"
@@ -358,11 +359,13 @@ export function ConnectedWaitingRoom(){
       </div>
       <p role="status" className={liveCss.menuStatus}>
        {status==='loading'?'جارٍ التحقق من الغرفة…':joined?
-        (presence?.bothPresent?'الطرفان في غرفة الانتظار':'بانتظار الطرف الآخر'):
+        (presence?.bothPresent?(lessonPhase==='live'?'الطرفان متصلان بالحصة الجارية':'الطرفان موجودان؛ الشيخ يقدر يبدأ الحصة'):'بانتظار الطرف الآخر'):
         'انضم أولًا لطلب تصريح الصوت والفيديو.'}
       </p>
-      <button type="button" disabled={busy} onClick={()=>void refresh('snapshot')}>
-       تحديث حالة الطرفين
+      <button type="button" disabled={busy} onClick={()=>{
+       void refresh('snapshot');setLifecycleRefresh(n=>n+1);
+      }}>
+       تحديث حالة الحصة والطرفين
       </button>
       <small>الشيخ وحده يبدأ الحصة رسميًا وينهيها. الكاميرا والمايك لا يعملان تلقائيًا؛ التوقيت موثق على D1.</small>
      </div>
@@ -390,6 +393,9 @@ export function ConnectedWaitingRoom(){
       <h2>المصحف المشترك</h2></div>
      <span className={css.quranStatus}>{sharedPage?'يتبع الطالب الشيخ · إصدار '+sharedPage.revision:'بانتظار تأكيد الصفحة من السيرفر'}</span>
     </header>
+    {lessonPhase==='live'&&!inkWriteAuthorized&&<p className={liveCss.error}
+     role="status">الرسم مقفول في هذه البيئة لأن حفظ علامات الحصة الدائم لم يُعتمد بعد.
+     يمكنك متابعة القراءة وتحديد الآيات، لكن لا توجد علامة محفوظة بدون تأكيد الخادم.</p>}
     <div className={css.toolbar} role="toolbar" aria-label="أدوات المصحف">
      <div className={css.inkPalette} aria-label="القلم والألوان">
       <div className={css.toolGroup}>
@@ -397,7 +403,7 @@ export function ConnectedWaitingRoom(){
         {id:'marker',symbol:'▰',name:'تظليل'},{id:'eraser',symbol:'⌫',name:'ممحاة'}] as const).map(item=>
         <button key={item.id} type="button"
          title={item.id==='off'?'تحديد آية للقراءة فقط':
-          canDraw?item.name:item.name+' متاح للطرفين أثناء الحصة مع تفعيل الحفظ الدائم'}
+          canDraw?item.name:item.name+' غير مفعل حتى يؤكد الخادم صلاحية الرسم والحفظ الدائم'}
          aria-label={item.name} aria-pressed={inkMode===item.id}
          disabled={item.id!=='off'&&!canDraw}
          onClick={()=>setInkMode(item.id)}>
