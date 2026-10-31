@@ -1,3 +1,7 @@
+## #244 signed trial cancellation→availability refresh regression (candidate)
+- SSR smoke: connected learner lessons render only signed loading/availability states, not local booking preview fixtures.
+- Dev E2E still required: book a future trial on synthetic learner A, cancel it >=6h ahead, verify the same open Student Lessons page automatically re-queries D1 availability and offers a valid rebooking slot without manually clicking Update. Confirm cancellation failure does NOT reset eligibility; sibling B never inherits learner A's slots/booking; retries and refresh do not invent success. No payment/provider/media changes. CI alone cannot prove this React effect.
+
 ## #252 ink snapshot truthfulness regression (candidate; no runtime acceptance)
 - A DO snapshot must never claim `persistence:'saved'` solely from an empty outbox: historical room-only marks may not have a D1 event. Pending D1 delivery must remain `pending`; only a confirmed append/replay may report `saved`.
 - Targeted `classroom-cumulative-delivery.test.ts` covers both a failed D1 write with pending snapshot and a legacy DO-only stroke with feature gate off/on. Run exact-head GitHub Verify and retain #252 open pending signed Dev two-role test and backfill reconciliation.
