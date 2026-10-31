@@ -56,7 +56,10 @@ export function TeacherAssignmentInkEditor({learnerId,initial,existing,onCancel,
   const other=marks.filter(m=>m.page!==page||(m.kind!=='pen'&&m.kind!=='marker'));
   const next:TeacherInkMark[]=strokes.map(s=>({
    id:s.id.slice(0,40),kind:s.kind,page:s.page,surah:null,ayah:null,
-   payload:{color:s.color,width:s.width,points:s.points}
+   payload:{color:s.color,width:s.width,
+    // Pointer input may contain 2500 samples; the D1 draft cap is 600.
+    points:s.points.length<=600?s.points:Array.from({length:600},(_,i)=>
+      s.points[Math.round(i*(s.points.length-1)/599)]!)}
   }));
   if(next.length+other.length>24){setError('الحد الأقصى 24 علامة للواجب؛ احذف بعض العلامات.');return;}
   setMarks([...other,...next]);setDirty(true);setSuccess('');setError('');
