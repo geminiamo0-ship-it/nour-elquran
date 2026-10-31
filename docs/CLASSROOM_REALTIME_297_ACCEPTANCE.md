@@ -14,6 +14,14 @@ The owner requests effectively instant shared page/verse, pen, marker, correctio
 - Default OFF on both sides: Worker env `NOOR_REALTIME_HINTS_ENABLED=true` and frontend build `NEXT_PUBLIC_NOOR_REALTIME_HINTS_ENABLED=true` are **both** necessary. No new runtime capability is enabled by merging source alone. `NOOR_CUMULATIVE_INK_ENABLED` remains OFF unless its separate durable-write rollout is approved.
 - No Production writes, no secret/body/cookie forwarding, and no LiveKit recording.
 
+## Subsequent development implemented in this PR (still unmerged and OFF)
+
+- Bounded provisional ink frames: `start/move/end/cancel`, sampled 32ms pointer updates, at most 64 normalized points/frame, no canonical save claims, no persistent DO stroke writes from the WebSocket.
+- Sender identity is always the authenticated DO socket attachment; server requires the **separate cumulative ink gate**, live D1 lesson status, fresh acting teacher/learner grant, active 25s room lease, current shared page, and a 20ms per-socket move-frame limit.
+- Peer receives only a temporary drawing overlay; existing signed final POST retains all points, CAS/idempotency and durable outbox reconciliation. Out-of-order deltas are dropped and fixed by the final signed GET snapshot. Preview expires without a save receipt.
+- One-way `presence` revision hints after join/leave; `corrections` revision hints sent **only to authorized Sheikh sockets**, never to learner or sibling. Notes text remains Sheikh-private.
+- A separate **frontend opt-in** `NEXT_PUBLIC_NOOR_REALTIME_PREVIEW_ENABLED=true` is required in addition to the existing realtime hints frontend/Worker flags. Backend previews also require `NOOR_CUMULATIVE_INK_ENABLED=true`; no flag is turned on in this PR. Until approved, the legacy behavior remains unchanged.
+
 ## Gates before isolated Dev activation
 
 1. Independent reviewer examines session+origin protection, Worker->DO actor derivation, authorization expiry/revocation, DoS/reconnect, and hibernated WebSocket API compatibility.
@@ -24,9 +32,9 @@ The owner requests effectively instant shared page/verse, pen, marker, correctio
 
 ## Required follow-up to achieve the full user experience
 
-- **In-flight ink previews:** bounded, rate-limited pointer segments during pen movement (20–40ms batch), local immediate stroke rendering, per-stroke identity/sequence, backpressure, reconnection repair. A provisional preview is never a persisted ink ledger entry; finalize through signed DO CAS and outbox.
+- **In-flight ink previews** now have a bounded first implementation; pending Dev WebSocket transport validation, 2-device frame telemetry, sub-100ms optimization, and adversarial session-revocation load tests. A provisional preview is never a persisted ink ledger entry; finalize through signed DO CAS and outbox.
 - **Page/verse:** send the authoritative validated state itself after commit, not only a revision hint and second GET when feasible.
-- **Notes/corrections/Start-End/presence:** scoped event topics; student-private notes NEVER sent to Sheikh unless explicit share permission, report versions remain immutable; lifecycle state from committed D1 only.
+- **Notes/corrections/Start-End/presence:** corrections private Sheikh-only and join/leave presence hints are now included. Still need post-D1-commit Start/End notifications, robust attendee departure signaling on expiry, bounded notes and all other safe scoped events. Student-private notes NEVER sent to Sheikh unless explicitly shared; report versions remain immutable.
 - **A/V:** retain LiveKit Cloud for independent camera/microphone, consent, participant removal and reconnection.
 - **Recovery:** no silent loss after reload, disconnected devices get signed snapshot/full revision reconciliation; always report pending vs saved clearly.
 
