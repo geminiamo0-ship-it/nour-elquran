@@ -14,13 +14,8 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     try {
       const { handleAuthenticated } = await import('./auth/routes.ts');
       return await handleAuthenticated(request, env, requestId);
-    } catch (error) {
-      // Temporary local-only diagnostic on the synthetic CI branch; remove
-      // before review/merge. Never log request bodies, auth tokens or actors.
-      if (env.AUTH_LOCAL_DEV === 'true') console.error('NOOR_LOCAL_QURAN_DIAGNOSTIC',
-        error instanceof Error ? error.name + ': ' + error.message : 'unknown');
-      return reply(503, { code: 'AUTH_UNAVAILABLE', retryable: true,
-        localDiagnostic: error instanceof Error ? error.message.slice(0,250) : 'unknown' }, requestId);
+    } catch {
+      return reply(503, { code: 'AUTH_UNAVAILABLE', retryable: true }, requestId);
     }
   }
   if ((path !== '/ready' && path !== '/readyz') || request.method !== 'GET') {
