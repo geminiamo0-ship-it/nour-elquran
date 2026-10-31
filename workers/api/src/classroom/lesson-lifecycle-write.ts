@@ -7,6 +7,7 @@ import {forwardVerifiedPresence} from './presence.ts';
 import {wakeLessonMediaReconciliation} from './media-enforcement.ts';
 import {forwardCorrections,type Correction} from './live-corrections.ts';
 import {applyTeacherReport} from '../lesson-reports.ts';
+import {fenceLessonCumulativeInk} from './quran-ink-end-fence.ts';
 
 const id=/^[A-Za-z0-9-]{1,128}$/;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -134,6 +135,13 @@ export async function teacherLifecycleAction(env:Env,subject:string,lessonId:str
   if(action==='start'&&row.status!=='scheduled')return {status:409,code:'LESSON_STATE_CONFLICT'};
   if(now<row.startsAtMs)return {status:409,code:'LESSON_NOT_STARTED_YET'};
   if(!db.batch)return {status:503,code:'ATOMIC_D1_BATCH_REQUIRED'};
+  // Dev-gated canonical ink: serialize the last DO edit with this End fence
+  // BEFORE committing D1 completion. Pending/unacknowledged Quran strokes
+  // keep the lesson open, never become a silent 'completed' report.
+  if(action==='end'&&env.NOOR_CUMULATIVE_INK_ENABLED==='true'){
+   const fence=await fenceLessonCumulativeInk(env,lessonId,row.learnerId,subject);
+   if(fence.status!==200)return {status:fence.status,code:fence.code};
+  }
   if(action==='start'){
    const p=await forwardVerifiedPresence(env,{lessonId,learnerId:row.learnerId,
     actorSubject:subject,role:'teacher'},'heartbeat');
