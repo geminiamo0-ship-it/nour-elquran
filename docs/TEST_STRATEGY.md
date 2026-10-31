@@ -1,3 +1,7 @@
+## #244 native D1 populated 0023→0024 migration regression (candidate)
+- The local Wrangler smoke must build a populated 0022 database **without** accidentally applying future 0024, apply 0023 with the historical Sheikh ink draft, then seed a confirmed trial before 0024 and apply 0024. The test requires `TRIAL_SLOT_ALREADY_BOOKED` on attempted withdrawal, no closure/lesson change on rejection, then a real owner cancellation event followed by permitted staff closure, with FK and migration replay checks.
+- Source paths: `scripts/fixtures/trial-slot-native-pre0024.sql`, `scripts/cloudflare-local-smoke.sh`. All actors/data are synthetic, D1 is disposable local. **Exact-head Verify pending**; no Cloudflare Dev or Production assertion. Keep #244 OPEN and do not deploy 0024 until independent review and #286 signed Dev 0023 acceptance.
+
 ## #244 combined 0023→0024 source gate (2026-10-31; candidate)
 - With P0 ink migration 0023 merged into main, apply this branch's forward-only 0024 via full sorted migrations. Python SQLite asserts both schema markers and all three guards; native Wrangler/D1 CI must run all migrations too. Signed remote Dev 0023 upgrade and signed staff/owner 0024 withdrawal are **not** established by source tests. Independent review, remote Dev acceptance and production permission remain separate.
 
