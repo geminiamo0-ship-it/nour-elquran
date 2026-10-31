@@ -196,6 +196,28 @@ CREATE TRIGGER learner_quran_event_no_update BEFORE UPDATE ON learner_quran_even
 BEGIN SELECT RAISE(ABORT,'QURAN_LEDGER_EVENTS_IMMUTABLE'); END;
 CREATE TRIGGER learner_quran_event_no_delete BEFORE DELETE ON learner_quran_events
 BEGIN SELECT RAISE(ABORT,'QURAN_LEDGER_EVENTS_IMMUTABLE'); END;
+-- A projection UPDATE is legal only as the exact next immutable event.
+-- A direct actor cannot forge a version/status/payload change without its event.
+CREATE TRIGGER learner_quran_current_update_guard BEFORE UPDATE ON learner_quran_current
+BEGIN
+ SELECT RAISE(ABORT,'QURAN_LEDGER_PROJECTION_IMMUTABLE') WHERE
+  NEW.learner_id IS NOT OLD.learner_id OR NEW.item_id IS NOT OLD.item_id
+  OR NEW.edition_id IS NOT OLD.edition_id OR NEW.page IS NOT OLD.page
+  OR NEW.surah IS NOT OLD.surah OR NEW.ayah IS NOT OLD.ayah
+  OR NEW.word_index IS NOT OLD.word_index OR NEW.kind IS NOT OLD.kind
+  OR NEW.audience IS NOT OLD.audience OR NEW.author_subject IS NOT OLD.author_subject
+  OR NEW.author_role IS NOT OLD.author_role OR NEW.origin_type IS NOT OLD.origin_type
+  OR NEW.origin_id IS NOT OLD.origin_id OR NEW.revision<>OLD.revision+1
+  OR NOT EXISTS(
+   SELECT 1 FROM learner_quran_events e
+   WHERE e.id=NEW.latest_event_id AND e.id<>OLD.latest_event_id
+     AND e.learner_id=OLD.learner_id AND e.item_id=OLD.item_id
+     AND e.edition_id=OLD.edition_id AND e.page=OLD.page
+     AND e.expected_revision=OLD.revision AND e.at_ms=NEW.updated_at_ms
+     AND ((e.action='hide' AND NEW.visible=0 AND NEW.payload_json=OLD.payload_json)
+       OR (e.action='put' AND NEW.visible=1 AND e.payload_json=NEW.payload_json))
+  );
+END;
 -- The projection is modified only by the event trigger; never apply client SQL.
 -- A future trusted repair/replay path must verify the event log first.
 CREATE TRIGGER learner_quran_current_no_delete BEFORE DELETE ON learner_quran_current
