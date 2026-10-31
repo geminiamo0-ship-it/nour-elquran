@@ -91,6 +91,24 @@ if ! grep -q 'NATIVE_LEDGER_INVALID_COLOR_REJECTED' "$state/ledger-invalid-check
   exit 1
 fi
 
+# #286: missing point coordinates must not pass native ledger validation as NULL.
+echo "Checking native D1 rejects omitted canonical pen point x (synthetic only)"
+if "${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/learner-quran-native-d1-missing-point.sql > "$state/ledger-missing-point.log" 2>&1; then
+  echo "Native D1 unexpectedly accepted a missing canonical point coordinate" >&2
+  exit 1
+fi
+if ! grep -q 'QURAN_LEDGER_POINT_DENIED' "$state/ledger-missing-point.log"; then
+  echo "Native D1 missing point failed for an unexpected reason" >&2
+  exit 1
+fi
+"${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --command "SELECT CASE WHEN (SELECT count(*) FROM learner_quran_events WHERE id='native-missing-point-event')=0 AND (SELECT count(*) FROM learner_quran_current WHERE item_id='native-missing-point-item')=0 THEN 'NATIVE_LEDGER_MISSING_POINT_REJECTED' ELSE 'NATIVE_LEDGER_MISSING_POINT_PERSISTED' END AS result" > "$state/ledger-missing-point-check.log"
+if ! grep -q 'NATIVE_LEDGER_MISSING_POINT_REJECTED' "$state/ledger-missing-point-check.log"; then
+  echo "Native D1 missing canonical point left an unexpected event or projection" >&2
+  exit 1
+fi
+
 echo "Starting LOCAL Worker + D1 (no publish)"
 "${wrangler[@]}" dev --local --ip 127.0.0.1 --port 8793 --persist-to "$state" > "$state/worker.log" 2>&1 &
 worker_pid=$!
