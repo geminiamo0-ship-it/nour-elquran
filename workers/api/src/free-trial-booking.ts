@@ -82,6 +82,7 @@ export async function listOwnerTrialSlots(db:CoreDatabase,subject:string,learner
  JOIN teachers t ON t.id=s.teacher_id
  WHERE t.status='active' AND t.qualified=1
  AND s.starts_at_ms>=? AND s.ends_at_ms<=?
+ AND NOT EXISTS(SELECT 1 FROM trial_slot_closure_events closed WHERE closed.slot_id=s.id)
  AND NOT EXISTS(SELECT 1 FROM lessons l
   WHERE l.status<>'cancelled' AND
    (l.actual_teacher_id=s.teacher_id OR l.learner_id=?)
@@ -129,4 +130,43 @@ export async function bookOwnerTrial(db:CoreDatabase,subject:string,learnerId:st
   throw e;
  }
  return {status:201,code:'TRIAL_BOOKED',lessonId} as const;
+}
+
+export type TrialCloseCommand=Readonly<{operationId:string;reason:string}>;
+export function parseTrialClose(raw:unknown):TrialCloseCommand|null{
+ if(!isObject(raw)||!exact(raw,['operationId','reason'])||
+  typeof raw.operationId!=='string'||!uuid.test(raw.operationId)||
+  typeof raw.reason!=='string'||raw.reason.trim().length<8||
+  raw.reason.trim().length>500)return null;
+ return {operationId:raw.operationId,reason:raw.reason.trim()};
+}
+type Closed={slot_id:string;actor_subject:string;reason:string};
+export async function closeTrialSlot(db:CoreDatabase,subject:string,slotId:string,
+ raw:unknown,now=Date.now()){
+ const cmd=parseTrialClose(raw);
+ if(!cmd||!uuid.test(slotId))
+  return {status:400,code:'INVALID_TRIAL_CLOSE'} as const;
+ if(!await canManageTeachers(db,subject))
+  return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
+ const find=()=>db.prepare(`SELECT slot_id,actor_subject,reason FROM trial_slot_closure_events
+  WHERE operation_id=?`).bind(cmd.operationId).first<Closed>();
+ const replay=(p:Closed)=>p.slot_id===slotId&&p.actor_subject===subject&&
+  p.reason===cmd.reason?
+  {status:200,code:'TRIAL_SLOT_ALREADY_CLOSED'} as const:
+  {status:409,code:'TRIAL_OPERATION_CONFLICT'} as const;
+ const old=await find();
+ if(old)return replay(old);
+ try{
+  await db.prepare(`INSERT INTO trial_slot_closure_events(
+    id,operation_id,slot_id,actor_subject,reason,at_ms)
+    VALUES(?,?,?,?,?,?)`).bind(crypto.randomUUID(),cmd.operationId,slotId,
+      subject,cmd.reason,now).run();
+ }catch(e){
+  const raced=await find();
+  if(raced)return replay(raced);
+  if(e instanceof Error&&/constraint|TRIAL_|FOREIGN KEY|UNIQUE/i.test(e.message))
+   return {status:409,code:'TRIAL_SLOT_CLOSE_DENIED'} as const;
+  throw e;
+ }
+ return {status:200,code:'TRIAL_SLOT_CLOSED'} as const;
 }
