@@ -1,3 +1,9 @@
+## 2026-10-31 / #252B — candidate DO → D1 durable classroom ink (PR #263; CI/Dev not yet accepted)
+- Branch `feat/252-do-d1-durable-ink-fence`; PR https://github.com/geminiamo0-ship-it/nour-elquran/pull/263 against main. Implements transactional DO page+outbox+alarm, D1 canonical append with deterministic IDs/actor provenance, retry and no saved ACK before canonical commit; live lesson phase gate.
+- Signed Worker End `prepare` drains outstanding queue and atomically fences new ink before D1 lifecycle End. A failed D1 End releases the fence, successful End confirms it. Student public POST and toolbar remain DISABLED.
+- Focused Node harness adds D1-write outage, DO-restart idempotent alarm replay, pending-End refusal and post-End write refusal. Exact-head Verify **pending**; prior run #41151829823 had a strict nullable-type error now fixed. Do NOT call source or Dev accepted before current check result. Runbook: `docs/CLASSROOM_DURABLE_INK_252B_DEV_RUNBOOK.md`.
+- Next: verify latest exact head 4/4, repair regressions, real Cloudflare Dev signed two-browser D1 proof, then merge after acceptance. No Production rollout, no historical room ink backfill, no global Reader/Notebook projection. Keep #252/#250 OPEN.
+
 ## 2026-10-31 Signed Student & Sheikh portal Dev acceptance — PASS (scope limited)
 
 ## CURRENT NEW PRODUCT APPROVAL — 2026-10-31 / ADR 0009 / #250
