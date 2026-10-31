@@ -1,3 +1,7 @@
+## 2026-10-31 #286 P0 — unassigned sibling draft denial native D1 candidate
+- PR #288 branch `test/286-native-d1-ink-draft-repro`: new synthetic negative fixture attempts a Sheikh highlight draft for an unassigned sibling under the same owner. `scripts/cloudflare-local-smoke.sh` requires `DRAFT_ACCESS_DENIED`, no draft row and no sibling canonical event/current mark. Commits `5a1e1c1b` and `2b683710`; exact-head CI pending at handoff.
+- NEXT EXACT ACTION: inspect Verify on current PR head; if green, obtain independent review and apply migration 0023 only on approved isolated Dev, rerun signed two-role teacher draft save/replay→publish→owner Quran readback with sibling denial. No Production/paid/media/WhatsApp changes; `NOOR_CUMULATIVE_INK_ENABLED` OFF; do not close #286 on local tests alone.
+
 ## Next action — #286 P0 native D1 sibling isolation regression (2026-10-31)
 - PR #288 branch `test/286-native-d1-ink-draft-repro` now includes synthetic same-account sibling in the native Wrangler D1 draft fixture; publication of one learner's Sheikh pen+highlight marks must leave the sibling's canonical event/current tables empty. Local smoke checks `NATIVE_DRAFT_SIBLING_ISOLATED_OK`. Commits `2b669476` and `8c0d849e` are source changes; CI on final head is not yet accepted.
 - Prior exact-head Verify [41188758711](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41188758711) passed 4/4 for `552bddae`, not the sibling addition.
