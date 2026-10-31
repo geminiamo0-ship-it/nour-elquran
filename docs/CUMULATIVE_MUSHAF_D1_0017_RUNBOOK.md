@@ -1,3 +1,9 @@
+## Native D1 compatibility discovered by exact-head CI — forward migration 0018
+
+Initial A3 Verify [#41150302660](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41150302660) failed in **native local Better Auth/D1 HTTP smoke**: the existing migration 0017 six-class hex-color `GLOB` raised `D1_ERROR: LIKE or GLOB pattern too complex` on a legitimate self-study pen event. This was invisible to the prior Python SQLite-only schema tests because no public write path existed. **Do not interpret this as an auth outage.**
+
+New additive `0018_quran_ledger_color_guard.sql` replaces only the ledger insert guard trigger, preserving the same actor, origin, anchor, revision and projection constraints; hex is checked by exact length, `#` prefix and a short negative-class `GLOB`. Historical 0017 is unchanged and all event/current rows remain intact. A Python SQL regression covers valid/invalid hex, while the real local Wrangler smoke proves actual D1 runtime behavior. Final exact-head CI must still pass before review/merge; no Production migration was run.
+
 ## A3 candidate — signed owner-only self-study canonical write (#251)
 
 Draft branch `feat/251-owner-cumulative-self-study-write` adds **POST** to the already signed owner `/v1/me/learners/:learnerId/cumulative-quran` endpoint. The Worker derives the account subject from Better Auth, checks exact learner ownership and schema version, validates the full bounded event, and **only accepts `originType=self_study`**. The browser cannot assert a role, actor, learner, visibility or shared classroom/assignment origin. Existing Origin/CSRF protection applies. D1 event insertion and current projection are transactional via migration 0017 triggers; return an ACK only after D1 confirms the write. Responses omit internal `authorSubject`. The old `/mushaf` private records are not migrated or removed.
