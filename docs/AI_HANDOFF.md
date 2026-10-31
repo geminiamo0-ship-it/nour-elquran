@@ -1,6 +1,7 @@
 ## 2026-10-31 — #244 booked trial slot closure safety candidate
 - Current branch: `fix/244-reject-closing-booked-trial-slot-20261031`, based on main `5d8bc59b584f31d7cb961abbe95d3e485db6d941`.
 - Concrete defect: `trial_slot_close_guard` in 0021 allowed closing a published slot after a live booking, despite explicit unfilled-only semantics. 0023 replaces only that trigger, retaining staff and future-time checks, and denies closure while any linked lesson is non-cancelled. Test covers booked denial, no phantom closure, explicit staff cancellation, then valid withdrawal.
+- Draft PR: https://github.com/geminiamo0-ship-it/nour-elquran/pull/280. First CI detected PR description missing the exact `Refs #N` syntax; PR body was corrected to `Refs #244, #155` before this follow-up commit. Verify the **new** exact HEAD, not the first failed run.
 - Next: inspect exact-head GitHub Verify, resolve any failures, independent PR review, then signed two-account Cloudflare Dev test before merge/issue acceptance. Do not change Production, payment/WhatsApp/audio policy or `NOOR_CUMULATIVE_INK_ENABLED` (OFF). #244 and #155 stay OPEN.
 
 ## #252 classroom snapshot ACK safety — 2026-10-31 (branch candidate)
