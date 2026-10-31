@@ -54,6 +54,24 @@ if ! grep -q 'NATIVE_DRAFT_INVALID_COLOR_REJECTED' "$state/draft-invalid-check.l
   exit 1
 fi
 
+# #286: SQLite NULL must not bypass the required mark-color guard.
+echo "Checking native D1 rejects omitted teacher ink color (synthetic only)"
+if "${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/teacher-draft-native-d1-missing-color.sql > "$state/draft-missing-color.log" 2>&1; then
+  echo "Native D1 unexpectedly accepted a missing teacher ink color" >&2
+  exit 1
+fi
+if ! grep -q 'DRAFT_MARKS_INVALID' "$state/draft-missing-color.log"; then
+  echo "Native D1 missing color failed for an unexpected reason" >&2
+  exit 1
+fi
+"${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --command "SELECT CASE WHEN (SELECT count(*) FROM teacher_assignment_draft_versions WHERE draft_id='e145a6fa-1d94-4994-91e7-5819692ba3b6')=0 THEN 'NATIVE_DRAFT_MISSING_COLOR_REJECTED' ELSE 'NATIVE_DRAFT_MISSING_COLOR_PERSISTED' END AS result" > "$state/draft-missing-color-check.log"
+if ! grep -q 'NATIVE_DRAFT_MISSING_COLOR_REJECTED' "$state/draft-missing-color-check.log"; then
+  echo "Native D1 missing color left an unexpected draft row" >&2
+  exit 1
+fi
+
 # #286: canonical learner ledger uses the same D1-safe color guard as drafts.
 # A malformed self-study event must fail without an event or current projection.
 echo "Checking native D1 rejects invalid canonical Quran ink color (synthetic only)"
