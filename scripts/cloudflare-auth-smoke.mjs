@@ -168,6 +168,27 @@ assert.equal((await call(mushafPath+'?page=0',{cookie:cookieA})).response.status
 assert.equal((await call(mushafPath,{method:'POST',cookie:cookieA,
  body:{...note,operationId:randomUUID(),actorAuthSubject:a.data.user.id}})).response.status,400);
 console.log('Native private Quran: verified learner save/reload, pen, marker, note anchor, bookmark, position, tombstone, CAS, replay, CSRF and cross-owner denial passed');
+// ADR 0009 / #251 A2: real same-origin Better Auth + D1 composite page read.
+// Old private marks remain owner-only; no public canonical write API yet.
+const cumulativePath='/v1/me/learners/'+learner+'/cumulative-quran';
+const cumulative=await call(cumulativePath+'?page=1',{cookie:cookieA});
+assert.equal(cumulative.response.status,200,JSON.stringify(cumulative.data));
+assert.equal(cumulative.data.code,'QURAN_COMPOSITE_READ');
+assert.equal(cumulative.data.learnerId,learner);
+assert.deepEqual(cumulative.data.current,[]);
+assert(cumulative.data.legacyPrivate.some(x=>x.itemId==='note-1-1-0'));
+assert(cumulative.data.legacyPrivate.some(x=>x.itemId==='stroke-1'));
+assert.equal((await call(cumulativePath+'?page=1',{cookie:cookieB})).response.status,404);
+assert.equal((await call(cumulativePath+'?page=1')).response.status,401);
+assert.equal((await call(cumulativePath+'?page=0',{cookie:cookieA})).response.status,400);
+assert.equal((await call(cumulativePath+'?page=1&index=1',{cookie:cookieA})).response.status,400);
+assert.equal((await call(cumulativePath,{method:'POST',cookie:cookieA,body:{action:'put'}})).response.status,405);
+const teacherOverlay='/v1/teacher/learners/'+learner+'/cumulative-quran';
+assert.equal((await call(teacherOverlay+'?page=1',{cookie:cookieA})).response.status,404);
+assert.equal((await call(teacherOverlay+'?page=1')).response.status,401);
+assert.equal((await call(teacherOverlay,{method:'POST',cookie:cookieA,body:{action:'put'}})).response.status,405);
+console.log('Native cumulative Quran: owner legacy+new composite, foreign 404, unauth 401, invalid page 400, no write route, teacher-private isolation PASS');
+
 
 assert.equal((await call('/v1/learners/'+learner,{cookie:cookieB,headers:{'x-account-id':'forged-owner-a'}})).response.status,404);
 assert.equal((await call('/v1/learners/'+learner,{headers:{authorization:'Bearer forged','x-user-id':a.data.user.id}})).response.status,401);

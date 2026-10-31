@@ -6,6 +6,7 @@ import { ownerAccount } from './accounts.ts';
 import { getOwnedLearner, listOwnedLearners } from '../owner-learners.ts';
 import { applyLearnerProfileAction, parseLearnerProfileAction } from '../learner-profile-actions.ts';
 import {applyPrivateMushaf,parsePrivateMushafOp,readPrivateMushaf} from '../private-mushaf.ts';
+import {readOwnerCumulativePage,readTeacherSharedPage} from '../learner-quran-ledger.ts';
 import { listOwnedLearnerLessons, listVerifiedTeacherLessons } from '../lesson-calendar.ts';
 import { listVerifiedTeacherLearners } from '../teacher-roster.ts';
 import {readOwnerPlan,readTeacherPlan,writeTeacherPlan,parsePlanAction} from '../academic-plans.ts';
@@ -173,6 +174,31 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
     const result=await readOwnerPlan(db,authSubject,ownedPlanMatch[1]!);
     const {status,...body}=result;
     return reply(status,body,requestId);
+  }
+  // ADR 0009 / #251 A2: authenticated cumulative reader only. The old
+  // student-private Mushaf is included ONLY for its verified owner; teachers
+  // cannot read any private marks or claim another account's learner.
+  const cumulative=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/cumulative-quran$/.exec(path);
+  if(cumulative){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const learnerId=cumulative[1]!;
+    if(!await getOwnedLearner(db,{authSubject},learnerId))
+      return reply(404,{code:'NOT_FOUND'},requestId);
+    const params=new URL(request.url).searchParams;
+    if(params.size!==1||!/^([1-9]\d{0,2})$/.test(params.get('page')??'')||
+       Number(params.get('page'))>604)
+      return reply(400,{code:'INVALID_QURAN_PAGE'},requestId);
+    const version=await db.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='learner_quran_ledger'",
+    ).first<{version:number}>();
+    if(version?.version!==1)return reply(503,{code:'QURAN_LEDGER_SCHEMA_NOT_READY'},requestId);
+    const result=await readOwnerCumulativePage(db,authSubject,learnerId,Number(params.get('page')));
+    const {status,...body}=result;
+    // Never expose internal auth subject ids in web read responses.
+    if('current' in body&&Array.isArray(body.current))
+      return reply(status,{learnerId,...body,
+        current:body.current.map(({authorSubject,...safe})=>{void authorSubject;return safe;})},requestId);
+    return reply(status,{learnerId,...body},requestId);
   }
   const mushafMatch = /^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/mushaf$/.exec(path);
   if(mushafMatch){
@@ -394,6 +420,27 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
       ?await wakeActingTeacherMedia(env,output.teacherId)
       :undefined;
     return reply(status,{...data,...(mediaEnforcement?{mediaEnforcement}: {})},requestId);
+  }
+  // Academic annotations: signed teacher may see only currently assigned
+  // shared annotations. Student-private ink/notes are never queried here.
+  const teacherCumulative=/^\/v1\/teacher\/learners\/([a-zA-Z0-9-]{1,128})\/cumulative-quran$/.exec(path);
+  if(teacherCumulative){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const params=new URL(request.url).searchParams;
+    if(params.size!==1||!/^([1-9]\d{0,2})$/.test(params.get('page')??'')||
+       Number(params.get('page'))>604)
+      return reply(400,{code:'INVALID_QURAN_PAGE'},requestId);
+    const version=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='learner_quran_ledger'",
+    ).first<{version:number}>();
+    if(version?.version!==1)return reply(503,{code:'QURAN_LEDGER_SCHEMA_NOT_READY'},requestId);
+    const learnerId=teacherCumulative[1]!;
+    const result=await readTeacherSharedPage(env.DB,session.user.id,learnerId,Number(params.get('page')));
+    const {status,...body}=result;
+    if('items' in body&&Array.isArray(body.items))
+      return reply(status,{learnerId,...body,
+        items:body.items.map(({authorSubject,...safe})=>{void authorSubject;return safe;})},requestId);
+    return reply(status,{learnerId,...body},requestId);
   }
   if(path==='/v1/teacher/assignment-catalog'){
     if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
