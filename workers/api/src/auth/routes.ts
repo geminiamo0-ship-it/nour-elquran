@@ -470,7 +470,7 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   if (!session) return reply(401, { code: 'UNAUTHENTICATED' }, requestId);
   // Same-origin signed, read-only realtime hints. Neither role nor identity
   // comes from a WebSocket payload or client-asserted request headers.
-  const teacherRealtime=/^\\/v1\\/teacher\\/lessons\\/([a-zA-Z0-9-]{1,128})\\/realtime$/.exec(path);
+  const teacherRealtime=new RegExp('^/v1/teacher/lessons/([a-zA-Z0-9-]{1,128})/realtime$').exec(path);
   if(teacherRealtime){
     const lessonId=teacherRealtime[1]!;
     const access=await checkTeacherClassroomAccess(env.DB,session.user.id,lessonId);
@@ -478,7 +478,7 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     return openVerifiedRealtime(env,{lessonId,learnerId:access.learnerId,
       actorSubject:session.user.id,role:'teacher'},request);
   }
-  const learnerRealtime=/^\\/v1\\/me\\/learners\\/([a-zA-Z0-9-]{1,128})\\/lessons\\/([a-zA-Z0-9-]{1,128})\\/realtime$/.exec(path);
+  const learnerRealtime=new RegExp('^/v1/me/learners/([a-zA-Z0-9-]{1,128})/lessons/([a-zA-Z0-9-]{1,128})/realtime$').exec(path);
   if(learnerRealtime){
     const learnerId=learnerRealtime[1]!,lessonId=learnerRealtime[2]!;
     const owner=await ownerAccount(env.DB,session.user.id);
