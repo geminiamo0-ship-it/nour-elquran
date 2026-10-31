@@ -54,6 +54,25 @@ if ! grep -q 'NATIVE_DRAFT_INVALID_COLOR_REJECTED' "$state/draft-invalid-check.l
   exit 1
 fi
 
+# #286: canonical learner ledger uses the same D1-safe color guard as drafts.
+# A malformed self-study event must fail without an event or current projection.
+echo "Checking native D1 rejects invalid canonical Quran ink color (synthetic only)"
+if "${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/learner-quran-native-d1-invalid-color.sql > "$state/ledger-invalid.log" 2>&1; then
+  echo "Native D1 unexpectedly accepted an invalid canonical ink color" >&2
+  exit 1
+fi
+if ! grep -q 'QURAN_LEDGER_PAYLOAD_DENIED' "$state/ledger-invalid.log"; then
+  echo "Native D1 canonical invalid color failed for an unexpected reason" >&2
+  exit 1
+fi
+"${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --command "SELECT CASE WHEN (SELECT count(*) FROM learner_quran_events WHERE id='native-invalid-canonical-event')=0 AND (SELECT count(*) FROM learner_quran_current WHERE item_id='native-invalid-canonical-item')=0 THEN 'NATIVE_LEDGER_INVALID_COLOR_REJECTED' ELSE 'NATIVE_LEDGER_INVALID_COLOR_PERSISTED' END AS result" > "$state/ledger-invalid-check.log"
+if ! grep -q 'NATIVE_LEDGER_INVALID_COLOR_REJECTED' "$state/ledger-invalid-check.log"; then
+  echo "Native D1 invalid canonical ink left an unexpected event or projection" >&2
+  exit 1
+fi
+
 echo "Starting LOCAL Worker + D1 (no publish)"
 "${wrangler[@]}" dev --local --ip 127.0.0.1 --port 8793 --persist-to "$state" > "$state/worker.log" 2>&1 &
 worker_pid=$!
