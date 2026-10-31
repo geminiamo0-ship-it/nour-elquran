@@ -52,7 +52,7 @@ function harness(config:{both?:boolean;authorized?:boolean;noBatch?:boolean;owne
   }}:{}),
  };
  const calls:string[]=[];
- const env:Env={DB:db,NOOR_CUMULATIVE_INK_ENABLED:config.inkEnabled?'true':undefined,
+ const env:Env={DB:db,...(config.inkEnabled?{NOOR_CUMULATIVE_INK_ENABLED:'true'}:{}),
   LESSON_ROOMS:{
   idFromName(x){return x;},
   get(){return {async fetch(req){
