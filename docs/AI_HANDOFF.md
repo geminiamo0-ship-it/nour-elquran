@@ -1,3 +1,7 @@
+## Current #251 A3 continuation — raced D1 insert ACK semantics (2026-10-31)
+- PR #259 branch `feat/251-owner-cumulative-self-study-write` now distinguishes a true new INSERT ACK (201 / COMMITTED) from a raced D1 commit discovered only after an INSERT error (200 / REPLAY). A conflicting raced payload stays 409 / REJECTED. Focused test in `workers/api/tests/learner-quran-ledger.test.ts` simulates both.
+- **NEXT EXACT ACTION:** verify GitHub Actions on the new PR #259 HEAD (all four Verify jobs), review the diff and check compatibility with current main; do not merge or claim Cloudflare Dev acceptance from source tests. #251 remains open for historical bridge/backfill; #252 and #253 still need signed end-to-end rollout.
+
 ## #251 A3 native D1 CI failure triage — 2026-10-31
 
 PR [#259](https://github.com/geminiamo0-ship-it/nour-elquran/pull/259) initially failed native Wrangler D1 smoke on a valid owner pen write: `LIKE or GLOB pattern too complex` in migration 0017 hex validation. Added forward-only migration `0018_quran_ledger_color_guard.sql` replacing only the insert guard with short negative-class hex validation, plus SQLite regression. Temporary local diagnostic response and log modifications were **reverted**, no secret/actor logging remains. Next: inspect exact latest-head GitHub Verify 4 jobs, fix any further failure, then independent review; no merge, staging or Production until gates pass.
