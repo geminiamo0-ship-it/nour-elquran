@@ -1,3 +1,9 @@
+## 2026-11-01 — #317 expired paid-slot proposal read model (PR #318, Draft)
+- Fetched current GitHub main, #317, PR #318, exact prior CI 41346071841 (4/4 PASS on `4e015eae`), required repo guardrails and current Worker/frontend source before editing.
+- New source: both signed owner/staff GET queries derive `expired` when `starts_at_ms <= serverNow+60s` **only if undecided**; settled approvals/rejections override. Staff cannot click approve on an already expired read-model row, and owner is no longer told the request is indefinitely pending. No D1 event mutation or automatic refund.
+- Added Node/Vitest contract tests; new exact-head CI, independent review and signed Cloudflare Dev D1 0031 E2E are not yet accepted. No local workspace run: container cannot resolve github.com for clone. Keep PR Draft and feature flags unchanged.
+- NEXT: inspect GitHub Verify for the new exact HEAD, fix failures, then design staff-published paid-slot offers and guardian verified-slot proposal UI. Obtain independent SQL/auth/privacy review and signed Dev staff/owner/sibling/credit/360×667/390×844 acceptance before merge.
+
 ## 2026-11-01 — #317 follow-up after Verify 41345886728
 - New CI result: [Verify 41345886728](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41345886728) on `e27bce29` has code-quality failure. The SQL approval-time eligibility guard did reject the dequalified Sheikh; failure was the Python regression's accumulated immutable rejection count (1 vs expected 0). A failed subtest then left the Sheikh dequalified and caused a secondary setup error.
 - Commit `11f2bddd` now asserts per-subtest decision count deltas and uses `finally` to restore qualification/status, preserving independence. **Check exact new HEAD Verify**; no pass claim yet. The migration 0031 guard remains source-only and unverified on remote Dev.
