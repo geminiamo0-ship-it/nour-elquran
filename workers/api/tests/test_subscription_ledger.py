@@ -100,7 +100,7 @@ class AcademicLedgerTests(unittest.TestCase):
   second=self.booked(start=T+2*SLOT)
   with self.assertRaisesRegex(sqlite3.IntegrityError,'SUBSCRIPTION_CYCLE_NO_CREDIT'):
    self.spend(second,c)
-  with self.assertRaisesRegex(sqlite3.IntegrityError,'SUBSCRIPTION_CYCLE_NO_CREDIT'):
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'SUBSCRIPTION_LESSON_INELIGIBLE'):
    self.spend(second,c,child='child-b')
   self.db.execute("UPDATE learners SET status='archived' WHERE id='child-a'")
   with self.assertRaisesRegex(sqlite3.IntegrityError,'SUBSCRIPTION_LESSON_INELIGIBLE'):
