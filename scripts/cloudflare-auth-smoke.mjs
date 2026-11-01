@@ -654,8 +654,16 @@ assert.equal((await call(academyOwner,{
 const repriced=await staffAcademy('packages',{...priceCommand,
  operationId:randomUUID(),priceEgp:1900});
 assert.equal(repriced.response.status,201,JSON.stringify(repriced.data));
-const requestSnapshot=(await call(academyOwner,{cookie:cookieA}))
- .data.requests.find(r=>r.id===packageRequest.data.requestId);
+const ownerRequestsAfterPrice=await call(academyOwner,{cookie:cookieA});
+assert.equal(ownerRequestsAfterPrice.response.status,200,
+ JSON.stringify(ownerRequestsAfterPrice.data));
+const requestSnapshot=ownerRequestsAfterPrice.data.requests.find(
+ r=>r.id===packageRequest.data.requestId);
+assert(requestSnapshot,
+ 'Created owner package request is not readable: '+
+ JSON.stringify({returnedId:packageRequest.data.requestId,
+ requests:ownerRequestsAfterPrice.data.requests,
+ saved:packageRequest.data}));
 assert.equal(requestSnapshot.priceEgp,1600,'Historic requested price was repriced');
 const cashCommand={operationId:randomUUID(),learnerId:learner,
  packageVersionId:firstOffer.versionId,requestId:packageRequest.data.requestId,
