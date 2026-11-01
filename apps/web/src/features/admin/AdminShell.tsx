@@ -17,6 +17,12 @@ type ReadState=
  |{phase:'loading'|'denied'|'error';subject:string;session:AccountSession}
  |{phase:'ready';subject:string;session:AccountSession;value:AdminOverview};
 
+/** A fresh sign-in under the same subject must not inherit cached staff data. */
+export function isStaleAdminRead(read:ReadState,session:AccountSession|null):boolean{
+ return read.phase==='idle'||!session||read.subject!==session.user.id||
+  read.session!==session;
+}
+
 function AccessMessage({title,detail,action}:{title:string;detail:string;action?:()=>void}){
  return <section className={css.access} role="status" dir="rtl">
   <span className={css.brandMark} aria-hidden="true">۞</span>
@@ -95,8 +101,7 @@ export function AdminShell(){
  // A stale result from a different account can never render, even before effect cleanup.
  // Session-object identity also invalidates a snapshot when a new login uses
  // the same user ID. AccountProvider creates a fresh session on every refresh.
- if(read.phase==='idle'||read.subject!==subject||read.session!==session||
-  read.phase==='loading')
+ if(isStaleAdminRead(read,session)||read.phase==='loading')
   return <AccessMessage title="جارٍ التحقق من صلاحية الإدارة"
    detail="نراجع جلسة الحساب ومنح الصلاحيات الحالية في D1 قبل عرض أي إحصاءات."/>;
  if(read.phase==='denied')return <AccessMessage
