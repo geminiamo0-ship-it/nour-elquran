@@ -1,3 +1,9 @@
+## #317 paid-slot API acceptance gate — 2026-11-01
+- Unit: signed guardian GET/POST exact allowlist and trusted Worker time, 404 foreign learner, idempotent same-payload replay vs 409 conflicting operation; staff GET/POST deny before any sensitive D1 query, validated permission and immutable staff decision, sanitized expected D1 constraint failures.
+- Native SQLite: apply full migrations through 0031 and verify proposal never spends, staff approval books+spends once, race/overlap/expired/revoked grant/teacher/owner/cycle denial and no partial events. `academy-paid-slot.test.ts` and `test_academy_paid_slot_requests.py`.
+- Isolated Dev: 0031 migration must be staged before source-pinned API, signed guardian A and sibling B + foreign guardian + verified staff + revoked staff; confirm CSRF Origin, 401/403/404, one debit only after staff approval, replay after network uncertainty and no cross-household data. RTL Student Lessons and Admin Requests UI at 360/390/1280 plus touch and reload.
+- Do NOT infer live booking, payment, Production readiness or feature-flag approval from source/CI. Keep #317 OPEN until independent review and signed Dev acceptance.
+
 ## #317 decision chronology regression — 2026-11-01
 - Native SQLite migration 0031: both `approved` and `rejected` decisions timestamped earlier than their guardian request must fail with `ACADEMY_DECISION_PRECEDES_REQUEST`, leaving no decision/lesson/spend; a later legitimate rejection must succeed. Future signed API must generate all audit timestamps server-side. Exact-head GitHub Verify and isolated Dev still required.
 
