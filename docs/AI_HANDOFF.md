@@ -1,3 +1,8 @@
+## 2026-11-01 — #317 paid-slot security test follow-up
+- Prior Draft head `f8d0aa3b8f9caa2240920db5978bc101e3ee6b56` completed [Verify 41337169021](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41337169021) SUCCESS 4/4. Do not transfer that status to a later HEAD.
+- Branch `feat/317-paid-slot-request-ledger` now includes a native regression for post-request learner archival/Sheikh qualification revocation: approval must atomically fail with no lesson/credit debit; explicit staff rejection remains possible. Await exact-head Verify and independent review.
+- Identified product/security gap: guardian can submit arbitrary timestamp within assigned teacher/valid cycle; no server-published **paid** slot availability contract exists. Do not reuse trial slots, enable a fake picker, or merge #318. Next: staff-authored paid availability event + owner-scoped signed options + D1 guard at proposal/approval, tests and Dev E2E. Production untouched.
+
 ## 2026-11-01 — #317 continuation: guardian proposal network contract
 - Reviewed AGENTS/status/plan/security/tests and live PR #318. Previous `d071dc49` Verify [41331326021](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41331326021) completed 4/4 (not current-head evidence after new commits).
 - On existing Draft branch `feat/317-paid-slot-request-ledger`, added `submitPaidSlotProposal` + `parsePaidSlotProposalAck` in `apps/web/src/features/student/paid-slot-requests-client.ts`; strict exact-input/ACK, signed POST, explicit uncertain-network outcome. Added focused Vitest regressions in `paid-slot-requests-client.test.ts` including immutable retries and no false debit.
