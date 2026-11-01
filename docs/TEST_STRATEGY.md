@@ -1,3 +1,6 @@
+## #317 decision chronology regression — 2026-11-01
+- Native SQLite migration 0031: both `approved` and `rejected` decisions timestamped earlier than their guardian request must fail with `ACADEMY_DECISION_PRECEDES_REQUEST`, leaving no decision/lesson/spend; a later legitimate rejection must succeed. Future signed API must generate all audit timestamps server-side. Exact-head GitHub Verify and isolated Dev still required.
+
 ## #317 expired undecided paid-slot request regression (2026-11-01)
 - Native full-migration SQLite must reject a second proposal while the first is still approvable, permit a fresh proposal once the first start reaches the one-minute approval cutoff, retain the old immutable audit row, reject approval of the old proposal, and spend exactly one unit on the fresh staff approval with valid FKs.
 - The API must supply trusted server timestamps; a client may never choose `requested_at_ms` or staff decision `at_ms`. No source-only test proves signed Dev runtime acceptance. Require exact-head CI, independent SQL review, then 2-role/sibling Dev E2E before merge/activation.
