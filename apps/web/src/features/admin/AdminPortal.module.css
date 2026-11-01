@@ -40,3 +40,24 @@
 @media(max-width:1150px){.metricGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.linksGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:850px){.sidebar{display:none}.layout{display:block}.menuButton{display:inline-block}.mobileNav{display:grid;gap:4px;background:#fffdf9;border-top:1px solid #e2dac9;padding:12px 16px 22px}.navLink,.navActive{min-height:45px}.topBar{min-height:72px}}
 @media(max-width:520px){.topBar{padding:8px 13px}.brandMark{width:39px;height:39px;font-size:21px}.brand strong{font-size:22px}.brand small{font-size:10px}.readonlyTag{font-size:10px;padding:6px 8px}.topActions{gap:6px}.menuButton{padding:7px 10px;font-size:12px}.hero{display:grid;gap:17px;border-radius:14px}.heroButton{justify-self:start}.metricGrid,.linksGrid{grid-template-columns:minmax(0,1fr)}.main{padding:12px}.metricCard{padding:16px}}
+
+/* #305: read-only staff directory; RTL responsive without overflow. */
+.staffDirectory{display:grid;gap:18px;min-width:0}
+.staffIntro{background:var(--paper-2,#fffdf7);border:1px solid var(--border,#e4d9c0);border-radius:12px;padding:clamp(18px,3vw,30px)}
+.staffIntro h1{font:700 clamp(25px,3vw,34px)/1.45 'Amiri',Georgia,serif;margin:0 0 8px}
+.staffIntro p:not(.kicker){font-size:13px;line-height:2;color:#47544a;margin:0;max-width:850px}
+.staffTopline{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.staffTopline h2{font-size:18px;margin:0}
+.staffRefresh{border:1px solid #d7c8a9;background:#f5eddc;color:#304c3b;padding:9px 16px;border-radius:8px;font-weight:750}
+.staffRefresh:disabled{opacity:.5;cursor:not-allowed}
+.staffRows{display:grid;gap:11px;min-width:0}
+.staffCard{background:#fffdf9;border:1px solid #e4ddcf;border-radius:10px;padding:18px;display:grid;grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(0,.6fr));gap:15px;align-items:center;min-width:0}
+.staffIdentity{min-width:0;display:grid;gap:6px}.staffIdentity strong{font-size:16px;overflow-wrap:anywhere;color:#294b37}.staffIdentity small{font-size:11px;color:#47544a}
+.staffCount{display:grid;gap:3px}.staffCount small{font-size:11px;color:#47544a}.staffCount strong{font-size:22px;color:#294b37;font-variant-numeric:tabular-nums}
+.staffState{display:inline-block;font-size:11px;font-weight:800;border:1px solid #d7e4d3;background:#edf4ed;color:#345c43;border-radius:100px;padding:3px 10px;justify-self:start}
+.staffStateOff{background:#f6eee5;color:#765d44;border-color:#e8dac9}
+.staffInfo{background:#f0f5ed;border:1px solid #d7e1d4;border-radius:8px;padding:14px 17px;color:#3f6249;line-height:1.85;font-size:12px}
+.staffEmpty{padding:28px;background:#fffdf9;border:1px dashed #d5ceb9;border-radius:10px;text-align:center;color:#47544a;line-height:1.9}
+.staffError{padding:21px;background:#fff8f3;border:1px solid #eedacf;border-radius:10px;color:#78503a;display:grid;gap:12px}
+.staffError button{justify-self:start;padding:8px 16px;border-radius:8px;border:1px solid #dac5b5;background:#fff;color:#58412f}
+@media(max-width:620px){.staffCard{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}.staffIdentity{grid-column:1/-1;padding-bottom:9px;border-bottom:1px solid #eee6d9}.staffCount strong{font-size:20px}}

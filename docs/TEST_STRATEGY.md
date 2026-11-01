@@ -1,3 +1,9 @@
+## #305 staff teacher directory acceptance — 2026-11-01
+- Backend Node tests: current `roles.manage` D1 grant must precede all directory SQL; empty list is valid; invalid timestamp/rows/negative counts fail closed; limit 50 + `truncated` with deterministic name/id sort; no contact or learner identities in SQL response.
+- Client Vitest: strict typed response, reject extra teacher PII keys, spoofed flags, malformed rows/duplicates, overlong lists; signed same-origin GET only; initial SSR loading not demo records; no client role claims.
+- Native disposable local Better Auth + D1 smoke: unsigned 401, nonstaff/forged role 403, verified staff empty then provisioned teacher 200, POST 405, CSRF 403, immediate grant revocation 403. No real student or teacher details. `pnpm test`, `pnpm typecheck`, `pnpm build`, `pnpm smoke`, `pnpm lint` required through exact-head GitHub Verify.
+- Separate signed isolated Cloudflare Dev staff/guardian/teacher and 360/390/1280 viewport acceptance plus independent privacy review required before merging/enabling. All Admin flags default OFF in production; no administrative writes.
+
 ## #302 additional fail-closed public-static and revoked identity smoke — 2026-11-01
 - `pnpm smoke` (no Chrome) requires successful static HTTP for three /admin routes but forbids the privileged overview title and metrics in HTML unless authorized build gates are explicitly set; this catches accidental default-on Admin exposure before runtime deployment.
 - `scripts/cloudflare-auth-smoke.mjs` tests a verified staff session's access is lost (403) not only upon staff grant revocation but also if phone verification is removed or the account disabled, with the same synthetic signed cookie; restored valid conditions regain 200. No remote migration/Worker and no real personal data.

@@ -1,3 +1,9 @@
+## #305 Admin teacher directory (source candidate)
+- `workers/api/src/staff-teacher-directory.ts`: bounded 50-row staff-only verified D1 query; deterministic order, counts, no contacts/learner identities, fail-closed on malformed results. `workers/api/src/auth/routes.ts` adds signed default-OFF `GET /v1/staff/teachers` beside overview.
+- `apps/web/src/features/admin/admin-teachers-client.ts`: strict response parser, signed same-origin no-store GET; `AdminTeacherDirectory.tsx`: mobile RTL read-only cards, real empty/error/denied/loading and 50-row warning; `AdminShell.tsx` mounts only after signed overview authorization.
+- `apps/web/src/features/admin/{AdminSections.tsx,admin-navigation.ts,AdminPortal.module.css}`: connects teachers only, keeps other sections honest and non-actionable.
+- `workers/api/tests/staff-teacher-directory.test.ts`, `apps/web/src/features/admin/admin-teachers-client.test.tsx`, `scripts/cloudflare-auth-smoke.mjs`: backend/parser/signed native D1 regression. No invite/activation/assignment/finance writes. Dev/viewport/reviewer acceptance pending.
+
 ## #302 initial staff-only Admin interface (source candidate)
 - `apps/web/src/app/admin/{page.tsx,layout.tsx,students,teachers,schedule,subscriptions,attendance,settings}`: thin static export entrypoints; signed AdminShell owns all data and section gates.
 - `apps/web/src/features/admin/AdminShell.tsx`: build-time dual opt-in, account/session recheck, source-ID-bound state and AbortController, no staff navigation or aggregate data until signed remote check. Mobile RTL role-verified navigation.
