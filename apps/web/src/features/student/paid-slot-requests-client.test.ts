@@ -1,6 +1,7 @@
 import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {ConnectedClassroomLessons} from './components/ConnectedClassroomLessons';
+import {currentLearnerRead} from './components/learner-scope';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {fetchPaidSlotRequests,parsePaidSlotRequests,PaidSlotRequestsError,
  parsePaidSlotProposalAck,submitPaidSlotProposal} from
@@ -129,5 +130,22 @@ describe('#317 signed guardian paid-slot proposal contract',()=>{
   expect(mock).toHaveBeenCalledTimes(4);
   const payloads=mock.mock.calls.map(call=>JSON.parse(call[1].body));
   expect(payloads).toEqual([input,input,input,input]);
+ });
+});
+
+describe('#317 sibling-switch render-time privacy boundary',()=>{
+ it('hides the previous sibling lesson and paid-slot data before useEffect cleanup',()=>{
+  const previous={learnerId:A,status:'ready' as const,
+   rows:[{id:'synthetic-private-lesson'}]};
+  expect(currentLearnerRead(previous,A)).toBe(previous);
+  expect(currentLearnerRead(previous,B)).toEqual({
+   learnerId:B,status:'loading',rows:[]
+  });
+  const paidRequests={learnerId:B,status:'ready' as const,rows:[row]};
+  expect(currentLearnerRead(paidRequests,A)).toEqual({
+   learnerId:A,status:'loading',rows:[]
+  });
+  expect(currentLearnerRead({learnerId:A,status:'error' as const,rows:[]},B))
+   .toMatchObject({learnerId:B,status:'loading',rows:[]});
  });
 });
