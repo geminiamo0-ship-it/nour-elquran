@@ -498,49 +498,6 @@ assert.equal(blockedTeacherTransition.data.code,'ACTIVE_CLASSES_BLOCK_TRANSITION
 assert.equal((await call(adminTeachers,{cookie:cookieA})).data.teachers[0].status,'active');
 console.log('Native signed Admin roster transition: anonymous/nonstaff denial, strict parsing, scheduled class guard PASS');
 
-const bookingRepeat=await schedule(bookRequest);
-assert.equal(bookingRepeat.data.code,'OPERATION_ALREADY_APPLIED');
-const overlapping=await schedule({...bookRequest,operationId:randomUUID(),startsAtMs:learnerBookingStart+1000});
-assert.equal(overlapping.response.status,409);
-const teacherSchedule=await call('/v1/teacher/lessons',{cookie:cookieB});
-assert.equal(teacherSchedule.response.status,200);
-assert.equal(teacherSchedule.data.lessons.length,1);
-assert.equal(teacherSchedule.data.lessons[0].id,lessonCreated.data.resourceId);
-assert.equal(teacherSchedule.data.lessons[0].endsAtMs-teacherSchedule.data.lessons[0].startsAtMs,2400000);
-const learnerTimetable=await call('/v1/me/learners/'+learner+'/lessons',{cookie:cookieA});
-assert.equal(learnerTimetable.response.status,200);
-assert.equal(learnerTimetable.data.lessons[0].id,lessonCreated.data.resourceId);
-const unsafeArchive=await call(profilePath,{method:'POST',cookie:cookieA,body:{
-  action:'archive',operationId:randomUUID(),expectedRevision:2,
-}});
-assert.equal(unsafeArchive.response.status,409,'Cannot archive a student with a scheduled lesson');
-assert.equal(unsafeArchive.data.code,'PROFILE_OPEN_LESSONS');
-assert.equal((await call('/v1/learners/'+learner,{cookie:cookieA})).data.learner.revision,2);
-
-assert.equal((await call('/v1/me/learners/'+learner+'/lessons',{cookie:cookieB})).response.status,404);
-const prematureRevoke=await schedule({action:'revoke',operationId:randomUUID(),
-  reason:'Synthetic schedule reallocation',resourceId:assignmentCreated.data.resourceId});
-assert.equal(prematureRevoke.response.status,409);
-assert.equal((await schedule({action:'cancel',operationId:randomUUID(),
-  reason:'Synthetic booking cancellation',resourceId:lessonCreated.data.resourceId},
-  cookieA,'https://attacker.invalid')).response.status,403);
-const cancelled=await schedule({action:'cancel',operationId:randomUUID(),
-  reason:'Synthetic booking cancellation',resourceId:lessonCreated.data.resourceId});
-assert.equal(cancelled.response.status,200,JSON.stringify(cancelled.data));
-const revoked=await schedule({action:'revoke',operationId:randomUUID(),
-  reason:'Synthetic assignment revocation',resourceId:assignmentCreated.data.resourceId});
-assert.equal(revoked.response.status,200,JSON.stringify(revoked.data));
-assert.deepEqual((await call('/v1/teacher/learners',{cookie:cookieB})).data.learners,[]);
-console.log('Native staff scheduling: assignment, teacher roster, booking, 40m, learner timetable, conflict, cancellation, revocation, no forged role passed');
-
-const unauthorizedMutation=await call('/v1/staff/teacher-actions',{
-  method:'POST',cookie:cookieB,body:teacherCommand('suspend'),
-});
-assert.equal(unauthorizedMutation.response.status,403);
-const badOrigin=await call('/v1/staff/teacher-actions',{
-  method:'POST',cookie:cookieA,origin:'https://attacker.invalid',body:teacherCommand('suspend'),
-});
-assert.equal(badOrigin.response.status,403);
 // #312: Positive attendance review is exercised over the actual signed Worker
 // and ephemeral LOCAL D1 only. The no-show and guardian appeal below are
 // strictly synthetic DB fixtures; never seed immutable attendance history into
@@ -614,6 +571,54 @@ sql("UPDATE staff_grants SET revoked_at_ms=1000 WHERE auth_subject="+
 console.log('Native signed attendance review: 401/403, verified grant 201, exact replay 200, tamper 409, guardian readback, separate permission and verification revocation PASS');
 
 
+
+const bookingRepeat=await schedule(bookRequest);
+assert.equal(bookingRepeat.data.code,'OPERATION_ALREADY_APPLIED');
+const overlapping=await schedule({...bookRequest,operationId:randomUUID(),startsAtMs:learnerBookingStart+1000});
+assert.equal(overlapping.response.status,409);
+const teacherSchedule=await call('/v1/teacher/lessons',{cookie:cookieB});
+assert.equal(teacherSchedule.response.status,200);
+// Find the booked slot by its immutable resource ID. A separate historical
+// synthetic attendance fixture is legitimately present in the local calendar.
+const bookedTeacherSlot=teacherSchedule.data.lessons.find(
+ x=>x.id===lessonCreated.data.resourceId);
+assert(bookedTeacherSlot,'Booked slot missing from signed teacher timetable');
+assert.equal(bookedTeacherSlot.endsAtMs-bookedTeacherSlot.startsAtMs,2400000);
+const learnerTimetable=await call('/v1/me/learners/'+learner+'/lessons',{cookie:cookieA});
+assert.equal(learnerTimetable.response.status,200);
+assert(learnerTimetable.data.lessons.some(x=>x.id===lessonCreated.data.resourceId),
+ 'Booked slot missing from signed owner timetable');
+const unsafeArchive=await call(profilePath,{method:'POST',cookie:cookieA,body:{
+  action:'archive',operationId:randomUUID(),expectedRevision:2,
+}});
+assert.equal(unsafeArchive.response.status,409,'Cannot archive a student with a scheduled lesson');
+assert.equal(unsafeArchive.data.code,'PROFILE_OPEN_LESSONS');
+assert.equal((await call('/v1/learners/'+learner,{cookie:cookieA})).data.learner.revision,2);
+
+assert.equal((await call('/v1/me/learners/'+learner+'/lessons',{cookie:cookieB})).response.status,404);
+const prematureRevoke=await schedule({action:'revoke',operationId:randomUUID(),
+  reason:'Synthetic schedule reallocation',resourceId:assignmentCreated.data.resourceId});
+assert.equal(prematureRevoke.response.status,409);
+assert.equal((await schedule({action:'cancel',operationId:randomUUID(),
+  reason:'Synthetic booking cancellation',resourceId:lessonCreated.data.resourceId},
+  cookieA,'https://attacker.invalid')).response.status,403);
+const cancelled=await schedule({action:'cancel',operationId:randomUUID(),
+  reason:'Synthetic booking cancellation',resourceId:lessonCreated.data.resourceId});
+assert.equal(cancelled.response.status,200,JSON.stringify(cancelled.data));
+const revoked=await schedule({action:'revoke',operationId:randomUUID(),
+  reason:'Synthetic assignment revocation',resourceId:assignmentCreated.data.resourceId});
+assert.equal(revoked.response.status,200,JSON.stringify(revoked.data));
+assert.deepEqual((await call('/v1/teacher/learners',{cookie:cookieB})).data.learners,[]);
+console.log('Native staff scheduling: assignment, teacher roster, booking, 40m, learner timetable, conflict, cancellation, revocation, no forged role passed');
+
+const unauthorizedMutation=await call('/v1/staff/teacher-actions',{
+  method:'POST',cookie:cookieB,body:teacherCommand('suspend'),
+});
+assert.equal(unauthorizedMutation.response.status,403);
+const badOrigin=await call('/v1/staff/teacher-actions',{
+  method:'POST',cookie:cookieA,origin:'https://attacker.invalid',body:teacherCommand('suspend'),
+});
+assert.equal(badOrigin.response.status,403);
 const suspension=await call('/v1/staff/teacher-actions',{
   method:'POST',cookie:cookieA,body:teacherCommand('suspend'),
 });
