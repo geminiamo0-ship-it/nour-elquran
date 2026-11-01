@@ -433,7 +433,11 @@ assert.equal((await call(adminTeachers,{cookie:cookieB})).response.status,403);
 assert.equal((await call(adminTeachers,{cookie:cookieA,method:'POST',body:{role:'admin'}})).response.status,405);
 assert.equal((await call(adminTeachers,{cookie:cookieA,origin:'https://outside.invalid'})).response.status,403);
 assert.deepEqual((await call('/v1/teacher/learners',{cookie:cookieB})).data.learners,[]);
-assert.deepEqual((await call('/v1/teacher/lessons',{cookie:cookieB})).data.lessons,[]);
+const historicalTeacherLessons=await call('/v1/teacher/lessons',{cookie:cookieB});
+assert.equal(historicalTeacherLessons.response.status,200);
+assert.equal(historicalTeacherLessons.data.lessons.length,1,
+ 'Only the synthetic historical attendance lesson may be present before future booking');
+assert.equal(historicalTeacherLessons.data.lessons[0].id,appealLessonId);
 // B3: synthetic staff creates an actual primary assignment and a 40m booked lesson.
 // The read-only teacher endpoints must immediately reflect only this family's data.
 const schedule=(body,cookie=cookieA,origin=base)=>call('/v1/staff/schedule-actions',{
