@@ -57,6 +57,10 @@ BEFORE INSERT ON academy_paid_slot_request_events BEGIN
  SELECT RAISE(ABORT,'ACADEMY_SLOT_REQUEST_PENDING') WHERE EXISTS(
   SELECT 1 FROM academy_paid_slot_request_events r
   WHERE r.learner_id=NEW.learner_id
+   -- An undecided proposal whose start has already passed the approval
+   -- cutoff must not permanently prevent the owner proposing a new slot.
+   -- It remains immutable/auditable and can only be rejected by staff.
+   AND r.starts_at_ms>NEW.requested_at_ms+60000
    AND NOT EXISTS(SELECT 1 FROM academy_paid_slot_decision_events d
     WHERE d.request_id=r.id));
 END;
