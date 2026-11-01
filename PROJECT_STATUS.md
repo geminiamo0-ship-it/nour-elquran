@@ -1,3 +1,8 @@
+## 2026-11-01 — #317 paid-slot staff decisions UI (Draft PR #318; unverified)
+- Source now includes signed staff pending-request approve/reject controls with reason (8–500 chars), explicit checkbox, immutable UUID operationId, no optimistic spend and strict D1 ACK validation. Unknown network outcome allows only same-operation replay; explicit 4xx denial blocks further submission pending refresh. Adjacent client/SSR tests added.
+- **NOT VERIFIED:** exact-head GitHub Verify, independent security review, D1 0031 Dev migration, signed guardian/staff/foreign owner/sibling E2E, UI/mobile/role acceptance. Main advanced 3 commits; Draft PR #318 reports mergeable=false. No Production/WhatsApp/payment/audio/ink flag change.
+- Next: exact-head CI and merge conflict reconciliation, then staff Dev tests and guardian proposal UI.
+
 ## 2026-11-01 — #317 signed Admin paid-slot inbox (Draft PR #318; source only)
 - Added strict 100-row staff-only D1 paid-slot list parser, no-store signed GET and RTL read-only inbox to `/admin/requests`. The existing AdminShell dual gate and fresh Worker D1 `roles.manage` grant remain authoritative; no role or personal data is accepted from client claims.
 - Student/Sheikh names and proposal state are displayed only after signed GET, with explicit loading, denied, schema/network error and empty states; stale session data is discarded. No fake booking/approval, payment or credit claim. New Vitest parser, auth/error and SSR loading-gate regressions.
