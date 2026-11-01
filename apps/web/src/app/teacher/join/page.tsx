@@ -1,2 +1,2 @@
-import {TeacherInvitationJoin} from '@/features/teacher/TeacherInvitationJoin';
+import {TeacherInvitationJoin} from '@/features/teacher';
 export default function InvitedTeacherPage(){return <TeacherInvitationJoin/>;}
