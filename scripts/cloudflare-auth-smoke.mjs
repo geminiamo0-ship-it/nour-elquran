@@ -349,19 +349,25 @@ const historicEnd=historicStart+40*60*1000;
 const reportedAt=historicStart+16*60*1000;
 const appealedAt=reportedAt+60*1000;
 const q=(x)=>"'"+String(x).replaceAll("'","''")+"'";
-sql("INSERT INTO lessons(id,learner_id,actual_teacher_id,kind,status,starts_at_ms,ends_at_ms) VALUES("+
- [appealLessonId,learner,provision.data.teacherId,'standard','scheduled'].map(q).join(',')+
- ","+historicStart+","+historicEnd+")");
-sql("INSERT INTO lesson_access_grants(id,lesson_id,learner_id,teacher_id,kind,starts_at_ms,ends_at_ms) VALUES("+
- [appealGrantId,appealLessonId,learner,provision.data.teacherId,'primary'].map(q).join(',')+
- ","+historicStart+","+historicEnd+")");
-sql("INSERT INTO attendance_incident_events(id,operation_id,lesson_id,learner_id,actor_subject,kind,reason,reported_at_ms) VALUES("+
- [incidentId,incidentOperationId,appealLessonId,learner,teacherSubject,'student_no_show',
-  'Synthetic no-show only in ephemeral local D1'].map(q).join(',')+","+reportedAt+")");
-sql("INSERT INTO attendance_appeal_events(id,operation_id,incident_id,learner_id,actor_subject,reason,submitted_at_ms) VALUES("+
- [appealId,appealOperationId,incidentId,learner,teacherActor,
-  'Synthetic guardian contests absence for native local signed review'].map(q).join(',')+
- ","+appealedAt+")");
+// One Wrangler invocation seeds the self-contained valid local-only audit
+// chain. Avoid repeatedly starting independent D1 engines while workerd is
+// serving the signed HTTP smoke; a four-invocation fixture destabilized CI.
+const fixtureStatements=[
+ "INSERT INTO lessons(id,learner_id,actual_teacher_id,kind,status,starts_at_ms,ends_at_ms) VALUES("+
+  [appealLessonId,learner,provision.data.teacherId,'standard','scheduled'].map(q).join(',')+
+  ","+historicStart+","+historicEnd+")",
+ "INSERT INTO lesson_access_grants(id,lesson_id,learner_id,teacher_id,kind,starts_at_ms,ends_at_ms) VALUES("+
+  [appealGrantId,appealLessonId,learner,provision.data.teacherId,'primary'].map(q).join(',')+
+  ","+historicStart+","+historicEnd+")",
+ "INSERT INTO attendance_incident_events(id,operation_id,lesson_id,learner_id,actor_subject,kind,reason,reported_at_ms) VALUES("+
+  [incidentId,incidentOperationId,appealLessonId,learner,teacherSubject,'student_no_show',
+   'Synthetic no-show only in ephemeral local D1'].map(q).join(',')+","+reportedAt+")",
+ "INSERT INTO attendance_appeal_events(id,operation_id,incident_id,learner_id,actor_subject,reason,submitted_at_ms) VALUES("+
+  [appealId,appealOperationId,incidentId,learner,teacherActor,
+   'Synthetic guardian contests absence for native local signed review'].map(q).join(',')+
+  ","+appealedAt+")",
+];
+sql(fixtureStatements.join(";\n")+";");
 const reviewUrl='/v1/staff/attendance-appeals/review';
 const reviewBody={operationId:randomUUID(),appealId,decision:'accepted',
  reason:'Synthetic evidence accepted without charges or automatic compensation'};
