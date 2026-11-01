@@ -1,56 +1,44 @@
 'use client';
 import {useEffect,useState} from 'react';
 import {subscriptionLedgerClient,type SubscriptionLedger} from '../../shared';
-import styles from '../StudentPortal.module.css';
-
-type View={phase:'loading'}|{phase:'error'}|
- {phase:'ready';ledger:SubscriptionLedger};
-const format=new Intl.DateTimeFormat('ar-EG',{
- timeZone:'Africa/Cairo',dateStyle:'medium'
-});
-/** Read-only signed owner data. Never treats academic units as paid/bookable. */
+import {currentCycleLabel} from '../../shared/academy-owner-client';
+import css from './StudentSubscription.module.css';
+type State={phase:'loading'}|{phase:'error'}|{phase:'ready';ledger:SubscriptionLedger};
+const format=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',dateStyle:'medium'});
+/** Academic units are factual D1 ledger entries, NOT proof of payment/bookable credits. */
 export function ConnectedSubscriptionLedger({learnerId}:{learnerId:string}){
- const [view,setView]=useState<View>({phase:'loading'});
+ const [view,setView]=useState<State>({phase:'loading'});
  const [retry,setRetry]=useState(0);
  useEffect(()=>{
-  const controller=new AbortController();
-  setView({phase:'loading'});
-  void subscriptionLedgerClient.owner(learnerId,controller.signal).then(ledger=>{
-   if(!controller.signal.aborted)setView({phase:'ready',ledger});
-  }).catch(()=>{
-   if(!controller.signal.aborted)setView({phase:'error'});
-  });
-  return()=>controller.abort();
+  const ctrl=new AbortController();setView({phase:'loading'});
+  void subscriptionLedgerClient.owner(learnerId,ctrl.signal).then(ledger=>{
+   if(!ctrl.signal.aborted)setView({phase:'ready',ledger});
+  }).catch(()=>{if(!ctrl.signal.aborted)setView({phase:'error'});});
+  return()=>ctrl.abort();
  },[learnerId,retry]);
  const cycle=view.phase==='ready'?view.ledger.latestCycle:null;
- return <section className={styles.panel} aria-label="سجل الوحدات الأكاديمية الموثّق">
-  <div className={styles.panelHead}><div>
-   <p className={styles.eyebrow}>سجل أكاديمي من الخادم</p>
-   <h2>الحصص والتعويضات المسجلة</h2>
-  </div><button type="button" className={styles.outlineButton}
-   onClick={()=>setRetry(v=>v+1)}>تحديث السجل</button></div>
-  {view.phase==='loading'?<p role="status">جارٍ التحقق من سجل هذا الطالب…</p>:
+ return <section className={css.hero} aria-label="حالة اشتراك الطالب">
+  <div className={css.heroTop}>
+   <h2>اشتراكي</h2>
+   {view.phase==='ready'&&<span className={css.heroBadge}>
+    {cycle?currentCycleLabel(cycle.state,cycle.endsAtMs,Date.now()):'بانتظار التفعيل'}</span>}
+  </div>
+  {view.phase==='loading'?<p className={css.heroPlaceholder} role="status">
+   جارٍ التحقق من سجل هذا الطالب…</p>:
    view.phase==='error'?<div role="alert">
-    تعذّر التحقق من السجل؛ لن نعرض رصيدًا افتراضيًا أو نفترض عدم وجود اشتراك.
-   </div>:<>
-    <p role="status">هذه وحدات حصص أكاديمية مسجلة فقط، وليست تأكيد دفع أو
-     تصريح حجز. تفعيل الاشتراكات المدفوعة والتجديد غير متاح بعد.</p>
-    <div className={styles.metricGrid}>
-     <div className={styles.metric}><span>وحدات الدورة المسجلة غير المستهلكة</span>
-      <strong>{cycle?cycle.recordedUnspentSessions:'—'}</strong>
-      <small>ليست رصيدًا متاحًا للحجز</small></div>
-     <div className={styles.metric}><span>وحدات التعويض غير المستهلكة</span>
-      <strong>{view.ledger.compensationUnspentSessions}</strong>
-      <small>سجل أكاديمي، دون حجز تلقائي</small></div>
-     <div className={styles.metric}><span>قرارات التعويض المسجلة</span>
-      <strong>{view.ledger.compensationGrantCount}</strong>
-      <small>لا تمثل مدفوعات</small></div>
-    </div>
-    {cycle?<p>الفترة المسجلة: {format.format(new Date(cycle.startsAtMs))}
-     {' — '}{format.format(new Date(cycle.endsAtMs))}.
-     لا يُستنتج من هذه التواريخ تجديد تلقائي أو صلاحية حجز.</p>:
-     <p className={styles.emptyBox}>لا توجد دورة اشتراك مسجلة لهذا الطالب بعد.
-      لا يعني ذلك فشل دفع أو وجود رصيد صفري معتمد.</p>}
-   </>}
+    <p className={css.heroPlaceholder}>تعذّر عرض حالة الاشتراك.</p>
+    <button type="button" className={css.buttonOutline} onClick={()=>setRetry(n=>n+1)}>
+     إعادة المحاولة</button>
+   </div>:cycle?<div className={css.heroFacts}>
+    <div className={css.heroFact}><small>حصص الدورة غير المستخدمة</small>
+     <strong>{cycle.recordedUnspentSessions.toLocaleString('ar-EG')}</strong></div>
+    <div className={css.heroFact}><small>نهاية الدورة المسجلة</small>
+     <strong>{format.format(new Date(cycle.endsAtMs))}</strong></div>
+    {view.ledger.compensationUnspentSessions>0&&
+     <div className={css.heroFact}><small>حصص تعويض مسجلة</small>
+      <strong>{view.ledger.compensationUnspentSessions.toLocaleString('ar-EG')}</strong></div>}
+   </div>:<p className={css.heroPlaceholder}>لم تُسجّل دورة حصص لهذا الطالب حتى الآن.</p>}
+  <p className={css.heroNote}>رصيد حصص أكاديمي مسجّل، وليس تأكيد دفع أو تصريح حجز؛
+   التفعيل والحجز عبر إدارة الأكاديمية.</p>
  </section>;
 }
