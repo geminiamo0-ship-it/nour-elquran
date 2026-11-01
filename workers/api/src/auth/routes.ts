@@ -15,6 +15,7 @@ import {listInbox,changeInboxRead} from '../in-app-inbox.ts';
 import {reportAttendanceIncident,submitAttendanceAppeal,listOwnerAttendance,listTeacherAttendance,listStaffAttendanceAppeals,reviewAttendanceAppeal} from '../attendance-cases.ts';
 import {publishTrialSlot,listOwnerTrialSlots,bookOwnerTrial,closeTrialSlot,cancelOwnerTrial} from '../free-trial-booking.ts';
 import {listOwnerRescheduleSlots,rescheduleOwnerTrial} from '../trial-rescheduling.ts';
+import {readOwnerSubscriptionLedger} from '../subscription-ledger.ts';
 import {readTeacherInkDrafts,saveTeacherInkDraft,teacherAssignmentPageRange} from '../teacher-assignment-ink-drafts.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
@@ -114,6 +115,18 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
     const result=await applyLearnerProfileAction(db,accountId,authSubject,profileMatch[1]!,input);
     const {status,...body}=result;
     return reply(status,body,requestId);
+  }
+  // #244: factual, signed read of academic ledger only. Never claim the
+  // units are payment-confirmed, bookable or a configured paid package.
+  const ownedLedger=/^\\/v1\\/me\\/learners\\/([a-zA-Z0-9-]{1,128})\\/subscription-ledger$/.exec(path);
+  if(ownedLedger){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await db.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='subscription_ledger'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'SUBSCRIPTION_SCHEMA_NOT_READY'},requestId);
+    const result=await readOwnerSubscriptionLedger(db,authSubject,ownedLedger[1]!);
+    const {status,...body}=result;return reply(status,body,requestId);
   }
   const ownerTrialCancel=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/trial-cancellations$/.exec(path);
   if(ownerTrialCancel){
