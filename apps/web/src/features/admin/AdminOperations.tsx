@@ -13,7 +13,8 @@ type Result=
  |{phase:'error';message:string}
  |{phase:'uncertain';command:unknown;operationId:string};
 type Props={kind:AdminOperationKind;session:AccountSession;
- rows?:readonly AdminDataRow[];teachers?:readonly AdminTeacher[];onApplied?:()=>void};
+ rows?:readonly AdminDataRow[];teachers?:readonly AdminTeacher[];
+ onApplied?:(result:AdminActionResult)=>void};
 const actions:Record<AdminOperationKind,readonly {id:string;label:string}[]>={
  teacher:[
   {id:'provision',label:'تجهيز ملف شيخ غير نشط'},
@@ -82,7 +83,7 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied}:Pro
   try{
    const acknowledged=await submitAdminAction(kind,value,ctrl.signal);
    if(ctrl.signal.aborted)return;
-   setResult({phase:'done',value:acknowledged});setConfirmed(false);onApplied?.();
+   setResult({phase:'done',value:acknowledged});setConfirmed(false);onApplied?.(acknowledged);
   }catch(e){
    if(ctrl.signal.aborted)return;
    if(e instanceof AdminActionError&&e.uncertain){
