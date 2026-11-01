@@ -1,3 +1,8 @@
+## 2026-10-31 — future R2 byte verifier (#245, source-only)
+- Added `verifyPrivateAudioBytes`: a bounded, pure pre-storage check of the **real binary payload**, parsed descriptor, exact byte size, container signatures (WebM EBML with WebM DocType; OggS version zero; MP4 `ftyp` with allowed brand), and SHA-256 using WebCrypto. No response includes raw audio, fingerprints other than a simple result code, or any signed URL. Tests use only synthetic byte arrays and reject edited bytes, malicious MIME mismatches, invalid sizes, malformed headers, and wrong digest.
+- Container magic and an SHA-256 match **do not prove the file is valid/playable/benign audio, the stated duration is accurate, nor that it contains audio only**. A real decoder/ffprobe-like validation, anti-malware policy, private R2 lifecycle, authorization, guardian proof, consent and retention rules are still mandatory before any upload endpoint can be enabled.
+- The function is **not called by a public route**; `PRIVATE_RECITATION_UPLOADS_ENABLED=false` and migration 0012 grant/upload denial triggers remain unchanged. This is defense-in-depth preparation, not working audio homework.
+
 ## Runtime defense-in-depth follow-up (#180, 2026-10-30)
 - The key builder revalidates the complete descriptor and string learner UUID at runtime, rather than trusting a TypeScript annotation. The private playback-header helper rejects unsupported MIME values, including HTML, before creating any headers. This is only a guard against future caller mistakes, not proof of media sniffing or an enabled endpoint.
 - Both the SQL grant/upload locks and `PRIVATE_RECITATION_UPLOADS_ENABLED=false` remain unchanged. No real media is accepted, stored or played; #180 policy and isolated R2 acceptance gates still apply.

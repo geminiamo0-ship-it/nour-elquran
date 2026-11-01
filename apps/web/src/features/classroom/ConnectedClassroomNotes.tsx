@@ -10,7 +10,7 @@ type Item={id:string;operationId:string;page:number;surah:number|null;ayah:numbe
  kind:Kind;text:string;atMs:number};
 type View={revision:number;items:Item[]};
 type Props={role:'teacher'|'student';page:number;lessonId:string;
- joined:boolean;selectedVerse:QuranTarget|null};
+ joined:boolean;selectedVerse:QuranTarget|null;refreshVersion?:number};
 const categories:ReadonlyArray<{value:Kind;label:string}>=[
  {value:'memorization',label:'الحفظ'},
  {value:'recitation',label:'التلاوة'},
@@ -30,7 +30,7 @@ function parse(raw:unknown):View{
   throw Error('INVALID_CORRECTIONS');
  return v as View;
 }
-export function ConnectedClassroomNotes({role,page,lessonId,joined,selectedVerse}:Props){
+export function ConnectedClassroomNotes({role,page,lessonId,joined,selectedVerse,refreshVersion}:Props){
  const [tab,setTab]=useState<Tab>('corrections');
  const [kind,setKind]=useState<Kind>('memorization');
  const [text,setText]=useState('');
@@ -56,7 +56,7 @@ export function ConnectedClassroomNotes({role,page,lessonId,joined,selectedVerse
   };
   void poll();const timer=window.setInterval(()=>void poll(),5000);
   return()=>{ctrl.abort();window.clearInterval(timer);};
- },[role,joined,url]);
+ },[role,joined,url,refreshVersion]);
  const add=useCallback(async()=>{
   if(role!=='teacher'||!joined||saving||!text.trim()||!view)return;
   const general=tab==='notes';

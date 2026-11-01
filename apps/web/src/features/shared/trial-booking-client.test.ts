@@ -67,4 +67,29 @@ describe('signed first free trial API',()=>{
   await expect(trialBookingClient.cancel(...a)).rejects.toThrow('INVALID_TRIAL_RESPONSE');
  });
 
+ it('reschedule choices are server-scoped, 30/40 minutes and never expose teacher selection',async()=>{
+  const old='7145a6fa-1d94-4994-91e7-5819692ba3b6';
+  const mock=vi.fn().mockResolvedValue(respond(200,{code:'TRIAL_RESCHEDULE_SLOTS',slots:[slot]}));
+  vi.stubGlobal('fetch',mock);
+  expect(await trialBookingClient.rescheduleSlots('child-a',old)).toEqual([slot]);
+  expect(mock.mock.calls[0]?.[0])
+   .toBe('/v1/me/learners/child-a/trial-reschedule-slots?lessonId='+old);
+  await expect(trialBookingClient.rescheduleSlots('child-a','other')).rejects
+   .toThrow('INVALID_TRIAL_RESCHEDULE');
+ });
+ it('reschedule sends one idempotent command and requires a verified new lesson',async()=>{
+  const old='7145a6fa-1d94-4994-91e7-5819692ba3b6';
+  const op='2145a6fa-1d94-4994-91e7-5819692ba3b6';
+  const next='9145a6fa-1d94-4994-91e7-5819692ba3b6';
+  const mock=vi.fn().mockResolvedValueOnce(respond(201,{code:'TRIAL_RESCHEDULED',lessonId:next}))
+   .mockResolvedValueOnce(respond(409,{code:'TRIAL_RESCHEDULE_UNAVAILABLE'}));
+  vi.stubGlobal('fetch',mock);
+  expect(await trialBookingClient.reschedule('child-a',old,slot.slotId,op)).toBe(next);
+  expect(mock.mock.calls[0]?.[0]).toBe('/v1/me/learners/child-a/trial-reschedules');
+  expect(JSON.parse(mock.mock.calls[0]?.[1]?.body)).toEqual({
+   oldLessonId:old,slotId:slot.slotId,operationId:op});
+  await expect(trialBookingClient.reschedule('child-a',old,slot.slotId,op))
+   .rejects.toThrow('TRIAL_RESCHEDULE_UNAVAILABLE');
+ });
+
 });

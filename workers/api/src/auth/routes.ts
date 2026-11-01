@@ -14,6 +14,8 @@ import {readOwnerAssignments,readTeacherAssignments,getAssignmentCatalog,publish
 import {listInbox,changeInboxRead} from '../in-app-inbox.ts';
 import {reportAttendanceIncident,submitAttendanceAppeal,listOwnerAttendance,listTeacherAttendance,listStaffAttendanceAppeals,reviewAttendanceAppeal} from '../attendance-cases.ts';
 import {publishTrialSlot,listOwnerTrialSlots,bookOwnerTrial,closeTrialSlot,cancelOwnerTrial} from '../free-trial-booking.ts';
+import {listOwnerRescheduleSlots,rescheduleOwnerTrial} from '../trial-rescheduling.ts';
+import {readOwnerSubscriptionLedger} from '../subscription-ledger.ts';
 import {readTeacherInkDrafts,saveTeacherInkDraft,teacherAssignmentPageRange} from '../teacher-assignment-ink-drafts.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
@@ -28,6 +30,7 @@ import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '.
 import {forwardVerifiedPresence,parseClientPresenceAction} from '../classroom/presence.ts';
 import {forwardVerifiedPage,parsePageAction} from '../classroom/quran-sync.ts';
 import {forwardVerifiedInk,parseClientInk} from '../classroom/ink-sync.ts';
+import {openVerifiedRealtime} from '../classroom/realtime.ts';
 import {createMediaToken,mediaLessonWindow} from '../classroom/livekit-token.ts';
 import {checkLiveKitProvider} from '../classroom/livekit-provider-check.ts';
 import {wakeActingTeacherMedia,wakeLessonMediaReconciliation} from '../classroom/media-enforcement.ts';
@@ -113,6 +116,18 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
     const {status,...body}=result;
     return reply(status,body,requestId);
   }
+  // #244: factual, signed read of academic ledger only. Never claim the
+  // units are payment-confirmed, bookable or a configured paid package.
+  const ownedLedger=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/subscription-ledger$/.exec(path);
+  if(ownedLedger){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await db.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='subscription_ledger'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'SUBSCRIPTION_SCHEMA_NOT_READY'},requestId);
+    const result=await readOwnerSubscriptionLedger(db,authSubject,ownedLedger[1]!);
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
   const ownerTrialCancel=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/trial-cancellations$/.exec(path);
   if(ownerTrialCancel){
     if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
@@ -122,6 +137,27 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
     if(schema?.version!==1)return reply(503,{code:'TRIAL_CANCEL_SCHEMA_NOT_READY'},requestId);
     const result=await cancelOwnerTrial(db,authSubject,ownerTrialCancel[1]!,
       await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
+  // #244: single D1 transaction replaces a scheduled FREE trial, never a
+  // client-side cancel+rebook sequence that might lose the original slot.
+  const trialReplacement=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/(trial-reschedule-slots|trial-reschedules)$/.exec(path);
+  if(trialReplacement){
+    const learnerId=trialReplacement[1]!,mode=trialReplacement[2]!;
+    if(request.method!==(mode==='trial-reschedule-slots'?'GET':'POST'))
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await db.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='trial_owner_reschedule'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'TRIAL_RESCHEDULE_SCHEMA_NOT_READY'},requestId);
+    if(mode==='trial-reschedule-slots'){
+      const params=new URL(request.url).searchParams;
+      if(params.size!==1||!params.get('lessonId'))
+        return reply(400,{code:'INVALID_TRIAL_RESCHEDULE'},requestId);
+      const result=await listOwnerRescheduleSlots(db,authSubject,learnerId,params.get('lessonId')!);
+      const {status,...body}=result;return reply(status,body,requestId);
+    }
+    const result=await rescheduleOwnerTrial(db,authSubject,learnerId,await readObject(request));
     const {status,...body}=result;return reply(status,body,requestId);
   }
   const trialRoute=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/(trial-slots|trial-bookings)$/.exec(path);
@@ -467,6 +503,27 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // The library re-reads the signed session from D1; cookie cache and unverified token auth are disabled.
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return reply(401, { code: 'UNAUTHENTICATED' }, requestId);
+  // Same-origin signed, read-only realtime hints. Neither role nor identity
+  // comes from a WebSocket payload or client-asserted request headers.
+  const teacherRealtime=new RegExp('^/v1/teacher/lessons/([a-zA-Z0-9-]{1,128})/realtime$').exec(path);
+  if(teacherRealtime){
+    const lessonId=teacherRealtime[1]!;
+    const access=await checkTeacherClassroomAccess(env.DB,session.user.id,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    return openVerifiedRealtime(env,{lessonId,learnerId:access.learnerId,
+      actorSubject:session.user.id,role:'teacher'},request);
+  }
+  const learnerRealtime=new RegExp('^/v1/me/learners/([a-zA-Z0-9-]{1,128})/lessons/([a-zA-Z0-9-]{1,128})/realtime$').exec(path);
+  if(learnerRealtime){
+    const learnerId=learnerRealtime[1]!,lessonId=learnerRealtime[2]!;
+    const owner=await ownerAccount(env.DB,session.user.id);
+    if(!owner)return reply(404,{code:'NOT_FOUND'},requestId);
+    const access=await checkOwnedLearnerClassroomAccess(env.DB,owner.id,learnerId,lessonId);
+    if(!access)return reply(404,{code:'NOT_FOUND'},requestId);
+    return openVerifiedRealtime(env,{lessonId,learnerId,
+      actorSubject:session.user.id,role:'learner'},request);
+  }
+
   const staffTrialClose=/^\/v1\/staff\/trial-slots\/([a-zA-Z0-9-]{1,128})\/close$/.exec(path);
   if(staffTrialClose){
     if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
@@ -616,7 +673,7 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     const result=request.method==='GET'
       ?await readTeacherInkDrafts(env.DB,session.user.id,learnerId)
       :await saveTeacherInkDraft(env.DB,session.user.id,learnerId,
-        await readObject(request,180000));
+        await readObject(request,180000),Date.now(),env.NOOR_ENVIRONMENT==='staging');
     const {status,...body}=result;
     return reply(status,body,requestId);
   }

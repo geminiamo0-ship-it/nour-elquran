@@ -3,6 +3,7 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import type {Room} from 'livekit-client';
 import {JoinError,requestMediaTicket,type RoomIdentity} from './media-credentials';
+import {remoteMediaStatus,type RemoteTrackState} from './media-signal-status';
 import css from './LiveClassroom.module.css';
 
 type Phase='idle'|'connecting'|'connected'|'reconnecting'|'failed';
@@ -51,6 +52,7 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState('');
  const [audioBlocked,setAudioBlocked]=useState(false);
+ const [remoteTracks,setRemoteTracks]=useState<RemoteTrackState>({audio:false,video:false});
  const [micPolicy,setMicPolicy]=useState<MicPolicy|null>(null);
  const [micPolicyError,setMicPolicyError]=useState(false);
  useEffect(()=>{
@@ -103,7 +105,8 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
    remoteVideo.current?.replaceChildren();
    remoteAudio.current?.replaceChildren();
    localVideo.current?.replaceChildren();
-   setMic(false);setCamera(false);setAudioBlocked(false);setPhase('idle');setBusy(false);
+   setMic(false);setCamera(false);setAudioBlocked(false);
+   setRemoteTracks({audio:false,video:false});setPhase('idle');setBusy(false);
  },[]);
  useEffect(()=>{
    if(!active)stop();
@@ -133,21 +136,34 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
        room.current=null;
        remoteVideo.current?.replaceChildren();remoteAudio.current?.replaceChildren();
        localVideo.current?.replaceChildren();
+       setRemoteTracks({audio:false,video:false});setAudioBlocked(false);
        setMic(false);setCamera(false);setPhase('failed');
        setMessage('انقطع اتصال الوسائط؛ يلزم إعادة تصريح الدخول.');
      });
      media.on(RoomEvent.TrackMuted,(publication,participant)=>{
-       if(current===epoch.current&&participant===media.localParticipant&&
-        publication.source===Track.Source.Microphone)setMic(false);
+       if(current!==epoch.current)return;
+       if(participant===media.localParticipant){
+         if(publication.source===Track.Source.Microphone)setMic(false);
+         if(publication.source===Track.Source.Camera)setCamera(false);
+       }else if(publication.kind===Track.Kind.Audio||publication.kind===Track.Kind.Video){
+         setRemoteTracks(previous=>({...previous,[publication.kind]:false}));
+       }
      });
      media.on(RoomEvent.TrackUnmuted,(publication,participant)=>{
-       if(current===epoch.current&&participant===media.localParticipant&&
-        publication.source===Track.Source.Microphone)setMic(true);
+       if(current!==epoch.current)return;
+       if(participant===media.localParticipant){
+         if(publication.source===Track.Source.Microphone)setMic(true);
+         if(publication.source===Track.Source.Camera)setCamera(true);
+       }else if(publication.track&&
+         (publication.kind===Track.Kind.Audio||publication.kind===Track.Kind.Video)){
+         setRemoteTracks(previous=>({...previous,[publication.kind]:true}));
+       }
      });
      media.on(RoomEvent.TrackSubscribed,(track)=>{
        if(current!==epoch.current)return;
        if(track.kind!==Track.Kind.Audio&&track.kind!==Track.Kind.Video)return;
        const element=track.attach();
+       setRemoteTracks(previous=>({...previous,[track.kind]:!track.isMuted}));
        // Remote audio autoplay can be blocked on mobile; the user can
        // explicitly tap "تشغيل صوت الطرف الآخر" to resume it.
        if(track.kind===Track.Kind.Audio){
@@ -165,9 +181,16 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
      });
      media.on(RoomEvent.TrackUnsubscribed,track=>{
        for(const element of track.detach())element.remove();
+       if(current!==epoch.current)return;
+       if(track.kind===Track.Kind.Audio||track.kind===Track.Kind.Video)
+         setRemoteTracks(previous=>({...previous,[track.kind]:false}));
+       if(track.kind===Track.Kind.Audio)setAudioBlocked(false);
      });
      media.on(RoomEvent.ParticipantDisconnected,()=>{
-       if(current===epoch.current)remoteVideo.current?.replaceChildren();
+       if(current!==epoch.current)return;
+       remoteVideo.current?.replaceChildren();
+       remoteAudio.current?.replaceChildren();
+       setRemoteTracks({audio:false,video:false});setAudioBlocked(false);
      });
      await media.connect(ticket.serverUrl,ticket.participantToken,{
        autoSubscribe:true,
@@ -266,7 +289,7 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
   data-media-phase={phase} data-embedded={embedded?"true":"false"}>
   <div className={css.mediaTop}>
    <strong>الصوت والفيديو · LiveKit Cloud</strong>
-   <span role="status">{phase==='connected'?'متصل بالصوت والفيديو — الأجهزة تحت تحكمك':
+   <span role="status">{phase==='connected'?'متصل بغرفة LiveKit — شغّل أجهزتك يدويًا':
     phase==='connecting'?'جارٍ الاتصال الآمن…':phase==='reconnecting'?'جارٍ استعادة الاتصال…':
     phase==='failed'?'الاتصال غير متاح حاليًا':'الأجهزة مغلقة افتراضيًا'}</span>
   </div>
@@ -274,6 +297,11 @@ export function LiveLessonMedia({identity,active,embedded=false}:{
   <div className={css.videoGrid}>
    <div className={css.remoteCard}>
     <div ref={remoteVideo} aria-label="فيديو الطرف الآخر" className={css.videoTarget}/>
+    <span className={css.remoteTrackState} role="status"
+      data-peer-audio={remoteTracks.audio?'received':'missing'}
+      data-peer-video={remoteTracks.video?'received':'missing'}>
+     {phase==='connected'?remoteMediaStatus(remoteTracks,audioBlocked):'لم يبدأ استقبال وسائط الطرف الآخر'}
+    </span>
     <span className={css.videoLabel}>{identity.role==='learner'?'كاميرا الشيخ':'كاميرا الطالب'}</span>
    </div>
    <div className={css.localCard}>

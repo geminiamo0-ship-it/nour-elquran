@@ -5,12 +5,12 @@ import {assignmentClient,assignmentMessage,type AssignmentDraft,type AssignmentS
 import type {TeacherRosterRow} from './teacher-read-api';
 import {TeacherAssignmentReview} from './TeacherAssignmentReview';
 import {TeacherAssignmentInkEditor} from './TeacherAssignmentInkEditor';
-import {teacherInkDraftClient,type SavedInkDraft} from './teacher-ink-draft-client';
+import {teacherInkDraftClient,TeacherDraftError,type SavedInkDraft} from './teacher-ink-draft-client';
 import css from './TeacherReadOnly.module.css';
 const client=assignmentClient();
 const kinds={memorization:'حفظ',revision:'مراجعة',recitation:'تلاوة'} as const;
 type Loaded={status:'loaded';learnerId:string;catalog:readonly AssignmentSource[];assignments:readonly PublishedAssignment[];
- drafts:readonly SavedInkDraft[];draftsUnavailable:boolean};
+ drafts:readonly SavedInkDraft[];draftsUnavailable:boolean;draftsError?:string};
 type State=Loaded|{status:'loading'|'error'};
 export function TeacherConnectedAssignments({learners}:{learners:readonly TeacherRosterRow[]}){
  const [learnerId,setLearnerId]=useState(learners[0]?.id??'');
@@ -25,15 +25,21 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
  const inFlight=useRef(false);
  const authorized=learners.find(l=>l.id===learnerId);
  const selected=authorized?.id??learners[0]?.id??'';
+ const editorOpen=editor!==null;
  useEffect(()=>{
   let active=true;const abort=new AbortController();
   setState({status:'loading'});setMessage('');setUncertain(false);setOpenReview(null);
   if(!selected){setState({status:'loaded',learnerId:'',catalog:[],assignments:[],drafts:[],draftsUnavailable:false});return()=>abort.abort();}
   void Promise.all([client.catalog(abort.signal),client.teacher(selected,abort.signal)])
    .then(async ([catalog,assignments])=>{
-     const drafts=await teacherInkDraftClient.list(selected,abort.signal).catch(()=>null);
+     let draftsError:string|undefined;
+     const drafts=await teacherInkDraftClient.list(selected,abort.signal).catch(error=>{
+      draftsError=error instanceof TeacherDraftError?error.code:'DRAFT_UNAVAILABLE';
+      return null;
+     });
      if(active&&!abort.signal.aborted){
-      setState({status:'loaded',learnerId:selected,catalog,assignments,drafts:drafts??[],draftsUnavailable:drafts===null});
+      setState({status:'loaded',learnerId:selected,catalog,assignments,drafts:drafts??[],
+       draftsUnavailable:drafts===null,...(draftsError?{draftsError}:{})});
       setSurah(catalog[0]?.surah??1);
      }
    }).catch(err=>{
@@ -54,7 +60,7 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
  const editionSurahs=catalog.filter(x=>x.editionId===editionId);
  const current=editionSurahs.find(x=>x.surah===surah)??editionSurahs[0];
  async function publish(e:FormEvent<HTMLFormElement>){
-  e.preventDefault();if(!selected||inFlight.current||uncertain||state.status!=='loaded'||
+  e.preventDefault();if(editorOpen||!selected||inFlight.current||uncertain||state.status!=='loaded'||
    state.learnerId!==selected)return;
   inFlight.current=true;setSaving(true);setMessage('');
   try{
@@ -74,7 +80,7 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
   <div className={css.heading}><h1>الواجبات والتسميعات</h1><span>تكليف رسمي لكل طالب</span></div>
   <p>كل واجب ينشر لطالب واحد بعد التحقق من صلاحية الشيخ ونطاق القرآن. يمكن مراجعة التسليمات المكتوبة واعتمادها أو طلب إعادتها؛ التسجيلات الصوتية لم تُربط بعد.</p>
   <label>اختر الطالب المسند
-    <select value={selected} disabled={saving} onChange={e=>{
+    <select value={selected} disabled={saving||editorOpen} onChange={e=>{
        setLearnerId(e.target.value);setEditor(null);setOpenReview(null);
        setInstructions('');setDue('');setFrom(1);setTo(1);
        setMessage('');setUncertain(false);
@@ -85,42 +91,51 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
     <p role="status">جارٍ تحميل الآيات والواجبات لهذا الطالب...</p>:
    state.status==='error'?<p role="alert">{message}</p>:
    <><form onSubmit={publish} style={{display:'grid',gap:10}}>
-    <label>نوع الواجب <select value={kind} disabled={saving||uncertain}
+    <label>نوع الواجب <select value={kind} disabled={saving||uncertain||editorOpen}
       onChange={e=>setKind(e.target.value as AssignmentDraft['kind'])}>
       {Object.entries(kinds).map(([id,name])=><option key={id} value={id}>{name}</option>)}
     </select></label>
     <label>السورة (نطاق معتمد من D1)
-     <select value={current?.surah??surah} disabled={saving||uncertain}
+     <select value={current?.surah??surah} disabled={saving||uncertain||editorOpen}
       onChange={e=>{setSurah(Number(e.target.value));setFrom(1);setTo(1);}}>
       {editionSurahs.map(row=><option key={row.surah} value={row.surah}>سورة {row.surah} · {row.ayahCount} آية</option>)}
      </select></label>
     <div className={css.actions}>
      <label>من آية <input required type="number" min={1} max={current?.ayahCount??1} value={from}
-       disabled={saving||uncertain} onChange={e=>setFrom(Number(e.target.value))}/></label>
+       disabled={saving||uncertain||editorOpen} onChange={e=>setFrom(Number(e.target.value))}/></label>
      <label>إلى آية <input required type="number" min={from} max={current?.ayahCount??1} value={to}
-       disabled={saving||uncertain} onChange={e=>setTo(Number(e.target.value))}/></label>
+       disabled={saving||uncertain||editorOpen} onChange={e=>setTo(Number(e.target.value))}/></label>
     </div>
     <label>آخر موعد (قبل نهاية اليوم حسب جهاز الشيخ)
-     <input required type="date" value={due} disabled={saving||uncertain}
+     <input required type="date" value={due} disabled={saving||uncertain||editorOpen}
        onChange={e=>setDue(e.target.value)}/></label>
     <label>تعليمات الواجب <textarea required maxLength={500} rows={3}
-      value={instructions} disabled={saving||uncertain} onChange={e=>setInstructions(e.target.value)}/></label>
+      value={instructions} disabled={saving||uncertain||editorOpen} onChange={e=>setInstructions(e.target.value)}/></label>
     <div className={css.actions}>
-     <button type="submit" disabled={saving||uncertain||!current||!due||!instructions.trim()}>
+     <button type="submit" disabled={saving||uncertain||editorOpen||!current||!due||!instructions.trim()}>
        {saving?'جارٍ تأكيد النشر…':'نشر الواجب لهذا الطالب'}</button>
      <button type="button" onClick={()=>{
-       if(!current||!due||!instructions.trim()||uncertain)return;
+       if(editorOpen||!current||!due||!instructions.trim()||uncertain)return;
        const dueAtMs=new Date(due+'T23:59:00').getTime();
        if(!Number.isFinite(dueAtMs)||dueAtMs<=Date.now()){setMessage('حدد موعدًا صحيحًا للواجب.');return;}
        setEditor({key:crypto.randomUUID(),input:{
         kind,editionId:current.editionId,surah:current.surah,fromAyah:from,
         toAyah:to,dueAtMs,instructions:instructions.trim()}});
-      }} disabled={saving||uncertain||(currentLoaded&&state.draftsUnavailable)||!current||!due||!instructions.trim()}>
+      }} disabled={saving||uncertain||editorOpen||(currentLoaded&&state.draftsUnavailable)||!current||!due||!instructions.trim()}>
        تحضير علامات المصحف قبل النشر</button>
-     <button type="button" onClick={()=>{setRetry(x=>x+1);setUncertain(false);setEditor(null);}} disabled={saving}>تحديث الواجبات</button>
+     <button type="button" onClick={()=>{setRetry(x=>x+1);setUncertain(false);setEditor(null);}} disabled={saving||editorOpen}>تحديث الواجبات</button>
     </div>
    </form>
-   {(state.status==='loaded'&&state.draftsUnavailable)&&<p role="alert">خدمة مسودات العلامات غير متاحة على هذه البيئة؛ نشر الواجبات النصية ما زال يعمل.</p>}
+   {(state.status==='loaded'&&currentLoaded&&state.draftsUnavailable)&&<p role="alert">
+      تعذّر تحميل علامات الواجب للطالب المختار؛ لم نفعّل نشر العلامات حتى يرد الخادم بشكل سليم.
+      السبب: <code>{state.draftsError??'DRAFT_UNAVAILABLE'}</code>.
+      {state.draftsError==='DRAFT_SCHEMA_NOT_READY'
+       ?' تحتاج قاعدة بيانات Dev إلى مراجعة ترحيلات مسودات الواجب.'
+       :state.draftsError==='NETWORK_FAILURE'
+       ?' تعذّر الاتصال بالشبكة؛ جرّب تحديث الواجبات.'
+       :' راجع صلاحية الشيخ والرد الفعلي من الخدمة ثم أعد المحاولة.'}
+      <button type="button" disabled={saving} onClick={()=>setRetry(n=>n+1)}>إعادة فحص المسودات</button>
+     </p>}
    {editor&&<TeacherAssignmentInkEditor key={editor.key} learnerId={selected}
     initial={editor.input} existing={editor.existing}
     onCancel={()=>setEditor(null)}
@@ -132,7 +147,7 @@ export function TeacherConnectedAssignments({learners}:{learners:readonly Teache
    {drafts.length?<div className={css.list}>{drafts.map(d=><article key={d.draftId} className={css.row}>
      <strong>سورة {d.surah} · الآيات {d.fromAyah}–{d.toAyah}</strong>
      <p>{d.marks.length} علامة · آخر حفظ {new Date(d.updatedAtMs).toLocaleString('ar-EG')}</p>
-     <button type="button" disabled={saving||uncertain} onClick={()=>setEditor({
+     <button type="button" disabled={saving||uncertain||editorOpen} onClick={()=>setEditor({
       key:d.draftId+'-'+d.revision,input:d,existing:d})}>فتح المسودة وتعديل العلامات</button>
    </article>)}</div>:<p className={css.empty}>لا توجد مسودات محفوظة لهذا الطالب.</p>}
    <h2>السجل المنشور</h2>

@@ -5,6 +5,7 @@ import {notebookClient,type LessonRow} from '../../shared';
 import {StudentConnectedAttendanceCases} from './StudentConnectedAttendanceCases';
 import {StudentTrialBooking} from './StudentTrialBooking';
 import {StudentTrialCancellation} from './StudentTrialCancellation';
+import {StudentTrialReschedule} from './StudentTrialReschedule';
 import styles from '../StudentPortal.module.css';
 const formatter=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short'});
 export function ConnectedClassroomLessons({learnerId}:{learnerId:string}){
@@ -42,9 +43,12 @@ export function ConnectedClassroomLessons({learnerId}:{learnerId:string}){
        فتح غرفة الانتظار</Link>:
       l.status==='completed'?<Link href="/student/notebook">دفتر الحصة</Link>:<span>غير متاح</span>}
      {l.kind==='trial'&&l.status==='scheduled'&&
+      <StudentTrialReschedule learnerId={learnerId} lessonId={l.id}
+       startsAtMs={l.startsAtMs} onRescheduled={()=>setRetry(n=>n+1)}/>}
+     {l.kind==='trial'&&l.status==='scheduled'&&
       <StudentTrialCancellation key={l.id} learnerId={learnerId} lessonId={l.id}
        startsAtMs={l.startsAtMs} onCancelled={()=>{
-        // Cancellation was confirmed by D1: refresh both lesson list and slot eligibility.
+        // A confirmed D1 cancellation refreshes both lessons and trial eligibility.
         setRetry(n=>n+1);setAvailabilityRevision(n=>n+1);
        }}/>}
     </article>)}</div>}

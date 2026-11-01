@@ -24,6 +24,265 @@ echo "Applying D1 migration to disposable LOCAL state"
 echo "Checking migration is replay-safe in local Wrangler"
 "${wrangler[@]}" d1 migrations apply noor-core-local --local --persist-to "$state"
 
+# #244: native D1 test the *actual nested trigger chain* rather than
+# inferring atomic replacement behavior from Python SQLite unit tests.
+echo "Checking native D1 trial replacement: collision rollback then new booking"
+"${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/trial-reschedule-native-seed.sql > "$state/trial-reschedule-seed.log"
+if ! grep -q 'NATIVE_TRIAL_RESCHEDULE_SEEDED' "$state/trial-reschedule-seed.log"; then
+  echo "Native D1 synthetic trial booking seed failed" >&2
+  exit 1
+fi
+if "${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/trial-reschedule-native-conflict.sql > "$state/trial-reschedule-conflict.log" 2>&1; then
+  echo "Native D1 unexpectedly accepted occupied replacement slot" >&2
+  exit 1
+fi
+if ! grep -q 'TRIAL_RESCHEDULE_SLOT_OCCUPIED' "$state/trial-reschedule-conflict.log"; then
+  echo "Native D1 occupied replacement failed for unexpected reason" >&2
+  exit 1
+fi
+"${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/trial-reschedule-native-success.sql > "$state/trial-reschedule-success.log"
+for proof in NATIVE_TRIAL_RESCHEDULE_CONFLICT_ATOMIC NATIVE_TRIAL_RESCHEDULE_COMMITTED; do
+  if ! grep -q "$proof" "$state/trial-reschedule-success.log"; then
+    echo "Native D1 trial replacement acceptance missing: $proof" >&2
+    exit 1
+  fi
+done
+echo "PASS: native D1 original booked slot preserved on failure, replacement atomic, sibling unaffected"
+
+# #286: prove a REAL native Wrangler D1 forward upgrade from an existing
+# populated 0022 database, not only a fresh schema / Python SQLite copy.
+# All resources, config, data, and the stub Worker are temporary LOCAL files.
+echo "Checking populated native D1 0022 -> 0023 forward upgrade (synthetic only)"
+upgrade="$state/native-upgrade"
+mkdir -p "$upgrade/migrations" "$upgrade/data"
+for migration in migrations/[0-9][0-9][0-9][0-9]_*.sql; do
+  # Build a genuine pre-0023 database: never seed future migrations 0024/0025.
+  number="$(basename "$migration")"
+  number="${number%%_*}"
+  if (( 10#$number >= 23 )); then continue; fi
+  cp -- "$migration" "$upgrade/migrations/"
+done
+cat > "$upgrade/wrangler.json" <<'JSON'
+{
+  "name": "noor-native-upgrade-local-only",
+  "main": "stub.ts",
+  "compatibility_date": "2026-10-29",
+  "workers_dev": false,
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "noor-core-local",
+    "database_id": "00000000-0000-0000-0000-000000000000",
+    "migrations_dir": "migrations"
+  }]
+}
+JSON
+printf '%s\n' 'export default {fetch(){return new Response("local only")}};' > "$upgrade/stub.ts"
+legacy=(${wrangler[@]} d1)
+"${legacy[@]}" migrations apply noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" > "$upgrade/legacy-migrations.log"
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --file ../../scripts/fixtures/teacher-draft-native-preupgrade.sql > "$upgrade/legacy-seed.log"
+if ! grep -q 'NATIVE_UPGRADE_PRESTATE_OK' "$upgrade/legacy-seed.log"; then
+  echo "Pre-0023 historical private draft did not persist" >&2
+  exit 1
+fi
+# The exact valid pen+highlight revision-2 INSERT must reproduce old GLOB
+# failure; never silently treat a different failure (or success) as proof.
+if "${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --file ../../scripts/fixtures/teacher-draft-native-upgrade.sql > "$upgrade/old-trigger.log" 2>&1; then
+  echo "Pre-0023 D1 unexpectedly accepted the old hex GLOB" >&2
+  exit 1
+fi
+if ! grep -q 'LIKE or GLOB pattern too complex' "$upgrade/old-trigger.log"; then
+  echo "Pre-0023 D1 failed for a reason other than the known native hex GLOB" >&2
+  exit 1
+fi
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --command "SELECT CASE WHEN (SELECT COUNT(*) FROM teacher_assignment_draft_versions WHERE draft_id='c145a6fa-1d94-4994-91e7-5819692ba3b6' AND revision=1 AND marks_json='[]')=1 AND (SELECT COUNT(*) FROM teacher_assignment_draft_versions WHERE draft_id='c145a6fa-1d94-4994-91e7-5819692ba3b6')=1 THEN 'NATIVE_UPGRADE_FAILED_WRITE_ATOMIC' ELSE 'NATIVE_UPGRADE_FAILED_WRITE_LEAK' END AS result" > "$upgrade/atomic.log"
+if ! grep -q 'NATIVE_UPGRADE_FAILED_WRITE_ATOMIC' "$upgrade/atomic.log"; then
+  echo "Native pre-upgrade failed write modified historical draft" >&2
+  exit 1
+fi
+
+# Apply exactly the forward-only 0023 through native Wrangler migration
+# tracking, with the ORIGINAL populated 0022 D1 state still in place.
+cp -- migrations/0023_quran_ink_color_d1_compat.sql "$upgrade/migrations/"
+"${legacy[@]}" migrations apply noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" > "$upgrade/forward.log"
+"${legacy[@]}" migrations apply noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" > "$upgrade/replay.log"
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --file ../../scripts/fixtures/teacher-draft-native-upgrade.sql > "$upgrade/forward-acceptance.log"
+for label in NATIVE_UPGRADE_REVISION_2_OK NATIVE_UPGRADE_PRIVATE_OK \
+             NATIVE_UPGRADE_PUBLICATION_OK NATIVE_UPGRADE_SIBLING_ISOLATED_OK; do
+  if ! grep -q "$label" "$upgrade/forward-acceptance.log"; then
+    echo "Native D1 forward migration failed required acceptance: $label" >&2
+    exit 1
+  fi
+done
+echo "PASS: native populated D1 0022 -> 0023, old GLOB repro, private draft retained, pen+highlight published, sibling isolated"
+
+# #244: this same populated native D1 must apply 0024 AFTER 0023.
+# A confirmed trial exists before 0024, so the forward-only close guard must
+# reject withdrawal atomically; only explicit owner cancellation can release it.
+echo "Checking native populated D1 0023 -> 0024 booked-trial withdrawal guard"
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --file ../../scripts/fixtures/trial-slot-native-pre0024.sql > "$upgrade/trial-pre0024.log"
+if ! grep -q 'NATIVE_TRIAL_BOOKED_PRE0024_OK' "$upgrade/trial-pre0024.log"; then
+  echo "Pre-0024 native D1 booked trial did not persist" >&2
+  exit 1
+fi
+cp -- migrations/0024_trial_slot_close_booking_guard.sql "$upgrade/migrations/"
+"${legacy[@]}" migrations apply noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" > "$upgrade/trial-forward.log"
+"${legacy[@]}" migrations apply noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" > "$upgrade/trial-replay.log"
+if "${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --command "INSERT INTO trial_slot_closure_events(id,operation_id,slot_id,actor_subject,reason,at_ms) VALUES('b645a6fa-1d94-4994-91e7-5819692ba3b6','b745a6fa-1d94-4994-91e7-5819692ba3b6','b145a6fa-1d94-4994-91e7-5819692ba3b6','trial-test-staff','Synthetic attempted booked withdrawal',0)" > "$upgrade/trial-denied.log" 2>&1; then
+  echo "Native D1 0024 unexpectedly allowed withdrawal of a booked trial" >&2
+  exit 1
+fi
+if ! grep -q 'TRIAL_SLOT_ALREADY_BOOKED' "$upgrade/trial-denied.log"; then
+  echo "Native D1 booked withdrawal failed for an unexpected reason" >&2
+  exit 1
+fi
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --command "SELECT CASE WHEN (SELECT COUNT(*) FROM trial_slot_closure_events WHERE slot_id='b145a6fa-1d94-4994-91e7-5819692ba3b6')=0 AND (SELECT status FROM lessons WHERE id='b545a6fa-1d94-4994-91e7-5819692ba3b6')='scheduled' THEN 'NATIVE_TRIAL_WITHDRAW_DENIED_ATOMIC' ELSE 'NATIVE_TRIAL_WITHDRAW_LEAK' END AS result" > "$upgrade/trial-denied-check.log"
+if ! grep -q 'NATIVE_TRIAL_WITHDRAW_DENIED_ATOMIC' "$upgrade/trial-denied-check.log"; then
+  echo "Native D1 rejected withdrawal changed the real lesson or closure history" >&2
+  exit 1
+fi
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --command "INSERT INTO trial_owner_cancellation_events(id,operation_id,lesson_id,learner_id,actor_subject,at_ms) VALUES('b845a6fa-1d94-4994-91e7-5819692ba3b6','b945a6fa-1d94-4994-91e7-5819692ba3b6','b545a6fa-1d94-4994-91e7-5819692ba3b6','draft-test-learner','draft-test-owner',0)" > "$upgrade/trial-cancel.log"
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --command "INSERT INTO trial_slot_closure_events(id,operation_id,slot_id,actor_subject,reason,at_ms) VALUES('ba45a6fa-1d94-4994-91e7-5819692ba3b6','bb45a6fa-1d94-4994-91e7-5819692ba3b6','b145a6fa-1d94-4994-91e7-5819692ba3b6','trial-test-staff','Synthetic closure after real cancellation',0)" > "$upgrade/trial-closed.log"
+"${legacy[@]}" execute noor-core-local --local \
+  --config "$upgrade/wrangler.json" --persist-to "$upgrade/data" \
+  --command "SELECT CASE WHEN (SELECT status FROM lessons WHERE id='b545a6fa-1d94-4994-91e7-5819692ba3b6')='cancelled' AND (SELECT COUNT(*) FROM trial_slot_closure_events WHERE slot_id='b145a6fa-1d94-4994-91e7-5819692ba3b6')=1 AND (SELECT version FROM noor_schema_meta WHERE component='trial_slot_close_booking_guard')=1 AND NOT EXISTS(SELECT 1 FROM pragma_foreign_key_check) THEN 'NATIVE_TRIAL_0024_FORWARD_OK' ELSE 'NATIVE_TRIAL_0024_FORWARD_BAD' END AS result" > "$upgrade/trial-final.log"
+if ! grep -q 'NATIVE_TRIAL_0024_FORWARD_OK' "$upgrade/trial-final.log"; then
+  echo "Native D1 0024 forward migration failed post-cancellation acceptance" >&2
+  exit 1
+fi
+echo "PASS: native populated D1 0022 -> 0023 -> 0024, booked withdrawal denied, cancellation then closure accepted"
+
+# Issue #286: exercise the exact pen+highlight draft INSERT in native local D1,
+# not Python's SQLite engine. Fixture is synthetic and this state is disposable.
+echo "Checking native D1 teacher marked-homework write (synthetic only)"
+"${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/teacher-draft-native-d1.sql > "$state/draft-smoke.log"
+if ! grep -q 'NATIVE_DRAFT_WRITE_OK' "$state/draft-smoke.log" || \
+   ! grep -q 'NATIVE_DRAFT_PRIVATE_OK' "$state/draft-smoke.log" || \
+   ! grep -q 'NATIVE_DRAFT_PUBLICATION_OK' "$state/draft-smoke.log" || \
+   ! grep -q 'NATIVE_DRAFT_SIBLING_ISOLATED_OK' "$state/draft-smoke.log"; then
+  echo "Native D1 draft write/privacy/publication/sibling isolation did not return expected confirmations" >&2
+  exit 1
+fi
+
+# #286: the same household does not grant a Sheikh access to a sibling who
+# is not assigned to that Sheikh. Check the real native D1 access trigger.
+echo "Checking native D1 denies unassigned sibling ink drafts (synthetic only)"
+if "${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/teacher-draft-native-d1-unassigned-sibling.sql > "$state/draft-sibling-denied.log" 2>&1; then
+  echo "Native D1 unexpectedly accepted a Sheikh draft for an unassigned sibling" >&2
+  exit 1
+fi
+if ! grep -q 'DRAFT_ACCESS_DENIED' "$state/draft-sibling-denied.log"; then
+  echo "Native D1 unassigned sibling draft failed for an unexpected reason" >&2
+  exit 1
+fi
+"${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --command "SELECT CASE WHEN (SELECT count(*) FROM teacher_assignment_draft_versions WHERE draft_id='d145a6fa-1d94-4994-91e7-5819692ba3b6')=0 AND (SELECT count(*) FROM learner_quran_events WHERE learner_id='draft-test-sibling')=0 AND (SELECT count(*) FROM learner_quran_current WHERE learner_id='draft-test-sibling')=0 THEN 'NATIVE_DRAFT_UNASSIGNED_SIBLING_DENIED' ELSE 'NATIVE_DRAFT_UNASSIGNED_SIBLING_LEAK' END AS result" > "$state/draft-sibling-denied-check.log"
+if ! grep -q 'NATIVE_DRAFT_UNASSIGNED_SIBLING_DENIED' "$state/draft-sibling-denied-check.log"; then
+  echo "Native D1 unassigned sibling attempt persisted draft or Quran marks" >&2
+  exit 1
+fi
+
+# Issue #286: native D1 must reject malformed colors and leave no draft row.
+# This deliberately failing fixture uses synthetic IDs only.
+echo "Checking native D1 rejects invalid teacher ink color (synthetic only)"
+if "${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/teacher-draft-native-d1-invalid-color.sql > "$state/draft-invalid.log" 2>&1; then
+  echo "Native D1 unexpectedly accepted an invalid teacher ink color" >&2
+  exit 1
+fi
+if ! grep -q 'DRAFT_MARKS_INVALID' "$state/draft-invalid.log"; then
+  echo "Native D1 invalid color failed for an unexpected reason" >&2
+  exit 1
+fi
+"${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --command "SELECT CASE WHEN (SELECT count(*) FROM teacher_assignment_draft_versions WHERE draft_id='f145a6fa-1d94-4994-91e7-5819692ba3b6')=0 THEN 'NATIVE_DRAFT_INVALID_COLOR_REJECTED' ELSE 'NATIVE_DRAFT_INVALID_COLOR_PERSISTED' END AS result" > "$state/draft-invalid-check.log"
+if ! grep -q 'NATIVE_DRAFT_INVALID_COLOR_REJECTED' "$state/draft-invalid-check.log"; then
+  echo "Native D1 invalid color left an unexpected draft row" >&2
+  exit 1
+fi
+
+# #286: SQLite NULL must not bypass the required mark-color guard.
+echo "Checking native D1 rejects omitted teacher ink color (synthetic only)"
+if "${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/teacher-draft-native-d1-missing-color.sql > "$state/draft-missing-color.log" 2>&1; then
+  echo "Native D1 unexpectedly accepted a missing teacher ink color" >&2
+  exit 1
+fi
+if ! grep -q 'DRAFT_MARKS_INVALID' "$state/draft-missing-color.log"; then
+  echo "Native D1 missing color failed for an unexpected reason" >&2
+  exit 1
+fi
+"${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --command "SELECT CASE WHEN (SELECT count(*) FROM teacher_assignment_draft_versions WHERE draft_id='e145a6fa-1d94-4994-91e7-5819692ba3b6')=0 THEN 'NATIVE_DRAFT_MISSING_COLOR_REJECTED' ELSE 'NATIVE_DRAFT_MISSING_COLOR_PERSISTED' END AS result" > "$state/draft-missing-color-check.log"
+if ! grep -q 'NATIVE_DRAFT_MISSING_COLOR_REJECTED' "$state/draft-missing-color-check.log"; then
+  echo "Native D1 missing color left an unexpected draft row" >&2
+  exit 1
+fi
+
+# #286: canonical learner ledger uses the same D1-safe color guard as drafts.
+# A malformed self-study event must fail without an event or current projection.
+echo "Checking native D1 rejects invalid canonical Quran ink color (synthetic only)"
+if "${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/learner-quran-native-d1-invalid-color.sql > "$state/ledger-invalid.log" 2>&1; then
+  echo "Native D1 unexpectedly accepted an invalid canonical ink color" >&2
+  exit 1
+fi
+if ! grep -q 'QURAN_LEDGER_PAYLOAD_DENIED' "$state/ledger-invalid.log"; then
+  echo "Native D1 canonical invalid color failed for an unexpected reason" >&2
+  exit 1
+fi
+"${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --command "SELECT CASE WHEN (SELECT count(*) FROM learner_quran_events WHERE id='native-invalid-canonical-event')=0 AND (SELECT count(*) FROM learner_quran_current WHERE item_id='native-invalid-canonical-item')=0 THEN 'NATIVE_LEDGER_INVALID_COLOR_REJECTED' ELSE 'NATIVE_LEDGER_INVALID_COLOR_PERSISTED' END AS result" > "$state/ledger-invalid-check.log"
+if ! grep -q 'NATIVE_LEDGER_INVALID_COLOR_REJECTED' "$state/ledger-invalid-check.log"; then
+  echo "Native D1 invalid canonical ink left an unexpected event or projection" >&2
+  exit 1
+fi
+
+# #286: missing point coordinates must not pass native ledger validation as NULL.
+echo "Checking native D1 rejects omitted canonical pen point x (synthetic only)"
+if "${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --file ../../scripts/fixtures/learner-quran-native-d1-missing-point.sql > "$state/ledger-missing-point.log" 2>&1; then
+  echo "Native D1 unexpectedly accepted a missing canonical point coordinate" >&2
+  exit 1
+fi
+if ! grep -q 'QURAN_LEDGER_POINT_DENIED' "$state/ledger-missing-point.log"; then
+  echo "Native D1 missing point failed for an unexpected reason" >&2
+  exit 1
+fi
+"${wrangler[@]}" d1 execute noor-core-local --local --persist-to "$state" \
+  --command "SELECT CASE WHEN (SELECT count(*) FROM learner_quran_events WHERE id='native-missing-point-event')=0 AND (SELECT count(*) FROM learner_quran_current WHERE item_id='native-missing-point-item')=0 THEN 'NATIVE_LEDGER_MISSING_POINT_REJECTED' ELSE 'NATIVE_LEDGER_MISSING_POINT_PERSISTED' END AS result" > "$state/ledger-missing-point-check.log"
+if ! grep -q 'NATIVE_LEDGER_MISSING_POINT_REJECTED' "$state/ledger-missing-point-check.log"; then
+  echo "Native D1 missing canonical point left an unexpected event or projection" >&2
+  exit 1
+fi
+
 echo "Starting LOCAL Worker + D1 (no publish)"
 "${wrangler[@]}" dev --local --ip 127.0.0.1 --port 8793 --persist-to "$state" > "$state/worker.log" 2>&1 &
 worker_pid=$!

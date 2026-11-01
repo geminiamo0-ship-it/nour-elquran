@@ -2,23 +2,22 @@
 import Link from 'next/link';
 import {useStudent} from '../StudentContext';
 import styles from '../StudentPortal.module.css';
+import {ConnectedSubscriptionLedger} from './ConnectedSubscriptionLedger';
 
-/** No balance, paid state or renewal date may be inferred from account stage.
- * This page remains explicitly blocked until the signed entitlement ledger API
- * and real payment/provider workflow are implemented and acceptance-tested.
- */
+/** Signed academic ledger facts are not payment or booking authorization. */
 export function SubscriptionWorkspace(){
  const {selected}=useStudent();
  return <div className={styles.workspace}>
-  <section className={styles.panel} aria-label="الاشتراكات الفعلية">
+  {selected.profile.demo?<section className={styles.panel}
+   aria-label="الاشتراكات الفعلية">
    <div className={styles.panelHead}><div>
     <p className={styles.eyebrow}>الملف المحدد · {selected.profile.name}</p>
     <h2>الاشتراك والحصص المتاحة</h2>
    </div></div>
    <div className={styles.subscriptionStatus} role="status">
     <span className={styles.statusNeutral}>الحالة المالية غير متاحة للتحقق</span>
-    <p>لم تتصل هذه الصفحة بعد بسجل استحقاقات موثوق. لا يمكن الاستنتاج
-     أن اشتراكك نشط أو منتهٍ، أو أن رصيدك صفر، من حالة ملف الطالب.</p>
+    <p>لا يمكن الاستنتاج أن اشتراكك نشط أو منتهٍ، أو أن رصيدك صفر،
+     من حالة ملف الطالب التجريبية.</p>
    </div>
    <div className={styles.metricGrid}>
     {[
@@ -30,7 +29,7 @@ export function SubscriptionWorkspace(){
      <span>{title}</span><strong>—</strong><small>{description}</small>
     </div>)}
    </div>
-  </section>
+  </section>:<ConnectedSubscriptionLedger learnerId={selected.profile.id}/>}
   <section className={styles.panel}>
    <div className={styles.panelHead}><div>
     <p className={styles.eyebrow}>بوابة المدفوعات</p><h2>تفعيل الباقات</h2>

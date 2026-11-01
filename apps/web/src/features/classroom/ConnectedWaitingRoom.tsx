@@ -5,6 +5,8 @@ import {LiveLessonMedia} from './LiveLessonMedia';
 import {LiveLessonLifecycle} from './LiveLessonLifecycle';
 import {ReaderPrintedPage,clampQuranPage,targetKey,type QuranTarget,type QuranInkStroke} from '@/features/student';
 import {fetchLiveInk,compactStroke,type InkView} from './live-ink';
+import {useLessonRealtime} from './useLessonRealtime';
+import {reducePreview,type PreviewDrawing} from './ink-preview';
 import {ConnectedClassroomNotes} from './ConnectedClassroomNotes';
 import {QuranVersePicker} from './QuranVersePicker';
 import {isVerseSelection,type VerseSelection} from './quran-verse-selection';
@@ -107,11 +109,14 @@ export function ConnectedWaitingRoom(){
  const [presence,setPresence]=useState<Presence|null>(null);
  const [joined,setJoined]=useState(false);
  const [lessonPhase,setLessonPhase]=useState<'scheduled'|'live'|'completed'|'cancelled'|null>(null);
+ const [lifecycleRefresh,setLifecycleRefresh]=useState(0);
+ const [notesRefresh,setNotesRefresh]=useState(0);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
  const [sharedPage,setSharedPage]=useState<SharedPage|null>(null);
  const [pageBusy,setPageBusy]=useState(false);
  const [ink,setInk]=useState<InkView|null>(null);
+ const [previewDrawings,setPreviewDrawings]=useState<PreviewDrawing[]>([]);
  const [inkBusy,setInkBusy]=useState(false);
  const [inkWriteAuthorized,setInkWriteAuthorized]=useState(false);
  const inkPostBusy=useRef(false);
@@ -119,6 +124,9 @@ export function ConnectedWaitingRoom(){
  const [inkMode,setInkMode]=useState<'off'|'pen'|'marker'|'eraser'>('off');
  const [inkColor,setInkColor]=useState('#d0a94c');
  const inkPollBusy=useRef(false);
+ const inkRefreshRef=useRef<(()=>void)|null>(null);
+ const presenceRefreshRef=useRef<(()=>void)|null>(null);
+ const pageRefreshRef=useRef<(()=>void)|null>(null);
  const [pageError,setPageError]=useState('');
  const pagePollBusy=useRef(false);
  const [panelOpen,setPanelOpen]=useState(false);
@@ -126,6 +134,29 @@ export function ConnectedWaitingRoom(){
  const stageRef=useRef<HTMLDivElement>(null);
  const running=useRef(false);
  const alive=useRef(true);
+ // Hint-only push from the signed DO. Each notification immediately reads the
+ // authoritative HTTP snapshot; the 1s polling path remains as safe fallback.
+ const sendPreview=useLessonRealtime(identity,joined,hint=>{
+  if(hint.type==='quran-page'){
+   setPreviewDrawings([]);
+   pageRefreshRef.current?.();
+  }
+  if(hint.type==='corrections')setNotesRefresh(v=>v+1);
+  if(hint.type==='presence'){
+   presenceRefreshRef.current?.();
+   setLifecycleRefresh(v=>v+1);
+  }
+  if(hint.type==='quran-ink'){
+   setPreviewDrawings(prev=>prev.filter(d=>d.stroke.page!==hint.page));
+   inkRefreshRef.current?.();
+  }
+ },()=>{
+  setPreviewDrawings([]);
+  pageRefreshRef.current?.();inkRefreshRef.current?.();
+ },frame=>{
+  if(joined&&lessonPhase==='live'&&sharedPage?.page===frame.page)
+   setPreviewDrawings(previous=>reducePreview(previous,frame));
+ });
  useEffect(()=>{
   const id=readIdentity();
   setIdentity(id);
@@ -174,6 +205,7 @@ export function ConnectedWaitingRoom(){
    if(action==='heartbeat'&&code==='NOT_JOINED')setPresence(null);
   }finally{running.current=false;if(alive.current)setBusy(false);}
  },[identity]);
+ presenceRefreshRef.current=()=>{void refresh('snapshot');};
  useEffect(()=>{
   if(!identity||!joined)return;
   const timer=window.setInterval(()=>{
@@ -197,11 +229,12 @@ export function ConnectedWaitingRoom(){
    }catch{if(enabled)setPageError('تعذّر تحديث الصفحة المشتركة، وسنعيد المحاولة تلقائيًا.');}
    finally{pagePollBusy.current=false;}
   };
+  pageRefreshRef.current=()=>{void poll();};
   void poll();
-  const timer=window.setInterval(()=>void poll(),2_000);
+  const timer=window.setInterval(()=>void poll(),1_000);
   const visible=()=>{if(document.visibilityState==='visible')void poll();};
   document.addEventListener('visibilitychange',visible);
-  return()=>{enabled=false;window.clearInterval(timer);document.removeEventListener('visibilitychange',visible);};
+  return()=>{enabled=false;pageRefreshRef.current=null;window.clearInterval(timer);document.removeEventListener('visibilitychange',visible);};
  },[identity,joined]);
  useEffect(()=>{
   if(!identity||!joined||!sharedPage){
@@ -227,13 +260,23 @@ export function ConnectedWaitingRoom(){
      setInkError('تعذّر تحديث علامات الحصة؛ سنعيد المحاولة.');}
    }finally{inkPollBusy.current=false;}
   };
+  inkRefreshRef.current=()=>{void poll();};
   void poll();
-  const timer=window.setInterval(()=>void poll(),2_000);
+  const timer=window.setInterval(()=>void poll(),1_000);
   const visibility=()=>{if(document.visibilityState==='visible')void poll();};
   document.addEventListener('visibilitychange',visibility);
-  return()=>{enabled=false;window.clearInterval(timer);
+  return()=>{enabled=false;inkRefreshRef.current=null;window.clearInterval(timer);
    document.removeEventListener('visibilitychange',visibility);};
  },[identity,joined,sharedPage?.page]);
+ useEffect(()=>{
+  if(!joined||lessonPhase!=='live'){setPreviewDrawings([]);return;}
+  if(!previewDrawings.length)return;
+  const timer=window.setTimeout(()=>{
+   const now=Date.now();
+   setPreviewDrawings(old=>old.filter(d=>now-d.seenAtMs<2400));
+  },500);
+  return()=>window.clearTimeout(timer);
+ },[joined,lessonPhase,previewDrawings]);
  const updateSharedInk=useCallback(async(onPage:number,next:QuranInkStroke[])=>{
   if(!identity||!joined||lessonPhase!=='live'||!inkWriteAuthorized||
     !sharedPage||sharedPage.page!==onPage||!ink||ink.page!==onPage||
@@ -325,13 +368,13 @@ export function ConnectedWaitingRoom(){
    <div className={barCss.actions}>
     <LiveLessonLifecycle role={identity.role} lessonId={identity.lessonId}
       learnerId={identity.learnerId} joined={joined}
-      bothPresent={presence?.bothPresent===true}
+      bothPresent={presence?.bothPresent===true} refreshVersion={lifecycleRefresh}
       onPhase={phase=>{setLessonPhase(phase);
        if(phase==='completed'||phase==='cancelled')setJoined(false);}}/>
     <button type="button" className={barCss.start}
      disabled={busy||status!=='ready'||lessonPhase==='completed'||lessonPhase==='cancelled'}
      onClick={()=>void refresh(joined?'leave':'join')}>
-     {busy?'جارٍ التأكيد…':joined?'مغادرة الحصة':'الانضمام لغرفة الانتظار'}
+     {busy?'جارٍ التأكيد…':joined?'مغادرة الحصة':lessonPhase==='live'?'العودة للحصة':'الانضمام لغرفة الانتظار'}
     </button>
     {role==='teacher'&&<button type="button" className={barCss.iconAction}
      aria-label="الأخطاء والتقييم" aria-expanded={panelOpen} aria-controls="lesson-notes"
@@ -358,11 +401,13 @@ export function ConnectedWaitingRoom(){
       </div>
       <p role="status" className={liveCss.menuStatus}>
        {status==='loading'?'جارٍ التحقق من الغرفة…':joined?
-        (presence?.bothPresent?'الطرفان في غرفة الانتظار':'بانتظار الطرف الآخر'):
+        (presence?.bothPresent?(lessonPhase==='live'?'الطرفان متصلان بالحصة الجارية':'الطرفان موجودان؛ الشيخ يقدر يبدأ الحصة'):'بانتظار الطرف الآخر'):
         'انضم أولًا لطلب تصريح الصوت والفيديو.'}
       </p>
-      <button type="button" disabled={busy} onClick={()=>void refresh('snapshot')}>
-       تحديث حالة الطرفين
+      <button type="button" disabled={busy} onClick={()=>{
+       void refresh('snapshot');setLifecycleRefresh(n=>n+1);
+      }}>
+       تحديث حالة الحصة والطرفين
       </button>
       <small>الشيخ وحده يبدأ الحصة رسميًا وينهيها. الكاميرا والمايك لا يعملان تلقائيًا؛ التوقيت موثق على D1.</small>
      </div>
@@ -390,6 +435,9 @@ export function ConnectedWaitingRoom(){
       <h2>المصحف المشترك</h2></div>
      <span className={css.quranStatus}>{sharedPage?'يتبع الطالب الشيخ · إصدار '+sharedPage.revision:'بانتظار تأكيد الصفحة من السيرفر'}</span>
     </header>
+    {lessonPhase==='live'&&!inkWriteAuthorized&&<p className={liveCss.error}
+     role="status">الرسم مقفول في هذه البيئة لأن حفظ علامات الحصة الدائم لم يُعتمد بعد.
+     يمكنك متابعة القراءة وتحديد الآيات، لكن لا توجد علامة محفوظة بدون تأكيد الخادم.</p>}
     <div className={css.toolbar} role="toolbar" aria-label="أدوات المصحف">
      <div className={css.inkPalette} aria-label="القلم والألوان">
       <div className={css.toolGroup}>
@@ -397,7 +445,7 @@ export function ConnectedWaitingRoom(){
         {id:'marker',symbol:'▰',name:'تظليل'},{id:'eraser',symbol:'⌫',name:'ممحاة'}] as const).map(item=>
         <button key={item.id} type="button"
          title={item.id==='off'?'تحديد آية للقراءة فقط':
-          canDraw?item.name:item.name+' متاح للطرفين أثناء الحصة مع تفعيل الحفظ الدائم'}
+          canDraw?item.name:item.name+' غير مفعل حتى يؤكد الخادم صلاحية الرسم والحفظ الدائم'}
          aria-label={item.name} aria-pressed={inkMode===item.id}
          disabled={item.id!=='off'&&!canDraw}
          onClick={()=>setInkMode(item.id)}>
@@ -434,7 +482,9 @@ export function ConnectedWaitingRoom(){
      <button type="button" className={css.pageEdgePrev} title="الصفحة السابقة" aria-label="الصفحة السابقة"
       disabled={!teacherCanTurn||page<=1} onClick={()=>void changeSharedPage(page-1)}>‹</button>
      <ReaderPrintedPage page={page} viewportFit inkMode={canDraw?inkMode:'off'} color={inkColor}
-      strokes={currentStrokes} selectedKey={selectedVerse?targetKey(selectedVerse):null}
+      strokes={currentStrokes}
+      previewStrokes={previewDrawings.filter(x=>x.stroke.page===page).map(x=>x.stroke)}
+      onInkPreview={canDraw?sendPreview:undefined} selectedKey={selectedVerse?targetKey(selectedVerse):null}
       noteKeys={new Set<string>()}
       onSelect={target=>{if(teacherCanTurn)void changeSharedPage(page,
         {surah:target.surah,ayah:target.ayah});}}
@@ -451,7 +501,8 @@ export function ConnectedWaitingRoom(){
    </main>
    <div className={css.panelSlot} id="lesson-notes" data-open={panelOpen?'true':'false'}>
     <ConnectedClassroomNotes role={role} page={page} lessonId={identity.lessonId}
-     joined={joined&&lessonPhase!=='completed'} selectedVerse={selectedVerse}/>
+     joined={joined&&lessonPhase!=='completed'} selectedVerse={selectedVerse}
+     refreshVersion={notesRefresh}/>
    </div>
   </div>
   <p className={[css.disclaimer,liveCss.disclaimer].join(' ')}>

@@ -92,6 +92,12 @@
 .videoTarget video{width:100%;height:100%;object-fit:cover;}
 .videoLabel{position:absolute;bottom:4px;right:6px;padding:2px 5px;border-radius:4px;
  background:#162f27c9;color:#fff;font-size:10px;pointer-events:none;}
+/* Peer media shows verified subscribed tracks, not just successful signaling. */
+.remoteTrackState{position:absolute;top:3px;right:4px;left:4px;z-index:1;
+ padding:2px 4px;border-radius:4px;background:#162f27d9;color:#fff;
+ font-size:9px;line-height:1.2;white-space:nowrap;overflow:hidden;
+ text-overflow:ellipsis;pointer-events:none;text-align:right;}
+
 .remoteAudio{display:none;}
 .mediaActions{display:flex;flex:0 0 auto;flex-wrap:wrap;gap:4px;align-items:center;}
 .mediaActions button{

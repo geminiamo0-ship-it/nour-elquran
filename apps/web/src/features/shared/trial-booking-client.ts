@@ -62,6 +62,24 @@ export const trialBookingClient={
    throw new TrialBookingError('INVALID_TRIAL_RESPONSE');
   return payload.lessonId;
  },
+ rescheduleSlots:async(learnerId:string,lessonId:string,signal?:AbortSignal)=>{
+  if(!uuid.test(lessonId))throw new TrialBookingError('INVALID_TRIAL_RESCHEDULE');
+  const raw=await request(ownerUrl(learnerId)+'/trial-reschedule-slots?lessonId='+
+   encodeURIComponent(lessonId),undefined,signal);
+  if(raw.code!=='TRIAL_RESCHEDULE_SLOTS')
+   throw new TrialBookingError('INVALID_TRIAL_RESPONSE');
+  return parseTrialAvailability({code:'TRIAL_SLOTS',eligible:true,slots:raw.slots}).slots;
+ },
+ reschedule:async(learnerId:string,oldLessonId:string,slotId:string,operationId:string)=>{
+  if(![oldLessonId,slotId,operationId].every(v=>uuid.test(v)))
+   throw new TrialBookingError('INVALID_TRIAL_RESCHEDULE');
+  const payload=await request(ownerUrl(learnerId)+'/trial-reschedules',
+    {oldLessonId,slotId,operationId});
+  if(!['TRIAL_RESCHEDULED','TRIAL_RESCHEDULE_REPLAY'].includes(String(payload.code))||
+   typeof payload.lessonId!=='string'||!uuid.test(payload.lessonId))
+   throw new TrialBookingError('INVALID_TRIAL_RESPONSE');
+  return payload.lessonId;
+ },
  cancel:async(learnerId:string,lessonId:string,operationId:string)=>{
   if(!uuid.test(lessonId)||!uuid.test(operationId))
    throw new TrialBookingError('INVALID_TRIAL_CANCELLATION');

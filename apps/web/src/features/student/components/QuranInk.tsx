@@ -2,6 +2,12 @@
 
 import { useRef, useState, type PointerEvent } from 'react';
 import type { QuranInkStroke } from '../quranAnnotations';
+/** Feature-local shape; classroom integration is intentionally one-way. */
+export type PreviewFrame=Readonly<{
+ type:'ink-preview';phase:'start'|'move'|'end'|'cancel';strokeId:string;
+ page:number;seq:number;kind:'pen'|'marker';color:string;width:3|16;
+ points:ReadonlyArray<Readonly<{x:number;y:number}>>;
+}>;
 import { pointToPath } from '../quranAnnotations';
 import css from './QuranInk.module.css';
 
@@ -14,9 +20,29 @@ type Props = {
   /** Teacher/classroom academic overlay: never editable by personal eraser. */
   fixedStrokes?: readonly QuranInkStroke[];
   onChange: (strokes: QuranInkStroke[]) => void;
+  /** Live room provisional updates, never a permanent ink save. */
+  onPreview?: (frame:PreviewFrame) => void;
+  previewStrokes?: readonly QuranInkStroke[];
 };
-export function QuranInk({ page, mode, color, strokes, fixedStrokes = [], onChange }: Props) {
-  const active = useRef<{ pointerId:number; points:{x:number;y:number}[] } | null>(null);
+type Draft= {pointerId:number;strokeId:string;points:{x:number;y:number}[];
+ lastSent:number;sentPoints:number;seq:number;kind:'pen'|'marker';color:string;width:3|16};
+export function QuranInk({ page, mode, color, strokes, fixedStrokes = [],
+ onChange,onPreview,previewStrokes=[] }: Props) {
+  const active = useRef<Draft|null>(null);
+  function publish(a:Draft,phase:'start'|'move'|'end'|'cancel',force=false){
+    if(!onPreview)return;
+    const now=performance.now();
+    if(phase==='move'&&!force&&now-a.lastSent<32)return;
+    const pending=phase==='end'||phase==='cancel'?[]:a.points.slice(a.sentPoints);
+    if((phase==='start'||phase==='move')&&!pending.length)return;
+    // The realtime packet is deliberately bounded; canonical onChange gets
+    // all points even when a high-frequency S Pen produces many samples.
+    const points=pending.length<=64?pending:Array.from({length:64},(_,i)=>
+      pending[Math.round(i*(pending.length-1)/63)]!);
+    onPreview({type:'ink-preview',phase,strokeId:a.strokeId,page,
+      seq:++a.seq,kind:a.kind,color:a.color,width:a.width,points});
+    a.lastSent=now;a.sentPoints=a.points.length;
+  }
   const [draft, setDraft] = useState<readonly {x:number;y:number}[]>([]);
   const enabled = mode !== 'off';
 
@@ -35,7 +61,12 @@ export function QuranInk({ page, mode, color, strokes, fixedStrokes = [], onChan
       e.preventDefault();
       return;
     }
-    active.current={pointerId:e.pointerId,points:[p]};
+    const kind=mode==='marker'?'marker':'pen';
+    const next:Draft={pointerId:e.pointerId,
+      strokeId:'ink-'+crypto.randomUUID(),points:[p],lastSent:0,
+      sentPoints:0,seq:-1,kind,color,width:kind==='marker'?16:3};
+    active.current=next;
+    publish(next,'start',true);
     e.currentTarget.setPointerCapture(e.pointerId);
     setDraft([p]);
     e.preventDefault();
@@ -46,21 +77,24 @@ export function QuranInk({ page, mode, color, strokes, fixedStrokes = [], onChan
     const next=pos(e),last=a.points[a.points.length-1];
     if (last && Math.hypot(last.x-next.x,last.y-next.y)<2) return;
     if (a.points.length>2500) return;
-    a.points.push(next);setDraft([...a.points]);
+    a.points.push(next);setDraft([...a.points]);publish(a,'move');
     e.preventDefault();
   }
   function end(e:PointerEvent<SVGSVGElement>) {
     const a=active.current;
     if (!a || a.pointerId!==e.pointerId) return;
+    publish(a,'move',true);publish(a,a.points.length>1?'end':'cancel',true);
     active.current=null;setDraft([]);
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
     if (a.points.length>1) onChange([...strokes,{
-      id:'ink-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),
-      page,color,width:mode==='marker'?16:3,kind:mode==='marker'?'marker':'pen',points:a.points
+      id:a.strokeId,
+      page,color:a.color,width:a.width,kind:a.kind,points:a.points
     }]);
   }
   function cancel(e:PointerEvent<SVGSVGElement>) {
-    if(active.current?.pointerId===e.pointerId){active.current=null;setDraft([]);}
+    if(active.current?.pointerId===e.pointerId){
+      publish(active.current,'cancel',true);active.current=null;setDraft([]);
+    }
   }
   return <svg className={enabled?css.active:css.passive} viewBox="0 0 1000 1594"
       preserveAspectRatio="none" aria-label="طبقة الرسم على المصحف"
@@ -73,6 +107,10 @@ export function QuranInk({ page, mode, color, strokes, fixedStrokes = [], onChan
       stroke={s.color} strokeWidth={s.width} opacity={s.kind==='marker'?0.36:0.9}
       fill="none" strokeLinecap="round" strokeLinejoin="round"
       pointerEvents="none" aria-label="علامة تعليمية مشتركة"/>)}
+    {previewStrokes.map(s=><path key={'preview-'+s.id} d={pointToPath(s.points)}
+      stroke={s.color} strokeWidth={s.width} opacity={s.kind==='marker'?0.30:0.70}
+      fill="none" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none"
+      aria-label="رسم لحظي غير محفوظ بعد"/>)}
     {draft.length>1 && <path d={pointToPath(draft)} stroke={color}
       strokeWidth={mode==='marker'?16:3} opacity={mode==='marker'?0.36:0.9}
       fill="none" strokeLinecap="round" strokeLinejoin="round"/>}

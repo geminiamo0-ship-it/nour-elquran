@@ -21,6 +21,8 @@ export interface Env {
   DB?: CoreDatabase;
   /** Off by default: full DO->D1 live ink delivery requires a lesson-end fence. */
   NOOR_CUMULATIVE_INK_ENABLED?: string;
+  /** Source lands disabled; enable only after signed Dev realtime acceptance. */
+  NOOR_REALTIME_HINTS_ENABLED?: string;
   AUTH_ENABLED?: string;
   AUTH_SECRET?: string;
   AUTH_ORIGIN?: string;
