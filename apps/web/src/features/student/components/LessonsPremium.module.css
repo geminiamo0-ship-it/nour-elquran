@@ -1,0 +1,75 @@
+/* #322 — premium minimal learner lessons. No generic admin-style timetable. */
+.page{direction:rtl;width:100%;min-width:0;display:grid;gap:19px;color:#153c2e}
+.page *{box-sizing:border-box}
+.intro{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-top:17px}
+.intro h1{font:700 clamp(34px,3.4vw,48px)/1.3 'Amiri','Noto Naskh Arabic',serif;color:#084430;margin:0}
+.intro p{font-size:clamp(14px,1.3vw,17px);color:#687469;margin:3px 0 0;line-height:1.7}
+.introIcon{color:#be913e;width:53px;height:53px;border-radius:16px;background:#fff7e9;border:1px solid #ebd7b4;display:grid;place-items:center;flex-shrink:0}
+.tabs{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid #eadbc7;padding-bottom:14px}
+.tab,.tabActive{border:1px solid #e6d8c5;border-radius:12px;background:#fffbf6;color:#315746;padding:12px 21px;min-height:47px;font-size:16px;font-weight:800;cursor:pointer}
+.tabActive{background:#074a35;color:white;border-color:#074a35;box-shadow:0 5px 12px #154c3127}
+.tab:hover{border-color:#b98d42}
+.schedule{display:grid;gap:17px}
+.feature{background:radial-gradient(circle at 14% 105%,#28785877,transparent 47%),linear-gradient(125deg,#095b42,#013b2b);padding:clamp(22px,2.7vw,36px);border:1px solid #27614e;border-radius:24px;color:#fff;box-shadow:0 12px 28px #073b251a;position:relative;overflow:hidden}
+.feature::after{content:'۞';position:absolute;font:210px/1 'Amiri',serif;color:#e8c78016;left:-26px;top:12px;pointer-events:none}
+.featureTop,.featureFoot{display:flex;align-items:center;justify-content:space-between;gap:15px;position:relative;z-index:1}
+.featureTop{margin-bottom:17px}
+.eyebrow{font-weight:800;font-size:13px;color:#f0ce81;letter-spacing:0}
+.liveFlag,.futureFlag,.demoFlag{font-size:13px;border:1px solid #ffffff57;border-radius:99px;padding:6px 13px;font-weight:800;color:#fff;background:#ffffff15}
+.liveFlag{background:#e2c16e;color:#193c2b;border-color:#e2c16e}
+.feature h2{font:700 clamp(28px,3vw,40px)/1.4 'Amiri',serif;margin:0 0 6px;color:#fff;position:relative;z-index:1}
+.feature p{font-size:16px;color:#eef4eb;margin:0 0 16px;line-height:1.65;position:relative;z-index:1}
+.facts{display:flex;flex-wrap:wrap;align-items:center;gap:10px;position:relative;z-index:1}
+.fact{padding:11px 15px;border:1px solid #ffffff48;border-radius:12px;background:#ffffff11;display:flex;gap:9px;align-items:center;font-weight:800;font-size:16px;line-height:1.6}
+.fact svg{color:#e1c481}
+.cta{display:inline-flex;align-items:center;justify-content:center;gap:12px;border-radius:13px;background:linear-gradient(140deg,#f9dd9d,#e7b85e);color:#183e2e;padding:12px 26px;min-height:50px;font-weight:800;font-size:17px;text-decoration:none;border:1px solid #ffdf9c;white-space:nowrap}
+.cta:hover{filter:brightness(1.04)}
+.featureFoot{margin-top:22px}
+.note{font-size:13px;color:#e8efe6;line-height:1.75;max-width:520px}
+.panel{border:1px solid #e8d8c1;border-radius:21px;background:#fffbf6;padding:clamp(18px,2.3vw,28px);box-shadow:0 7px 20px #49360e0e}
+.panelHead{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:15px}
+.panelHead h2{font:700 clamp(24px,2.4vw,31px)/1.4 'Amiri',serif;margin:0;color:#103f30}
+.panelHead small{font-size:13px;color:#788074}
+.lessons{display:grid;gap:0}
+.lessonRow{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:17px 3px;border-top:1px solid #eee3d2}
+.lessonRow:first-child{border-top:0}
+.lessonSummary{display:flex;align-items:center;gap:15px;min-width:0}
+.lessonMark{width:46px;height:46px;flex-shrink:0;display:grid;place-items:center;border-radius:13px;background:#eef3e9;color:#0a553c}
+.lessonInfo{display:grid;gap:3px;min-width:0}
+.lessonInfo strong{color:#164431;font-size:17px;line-height:1.5}
+.lessonInfo span{font-size:14px;color:#758074;line-height:1.65}
+.ghostLink{color:#0d6345;font-size:14px;font-weight:800;text-decoration:none;border:1px solid #d4e2d3;border-radius:10px;padding:9px 12px;white-space:nowrap}
+.ghostLink:hover{background:#edf5ec}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:9px}
+.empty{font-size:16px;line-height:1.75;color:#697769;margin:0;padding:10px 0}
+.emptyState{background:#fffbf6;border:1px solid #e9d7bd;padding:20px;border-radius:19px;font-size:16px;color:#526d5c}
+.expansion{border:1px solid #e7d9c5;background:#fffaf2;border-radius:16px;overflow:hidden}
+.expansion summary{padding:16px 20px;font-size:16px;font-weight:800;color:#174632;cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:54px}
+.expansion summary::-webkit-details-marker{display:none}
+.expansion summary:after{content:'⌄';font-size:23px;color:#997233;font-weight:400;transition:transform .2s}
+.expansion[open] summary:after{transform:rotate(180deg)}
+.expansionBody{padding:4px 16px 17px;border-top:1px solid #e8d8c1}
+.expansionBody p{line-height:1.7;font-size:15px}
+.expansionBody :global(section){margin:12px 0 0}
+.expansionBody :global(h2){font-size:24px}
+.embedded{min-width:0}
+.embedded :global(section){border-radius:18px;box-shadow:none}
+.embedded :global(p){font-size:15px;line-height:1.8}
+.embedded :global(h2){font-size:25px}
+.previewFoot{font-size:13px;color:#7b745f}
+.page :is(button,a,summary):focus-visible{outline:3px solid #c6a04d;outline-offset:3px}
+@media(max-width:900px){.featureFoot{align-items:stretch}.cta{padding-inline:18px}.facts{gap:7px}.fact{font-size:15px}}
+@media(max-width:640px){
+ .page{gap:14px}.intro{margin-top:12px}.intro h1{font-size:32px}.intro p{font-size:14px}
+ .introIcon{width:44px;height:44px}
+ .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding-bottom:12px}
+ .tab,.tabActive{font-size:13px;min-height:45px;padding:9px 5px}
+ .feature{padding:20px;border-radius:18px}.feature h2{font-size:29px}.feature p{font-size:14px}
+ .featureFoot{display:grid;gap:12px}.cta{width:100%;white-space:normal;font-size:16px}
+ .fact{padding:9px 11px;font-size:14px}
+ .panel{border-radius:17px;padding:17px}.panelHead h2{font-size:24px}
+ .lessonRow{align-items:flex-start;flex-wrap:wrap;padding:13px 0}.lessonInfo strong{font-size:15px}
+ .lessonInfo span{font-size:13px}.lessonMark{width:39px;height:39px}.controls{width:100%;padding-right:52px}
+ .ghostLink{font-size:13px}.expansion summary{font-size:14px;padding:14px}
+}
+@media(prefers-reduced-motion:reduce){.expansion summary:after{transition:none}}
