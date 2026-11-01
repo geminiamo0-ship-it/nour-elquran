@@ -63,6 +63,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const [price,setPrice]=useState('');
  const [sessions,setSessions]=useState('8');
  const [selectedPackage,setSelectedPackage]=useState('');
+ const [packageFormOpen,setPackageFormOpen]=useState(false);
  const [selectedRequest,setSelectedRequest]=useState('');
  const [learnerId,setLearnerId]=useState('');
  const [reason,setReason]=useState('');
@@ -115,24 +116,30 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   invites:'إضافة شيخ بدعوة',contact:'واتساب الأكاديمية'}[mode];
  return <section dir="rtl" className={styles.root} aria-label={modeTitle}>
   <h2>{modeTitle}</h2>
-  <p>كل تعديل يتطلب صلاحية الإدارة الحالية وتأكيدًا صريحًا. الدفع لا يُثبت تلقائيًا من واتساب.</p>
+  {mode==='packages'?<p>أضف باقة أو عدّل سعرها وعدد حصصها. التعديلات الجديدة لا تغيّر الاشتراكات السابقة.</p>:
+   <p>تُراجع كل عملية من الإدارة؛ واتساب ليس إثبات دفع تلقائيًا.</p>}
   <button type="button" onClick={()=>setRefresh(n=>n+1)} disabled={busy}>
    تحديث البيانات</button>
   {!data&&<p role="status">جارٍ تحميل البيانات المصرح بها…</p>}
   {data&&mode==='packages'&&<>
-   <h3>الباقات المسجلة</h3>
+   <div className={styles.packageHeading}><h3>الباقات الحالية</h3>
+    <button type="button" onClick={()=>{
+     setSelectedPackage('');setTitle('');setPrice('');setSessions('8');
+     setConfirmed(false);setPackageFormOpen(true);
+    }}>+ إضافة باقة</button></div>
    {data.packages.length===0?<p>لا توجد باقات مضافة بعد.</p>:
     <div className={styles.options}>
      {data.packages.map(p=><article key={p.id}>
-      <strong>{p.title}</strong> — {label(p.priceEgp)} جنيه / {label(p.sessions)} حصص
-      {' · '}{p.active===1?'متاحة':'موقوفة'}
+      <div className={styles.packageFacts}><strong>{p.title}</strong>
+       <span>{label(p.priceEgp)} جنيه / {label(p.sessions)} حصص</span>
+       <small>{p.active===1?'متاحة':'موقوفة'}</small></div>
       <button type="button" onClick={()=>{
        setSelectedPackage(p.packageId);setTitle(p.title);setPrice(String(p.priceEgp));
-       setSessions(String(p.sessions));setConfirmed(false);
+       setSessions(String(p.sessions));setConfirmed(false);setPackageFormOpen(true);
       }}>تعديل الإصدار القادم</button>
      </article>)}
     </div>}
-   <form onSubmit={e=>guard(e,()=>void send('packages',{
+   {packageFormOpen&&<form onSubmit={e=>guard(e,()=>void send('packages',{
     operationId:iso(),packageId:UUID.test(selectedPackage)?selectedPackage:iso(),
     title:title.trim(),priceEgp:Number(price),sessions:Number(sessions),
     active:(e.nativeEvent as SubmitEvent).submitter instanceof HTMLButtonElement?
@@ -144,16 +151,14 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
      value={price} onChange={e=>setPrice(e.target.value)}/></label>
     <label>عدد الحصص<input required type="number" min={1} max={60} step={1}
      value={sessions} onChange={e=>setSessions(e.target.value)}/></label>
-    <p>الإصدار الجديد لا يغيّر أسعار الطلبات أو الاشتراكات السابقة.</p>
+    <p>السعر الجديد للطلبات القادمة فقط.</p>
     <Confirm checked={confirmed} onChange={setConfirmed}/>
     <button type="submit" disabled={!confirmed||busy} data-active="true">
      {selectedPackage?'حفظ السعر والباقة':'إضافة باقة'}</button>
     {selectedPackage&&<button type="submit" disabled={!confirmed||busy}
      data-active="false">تعطيل الباقة</button>}
-    {selectedPackage&&<button type="button" onClick={()=>{
-     setSelectedPackage('');setTitle('');setPrice('');setSessions('8');setConfirmed(false);
-    }}>باقة جديدة</button>}
-   </form>
+    <button type="button" onClick={()=>{setPackageFormOpen(false);setConfirmed(false);}}>إلغاء</button>
+   </form>}
   </>}
   {data&&mode==='requests'&&<>
    <h3>طلبات الطلاب</h3>

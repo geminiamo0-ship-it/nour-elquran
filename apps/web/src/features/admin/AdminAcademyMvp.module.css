@@ -6,10 +6,21 @@
 .root label{display:flex;flex-direction:column;gap:7px;font-size:14px;font-weight:700}
 .root label:has(input[type=checkbox]),.root label:has(input[type=radio]){flex-direction:row;align-items:flex-start}
 .root input:not([type=checkbox]):not([type=radio]),.root select{border:1px solid #c4d1c6;border-radius:8px;padding:10px;min-width:0;width:100%;background:#fff;color:#234030;font:inherit}
-.root button{width:fit-content;border-radius:9px;background:#295c40;color:white;border:0;padding:10px 15px;font:700 14px inherit;cursor:pointer}
+.root button{width:fit-content;border-radius:9px;background:#295c40;color:white;border:0;padding:10px 15px;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer}
 .root button:disabled{opacity:.48;cursor:not-allowed}
 .root :is(button,input,select):focus-visible{outline:3px solid #b98c34;outline-offset:2px}
 .options{display:grid;gap:10px;max-height:360px;overflow-y:auto;padding:4px}
 .options article,.options label{padding:12px;border:1px solid #e0e3d9;background:#fff;border-radius:10px}
 .root code{font:12px monospace;max-width:100%;overflow-wrap:anywhere}
 @media(max-width:720px){.root{padding:14px}.root button{width:100%}}
+/* #324: low-noise Admin packages. Only edit controls expand when selected. */
+.packageHeading{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.packageHeading h3{margin:0}
+.packageFacts{display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:1}
+.packageFacts strong{font:700 22px/1.4 'Amiri',serif;color:#0e4832}
+.packageFacts span{font-size:15px;font-weight:800;color:#2a6042}
+.packageFacts small{font-size:13px;color:#887349;padding:5px 9px;border-radius:99px;background:#f6f1e5}
+.options article{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;min-height:65px}
+.root button{min-height:43px}
+.root form{border-color:#e5d5b9;background:#fffaf2;border-radius:15px}
+@media(max-width:720px){.packageFacts{display:grid;gap:5px}.packageHeading button{width:auto}.options article{align-items:stretch}}

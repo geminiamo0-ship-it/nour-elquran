@@ -48,7 +48,7 @@ function Frame({children,preview=false}:{children:ReactNode;preview?:boolean}){
   event.preventDefault();event.stopPropagation();
   const next=href.startsWith('/student/progress')?'/preview/student/lessons#reports':
    href.startsWith('/student/notebook')?'/preview/student/lessons#notebook':
-   href.startsWith('/student/account')||href.startsWith('/student/subscription')?'/preview/student':
+   href.startsWith('/student/account')?'/preview/student':
    href.replace(/^\/student/,'/preview/student');
   router.push(next);
  }
@@ -90,7 +90,7 @@ function Frame({children,preview=false}:{children:ReactNode;preview?:boolean}){
       <details className={css.accountMenu}>
        <summary aria-label="الحساب والاشتراك"><Icon name="chevron" size={18}/></summary>
        <div className={css.accountPopover}>
-        {preview?<p className={css.previewMenuNote}>معاينة بصرية فقط؛ الحساب والاشتراك غير متصلين.</p>:<>
+        {preview?<div className={css.previewMenuNote}>معاينة بصرية فقط؛ لا توجد مدفوعات حقيقية.<p><Link href="/preview/student/subscription">معاينة الاشتراك والباقات</Link></p></div>:<>
         <Link href="/student/account"><Icon name="user" size={17}/> الحساب والملفات</Link>
         <Link href="/student/subscription"><Icon name="settings" size={17}/> الاشتراك والدفع</Link>
         {!selected.profile.demo&&<div className={css.sessionMenu}><SessionControls/></div>}
