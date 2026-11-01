@@ -164,6 +164,23 @@ export function cairoMonthEnd(start:number){
  }
  return guess;
 }
+/** Stable, privacy-safe operational errors only; never expose raw SQLite, identities or SQL. */
+export function activationDeniedCode(error:unknown){
+ const message=error instanceof Error?error.message:'';
+ if(message.includes('SUBSCRIPTION_CYCLE_OVERLAP'))return 'ACADEMY_CYCLE_OVERLAP';
+ if(message.includes('SUBSCRIPTION_RENEWAL_CHAIN_INVALID'))return 'ACADEMY_RENEWAL_CONFLICT';
+ if(message.includes('SUBSCRIPTION_ROLLOVER_MISMATCH'))return 'ACADEMY_ROLLOVER_CONFLICT';
+ if(message.includes('SUBSCRIPTION_LEARNER_DENIED')||message.includes('ACADEMY_LEARNER_DENIED'))
+  return 'ACADEMY_LEARNER_UNAVAILABLE';
+ if(message.includes('ACADEMY_VERSION_DENIED'))return 'ACADEMY_PACKAGE_VERSION_UNAVAILABLE';
+ if(message.includes('ACADEMY_REQUEST_MISMATCH'))return 'ACADEMY_REQUEST_MISMATCH';
+ if(message.includes('SUBSCRIPTION_STAFF_DENIED')||message.includes('ACADEMY_STAFF_DENIED'))
+  return 'ACADEMY_STAFF_ACCESS_CHANGED';
+ if(message.includes('UNIQUE constraint failed')&&message.includes('request_id'))
+  return 'ACADEMY_REQUEST_ALREADY_ACTIVATED';
+ if(message.includes('FOREIGN KEY constraint failed'))return 'ACADEMY_REFERENCE_UNAVAILABLE';
+ return 'ACADEMY_ACTIVATION_DENIED';
+}
 export async function staffActivate(db:CoreDatabase,subject:string,raw:unknown,now=Date.now()){
  if(!object(raw)||!exact(raw,['operationId','learnerId','packageVersionId','requestId','note','manualConfirmed'])||
  !uuid(raw.operationId)||!uuid(raw.learnerId)||!uuid(raw.packageVersionId)||
@@ -180,6 +197,32 @@ export async function staffActivate(db:CoreDatabase,subject:string,raw:unknown,n
  previous.packageVersionId===raw.packageVersionId&&previous.requestId===raw.requestId?
  {status:200,code:'ACADEMY_ACTIVATION_REPLAY'} as const:
  {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ // A displayed request is an immutable quote, not an HTTP request trace.
+ // Confirm the exact learner, quote and pending state before touching credits.
+ if(raw.requestId!==null){
+  const request=await db.prepare(`SELECT req.learner_id AS learnerId,
+   req.package_version_id AS versionId,
+   EXISTS(SELECT 1 FROM academy_subscription_activation_events a
+    WHERE a.request_id=req.id) AS activated,
+   EXISTS(SELECT 1 FROM academy_request_rejections rej
+    WHERE rej.request_id=req.id) AS rejected
+   FROM academy_request_events req WHERE req.id=?`)
+  .bind(raw.requestId).first<{learnerId:string;versionId:string;
+    activated:number;rejected:number}>();
+  if(!request)return {status:409,code:'ACADEMY_REQUEST_NOT_FOUND'} as const;
+  if(request.activated)return {status:409,code:'ACADEMY_REQUEST_ALREADY_ACTIVATED'} as const;
+  if(request.rejected)return {status:409,code:'ACADEMY_REQUEST_REJECTED'} as const;
+  if(request.learnerId!==raw.learnerId||request.versionId!==raw.packageVersionId)
+   return {status:409,code:'ACADEMY_REQUEST_MISMATCH'} as const;
+ }else{
+  const quoted=await db.prepare(`SELECT id,package_id AS packageId,active
+    FROM academy_package_events WHERE id=?`)
+   .bind(raw.packageVersionId).first<{id:string;packageId:string;active:number}>();
+  if(!quoted||quoted.active!==1)return {status:409,code:'ACADEMY_PACKAGE_VERSION_UNAVAILABLE'} as const;
+  const latest=await currentPackage(db,quoted.packageId);
+  if(latest?.id!==quoted.id)
+   return {status:409,code:'ACADEMY_PACKAGE_VERSION_UNAVAILABLE'} as const;
+ }
  const last=await db.prepare(`SELECT id,ends_at_ms AS endsAtMs,
  base_sessions AS baseSessions,rollover_sessions AS rolloverSessions,
  (SELECT COUNT(*) FROM subscription_spend_events spend
@@ -200,7 +243,7 @@ export async function staffActivate(db:CoreDatabase,subject:string,raw:unknown,n
  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,1,?)`).bind(crypto.randomUUID(),raw.operationId,subject,
  raw.learnerId,raw.requestId,raw.packageVersionId,crypto.randomUUID(),
  last?.id??null,carry,start,ends,raw.note,start).run();
- }catch(e){if(allowed(e))return {status:409,code:'ACADEMY_ACTIVATION_DENIED'} as const;throw e;}
+ }catch(e){if(allowed(e))return {status:409,code:activationDeniedCode(e)} as const;throw e;}
  return {status:201,code:'ACADEMY_SUBSCRIPTION_ACTIVATED',startsAtMs:start,
  endsAtMs:ends,rolloverSessions:carry} as const;
 }
