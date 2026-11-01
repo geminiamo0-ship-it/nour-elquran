@@ -1,3 +1,8 @@
+## 2026-11-01 — #317 decision chronology hardening on Draft PR #318
+- Current repository rechecked; #317 remains OPEN, PR #318 Draft. Source D1 migration 0031 now rejects staff approval/rejection when decision `at_ms` precedes guardian proposal `requested_at_ms` (error `ACADEMY_DECISION_PRECEDES_REQUEST`). Added native SQLite regression for both decision types and no phantom booking/spend.
+- Commits edb8ef8 (SQL) and d198a68 (test) on branch `feat/317-paid-slot-request-ledger`. Do not confuse source push with CI, Dev acceptance, or release. Local full-repo clone unavailable in this run (container DNS could not resolve github.com); inspect GitHub Actions on exact new HEAD.
+- NEXT: CI + independent SQL/security review, then signed guardian/staff API with server-only clock, student request/Admin inbox, isolated Dev two-role and sibling QA. No production/payment/WhatsApp/media/flag changes; keep #317/#155 open.
+
 ## 2026-11-01 — #317 D1 expired pending request recovery, continuation of Draft PR #318
 - Latest checked main `b54eeb84ac3cf3715bebbaa27f492e85a4d761fd`; Draft #318 head was `447b8b9` with prior 4/4 Verify #41280097038 before this follow-up. No independent PR reviews.
 - Migration 0031 pending-request guard previously treated an expired undecided proposal as pending forever. It now excludes old slots at/before the approval cutoff relative to NEW.requested_at_ms (must be trusted server time when API is implemented). Added native regression proving old approval still fails and fresh approval debits exactly once.
