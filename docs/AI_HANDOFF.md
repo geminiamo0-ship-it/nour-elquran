@@ -1,3 +1,9 @@
+## 2026-11-01 — #309 atomic teacher-role guard API error contract
+
+- Live GitHub `main@bd1224be3beffa14476be1305e40713c770b51e7`; open #309 PR #311 had exact-head Verify #41273340282 SUCCESS **before** this follow-up. Reviewed migration 0027, shared `issueTeacherRoleAction`, and legacy endpoint. SQL `RAISE(ABORT,'active classes block teacher transition')` was not explicitly classified; roster preflight is not atomic and legacy path has no preflight.
+- In the existing PR #311 branch, mapped this known atomic denial to `409 ACTIVE_CLASSES_BLOCK_TRANSITION`, preserving idempotent replay and failing closed for unrelated D1 failures. Added Node regression for both cases in `workers/api/tests/staff-teachers.test.ts`.
+- **NEXT EXACT ACTION:** inspect the new PR #311 head and GitHub Verify after follow-up commits; if red repair; then independent review and Santoreno isolated Dev signed 0027/0028 staff/nonstaff role/attendance tests. No source-only acceptance, Production deploy, finance, audio, or cumulative ink flag.
+
 ## 2026-11-01 — Single Admin operations candidate #309
 - After owner confirmed their signed Dev Admin worked, source branch feat/admin-consolidated-operations-20261101 wires 3 existing audited D1 workflows into existing RTL Admin pages. Preserve current read-only GET lists and bounded roles; source does NOT imply deployment.
 - A new POST /v1/staff/teachers/transition resolves roster teacherId to private auth subject on the SERVER after fresh roles.manage grant, then uses existing issueTeacherRoleAction and immutable D1 role event. New migration 0027 prevents suspension/de-qualification with a future/live class at database write time. Never show the underlying auth subject in staff roster API or logs.
