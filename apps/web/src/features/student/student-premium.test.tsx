@@ -45,6 +45,17 @@ describe('approved premium learner experience #322',()=>{
   expect(html).toContain(target.replaceAll('&','&amp;'));
   expect(html).toContain('دخول الحصة');
  });
+ it('rebuilds lessons around one upcoming session without redundant weekly panels or mock booking',()=>{
+  const markup=renderToStaticMarkup(<StudentProvider liveLearners={DEMO_PROFILES}
+   initialSelectedId="demo-active"><LessonHub/></StudentProvider>);
+  expect(markup).toContain('حصصي');
+  expect(markup).toContain('سجل الحصص');
+  expect(markup).toContain('التقارير');
+  expect(markup).toContain('مراجعة سورة الإخلاص');
+  expect(markup).not.toContain('أيام حصصي الأسبوعية');
+  expect(markup).not.toContain('التجربة المجانية والجدول المنتظم');
+  expect(markup).not.toContain('اختر يومًا من الأسبوع');
+ });
  it('keeps report and private notebook workflows in the unified lessons view',()=>{
   const report=renderToStaticMarkup(<StudentProvider><LessonHub initialTab="reports"/></StudentProvider>);
   const notebook=renderToStaticMarkup(<StudentProvider><LessonHub initialTab="notebook"/></StudentProvider>);
