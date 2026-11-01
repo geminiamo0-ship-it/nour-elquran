@@ -71,7 +71,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    setResult({phase:'done',message:'سجّل الخادم العملية: '+ack.code});
    setConfirmed(false);setReason('');setPendingOp(null);
    if(path==='invites'&&typeof (ack as {token?:unknown}).token==='string'){
-    const token=(ack as {token:string}).token;
+    const token=(ack as {code:string;token?:string}).token!;
     setInviteUrl(window.location.origin+'/teacher/join?token='+token);
    }else{setRefresh(n=>n+1);}
   }catch(e){
