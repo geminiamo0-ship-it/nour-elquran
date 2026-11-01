@@ -13,7 +13,6 @@ const sample={
   endsAtMs:NOW+2592000000,baseSessions:8,rolloverSessions:1,spentSessions:2},
  attendance:{id:'appeal-a',kind:'student_no_show',submittedAtMs:NOW,decision:'pending'},
 } as const;
-type View=keyof typeof sample;
 function make(granted:boolean,rows:unknown){
  const queries:{sql:string,args:unknown[]}[]=[];
  const db={prepare(sql:string){return{bind(...args:unknown[]){
