@@ -73,3 +73,29 @@
  .ghostLink{font-size:13px}.expansion summary{font-size:14px;padding:14px}
 }
 @media(prefers-reduced-motion:reduce){.expansion summary:after{transition:none}}
+
+.reportList{display:grid;gap:14px}
+.reportCard{border:1px solid #e5d6c0;border-radius:16px;background:#fffdf9;padding:20px;min-width:0}
+.reportHead{display:flex;align-items:start;justify-content:space-between;gap:15px;margin-bottom:13px}
+.reportHead strong{display:block;font-size:18px;color:#154432;line-height:1.6}
+.reportHead small{display:block;font-size:13px;color:#798071}
+.reportGrades{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin:12px 0}
+.grade{background:#f5f1e8;border:1px solid #efe3d0;border-radius:12px;padding:13px;text-align:center}
+.grade span{font-size:14px;color:#677a68;display:block}
+.grade strong{display:block;font-size:19px;color:#0f4e38;margin-top:4px}
+.reportSummary{font-size:15px;line-height:1.8;margin:12px 0 0;color:#344e3d}
+.detailsButton{border:1px solid #c6a56e;color:#134f38;background:#fff9ee;border-radius:9px;min-height:41px;padding:9px 15px;font-weight:800;font-size:14px;cursor:pointer}
+.detailText{border-top:1px solid #e8d9c4;margin-top:12px;padding-top:12px;font-size:15px;line-height:1.8;color:#435846}
+.detailText p{font-size:15px;line-height:1.8;margin:6px 0}
+.more{background:#f1ebdd;border:1px solid #e6d8c4;border-radius:11px;padding:11px 19px;color:#204b38;font-size:15px;font-weight:800;cursor:pointer}
+.reportEmpty{font-size:16px;color:#657266;line-height:1.8;padding:12px 0}
+.noteCard{border:1px solid #e5d6c0;border-radius:16px;background:#fffdf9;padding:20px}
+.noteCard h2{font:700 26px 'Amiri',serif;margin:0 0 8px}
+.fieldLabel{font-size:15px;color:#315343;font-weight:800;display:block;margin:8px 0}
+.chooser,.noteInput{width:100%;min-height:46px;padding:10px 14px;border:1px solid #d7c6ac;border-radius:10px;background:#fffdf9;color:#214632;font:inherit}
+.noteInput{min-height:105px;line-height:1.8;resize:vertical}
+.noteActions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
+.savedNote{border-top:1px solid #ebdfcf;display:flex;justify-content:space-between;align-items:start;gap:15px;padding:13px 0}
+.savedNote p{font-size:15px;line-height:1.8;margin:0}
+.textButton{border:0;background:transparent;color:#8e6328;font-weight:800;cursor:pointer}
+@media(max-width:640px){.reportCard,.noteCard{padding:16px}.reportHead strong{font-size:16px}.reportGrades{gap:6px}.grade{padding:9px 4px}.grade span{font-size:12px}.grade strong{font-size:15px}.noteActions{align-items:stretch;flex-wrap:wrap}.reportSummary{font-size:14px}}
