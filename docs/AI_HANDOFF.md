@@ -1,3 +1,17 @@
+## 2026-11-01 / #244 — compensation spend temporal guard (PR #299, CI pending)
+- Source review found the 0026 compensation spend trigger checked grant issuance and remaining balance, but unlike cycle spends it did not restrict the debit timestamp to the target lesson start. A late staff ledger event could therefore consume a non-expiring grant against an already-started lesson.
+- Hardened the D1 INSERT trigger to require grant-issued <= spend-at <= target lesson start; added a regression that first rejects a late debit and then accepts a timely debit 299 days after grant issuance. No credit writer or paid booking endpoint was enabled.
+- Candidate commit on existing PR #299; **exact-head CI and independent SQL/security review are still required**, followed by isolated signed Dev 0026 acceptance. #244 remains OPEN; no Production, payments, child media, WhatsApp or cumulative-ink flag changes.
+- NEXT: inspect exact-head GitHub Verify and independent reviewer feedback, then isolated Dev migration/owner-sibling read acceptance; do not merge solely on source tests.
+
+## 2026-11-01 — Exact continuation: #244 subscriptions 0026 foundation, PR #299
+
+- User asked to proceed after atomic trial replacement; #298 merged into Noor main at `157daaa0...` and isolated Dev #41254227146 showed signed 0025 replacement PASS.
+- New **DRAFT** [PR #299](https://github.com/geminiamo0-ship-it/nour-elquran/pull/299) offers **source-only** 0026 D1 immutable academic-credit cycles, one-cycle carry within 3-day manual-renewal grace, non-expiring staff-issued lesson-backed compensations, spend caps, and signed guardian GET `/v1/me/learners/:id/subscription-ledger`. It always returns `bookingEnabled:false`; this does not enable paid bookings or financial receipts. Owner sibling separation via existing Better Auth and D1.
+- Tests: `workers/api/tests/test_subscription_ledger.py`, `workers/api/tests/subscription-ledger.test.ts` and existing native Wrangler local all-migration gate. Read `docs/SUBSCRIPTION_LEDGER_244_FOUNDATION.md` for limitations and design. Verify latest PR-head CI; fix failures before review. Independent reviewer and signed 0026 remote Dev acceptance still needed; do not merge/deploy Production automatically.
+- CRITICAL: migration only bounds period 27-32 days. The **exact Cairo calendar-month time-zone computation, pack catalog/prices, manual-confirmation staff write API, reservation/debit/refund, no-shows, late admin exceptions and full subscription UI** are NOT implemented. Separate reviewed slices required; Admin Dashboard last per owner decision.
+- Next: finish PR #299 green checks, request independent SQL/security review, isolate Dev signed household GET with schema marker and no fabricated paid balances. Keep #244 open.
+
 ## 2026-10-31 / #244 — latest exact handoff: rebooked-slot safety
 - Existing PR #280 `fix/244-reject-closing-booked-trial-slot-20261031`, source-only additive 0024. Native Wrangler full forward-upgrade Verify [#41242256224](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41242256224) PASS 4/4 on prior HEAD `3f0bc40a`.
 - Added Python SQL regression `test_rebooked_trial_slot_still_blocks_withdrawal` at `75b92cbd`: cancelled trial A, same-slot rebooking B, withdrawal denied while B scheduled, no closure event, then cancel B and allow withdrawal. **Check new exact-head Verify before claiming PASS.**
