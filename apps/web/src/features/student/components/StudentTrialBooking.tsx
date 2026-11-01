@@ -6,7 +6,7 @@ type View={phase:'loading'|'ready'|'error';availability:TrialAvailability|null};
 const format=new Intl.DateTimeFormat('ar-EG',{
  timeZone:'Africa/Cairo',dateStyle:'full',timeStyle:'short'
 });
-export function StudentTrialBooking({learnerId,onBooked: _onBooked,refreshRevision}:{
+export function StudentTrialBooking({learnerId,refreshRevision}:{
  learnerId:string;onBooked:()=>void;refreshRevision:number;
 }){
  const [view,setView]=useState<View>({phase:'loading',availability:null});
