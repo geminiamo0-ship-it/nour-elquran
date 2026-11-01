@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {readOwnerAcademy,latestPendingAcademyRequest,
- type AcademyOffer,type OwnerAcademy} from '../../shared/academy-owner-client';
+ type AcademyOffer,type OwnerAcademy} from '../../shared';
 import css from './StudentSubscription.module.css';
 
 type View={phase:'loading'|'error';message:string}|
