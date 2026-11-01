@@ -1,3 +1,8 @@
+## 2026-11-01 — #317 concurrent paid-slot idempotency hardening (PR #318; source-only)
+- Signed guardian proposal and staff decision endpoints now re-read immutable D1 events by operationId after a recognized constraint failure. If a concurrent identical insert won, they return the original requestId/lessonId instead of misleading 409; a mismatched actor/payload remains 409, and revoked owner/staff fails before replay.
+- New Node regressions simulate both SELECT-to-INSERT unique races, mismatch and revoked staff. No extra lesson/credit write is made during recovery; D1 triggers still own atomic booking/spend.
+- Verification pending: exact-head GitHub Verify and independent SQL/auth review. No local tests executed (GitHub clone DNS unavailable), no Cloudflare Dev migration, signed E2E, Production, payment, WhatsApp, R2 child audio or cumulative-ink activation. Keep #317 and PR #318 OPEN/Draft. NEXT: exact-head CI, review, connected Student/Admin UI and synthetic Dev owner/staff/sibling acceptance.
+
 ## 2026-11-01 — #317 paid-slot idempotency after expiry (Draft PR #318)
 - Source audit of the signed guardian POST found that the future-slot check ran **before** looking up the immutable operationId, so a legitimate retry after the proposed start could return 400 instead of the original request ID. This is unsafe for a network-uncertain write.
 - Branch `feat/317-paid-slot-request-ledger`: moved the time-window check after owner authorization and exact prior-operation replay; **new** proposals still require a future slot and expired/unauthorized attempts cannot create rows. Added Node regressions for late exact replay, fresh stale rejection and revoked owner denial. Commits `7848381`, `f96035c`.
