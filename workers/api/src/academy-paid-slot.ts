@@ -25,16 +25,17 @@ async function owner(db:CoreDatabase,subject:string,learnerId:string){
  return r?.allowed===1;
 }
 
-export async function ownerPaidSlotRequests(db:CoreDatabase,subject:string,learnerId:string){
+export async function ownerPaidSlotRequests(db:CoreDatabase,subject:string,learnerId:string,now=Date.now()){
  if(!await owner(db,subject,learnerId))return {status:404,code:'NOT_FOUND'} as const;
  const rows=await db.prepare(`SELECT r.id AS requestId,r.teacher_id AS teacherId,
  r.starts_at_ms AS startsAtMs,r.ends_at_ms AS endsAtMs,
- CASE WHEN d.decision IS NULL THEN 'pending' ELSE d.decision END AS state,
+ CASE WHEN d.decision IS NOT NULL THEN d.decision
+ WHEN r.starts_at_ms<=? THEN 'expired' ELSE 'pending' END AS state,
  d.lesson_id AS lessonId
  FROM academy_paid_slot_request_events r
  LEFT JOIN academy_paid_slot_decision_events d ON d.request_id=r.id
  WHERE r.learner_id=? ORDER BY r.requested_at_ms DESC,r.id DESC LIMIT 30`)
- .bind(learnerId).all<Record<string,unknown>>();
+  .bind(now+60000,learnerId).all<Record<string,unknown>>();
  return {status:200,code:'ACADEMY_PAID_SLOT_REQUESTS',requests:rows.results} as const;
 }
 
