@@ -1,3 +1,7 @@
+## #317 owner paid-slot status read UI (source-only, 2026-11-01)
+- Vitest `paid-slot-requests-client.test.ts` asserts strict response fields, bounded unique requests, 40-minute intervals, approved lesson ID vs pending/rejected null, PII rejection, same-origin signed no-store GET, malformed learner ID denied before fetch, 404/503/offline never rendered as zero rows.
+- Signed Lessons component is learner-keyed and aborts old request on switch. Browser 360/390 and sibling/foreign-owner/Dev D1 0031 checks remain required. Exact-head CI not yet observed for this slice; no operational acceptance.
+
 ## #317 concurrent operationId race regression — 2026-11-01
 - Node academy-paid-slot.test.ts: two signed POSTs may both observe no prior event; losing D1 unique insert must read winner by operationId and return original guardian requestId or staff lessonId only if actor and immutable payload match. Changed actor/payload remains 409; revoked owner/staff denies before replay. No second booking/spend write.
 - Required: exact-head GitHub Verify including native D1, strict TypeScript and security smoke; independent review; synthetic signed Cloudflare Dev two-role/sibling/idempotency acceptance. No CI/Dev pass claimed for this change yet.
