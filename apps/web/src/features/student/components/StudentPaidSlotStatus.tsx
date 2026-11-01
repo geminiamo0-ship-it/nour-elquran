@@ -37,6 +37,7 @@ export function StudentPaidSlotStatus({learnerId}:{learnerId:string}){
      <div className={styles.lessonInfo}>
       <strong>{date.format(new Date(item.startsAtMs))}</strong>
       <span>{item.state==='pending'?'بانتظار قرار الإدارة':
+       item.state==='expired'?'انتهى الموعد دون اعتماد الحجز':
        item.state==='approved'?'تم اعتماد الحجز':'رفضت الإدارة الطلب'}</span>
      </div>
     </article>)}</div>}
