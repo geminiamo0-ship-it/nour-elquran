@@ -96,7 +96,7 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied}:Pro
   if(busy||!confirmed)return;
   const operationId=crypto.randomUUID(),value=command(operationId);
   if(!validAdminAction(kind,value)){
-   setResult({phase:'error',message:errors.INVALID_ACTION_INPUT});return;
+   setResult({phase:'error',message:errors.INVALID_ACTION_INPUT??'راجع الحقول المطلوبة.'});return;
   }
   void send(value,operationId);
  }
