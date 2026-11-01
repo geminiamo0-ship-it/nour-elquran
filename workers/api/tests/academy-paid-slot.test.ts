@@ -46,11 +46,16 @@ test('guardian request requires exact schema, owner and trusted server clock',as
  assert.deepEqual(insert.values.slice(1),[OP,LEARNER,TEACHER,CYCLE,'owner',START,
   START+2400000,NOW]);
  for(const bad of [{...proposal,requestedAtMs:1},{...proposal,actorSubject:'staff'},
-  {...proposal,startsAtMs:NOW-1},{...proposal,startsAtMs:'120000000'},
-  {...proposal,startsAtMs:NOW+31*86400000}]){
+  {...proposal,startsAtMs:'120000000'}]){
   const m=mock();
   assert.equal((await ownerPaidSlotRequest(m.db,'owner',LEARNER,bad,NOW)).status,400);
   assert.equal(m.queries.length,0);
+ }
+ for(const bad of [{...proposal,startsAtMs:NOW-1},
+  {...proposal,startsAtMs:NOW+31*86400000}]){
+  const m=mock();
+  assert.equal((await ownerPaidSlotRequest(m.db,'owner',LEARNER,bad,NOW)).status,400);
+  assert.equal(m.queries.some(q=>q.sql.includes('INSERT INTO')),false);
  }
  const denied=mock({owner:false});
  assert.deepEqual(await ownerPaidSlotRequest(denied.db,'owner',LEARNER,proposal,NOW),
@@ -70,6 +75,22 @@ test('guardian idempotency accepts only same owner, learner and immutable propos
   assert.equal((await ownerPaidSlotRequest(bad.db,'owner',LEARNER,proposal,NOW)).status,409);
   assert.equal(bad.queries.some(q=>q.sql.includes('INSERT INTO')),false);
  }
+});
+
+test('guardian retry of the same proposal remains idempotent after the slot expires',async()=>{
+ const prior={id:REQUEST,actor:'owner',learnerId:LEARNER,teacherId:TEACHER,
+  cycleId:CYCLE,startsAtMs:START};
+ const later=START+60000;
+ const replay=mock({prior});
+ assert.deepEqual(await ownerPaidSlotRequest(replay.db,'owner',LEARNER,proposal,later),
+  {status:200,code:'ACADEMY_PAID_SLOT_REPLAY',slotRequestId:REQUEST});
+ assert.equal(replay.queries.some(q=>q.sql.includes('INSERT INTO')),false);
+ const newAttempt=mock();
+ assert.equal((await ownerPaidSlotRequest(newAttempt.db,'owner',LEARNER,proposal,later)).status,400);
+ assert.equal(newAttempt.queries.some(q=>q.sql.includes('INSERT INTO')),false);
+ const revoked=mock({owner:false,prior});
+ assert.equal((await ownerPaidSlotRequest(revoked.db,'owner',LEARNER,proposal,later)).status,404);
+ assert.equal(revoked.queries.some(q=>q.sql.includes('FROM academy_paid_slot_request_events')),false);
 });
 
 test('guardian and staff lists are bounded and deny foreign role before query',async()=>{
