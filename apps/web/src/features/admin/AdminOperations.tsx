@@ -2,6 +2,7 @@
 import {useEffect,useRef,useState} from 'react';
 import type {AccountSession} from '@/features/account';
 import type {AdminDataRow} from './admin-collections-client';
+import type {AdminTeacher} from './admin-teachers-client';
 import {submitAdminAction,validAdminAction,AdminActionError,
  type AdminOperationKind,type AdminActionResult} from './admin-operations-client';
 import css from './AdminOperations.module.css';
@@ -12,7 +13,7 @@ type Result=
  |{phase:'error';message:string}
  |{phase:'uncertain';command:unknown;operationId:string};
 type Props={kind:AdminOperationKind;session:AccountSession;
- rows?:readonly AdminDataRow[];onApplied?:()=>void};
+ rows?:readonly AdminDataRow[];teachers?:readonly AdminTeacher[];onApplied?:()=>void};
 const actions:Record<AdminOperationKind,readonly {id:string;label:string}[]>={
  teacher:[
   {id:'provision',label:'تجهيز ملف شيخ غير نشط'},
@@ -43,7 +44,7 @@ const errors:Record<string,string>={
  ATTENDANCE_REVIEW_DENIED:'لا يمكن اعتماد قرار هذا الاعتراض.',
 };
 const toMillis=(s:string)=>s?new Date(s).getTime():NaN;
-export function AdminOperations({kind,session,rows=[],onApplied}:Props){
+export function AdminOperations({kind,session,rows=[],teachers=[],onApplied}:Props){
  const [action,setAction]=useState<string>(actions[kind][0]!.id);
  const [target,setTarget]=useState('');
  const [learner,setLearner]=useState('');
@@ -64,7 +65,9 @@ export function AdminOperations({kind,session,rows=[],onApplied}:Props){
  }
  function command(operationId:string):unknown{
   const base={operationId,reason:reason.trim()};
-  if(kind==='teacher')return {...base,action,targetUserId:target.trim()};
+  if(kind==='teacher')return action==='provision'
+   ?{...base,action,targetUserId:target.trim()}
+   :{...base,action,teacherId:resource.trim()};
   if(kind==='attendance')return {...base,appealId:resource.trim(),decision:action};
   if(action==='cancel'||action==='revoke')return {...base,action,resourceId:resource.trim()};
   const common={...base,action,learnerId:learner.trim(),teacherId:teacher.trim(),
@@ -109,9 +112,16 @@ export function AdminOperations({kind,session,rows=[],onApplied}:Props){
     <select disabled={busy} value={action} onChange={e=>changeAction(e.target.value)}>
      {actions[kind].map(a=><option key={a.id} value={a.id}>{a.label}</option>)}
     </select></label>
-   {kind==='teacher'&&<label>معرّف حساب الشيخ (auth subject)
+   {kind==='teacher'&&action==='provision'&&<label>معرّف الحساب المسجّل (auth subject)
     <input required disabled={busy} maxLength={128} autoComplete="off"
      value={target} onChange={e=>setTarget(e.target.value)}/></label>}
+   {kind==='teacher'&&action!=='provision'&&<label>اختر الشيخ من السجل الموثق
+    <select required disabled={busy} value={resource} onChange={e=>setResource(e.target.value)}>
+     <option value="">اختر شيخًا…</option>
+     {teachers.map(t=><option key={t.id} value={t.id}>
+      {t.name} · {t.status==='active'?'نشط':'موقوف'} · {t.qualified?'مؤهل':'غير مؤهل'}
+     </option>)}
+    </select></label>}
    {kind==='schedule'&&['assign','book'].includes(action)&&<>
     <label>معرّف الطالب
      <input required disabled={busy} maxLength={128} value={learner}
