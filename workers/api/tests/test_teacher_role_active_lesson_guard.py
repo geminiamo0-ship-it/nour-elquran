@@ -59,6 +59,15 @@ class TeacherActiveLessonGuard(unittest.TestCase):
         self.assertEqual(self.db.execute(
             "SELECT status FROM teachers WHERE id='teacher-id'").fetchone(),('active',))
 
+    def test_live_past_reservation_end_still_blocks_suspension(self):
+        self.db.execute("UPDATE lessons SET status='live',ends_at_ms=? WHERE id='lesson-id'",
+                        (T-1,))
+        with self.assertRaisesRegex(sqlite3.IntegrityError,
+                                    "active classes block teacher transition"):
+            self.suspend("live-overdue")
+        self.assertEqual(self.db.execute(
+            "SELECT status FROM teachers WHERE id='teacher-id'").fetchone(),('active',))
+
     def test_cancellation_then_suspension_retains_history(self):
         self.db.execute("UPDATE lessons SET status='cancelled' WHERE id='lesson-id'")
         self.suspend("allowed-op")
