@@ -49,7 +49,8 @@ export function TrainingWorkspace(){
   </nav>
 
   {tab==='homework'&&!demo&&<section id="training-panel-homework" role="tabpanel" aria-labelledby="training-tab-homework">
-   <StudentPublishedAssignments key={selected.profile.id} learnerId={selected.profile.id}/>
+   <StudentPublishedAssignments key={selected.profile.id} learnerId={selected.profile.id}
+    onPractice={()=>changeTab('practice')}/>
   </section>}
   {tab==='homework'&&demo&&<section className={css.content} id="training-panel-homework"
    role="tabpanel" aria-labelledby="training-tab-homework">
