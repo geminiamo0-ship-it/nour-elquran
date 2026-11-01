@@ -1,3 +1,9 @@
+## 2026-11-01 — #309 atomic teacher active-lesson conflict mapping (source candidate)
+
+- Reviewed open PR #311 and D1 migration 0027 on current main `bd1224be3beffa14476be1305e40713c770b51e7`. Found the legacy `/v1/staff/teacher-actions` path can hit the new atomic trigger directly, while roster preflight can race with a new booking; the trigger raises `active classes block teacher transition` but the shared handler's error classifier did not explicitly recognize that text, risking a generic HTTP 503 instead of an actionable policy conflict.
+- Updated `workers/api/src/staff-teachers.ts` to translate only that known 0027 trigger message to `409 ACTIVE_CLASSES_BLOCK_TRANSITION`; unknown D1 failures still propagate and never claim success. Added Node regression for the legacy direct-trigger path and unrelated D1 errors. No D1 schema, role permissions, Production, financial, or media changes.
+- **NEXT:** exact-head GitHub Verify on PR #311 including new Node regression; independent review of atomic guard and staff permissions; isolated synthetic signed Dev 0027+0028 tests and mobile QA. No remote acceptance claimed.
+
 ## 2026-11-01 — Admin operational package #309 (source candidate; NOT deployed)
 - Consolidated operational Admin UI source connects existing signed D1 teacher, schedule and attendance audit commands while keeping read-only overviews and subscription ledger intact. New roster teacher transition endpoint resolves private auth subject only inside authorized Worker; no browser contact/identity leak.
 - D1 0027 adds atomic prohibition on suspension or qualification revocation while scheduled/live lessons remain. UI exposes assignment/revocation and 6h-policy cancellation, **not** manual paid lesson creation; attendance adjudication requires separate attendance.review role. All actions demand reason, confirmation, operationId, authoritative ACK, and explicit uncertain-network replay.
