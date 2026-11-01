@@ -29,10 +29,10 @@ export function AdminBookingPanel({mode,session}:{mode:'trial'|'paid';session:Ac
    const r=await fetch(root+p,{credentials:'same-origin',cache:'no-store',signal:ctrl.signal});
    if(!r.ok)throw Error('DENIED');
    return r.json() as Promise<{requests?:Trial[];cycles?:Cycle[]}>;
-  }),...(mode==='paid'?[fetch('/v1/staff/teachers',{
+  }),...([fetch('/v1/staff/teachers',{
     credentials:'same-origin',cache:'no-store',signal:ctrl.signal
    }).then(async r=>{if(!r.ok)throw Error('DENIED');
-    return r.json() as Promise<{teachers:Teacher[]}>;})]:[])]).then(list=>{
+    return r.json() as Promise<{teachers:Teacher[]}>;})])).then(list=>{
    const first=list[0] as {requests?:Trial[];cycles?:Cycle[]}|undefined;
    const second=list[1] as {teachers?:Teacher[]}|undefined;
    if(!ctrl.signal.aborted)setData({phase:'ready',trials:first?.requests??[],
@@ -44,7 +44,8 @@ export function AdminBookingPanel({mode,session}:{mode:'trial'|'paid';session:Ac
  async function send(path:string,body:unknown){
   setBusy(true);setResult('جارٍ تسجيل القرار لدى الخادم…');setPending({path,body});
   try{
-   const response=await fetch('/v1/staff/academy/'+path,{
+   const response=await fetch(path==='slot-publication'?'/v1/staff/trial-slots':
+    '/v1/staff/academy/'+path,{
     method:'POST',credentials:'same-origin',redirect:'error',cache:'no-store',
     headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
    const payload:unknown=await response.json();
@@ -65,6 +66,27 @@ export function AdminBookingPanel({mode,session}:{mode:'trial'|'paid';session:Ac
   {data.phase==='error'&&<p role="alert">تعذّر التحقق من الصلاحية أو السجلات.</p>}
   {data.phase==='ready'&&<>
    {mode==='trial'?<>
+    <form onSubmit={e=>{e.preventDefault();
+     if(!confirmed||!teacher||!start||busy)return;
+     void send('slot-publication',{operationId:crypto.randomUUID(),
+      teacherId:teacher,startsAtMs:new Date(start).getTime()});
+    }}>
+     <h3>نشر موعد تجريبي متاح</h3>
+     <p>اختاري الشيخ والوقت؛ سيظهر الموعد للطالب كي يطلب تأكيده من الإدارة.
+      نشر الموعد لا يحجز حصة ولا يخصم رصيدًا.</p>
+     <label>الشيخ
+      <select required value={teacher} onChange={e=>setTeacher(e.target.value)}>
+       <option value="">اختر شيخًا نشطًا</option>
+       {data.teachers.filter(t=>t.status==='active'&&t.qualified).map(t=>
+        <option key={t.id} value={t.id}>{t.name}</option>)}
+      </select></label>
+     <label>الموعد<input required type="datetime-local" value={start}
+      onChange={e=>setStart(e.target.value)}/></label>
+     <label><input type="checkbox" checked={confirmed}
+      onChange={e=>setConfirmed(e.target.checked)}/>
+      راجعت توافر الشيخ وأوافق على إظهار الموعد للطلاب</label>
+     <button type="submit" disabled={!teacher||!start||!confirmed||busy}>نشر الموعد التجريبي</button>
+    </form>
     {data.trials.length===0?<p>مفيش طلبات تجريبية حالياً.</p>:
      <div className={styles.options}>
      {data.trials.map(v=><label key={v.requestId}>
