@@ -83,6 +83,22 @@ BEFORE INSERT ON academy_paid_slot_decision_events BEGIN
   NEW.decision='approved' AND NOT EXISTS(
    SELECT 1 FROM academy_paid_slot_request_events r
    WHERE r.id=NEW.request_id AND r.starts_at_ms>NEW.at_ms+60000);
+ -- #317: A valid proposal does not reserve eligibility. Re-check the
+ -- learner, owner, teacher qualification and assignment AT APPROVAL time.
+ -- Rejections must remain possible for stale proposals without spending.
+ SELECT RAISE(ABORT,'ACADEMY_PAID_ASSIGNMENT_MISSING') WHERE
+  NEW.decision='approved' AND NOT EXISTS(
+   SELECT 1 FROM academy_paid_slot_request_events r
+   JOIN learners l ON l.id=r.learner_id
+   JOIN accounts a ON a.id=l.account_id
+   JOIN teachers t ON t.id=r.teacher_id
+   JOIN teacher_assignments g ON g.learner_id=l.id AND g.teacher_id=t.id
+   WHERE r.id=NEW.request_id AND l.status='active'
+    AND a.status='active' AND a.auth_subject=r.actor_subject
+    AND t.status='active' AND t.qualified=1
+    AND g.revoked_at_ms IS NULL
+    AND g.starts_at_ms<=r.starts_at_ms
+    AND g.ends_at_ms>=r.ends_at_ms);
 END;
 -- Any rejection records only the decision. An approval is a single D1
 -- transaction: the #315 trigger inserts the lesson and exactly one spend.
