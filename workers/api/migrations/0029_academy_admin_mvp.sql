@@ -108,9 +108,12 @@ CREATE TRIGGER academy_activation_staff BEFORE INSERT ON academy_subscription_ac
   AND l.status='active' AND a.status='active');
  SELECT RAISE(ABORT,'ACADEMY_VERSION_DENIED') WHERE NOT EXISTS(
   SELECT 1 FROM academy_package_events p WHERE p.id=NEW.package_version_id AND p.active=1
-  AND NOT EXISTS (SELECT 1 FROM academy_package_events n
+  AND (NEW.request_id IS NOT NULL OR NOT EXISTS(
+   SELECT 1 FROM academy_package_events n
    WHERE n.package_id=p.package_id AND (n.at_ms>p.at_ms OR
-    (n.at_ms=p.at_ms AND n.id>p.id))));
+    (n.at_ms=p.at_ms AND n.id>p.id)))));
+ -- Existing student requests retain their immutable quoted historical price
+ -- even if Admin edited the package afterward. Direct grants use current price.
  SELECT RAISE(ABORT,'ACADEMY_REQUEST_MISMATCH') WHERE NEW.request_id IS NOT NULL AND NOT EXISTS(
   SELECT 1 FROM academy_request_events r WHERE r.id=NEW.request_id
    AND r.learner_id=NEW.learner_id AND r.package_version_id=NEW.package_version_id
@@ -173,4 +176,23 @@ CREATE TRIGGER academy_request_rejections_immutable_update BEFORE UPDATE ON acad
 CREATE TRIGGER academy_request_rejections_immutable_delete BEFORE DELETE ON academy_request_rejections BEGIN SELECT RAISE(ABORT,'ACADEMY_IMMUTABLE'); END;
 CREATE TRIGGER academy_contact_events_immutable_update BEFORE UPDATE ON academy_contact_events BEGIN SELECT RAISE(ABORT,'ACADEMY_IMMUTABLE'); END;
 CREATE TRIGGER academy_contact_events_immutable_delete BEFORE DELETE ON academy_contact_events BEGIN SELECT RAISE(ABORT,'ACADEMY_IMMUTABLE'); END;
+-- A staff-issued unguessable invitation is the Academy's explicit role
+-- approval for the invited account; no CV or phone OTP is required to claim.
+-- The invite creation + claim is the immutable provenance for this role.
+-- It cannot create a staff grant or elevate the user beyond Sheikh.
+CREATE TRIGGER academy_invite_auto_provision AFTER UPDATE OF claimed_subject
+ ON academy_teacher_invites WHEN OLD.claimed_subject IS NULL AND NEW.claimed_subject IS NOT NULL
+BEGIN
+ SELECT RAISE(ABORT,'ACADEMY_INVITER_REVOKED') WHERE NOT EXISTS(
+ SELECT 1 FROM staff_grants g JOIN auth_users actor ON actor.id=g.auth_subject
+ JOIN accounts account ON account.auth_subject=actor.id
+ WHERE g.auth_subject=NEW.actor_subject AND g.permission='roles.manage'
+ AND g.revoked_at_ms IS NULL AND actor.phone_number_verified=1 AND account.status='active');
+ SELECT RAISE(ABORT,'ACADEMY_TEACHER_ALREADY_REGISTERED') WHERE EXISTS(
+  SELECT 1 FROM teachers t WHERE t.auth_subject=NEW.claimed_subject);
+ INSERT INTO teachers(id,auth_subject,qualified,status)
+ VALUES(lower(hex(randomblob(4))||'-'||hex(randomblob(2))||'-4'||
+  substr(hex(randomblob(2)),2,3)||'-a'||substr(hex(randomblob(2)),2,3)||
+  '-'||hex(randomblob(6))),NEW.claimed_subject,1,'active');
+END;
 INSERT INTO noor_schema_meta(component,version) VALUES('academy_admin_mvp',1);
