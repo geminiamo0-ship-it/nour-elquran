@@ -42,8 +42,7 @@ export async function ownerPaidSlotRequest(db:CoreDatabase,subject:string,
  learnerId:string,raw:unknown,now=Date.now()){
  if(!obj(raw)||!exact(raw,['operationId','teacherId','cycleId','startsAtMs'])||
  !uuid(raw.operationId)||!uuid(raw.teacherId)||!uuid(raw.cycleId)||
- !Number.isSafeInteger(raw.startsAtMs)||!safeClock(now)||
- Number(raw.startsAtMs)<now+60000||Number(raw.startsAtMs)>now+WINDOW_MS)
+ !Number.isSafeInteger(raw.startsAtMs)||!safeClock(now))
  return {status:400,code:'ACADEMY_PAID_SLOT_INVALID'} as const;
  if(!await owner(db,subject,learnerId))return {status:404,code:'NOT_FOUND'} as const;
  const prior=await db.prepare(`SELECT id,actor_subject AS actor,
@@ -57,6 +56,10 @@ export async function ownerPaidSlotRequest(db:CoreDatabase,subject:string,
  prior.startsAtMs===raw.startsAtMs?
  {status:200,code:'ACADEMY_PAID_SLOT_REPLAY',slotRequestId:prior.id} as const:
  {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ // A retried, identical operation must remain replayable even after its
+ // proposed slot expires. Only NEW proposals need the future-slot window.
+ if(Number(raw.startsAtMs)<now+60000||Number(raw.startsAtMs)>now+WINDOW_MS)
+  return {status:400,code:'ACADEMY_PAID_SLOT_INVALID'} as const;
  const id=crypto.randomUUID();
  try{
   await db.prepare(`INSERT INTO academy_paid_slot_request_events
