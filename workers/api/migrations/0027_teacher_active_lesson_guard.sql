@@ -12,8 +12,8 @@ BEGIN
   JOIN lessons lesson ON lesson.actual_teacher_id=teacher.id
   WHERE teacher.id=NEW.teacher_id
     AND teacher.auth_subject=NEW.target_auth_subject
-    AND lesson.status IN ('scheduled','live')
-    AND lesson.ends_at_ms>NEW.at_ms
+    AND (lesson.status='live'
+      OR (lesson.status='scheduled' AND lesson.ends_at_ms>NEW.at_ms))
  );
 END;
 INSERT INTO noor_schema_meta(component,version)
