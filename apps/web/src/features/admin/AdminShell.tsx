@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {useEffect,useState} from 'react';
-import {AccountGate,useAccount} from '@/features/account';
+import {AccountGate,useAccount,type AccountSession} from '@/features/account';
 import {ADMIN_NAVIGATION,getAdminRoute} from './admin-navigation';
 import {AdminOverviewPanel,AdminPendingSection} from './AdminSections';
 import {AdminOverviewError,fetchAdminOverview,type AdminOverview} from './admin-overview-client';
@@ -14,10 +14,8 @@ export const ADMIN_PORTAL_ENABLED=
  process.env.NEXT_PUBLIC_ACCOUNT_UI==='true';
 type ReadState=
  |{phase:'idle'}
- |{phase:'loading';subject:string}
- |{phase:'denied';subject:string}
- |{phase:'error';subject:string}
- |{phase:'ready';subject:string;value:AdminOverview};
+ |{phase:'loading'|'denied'|'error';subject:string;session:AccountSession}
+ |{phase:'ready';subject:string;session:AccountSession;value:AdminOverview};
 
 function AccessMessage({title,detail,action}:{title:string;detail:string;action?:()=>void}){
  return <section className={css.access} role="status" dir="rtl">
@@ -34,24 +32,60 @@ function AccessMessage({title,detail,action}:{title:string;detail:string;action?
 export function AdminShell(){
  const pathname=usePathname();
  const {state:account}=useAccount();
- const subject=account.status==='authenticated'?account.session.user.id:null;
+ const session=account.status==='authenticated'?account.session:null;
+ const subject=session?.user.id??null;
  const [read,setRead]=useState<ReadState>({phase:'idle'});
  const [retry,setRetry]=useState(0);
  const [menuOpen,setMenuOpen]=useState(false);
  useEffect(()=>{
-  if(!ADMIN_PORTAL_ENABLED||!subject){
+  if(!ADMIN_PORTAL_ENABLED||!session||!subject){
    setRead({phase:'idle'});return;
   }
-  const ctrl=new AbortController();
-  setRead({phase:'loading',subject});
-  void fetchAdminOverview(ctrl.signal).then(value=>{
-   if(!ctrl.signal.aborted)setRead({phase:'ready',subject,value});
-  }).catch(error=>{
-   if(!ctrl.signal.aborted)setRead({phase:error instanceof AdminOverviewError&&
-    (error.status===401||error.status===403||error.status===404)?'denied':'error',subject});
-  });
-  return ()=>ctrl.abort();
- },[subject,retry]);
+  let current:AbortController|null=null;
+  let mounted=true;
+  // Never retain the privileged snapshot when the tab is hidden, navigated,
+  // or its account lease changes. Every refresh rechecks D1 staff authority.
+  const clear=()=>{
+   current?.abort();
+   if(mounted)setRead({phase:'loading',subject,session});
+  };
+  const refresh=()=>{
+   if(!mounted)return;
+   current?.abort();
+   const ctrl=new AbortController();current=ctrl;
+   setRead({phase:'loading',subject,session});
+   void fetchAdminOverview(ctrl.signal).then(value=>{
+    if(mounted&&!ctrl.signal.aborted)
+     setRead({phase:'ready',subject,session,value});
+   }).catch(error=>{
+    if(!mounted||ctrl.signal.aborted)return;
+    setRead({phase:error instanceof AdminOverviewError&&
+     (error.status===401||error.status===403||error.status===404)?'denied':'error',
+     subject,session});
+   });
+  };
+  const onWake=()=>{if(document.visibilityState==='visible')refresh();};
+  const onVisible=()=>{if(document.visibilityState==='visible')refresh();else clear();};
+  const channel=typeof BroadcastChannel==='undefined'?null:
+   new BroadcastChannel('noor-account-session');
+  if(channel)channel.onmessage=refresh;
+  window.addEventListener('pageshow',onWake);
+  window.addEventListener('focus',onWake);
+  window.addEventListener('pagehide',clear);
+  document.addEventListener('visibilitychange',onVisible);
+  // Bounded periodic D1 revalidation limits stale staff grant exposure even
+  // if the tab remains foregrounded after an out-of-band revocation.
+  const timer=window.setInterval(onWake,30000);
+  refresh();
+  return ()=>{
+   mounted=false;current?.abort();window.clearInterval(timer);
+   channel?.close();
+   window.removeEventListener('pageshow',onWake);
+   window.removeEventListener('focus',onWake);
+   window.removeEventListener('pagehide',clear);
+   document.removeEventListener('visibilitychange',onVisible);
+  };
+ },[session,subject,retry,pathname]);
  if(!ADMIN_PORTAL_ENABLED)return <AccessMessage title="لوحة الإدارة غير مفعّلة"
   detail="الواجهة قيد التجهيز على بيئة التطوير. لا توجد أي صلاحيات أو بيانات إدارية متاحة على هذا الإصدار."/>;
  if(account.status==='signed-out')return <AccountGate/>;
@@ -59,7 +93,10 @@ export function AdminShell(){
   title={account.status==='checking'?'جارٍ التحقق من حسابك':'تعذّر التحقق من الجلسة'}
   detail="لن تظهر أي بيانات إدارية قبل التحقق من جلسة الحساب وصلاحيات الإدارة على الخادم."/>;
  // A stale result from a different account can never render, even before effect cleanup.
- if(read.phase==='idle'||read.subject!==subject||read.phase==='loading')
+ // Session-object identity also invalidates a snapshot when a new login uses
+ // the same user ID. AccountProvider creates a fresh session on every refresh.
+ if(read.phase==='idle'||read.subject!==subject||read.session!==session||
+  read.phase==='loading')
   return <AccessMessage title="جارٍ التحقق من صلاحية الإدارة"
    detail="نراجع جلسة الحساب ومنح الصلاحيات الحالية في D1 قبل عرض أي إحصاءات."/>;
  if(read.phase==='denied')return <AccessMessage
