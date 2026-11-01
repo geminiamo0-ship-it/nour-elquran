@@ -622,6 +622,140 @@ assert.equal(revoked.response.status,200,JSON.stringify(revoked.data));
 assert.deepEqual((await call('/v1/teacher/learners',{cookie:cookieB})).data.learners,[]);
 console.log('Native staff scheduling: assignment, teacher roster, booking, 40m, learner timetable, conflict, cancellation, revocation, no forged role passed');
 
+// #315: actual signed local Better Auth + D1 complete academy acceptance.
+// All mutations use disposable local D1, never the shared Dev financial ledger.
+const academyRoot='/v1/staff/academy';
+const academyOwner='/v1/me/learners/'+learner+'/academy';
+const staffAcademy=(route,body,cookie=cookieA)=>call(academyRoot+'/'+route,{
+ method:'POST',cookie,body});
+assert.equal((await call(academyRoot)).response.status,401);
+assert.equal((await call(academyRoot,{cookie:cookieB})).response.status,403);
+assert.equal((await call(academyOwner,{cookie:cookieB})).response.status,404);
+assert.equal((await call(academyOwner)).response.status,401);
+const academyPackageId=randomUUID();
+const priceCommand={operationId:randomUUID(),packageId:academyPackageId,
+ title:'Eight signed Quran classes',priceEgp:1600,sessions:8,active:true};
+assert.equal((await staffAcademy('packages',priceCommand,cookieB)).response.status,403);
+const savedPrice=await staffAcademy('packages',priceCommand);
+assert.equal(savedPrice.response.status,201,JSON.stringify(savedPrice.data));
+const ownerCatalog=await call(academyOwner,{cookie:cookieA});
+assert.equal(ownerCatalog.response.status,200,JSON.stringify(ownerCatalog.data));
+const firstOffer=ownerCatalog.data.packages.find(p=>p.packageId===academyPackageId);
+assert(firstOffer,'Saved EGP package missing from owner signed catalog');
+assert.equal(firstOffer.priceEgp,1600);
+assert.equal((await call(academyOwner,{method:'POST',cookie:cookieB,
+ body:{operationId:randomUUID(),packageId:academyPackageId}})).response.status,404);
+const packageRequestCommand={operationId:randomUUID(),packageId:academyPackageId};
+const packageRequest=await call(academyOwner,{
+ method:'POST',cookie:cookieA,body:packageRequestCommand});
+assert.equal(packageRequest.response.status,201,JSON.stringify(packageRequest.data));
+assert.equal((await call(academyOwner,{
+ method:'POST',cookie:cookieA,body:packageRequestCommand})).response.status,200);
+const repriced=await staffAcademy('packages',{...priceCommand,
+ operationId:randomUUID(),priceEgp:1900});
+assert.equal(repriced.response.status,201,JSON.stringify(repriced.data));
+const requestSnapshot=(await call(academyOwner,{cookie:cookieA}))
+ .data.requests.find(r=>r.id===packageRequest.data.requestId);
+assert.equal(requestSnapshot.priceEgp,1600,'Historic requested price was repriced');
+const cashCommand={operationId:randomUUID(),learnerId:learner,
+ packageVersionId:firstOffer.versionId,requestId:packageRequest.data.requestId,
+ note:'Signed test receipt confirmed out of band by academy staff',
+ manualConfirmed:true};
+assert.equal((await staffAcademy('activate',cashCommand,cookieB)).response.status,403);
+const activated=await staffAcademy('activate',cashCommand);
+assert.equal(activated.response.status,201,JSON.stringify(activated.data));
+assert.equal((await staffAcademy('activate',cashCommand)).response.status,200);
+const academicLedger=await call('/v1/me/learners/'+learner+'/subscription-ledger',
+ {cookie:cookieA});
+assert.equal(academicLedger.response.status,200,JSON.stringify(academicLedger.data));
+assert.equal(academicLedger.data.latestCycle.baseSessions,8);
+const cycles=await call(academyRoot+'/cycles',{cookie:cookieA});
+assert.equal(cycles.response.status,200,JSON.stringify(cycles.data));
+const signedCycle=cycles.data.cycles.find(row=>row.learnerId===learner&&row.remaining===8);
+assert(signedCycle,'Manual academic activation must create existing D1 credit cycle');
+const contactResponse=await staffAcademy('contact',{
+ operationId:randomUUID(),whatsappNumber:'201012345678'});
+assert.equal(contactResponse.response.status,201,JSON.stringify(contactResponse.data));
+assert.equal((await call(academyOwner,{cookie:cookieA})).data.whatsappNumber,
+ '201012345678');
+
+const inviteCommand={operationId:randomUUID()};
+assert.equal((await staffAcademy('invites',inviteCommand,cookieB)).response.status,403);
+const issued=await staffAcademy('invites',inviteCommand);
+assert.equal(issued.response.status,201,JSON.stringify(issued.data));
+assert.match(issued.data.token,/^[0-9a-f]{64}$/);
+assert.equal((await staffAcademy('invites',inviteCommand)).response.status,409,
+ 'Invite secret must not be replayed from a later request');
+const invitedAccount=await call('/api/auth/register',{method:'POST',
+ body:{name:'Synthetic Invited Sheikh C',phoneNumber:'+12025550103',password}});
+assert.equal(invitedAccount.response.status,200,JSON.stringify(invitedAccount.data));
+const cookieC=cookieHeader(invitedAccount.response);
+const invitePath='/v1/me/academy/invite-claim';
+assert.equal((await call(invitePath,{method:'POST',cookie:cookieB,
+ body:{token:issued.data.token}})).response.status,201,
+ 'An unclaimed invite can be accepted once by the authenticated link holder');
+const deniedClaim=await call(invitePath,{method:'POST',cookie:cookieC,
+ body:{token:issued.data.token}});
+assert.equal(deniedClaim.response.status,409,'Different user cannot reuse an invite');
+assert.equal((await call('/v1/teacher/learners',{cookie:cookieB})).response.status,200);
+const claimedTeachers=await call(adminTeachers,{cookie:cookieA});
+const invitedSheikh=claimedTeachers.data.teachers.find(t=>t.name==='Fixture Owner B');
+assert(invitedSheikh&&invitedSheikh.status==='active',
+ 'Invited account must become an active Sheikh without CV');
+const validInvite=await staffAcademy('invites',{operationId:randomUUID()});
+assert.equal(validInvite.response.status,201);
+assert.equal((await call(invitePath,{method:'POST',cookie:cookieC,
+ body:{token:validInvite.data.token}})).response.status,201);
+const teacherC=(await call(adminTeachers,{cookie:cookieA}))
+ .data.teachers.find(t=>t.name==='Synthetic Invited Sheikh C');
+assert(teacherC&&teacherC.status==='active'&&teacherC.qualified===true,
+ 'Newly invited Sheikh is active directly after secure claim');
+const assignedC=await schedule({action:'assign',operationId:randomUUID(),
+ learnerId:learner,teacherId:teacherC.id,startsAtMs:Date.now()+2000,
+ endsAtMs:Date.now()+27*86400000,
+ reason:'Staff assigned independently invited Sheikh to this student'});
+assert.equal(assignedC.response.status,201,JSON.stringify(assignedC.data));
+await pause(2100);
+const paidStart=Date.now()+3*86400000;
+const paidCommand={operationId:randomUUID(),learnerId:learner,
+ teacherId:teacherC.id,cycleId:signedCycle.cycleId,startsAtMs:paidStart,
+ reason:'Manual prepaid lesson approved by signed academy manager'};
+assert.equal((await staffAcademy('book',paidCommand,cookieB)).response.status,403);
+const paid=await staffAcademy('book',paidCommand);
+assert.equal(paid.response.status,201,JSON.stringify(paid.data));
+assert.equal((await staffAcademy('book',paidCommand)).response.status,200);
+assert.equal((await call('/v1/me/learners/'+learner+'/subscription-ledger',
+ {cookie:cookieA})).data.latestCycle.recordedUnspentSessions,7);
+assert((await call('/v1/me/learners/'+learner+'/lessons',{cookie:cookieA}))
+ .data.lessons.some(l=>l.id===paid.data.lessonId),
+ 'Paid lesson must be visible in actual learner timetable');
+
+const sibling=(await call('/v1/me/learners',{cookie:cookieA}))
+ .data.learners.find(x=>x.id!==learner);
+assert(sibling,'Existing synthetic sibling required for independent free trial');
+const trialSlot=await call('/v1/staff/trial-slots',{method:'POST',cookie:cookieA,
+ body:{operationId:randomUUID(),teacherId:teacherC.id,
+ startsAtMs:Date.now()+5*86400000}});
+assert.equal(trialSlot.response.status,201,JSON.stringify(trialSlot.data));
+const trialPath='/v1/me/learners/'+sibling.id+'/trial-requests';
+assert.equal((await call(trialPath,{method:'POST',cookie:cookieB,
+ body:{operationId:randomUUID(),slotId:trialSlot.data.slotId}})).response.status,404);
+const requestedTrial=await call(trialPath,{method:'POST',cookie:cookieA,
+ body:{operationId:randomUUID(),slotId:trialSlot.data.slotId}});
+assert.equal(requestedTrial.response.status,201,JSON.stringify(requestedTrial.data));
+assert.equal((await call('/v1/me/learners/'+sibling.id+'/trial-bookings',{
+ method:'POST',cookie:cookieA,
+ body:{operationId:randomUUID(),slotId:trialSlot.data.slotId}})).response.status,409,
+ 'Old self-serve booking must not bypass staff confirmation');
+const decided=await staffAcademy('trial-decisions',{operationId:randomUUID(),
+ requestId:requestedTrial.data.requestId,decision:'approved',
+ reason:'Admin approved one-time learner trial booking with tutor'});
+assert.equal(decided.response.status,201,JSON.stringify(decided.data));
+assert((await call('/v1/me/learners/'+sibling.id+'/lessons',{cookie:cookieA}))
+ .data.lessons.some(x=>x.id===decided.data.lessonId),
+ 'Admin-confirmed free trial must appear in signed learner calendar');
+console.log('Native signed Academy MVP: catalog, historical price, owner request, manual activation, credit spend, secure invited Sheikh, trial approval and foreign-role isolation PASS');
+
 const unauthorizedMutation=await call('/v1/staff/teacher-actions',{
   method:'POST',cookie:cookieB,body:teacherCommand('suspend'),
 });
