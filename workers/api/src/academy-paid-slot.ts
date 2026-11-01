@@ -67,11 +67,17 @@ export async function ownerPaidSlotRequest(db:CoreDatabase,subject:string,
   return {status:400,code:'ACADEMY_PAID_SLOT_INVALID'} as const;
  const id=crypto.randomUUID();
  try{
-  await db.prepare(`INSERT INTO academy_paid_slot_request_events
+  const write=await db.prepare(`INSERT INTO academy_paid_slot_request_events
   (id,operation_id,learner_id,teacher_id,cycle_id,actor_subject,
   starts_at_ms,ends_at_ms,requested_at_ms) VALUES(?,?,?,?,?,?,?,?,?)`)
   .bind(id,raw.operationId,learnerId,raw.teacherId,raw.cycleId,subject,
    raw.startsAtMs,Number(raw.startsAtMs)+SLOT_MS,now).run();
+  // A resolved D1 call is not proof of persistence unless D1 acknowledges
+  // a successful row change. Unknown outcomes must remain retryable with
+  // the same operationId, never be reported as a confirmed proposal.
+  if(write.success!==true||!Number.isSafeInteger(write.meta?.changes)||
+   write.meta.changes<1)
+   return {status:503,code:'ACADEMY_PAID_SLOT_WRITE_UNCONFIRMED'} as const;
  }catch(e){
   if(expected(e)){
    // An identical concurrent insert can win between SELECT and INSERT.
@@ -130,10 +136,16 @@ export async function staffPaidSlotDecision(db:CoreDatabase,subject:string,
  const lessonId=raw.decision==='approved'?crypto.randomUUID():null;
  try{
   // One D1 INSERT; the SQL trigger atomically creates the lesson and spend.
-  await db.prepare(`INSERT INTO academy_paid_slot_decision_events
+  const write=await db.prepare(`INSERT INTO academy_paid_slot_decision_events
   (id,operation_id,request_id,actor_subject,decision,lesson_id,reason,at_ms)
   VALUES(?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(),raw.operationId,
    raw.requestId,subject,raw.decision,lessonId,raw.reason,now).run();
+  // Do not tell staff a lesson was booked or a unit spent if D1 did not
+  // acknowledge a successful insert. An uncertain write is recoverable by
+  // replaying the exact immutable operationId after a fresh role check.
+  if(write.success!==true||!Number.isSafeInteger(write.meta?.changes)||
+   write.meta.changes<1)
+   return {status:503,code:'ACADEMY_PAID_SLOT_WRITE_UNCONFIRMED'} as const;
  }catch(e){
   if(expected(e)){
    // Preserve the original lessonId on an identical concurrent decision.
