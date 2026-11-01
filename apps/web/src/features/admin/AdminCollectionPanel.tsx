@@ -4,6 +4,7 @@ import type {AccountSession} from '@/features/account';
 import {fetchAdminCollection,AdminCollectionError,
  type AdminCollection,type AdminDataView,type AdminDataRow} from './admin-collections-client';
 import css from './AdminPortal.module.css';
+import {AdminOperations} from './AdminOperations';
 
 type Read=
  |{phase:'idle'}
@@ -22,7 +23,7 @@ const configurations:Record<AdminDataView,Config>={
  schedule:{
   title:'الحصص والجدول',
   intro:'الحصص الموجودة فعليًا من آخر سبعة أيام وحتى الثلاثين يومًا القادمة؛ لا يُنشئ العرض حجوزات جديدة.',
-  scope:'تبدأ الحصة وتنتهي من أحداثها المعتمدة فقط، ولا يوجد خصم أو إلغاء أو تعويض من هذه الواجهة.',
+  scope:'الإلغاء الإداري متاح عند سماح سياسة الست ساعات، بينما إنشاء حجوزات مدفوعة أو خصم رصيد ليس مفعلًا.',
   fields:[{key:'startsAtMs',label:'الموعد'},{key:'learnerName',label:'الطالب'},
    {key:'teacherName',label:'الشيخ'},{key:'kind',label:'نوع الحصة'},
    {key:'status',label:'الحالة'}],
@@ -38,7 +39,7 @@ const configurations:Record<AdminDataView,Config>={
  attendance:{
   title:'الحضور والتعويضات',
   intro:'طلبات الاعتراض المسجلة على بلاغات الحضور. لا تُعرض الملاحظات الحساسة أو تفاصيل الشكوى في القائمة.',
-  scope:'حالة الاعتراض ليست حكمًا بخصم حصة أو استحقاق تعويض. القرارات والتعويضات تحتاج مراجعة منفصلة.',
+  scope:'مراجعة الاعتراض تتطلب تصريح attendance.review. لا ينتج عن قبول الاعتراض خصم أو تعويض تلقائي.',
   fields:[{key:'submittedAtMs',label:'تاريخ الاعتراض'},
    {key:'kind',label:'نوع البلاغ'},{key:'decision',label:'قرار المراجعة'}],
  },
@@ -130,6 +131,9 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
       </div>)}
      </article>)}</div>}
   </>}
+  {visible&&(view==='schedule'||view==='attendance')&&
+   <AdminOperations kind={view} session={session} rows={visible.rows}
+    onApplied={()=>setRetry(n=>n+1)}/>}
   <p className={css.collectionDisclaimer}>{config.scope}</p>
  </section>;
 }
