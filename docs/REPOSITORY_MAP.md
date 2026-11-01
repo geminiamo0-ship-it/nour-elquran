@@ -1,3 +1,13 @@
+## #302 initial staff-only Admin interface (source candidate)
+- `apps/web/src/app/admin/{page.tsx,layout.tsx,students,teachers,schedule,subscriptions,attendance,settings}`: thin static export entrypoints; signed AdminShell owns all data and section gates.
+- `apps/web/src/features/admin/AdminShell.tsx`: build-time dual opt-in, account/session recheck, source-ID-bound state and AbortController, no staff navigation or aggregate data until signed remote check. Mobile RTL role-verified navigation.
+- `apps/web/src/features/admin/AdminSections.tsx`, `admin-navigation.ts`, `AdminPortal.module.css`: accessible summary of four real counts and honest inactive section explanations. No fake actions.
+- `apps/web/src/features/admin/admin-overview-client.ts`: strict non-bookable/no-PII four-field aggregate response parser, same-origin credentials/no-store GET.
+- `workers/api/src/staff-overview.ts`: verifies current D1 staff roles.manage grant, reads only four safe COUNT totals (active learners, qualified teachers, future scheduled lessons, completed lessons); no names, phone or financial amounts.
+- `workers/api/src/auth/routes.ts`: signed `GET /v1/staff/overview` behind Worker `NOOR_ADMIN_PORTAL_ENABLED=true` opt-in; client build separately requires `NEXT_PUBLIC_ADMIN_PORTAL_ENABLED=true` and account UI. All OFF by default; no Production.
+- `workers/api/tests/staff-overview.test.ts`, `apps/web/src/features/admin/*test*`: staff denial/query scope, malformed response, default-off UI/route honesty tests.
+- **Not delivered:** staff management CRUD, any unauthorized finance record, attendance decisions, invitations, external integrations or signed Dev UI acceptance.
+
 ## #244 connected academic ledger UI (candidate)
 - apps/web/src/features/shared/subscription-ledger-client.ts: signed owner GET, strict non-bookable contract and invalid-response denial; adjacent parser tests.
 - apps/web/src/features/student/components/ConnectedSubscriptionLedger.tsx: read-only student D1 ledger view, loading/error/retry and no payment claims; adjacent initial-state test. SubscriptionWorkspace keeps payment UI disabled.

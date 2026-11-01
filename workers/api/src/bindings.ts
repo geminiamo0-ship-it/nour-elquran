@@ -14,6 +14,8 @@ import type {LessonRoomNamespace} from './classroom/lesson-room.ts';
 export interface Env {
   LESSON_ROOMS?: LessonRoomNamespace;
   NOOR_ENVIRONMENT?: string;
+  /** #302 Admin read-only stage; OFF unless explicitly enabled in isolated Dev. */
+  NOOR_ADMIN_PORTAL_ENABLED?: string;
   NOOR_DEV_OPEN?: string;
   LIVEKIT_URL?: string;
   LIVEKIT_API_KEY?: string;

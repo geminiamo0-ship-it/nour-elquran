@@ -211,6 +211,12 @@ assert.match(teacherSubject,/^[a-zA-Z0-9_-]+$/);
 const teacherCommand=(action,operationId=randomUUID())=>({
   targetUserId:teacherSubject,action,reason:'Synthetic qualified staff decision',operationId,
 });
+// #302: local-only admin opt-in validates the actual signed Better Auth + D1 route.
+const adminOverview='/v1/staff/overview';
+assert.equal((await call(adminOverview)).response.status,401);
+assert.equal((await call(adminOverview,{cookie:cookieA})).response.status,403);
+assert.equal((await call(adminOverview,{cookie:cookieB})).response.status,403);
+assert.equal((await call(adminOverview,{cookie:cookieA,headers:{'x-user-role':'admin'}})).response.status,403);
 const beforeGrant=await call('/v1/staff/teacher-actions',{
   method:'POST',cookie:cookieA,body:teacherCommand('provision'),
 });
@@ -221,6 +227,36 @@ const outsider=await call('/v1/staff/teacher-actions',{
 assert.equal(outsider.response.status,403);
 sql("UPDATE auth_users SET phone_number_verified=1 WHERE id IN ('"+teacherActor+"','"+teacherSubject+"')");
 sql("INSERT INTO staff_grants(auth_subject,permission) VALUES('"+teacherActor+"','roles.manage')");
+const realOverview=await call(adminOverview,{cookie:cookieA});
+assert.equal(realOverview.response.status,200,JSON.stringify(realOverview.data));
+assert.equal(realOverview.data.code,'STAFF_OVERVIEW');
+assert.equal(realOverview.data.readOnly,true);
+const overviewMetrics=realOverview.data.metrics;
+assert.deepEqual(Object.keys(overviewMetrics).sort(),[
+ 'activeLearners','activeQualifiedTeachers','completedLessons','upcomingLessons',
+]);
+assert(Object.values(overviewMetrics).every(v=>Number.isSafeInteger(v)&&v>=0));
+assert(overviewMetrics.activeLearners>=1,'Native D1 fixture learner missing');
+assert.equal(typeof realOverview.data.asOfMs,'number');
+for(const secret of ['user','email','phone','password','learnerId']) {
+ assert.equal(Object.hasOwn(realOverview.data,secret),false,'Admin overview exposed '+secret);
+}
+assert.equal((await call(adminOverview,{cookie:cookieB})).response.status,403);
+// A stale signed session must not retain Staff access if D1 account state or
+// verification is revoked independently from the role grant.
+sql("UPDATE auth_users SET phone_number_verified=0 WHERE id='"+teacherActor+"'");
+assert.equal((await call(adminOverview,{cookie:cookieA})).response.status,403,
+  'Staff overview must deny an unverified owner despite unchanged grant');
+sql("UPDATE auth_users SET phone_number_verified=1 WHERE id='"+teacherActor+"'");
+assert.equal((await call(adminOverview,{cookie:cookieA})).response.status,200);
+sql("UPDATE accounts SET status='disabled' WHERE auth_subject='"+teacherActor+"'");
+assert.equal((await call(adminOverview,{cookie:cookieA})).response.status,403,
+  'Staff overview must deny a disabled account despite unchanged grant');
+sql("UPDATE accounts SET status='active' WHERE auth_subject='"+teacherActor+"'");
+assert.equal((await call(adminOverview,{cookie:cookieA})).response.status,200);
+assert.equal((await call(adminOverview,{method:'POST',cookie:cookieA,body:{role:'admin'}})).response.status,405);
+assert.equal((await call(adminOverview,{cookie:cookieA,origin:'https://outside.invalid'})).response.status,403);
+console.log('Native signed Admin overview: pregrant 403, verified aggregate 200, spoof/foreign 403, POST 405, PII absent PASS');
 assert.equal((await call('/v1/teacher/learners',{cookie:cookieB})).response.status,403);
 const provisionBody=teacherCommand('provision');
 const provision=await call('/v1/staff/teacher-actions',{
@@ -440,6 +476,10 @@ assert.equal((await call('/v1/teacher/learners',{cookie:cookieB})).response.stat
 assert.equal((await call(planWrite,{method:'POST',cookie:cookieB,body:planCommand})).response.status,404,
   'Revoked teacher must not replay a previously saved academic plan');
 sql("UPDATE staff_grants SET revoked_at_ms=1000 WHERE auth_subject='"+teacherActor+"'");
+const revokedAdmin=await call(adminOverview,{cookie:cookieA});
+assert.equal(revokedAdmin.response.status,403,'Revoked staff grant must lose overview access immediately');
+assert.equal((await call(adminOverview,{cookie:cookieB})).response.status,403);
+console.log('Native signed Admin overview: postgrant revocation denies immediately without cached role PASS');
 const afterRevocation=await call('/v1/staff/teacher-actions',{
   method:'POST',cookie:cookieA,body:teacherCommand('activate'),
 });

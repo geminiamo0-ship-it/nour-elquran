@@ -1,3 +1,20 @@
+## 2026-11-01 — Admin #302 default-off static export negative smoke
+- Live `main` unchanged. PR #304 still OPEN. Added fast `scripts/smoke.mjs` check of three default-disabled /admin paths, rejects rendered staff metrics/sensitive panels in public static HTML and requires Arabic RTL. Not a signed Dev positive proof; build flags OFF.
+- Expanded disposable local signed Worker smoke for stale staff cookies after D1 phone verification and account-state revocation while grant remains active. Exact-head GitHub Verify must be checked before reporting success. Revoke-grant test remains.
+- Continue to independent review + gated Cloudflare Dev role and mobile QA, no Production or finance change.
+
+## 2026-11-01 — Admin #302 role-switch hardening in PR #304
+- Rechecked `main@0dee555b03f88a9d8943da17597c6980d9afedd4` and PR #304 still OPEN, mergeable, no APPROVED reviews, previous exact-head Verify PASS 4/4 on `27fad4a`. Found a source/QA gap: old staff counts could remain on an already-open tab after external D1 grant revocation or a new login with the same auth subject.
+- Implemented in the same PR: AdminShell's current AccountSession **object identity** guards cached metrics; abort/clear/reload on route/account changes, visibility/focus/pageshow and cross-tab updates, plus bounded 30-second foreground recheck. Browser UI never decides roles; server still revalidates D1 every GET.
+- Added native Wrangler local Better Auth smoke for real /v1/staff/overview including unsigned/nonstaff/spoof POST/CSRF, staff aggregate, D1 grant revocation, PII-scope assertions. TEMPORARY local-only flag; no Cloudflare Dev/Production toggles, finance, teachers, minors, R2 or WhatsApp.
+- **NEXT:** inspect exact-head CI after these changes; if green update PR report and Issue #302. Do not merge/activate flags without independent privacy review and signed isolated Cloudflare Dev staff-vs-guardian/teacher test including role revocation plus viewport evidence.
+
+## 2026-11-01 — Admin Phase A source start, Issue #302
+- User requested continuing work and explicitly affirmed beginning a professionally organized Admin Dashboard. Checked Noor `main@0dee555b03f88a9d8943da17597c6980d9afedd4`, open PRs/CI, AGENTS/STATUS/PLAN/security/testing/ADR 0008 and existing #21/#22 blueprint. Created #302 to authorize **read-only foundation only**, documenting full Admin last.
+- Implementing branch `feat/302-admin-readonly-foundation`: seven RTL routes, responsive admin layout and empty truthfully unavailable sections, signed staff-only `GET /v1/staff/overview` limited to D1 counts. Worker and Next flags OFF by default. Existing Better Auth + fresh `roles.manage` check; does not list or mutate real child/family/teacher identities. Source tests cover malformed aggregate, nonstaff denial and default-off frontend.
+- **NEXT:** open linked Draft PR, inspect exact-head GitHub Verify, fix lint/TS/tests/static export if needed; independent security review and Dev account-positive/nonstaff-negative plus 360/390 checks are not complete. Keep Issue OPEN and do not deploy Production, enable finance/WhatsApp/R2, or turn on cumulative ink.
+- In parallel #244 signed rebooking API Dev PASS (Santoreno #41260348906) and student/teacher synthetic browser PASS (#41259982432), but same-page cancel→auto-refresh→rebook still unproven.
+
 ## #244 signed trial availability refresh after cancellation — 2026-10-31 (candidate)
 - Source branch fix/244-refresh-trial-after-cancel-20261031 based on verified main@196f3373589b04300b0c34573773c254f9197a4a. A successful owner trial cancellation previously reloaded only ConnectedClassroomLessons while StudentTrialBooking kept the previous eligible:false state and could not display rebooking slots until a manual refresh.
 - ConnectedClassroomLessons.tsx now increments a dedicated availability revision AFTER confirmed cancellation, and StudentTrialBooking.tsx includes that revision in its abortable signed availability effect. SSR regression ensures the connected route never falls back to synthetic booking preview. No optimistic booking, new backend/API, finance or child data.

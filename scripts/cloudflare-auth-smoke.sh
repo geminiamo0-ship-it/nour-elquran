@@ -17,7 +17,7 @@ umask 077
 python3 - <<'PY'
 import secrets
 from pathlib import Path
-Path('.dev.vars').write_text('AUTH_ENABLED=true\nAUTH_LOCAL_DEV=true\nAUTH_ORIGIN=http://127.0.0.1:8795\nAUTH_SECRET='+secrets.token_hex(32)+'\n')
+Path('.dev.vars').write_text('AUTH_ENABLED=true\nAUTH_LOCAL_DEV=true\nAUTH_ORIGIN=http://127.0.0.1:8795\nNOOR_ADMIN_PORTAL_ENABLED=true\nAUTH_SECRET='+secrets.token_hex(32)+'\n')
 PY
 wrangler=(npx --yes wrangler@4.45.0)
 "${wrangler[@]}" d1 migrations apply noor-core-local --local --persist-to "$state"
