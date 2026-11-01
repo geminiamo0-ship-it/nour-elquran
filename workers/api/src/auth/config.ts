@@ -20,8 +20,11 @@ export function createAuth(env: Env) {
     user: { modelName: 'authUsers' },
     session: {
       modelName: 'authSessions',
-      expiresIn: 60 * 60 * 24 * 7,
-      updateAge: 60 * 60 * 24,
+      // One hour absolute session, with a bounded database rolling refresh.
+      // Keep cookieCache disabled: server-side authorization must see account
+      // disable, staff revocation and signed-out sessions immediately.
+      expiresIn: 60 * 60,
+      updateAge: 60 * 10,
       cookieCache: { enabled: false },
     },
     account: { modelName: 'authCredentials' },
