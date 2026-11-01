@@ -26,3 +26,6 @@ export type {TrialSlot,TrialAvailability} from './trial-booking-client';
 
 export {subscriptionLedgerClient,parseSubscriptionLedger,SubscriptionLedgerError} from './subscription-ledger-client';
 export type {SubscriptionLedger,SubscriptionCycle} from './subscription-ledger-client';
+
+export {readOwnerAcademy,parseOwnerAcademy,latestPendingAcademyRequest,currentCycleLabel} from './academy-owner-client';
+export type {OwnerAcademy,AcademyOffer,AcademyRequest} from './academy-owner-client';
