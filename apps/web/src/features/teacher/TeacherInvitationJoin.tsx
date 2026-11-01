@@ -2,7 +2,7 @@
 import {useEffect,useState,type FormEvent} from 'react';
 import Link from 'next/link';
 import {useAccount} from '@/features/account';
-import styles from '@/features/account/Account.module.css';
+import styles from './TeacherInvitationJoin.module.css';
 /** The invitation proves possession of a 256-bit staff-issued single-use link.
  * It never independently grants an active teacher role or verifies a phone.
  */
