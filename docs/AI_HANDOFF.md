@@ -1,3 +1,8 @@
+## 2026-11-01 — #317 follow-up after Verify 41345886728
+- New CI result: [Verify 41345886728](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41345886728) on `e27bce29` has code-quality failure. The SQL approval-time eligibility guard did reject the dequalified Sheikh; failure was the Python regression's accumulated immutable rejection count (1 vs expected 0). A failed subtest then left the Sheikh dequalified and caused a secondary setup error.
+- Commit `11f2bddd` now asserts per-subtest decision count deltas and uses `finally` to restore qualification/status, preserving independence. **Check exact new HEAD Verify**; no pass claim yet. The migration 0031 guard remains source-only and unverified on remote Dev.
+- NEXT: obtain 4/4 CI and independent security review; signed D1 0031 Dev owner/staff/sibling/credit/mobile E2E still required. PR #318 Draft, #317 OPEN; no Production changes.
+
 ## 2026-11-01 — #317 Draft PR #318: CI regression and approval guard repair
 - Inspected actual [Verify 41342708600](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41342708600) on head `7e51b1af`: 3/4 jobs success; code-quality failed in Python unit tests, not lint or TS. Repro was a post-request Sheikh qualification revocation still allowing approval and one decision row.
 - Updated migration 0031 to enforce **fresh, transactional approval-time** learner/owner and Sheikh qualification/status/assignment eligibility. Added suspended-Sheikh negative regression to the native test. Rejection of a stale proposal remains permitted, without a lesson/spend.
