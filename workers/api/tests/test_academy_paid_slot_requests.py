@@ -149,17 +149,29 @@ class PaidSlotRequestD1(unittest.TestCase):
   ):
    with self.subTest(mutate=mutate):
     req=self.request()
+    decisions_before=self.db.execute(
+     'SELECT COUNT(*) FROM academy_paid_slot_decision_events').fetchone()[0]
     self.db.execute(mutate)
-    with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_PAID_ASSIGNMENT_MISSING'):
-     self.decide(req)
+    try:
+     with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_PAID_ASSIGNMENT_MISSING'):
+      self.decide(req)
+     # Prior subtests intentionally leave immutable rejection events. Only
+     # assert that this failed approval did not add a NEW decision row.
+     self.assertEqual(self.db.execute(
+      'SELECT COUNT(*) FROM academy_paid_slot_decision_events').fetchone(),
+      (decisions_before,))
+     self.assertEqual(self.db.execute('SELECT COUNT(*) FROM lessons').fetchone(),(0,))
+     self.assertEqual(self.db.execute(
+      'SELECT COUNT(*) FROM subscription_spend_events').fetchone(),(0,))
+     # Even a stale, no-longer-bookable proposal can be explicitly rejected.
+     self.decide(req,decision='rejected')
+    finally:
+     # Preserve test isolation if an assertion fails; otherwise a disabled
+     # teacher contaminates the next subtest and hides the real failure.
+     self.db.execute(restore)
     self.assertEqual(self.db.execute(
-     'SELECT COUNT(*) FROM academy_paid_slot_decision_events').fetchone(),(0,))
-    self.assertEqual(self.db.execute('SELECT COUNT(*) FROM lessons').fetchone(),(0,))
-    self.assertEqual(self.db.execute(
-     'SELECT COUNT(*) FROM subscription_spend_events').fetchone(),(0,))
-    # Even a stale, no-longer-bookable proposal can be explicitly rejected.
-    self.decide(req,decision='rejected')
-    self.db.execute(restore)
+     'SELECT COUNT(*) FROM academy_paid_slot_decision_events').fetchone(),
+     (decisions_before+1,))
   self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
 
  def test_staff_revocation_or_lost_verification_denies_both_decisions(self):
