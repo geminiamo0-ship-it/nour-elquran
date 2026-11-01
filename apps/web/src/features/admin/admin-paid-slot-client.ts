@@ -2,7 +2,7 @@
 export type AdminPaidSlot = Readonly<{
  requestId:string;learnerId:string;learnerName:string;
  teacherId:string;teacherName:string;startsAtMs:number;endsAtMs:number;
- state:'pending'|'approved'|'rejected';lessonId:string|null;
+ state:'pending'|'expired'|'approved'|'rejected';lessonId:string|null;
 }>;
 export class AdminPaidSlotError extends Error {
  constructor(readonly code:string,readonly status=0){super(code);}
@@ -24,7 +24,7 @@ function validRow(v:unknown):v is AdminPaidSlot {
   !name(v.learnerName)||!name(v.teacherName)||
   !clock(v.startsAtMs)||!clock(v.endsAtMs)||
   v.endsAtMs!==v.startsAtMs+2400000||
-  !['pending','approved','rejected'].includes(String(v.state)))return false;
+  !['pending','expired','approved','rejected'].includes(String(v.state)))return false;
  return v.state==='approved'?uuid(v.lessonId):v.lessonId===null;
 }
 export function parseAdminPaidSlots(raw:unknown):readonly AdminPaidSlot[] {
