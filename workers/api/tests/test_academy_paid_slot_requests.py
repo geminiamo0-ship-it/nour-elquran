@@ -144,6 +144,8 @@ class PaidSlotRequestD1(unittest.TestCase):
     "UPDATE learners SET status='active' WHERE id='child-a'"),
    ("UPDATE teachers SET qualified=0 WHERE id='id-teacher-a'",
     "UPDATE teachers SET qualified=1 WHERE id='id-teacher-a'"),
+   ("UPDATE teachers SET status='disabled' WHERE id='id-teacher-a'",
+    "UPDATE teachers SET status='active' WHERE id='id-teacher-a'"),
   ):
    with self.subTest(mutate=mutate):
     req=self.request()
