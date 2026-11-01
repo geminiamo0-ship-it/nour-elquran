@@ -1,3 +1,7 @@
+## #317 paid slot proposal D1 foundation (source-only)
+- `workers/api/migrations/0031_academy_paid_slot_requests.sql`: owner-bound immutable request and staff decision events. A request never books/debits; approved decision atomically inserts the existing #315 booking and one spend, while rejected decision never debits.
+- `workers/api/tests/test_academy_paid_slot_requests.py`: native full migration/fixture SQL invariants. No new public endpoint or UI yet; no production migration.
+
 ## 2026-11-01 Admin operational package #309
 - apps/web/src/features/admin/{AdminOperations.tsx,AdminOperations.module.css,admin-operations-client.ts,admin-operations.test.tsx} — signed, confirmed and audit-aware operations UI/client for existing teacher, schedule and attendance pages; deliberately no paid booking.
 - workers/api/src/staff-teacher-transition.ts — server-only teacher roster ID -> private auth subject resolution and role-action reuse; registered in workers/api/src/auth/routes.ts via POST /v1/staff/teachers/transition.
