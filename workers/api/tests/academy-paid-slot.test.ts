@@ -92,7 +92,8 @@ test('staff decision uses server time, one D1 insert, fresh role and exact repla
  const result=await staffPaidSlotDecision(m.db,'staff',decision,NOW);
  assert.equal(result.status,201);
  assert.equal(result.code,'ACADEMY_PAID_SLOT_DECIDED');
- assert.match(String(result.lessonId),/^[0-9a-f-]{36}$/i);
+ assert.ok('lessonId' in result);
+ if('lessonId' in result)assert.match(String(result.lessonId),/^[0-9a-f-]{36}$/i);
  const insert=m.queries.find(q=>q.sql.includes('INSERT INTO academy_paid_slot_decision_events'));
  assert.ok(insert);
  assert.deepEqual(insert.values.slice(1,5),[OP,REQUEST,'staff','approved']);
