@@ -1,7 +1,7 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminOperations} from './AdminOperations';
-import {AdminActionError,submitAdminAction,validAdminAction}
+import {submitAdminAction,validAdminAction}
  from './admin-operations-client';
 
 const operationId='124e4567-e89b-42d3-a456-426614174000';
