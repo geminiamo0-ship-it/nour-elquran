@@ -33,7 +33,7 @@ export async function transitionListedTeacher(db:CoreDatabase,staffSubject:strin
  if(!teacher||!ID.test(teacher.subject))
   return {status:404,code:'TEACHER_NOT_FOUND'} as const;
  if(command.action==='suspend'||command.action==='revoke_qualification'){
-  const active=await db.prepare('SELECT 1 AS pending FROM lessons WHERE actual_teacher_id=? AND status IN (\'scheduled\',\'live\') AND ends_at_ms>? LIMIT 1')
+  const active=await db.prepare('SELECT 1 AS pending FROM lessons WHERE actual_teacher_id=? AND (status=\'live\' OR (status=\'scheduled\' AND ends_at_ms>?)) LIMIT 1')
    .bind(command.teacherId,now).first<{pending:number}>();
   if(active)return {status:409,code:'ACTIVE_CLASSES_BLOCK_TRANSITION'} as const;
  }
