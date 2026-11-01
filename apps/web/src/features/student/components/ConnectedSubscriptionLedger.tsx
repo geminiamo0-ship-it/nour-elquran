@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useState} from 'react';
 import {subscriptionLedgerClient,type SubscriptionLedger} from '../../shared';
-import {currentCycleLabel} from '../../shared/academy-owner-client';
+import {currentCycleLabel} from '../../shared';
 import css from './StudentSubscription.module.css';
 type State={phase:'loading'}|{phase:'error'}|{phase:'ready';ledger:SubscriptionLedger};
 const format=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',dateStyle:'medium'});
