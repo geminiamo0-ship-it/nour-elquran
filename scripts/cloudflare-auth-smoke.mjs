@@ -658,15 +658,15 @@ const ownerRequestsAfterPrice=await call(academyOwner,{cookie:cookieA});
 assert.equal(ownerRequestsAfterPrice.response.status,200,
  JSON.stringify(ownerRequestsAfterPrice.data));
 const requestSnapshot=ownerRequestsAfterPrice.data.requests.find(
- r=>r.id===packageRequest.data.requestId);
+ r=>r.id===packageRequest.data.academyRequestId);
 assert(requestSnapshot,
  'Created owner package request is not readable: '+
- JSON.stringify({returnedId:packageRequest.data.requestId,
+ JSON.stringify({returnedId:packageRequest.data.academyRequestId,
  requests:ownerRequestsAfterPrice.data.requests,
  saved:packageRequest.data}));
 assert.equal(requestSnapshot.priceEgp,1600,'Historic requested price was repriced');
 const cashCommand={operationId:randomUUID(),learnerId:learner,
- packageVersionId:firstOffer.versionId,requestId:packageRequest.data.requestId,
+ packageVersionId:firstOffer.versionId,requestId:packageRequest.data.academyRequestId,
  note:'Signed test receipt confirmed out of band by academy staff',
  manualConfirmed:true};
 assert.equal((await staffAcademy('activate',cashCommand,cookieB)).response.status,403);
@@ -750,7 +750,7 @@ assert.equal((await call('/v1/me/learners/'+sibling.id+'/trial-bookings',{
  body:{operationId:randomUUID(),slotId:trialSlot.data.slotId}})).response.status,409,
  'Old self-serve booking must not bypass staff confirmation');
 const decided=await staffAcademy('trial-decisions',{operationId:randomUUID(),
- requestId:requestedTrial.data.requestId,decision:'approved',
+ requestId:requestedTrial.data.trialRequestId,decision:'approved',
  reason:'Admin approved one-time learner trial booking with tutor'});
 assert.equal(decided.response.status,201,JSON.stringify(decided.data));
 assert((await call('/v1/me/learners/'+sibling.id+'/lessons',{cookie:cookieA}))
