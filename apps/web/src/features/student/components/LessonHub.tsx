@@ -68,7 +68,7 @@ export function LessonHub({initialTab='schedule'}:{initialTab?:LessonView}){
  },[]);
  function change(next:LessonView){
   setTab(next);
-  window.history.replaceState(null,'','/student/lessons#'+next);
+  window.history.replaceState(null,'',window.location.pathname+'#'+next);
  }
  return <div dir="rtl">
   <nav className={premium.lessonTabs} aria-label="أقسام حصصي">
