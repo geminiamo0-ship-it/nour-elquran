@@ -14,6 +14,7 @@ const date=new Intl.DateTimeFormat('ar-EG',{
  timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short'
 });
 const states={pending:'بانتظار قرار الإدارة',
+ expired:'انتهى الموعد دون اعتماد',
  approved:'تم اعتماد الحصة',rejected:'رُفض الطلب'} as const;
 
 /** Signed staff inbox; only immutable pending requests offer audited decisions. */
