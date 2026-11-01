@@ -1,3 +1,9 @@
+## 2026-11-01 — #317 signed Admin paid-slot inbox (Draft PR #318; source only)
+- Added strict 100-row staff-only D1 paid-slot list parser, no-store signed GET and RTL read-only inbox to `/admin/requests`. The existing AdminShell dual gate and fresh Worker D1 `roles.manage` grant remain authoritative; no role or personal data is accepted from client claims.
+- Student/Sheikh names and proposal state are displayed only after signed GET, with explicit loading, denied, schema/network error and empty states; stale session data is discarded. No fake booking/approval, payment or credit claim. New Vitest parser, auth/error and SSR loading-gate regressions.
+- **Not verified**: GitHub exact-head CI, local full workspace tests (GitHub DNS unavailable), independent review, Cloudflare Dev 0031 and signed staff/guardian/sibling E2E. The admin approval/rejection controls and real guardian slot proposal form remain pending; no Production change.
+- NEXT: inspect exact-head Verify, fix failures, independently review security, then build audited staff decision UI and guardian verified-slot form, followed by Dev signed role and mobile QA. Keep #317/PR #318 OPEN/Draft.
+
 ## 2026-11-01 — #317 owner paid-slot request status in signed Lessons (Draft PR #318)
 - Added strict browser parser and no-store owner GET client for D1 `ACADEMY_PAID_SLOT_REQUESTS`; rejects unexpected fields, duplicate IDs, invalid 40-minute windows, impossible approved/rejected states and PII. No client-selected roles or fabricated records.
 - Signed `ConnectedClassroomLessons` now mounts learner-keyed read-only request status, with honest loading/empty/denied/offline states and Cairo-local times; no booking form, credit debit or automatic retry. A learner switch remounts and aborts prior GET. Tests cover parser and HTTP failures in `paid-slot-requests-client.test.ts`.
