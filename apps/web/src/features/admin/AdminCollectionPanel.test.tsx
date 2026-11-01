@@ -4,7 +4,7 @@ import {AdminCollectionPanel} from './AdminCollectionPanel';
 import {ADMIN_NAVIGATION,getAdminRoute} from './admin-navigation';
 
 describe('Admin Phase B connected four collections (#307)',()=>{
- const session={user:{id:'verified-staff'},phoneVerified:true};
+ const session={user:{id:'verified-staff',name:'Synthetic Verified Staff'},phoneVerified:true};
  for(const view of ['students','schedule','subscriptions','attendance'] as const){
   it('starts '+view+' behind a loading gate, without inventing personal records',()=>{
    const html=renderToStaticMarkup(<AdminCollectionPanel session={session} view={view}/>);

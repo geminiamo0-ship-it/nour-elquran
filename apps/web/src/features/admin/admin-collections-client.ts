@@ -58,7 +58,7 @@ export function parseAdminCollection(view:AdminDataView,raw:unknown):AdminCollec
  const rows:AdminDataRow[]=[];
  const ids=new Set<string>();
  for(const value of raw.rows){
-  if(!validRow(view,value)||ids.has(value.id))
+  if(!validRow(view,value)||typeof value.id!=='string'||ids.has(value.id))
    throw new AdminCollectionError('INVALID_COLLECTION');
   ids.add(value.id);
   rows.push(value);
