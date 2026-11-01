@@ -1,14 +1,17 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect,useState } from 'react';
 import { useStudent } from '../StudentContext';
 import { SchedulePanel } from './SchedulePanel';
 import { ConnectedClassroomLessons } from './ConnectedClassroomLessons';
 import { BookingWorkspace } from './BookingWorkspace';
 import styles from '../StudentPortal.module.css';
+import premium from '../StudentPremium.module.css';
+import {ProgressWorkspace} from './ProgressWorkspace';
+import {NotebookWorkspace} from './NotebookWorkspace';
 
 type Filter = 'upcoming' | 'completed' | 'all';
-export function LessonHub() {
+function ScheduleView() {
   const { selected } = useStudent();
   const [filter, setFilter] = useState<Filter>('upcoming');
   const matches = selected.lessons.filter((lesson) => {
@@ -49,4 +52,34 @@ export function LessonHub() {
     </section>
     <div className={styles.infoNote}>الحجز والإلغاء وطلب التعويض والاعتراض على الغياب ستتصل بسجل مواعيد موثّق بعد تفعيل الـBackend. لا يوجد طلب يُرسَل حاليًا.</div>
   </div>;
+}
+
+type LessonView='schedule'|'reports'|'notebook';
+export function LessonHub({initialTab='schedule'}:{initialTab?:LessonView}){
+ const [tab,setTab]=useState<LessonView>(initialTab);
+ useEffect(()=>{
+  const sync=()=>{
+   const hash=window.location.hash.slice(1);
+   if(hash==='reports'||hash==='notebook'||hash==='schedule')setTab(hash);
+  };
+  sync();
+  window.addEventListener('hashchange',sync);
+  return()=>window.removeEventListener('hashchange',sync);
+ },[]);
+ function change(next:LessonView){
+  setTab(next);
+  window.history.replaceState(null,'','/student/lessons#'+next);
+ }
+ return <div dir="rtl">
+  <nav className={premium.lessonTabs} aria-label="أقسام حصصي">
+   {([{id:'schedule',label:'المواعيد والحجز'},
+      {id:'notebook',label:'دفتر الحصص'},
+      {id:'reports',label:'التقارير والتقدم'}] as const).map(item=>
+    <button key={item.id} type="button"
+     className={tab===item.id?premium.lessonTabActive:premium.lessonTab}
+     aria-pressed={tab===item.id} onClick={()=>change(item.id)}>
+     {item.label}</button>)}
+  </nav>
+  {tab==='schedule'?<ScheduleView/>:tab==='notebook'?<NotebookWorkspace/>:<ProgressWorkspace/>}
+ </div>;
 }
