@@ -113,3 +113,8 @@
 @media(max-width:650px){.header{gap:6px}.identity{gap:2px}}
 
 .brandSymbol svg{width:78px;height:78px;filter:drop-shadow(0 2px 6px #001e1460)}
+
+/* Explicit non-auth visual preview, never evidence of enrollment or learner progress. */
+.previewRibbon{background:#fff4dd;color:#69471c;text-align:center;font-size:13px;font-weight:800;line-height:1.6;border-bottom:1px solid #e9d19c;padding:8px 14px}
+.previewMenuNote{font-size:13px;line-height:1.8;margin:0;color:#56645b;padding:10px}
+@media(max-width:650px){.previewRibbon{font-size:11px;padding:6px 9px}}
