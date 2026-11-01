@@ -6,6 +6,7 @@ import {StudentConnectedAttendanceCases} from './StudentConnectedAttendanceCases
 import {StudentTrialBooking} from './StudentTrialBooking';
 import {StudentTrialCancellation} from './StudentTrialCancellation';
 import {StudentTrialReschedule} from './StudentTrialReschedule';
+import {StudentPaidSlotStatus} from './StudentPaidSlotStatus';
 import styles from '../StudentPortal.module.css';
 const formatter=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short'});
 export function ConnectedClassroomLessons({learnerId}:{learnerId:string}){
@@ -55,6 +56,7 @@ export function ConnectedClassroomLessons({learnerId}:{learnerId:string}){
   </section>
   <StudentTrialBooking key={learnerId} learnerId={learnerId}
    refreshRevision={availabilityRevision} onBooked={()=>setRetry(x=>x+1)}/>
+  <StudentPaidSlotStatus key={'paid-'+learnerId} learnerId={learnerId}/>
   <StudentConnectedAttendanceCases key={learnerId} learnerId={learnerId}/>
  </div>;
 }
