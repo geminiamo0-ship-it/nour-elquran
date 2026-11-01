@@ -5,6 +5,7 @@ import {fetchAdminCollection,AdminCollectionError,
  type AdminCollection,type AdminDataView,type AdminDataRow} from './admin-collections-client';
 import css from './AdminPortal.module.css';
 import {AdminOperations} from './AdminOperations';
+import type {AdminActionResult} from './admin-operations-client';
 
 type Read=
  |{phase:'idle'}
@@ -68,6 +69,9 @@ function matching(row:AdminDataRow,term:string){
 export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:AccountSession}){
  const [read,setRead]=useState<Read>({phase:'idle'});
  const [retry,setRetry]=useState(0);
+ const [latestAck,setLatestAck]=useState<{
+  session:AccountSession;view:AdminDataView;value:AdminActionResult
+ }|null>(null);
  const [query,setQuery]=useState('');
  useEffect(()=>{
   const ctrl=new AbortController();
@@ -134,9 +138,12 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
       </div>)}
      </article>)}</div>}
   </>}
+  {latestAck?.session===session&&latestAck.view===view&&<p role="status" className={css.staffInfo}>
+    تم تأكيد العملية وحفظها: {latestAck.value.code}. يجري تحديث السجل من الخادم.
+   </p>}
   {visible&&(view==='schedule'||view==='attendance')&&
    <AdminOperations kind={view} session={session} rows={visible.rows}
-    onApplied={()=>setRetry(n=>n+1)}/>}
+    onApplied={value=>{setLatestAck({session,view,value});setRetry(n=>n+1);}}/>}
   <p className={css.collectionDisclaimer}>{config.scope}</p>
  </section>;
 }
