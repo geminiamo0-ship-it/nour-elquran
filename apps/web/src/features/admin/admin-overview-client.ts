@@ -20,11 +20,12 @@ const metricsKeys=['activeLearners','activeQualifiedTeachers','upcomingLessons',
 
 export function parseAdminOverview(value:unknown):AdminOverview{
  if(!isRecord(value)||value.code!=='STAFF_OVERVIEW'||value.readOnly!==true||
-  !Number.isSafeInteger(value.asOfMs)||Number(value.asOfMs)<0||
-  !isRecord(value.metrics)||Object.keys(value.metrics).length!==metricsKeys.length||
-  !metricsKeys.every(k=>Number.isSafeInteger(value.metrics[k])&&
-    Number(value.metrics[k])>=0))throw new AdminOverviewError('INVALID_OVERVIEW');
+  !Number.isSafeInteger(value.asOfMs)||Number(value.asOfMs)<0)
+  throw new AdminOverviewError('INVALID_OVERVIEW');
  const m=value.metrics;
+ if(!isRecord(m)||Object.keys(m).length!==metricsKeys.length||
+  !metricsKeys.every(k=>Number.isSafeInteger(m[k])&&Number(m[k])>=0))
+  throw new AdminOverviewError('INVALID_OVERVIEW');
  return {asOfMs:Number(value.asOfMs),metrics:{
   activeLearners:Number(m.activeLearners),
   activeQualifiedTeachers:Number(m.activeQualifiedTeachers),

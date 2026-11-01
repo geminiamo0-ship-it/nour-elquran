@@ -14,7 +14,9 @@ export const ADMIN_PORTAL_ENABLED=
  process.env.NEXT_PUBLIC_ACCOUNT_UI==='true';
 type ReadState=
  |{phase:'idle'}
- |{phase:'loading'|'denied'|'error';subject:string}
+ |{phase:'loading';subject:string}
+ |{phase:'denied';subject:string}
+ |{phase:'error';subject:string}
  |{phase:'ready';subject:string;value:AdminOverview};
 
 function AccessMessage({title,detail,action}:{title:string;detail:string;action?:()=>void}){
@@ -68,6 +70,9 @@ export function AdminShell(){
   title="تعذّر تحميل البيانات الإدارية"
   detail="البيانات غير متاحة الآن؛ لن نستبدلها بأرقام صفرية أو بيانات تجريبية."
   action={()=>setRetry(n=>n+1)}/>;
+ if(read.phase!=='ready')return <AccessMessage
+  title="جارٍ التحقق من البيانات"
+  detail="لن تظهر أي إحصائيات قبل اكتمال استجابة الخادم."/>;
  const route=getAdminRoute(pathname);
  const nav=ADMIN_NAVIGATION.map(item=>
   <Link key={item.href} href={item.href} aria-current={route===item.href?'page':undefined}
