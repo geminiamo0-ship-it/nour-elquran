@@ -1,5 +1,5 @@
 /** #317: strictly parsed owner-only read model; never a booking or payment claim. */
-export type PaidSlotState='pending'|'approved'|'rejected';
+export type PaidSlotState='pending'|'expired'|'approved'|'rejected';
 export type PaidSlotRequest=Readonly<{
  requestId:string;teacherId:string;startsAtMs:number;endsAtMs:number;
  state:PaidSlotState;lessonId:string|null;
@@ -17,7 +17,7 @@ function validRow(v:unknown):v is PaidSlotRequest{
  if(!record(v)||Object.keys(v).length!==fields.length||
   !fields.every(k=>Object.hasOwn(v,k))||!uuid(v.requestId)||!uuid(v.teacherId)||
   !ms(v.startsAtMs)||!ms(v.endsAtMs)||v.endsAtMs!==v.startsAtMs+2400000||
-  !['pending','approved','rejected'].includes(String(v.state)))return false;
+  !['pending','expired','approved','rejected'].includes(String(v.state)))return false;
  return v.state==='approved'?uuid(v.lessonId):v.lessonId===null;
 }
 export function parsePaidSlotRequests(raw:unknown):readonly PaidSlotRequest[]{
