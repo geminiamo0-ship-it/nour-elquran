@@ -1,3 +1,9 @@
+## 2026-11-01 / #21 — verified zero-mock Admin shell candidate (PR pending)
+- Owner-requested first Admin foundation: static /admin + signed D1 staff capabilities, per-grant navigation, no client role claims, no real data before verified access and no invented metrics.
+- New read-only /v1/staff/capabilities uses verified session, active account, verified phone and unrevoked roles.manage/attendance.review grants. No staff mutation, payments or child media.
+- Exact-head CI, independent review, signed Dev role/revocation QA and mobile accessibility are PENDING. Do not merge/close #21 without those gates; Production unchanged.
+- NEXT: inspect exact-head Verify and review; run synthetic Dev staff/owner/teacher/anonymous/disabled role checks and 360/390 keyboard/mobile acceptance.
+
 ## 2026-10-31 / #244 — trial rebooking availability refresh candidate (NOT merged)
 - Signed Student /student/lessons has real D1 booking and cancellation, but after a confirmed cancellation it refreshed only the lesson list. The separately mounted StudentTrialBooking retained its prior eligible:false/slot snapshot until the user manually clicked Update. This incorrectly hid newly re-eligible first-trial slots.
 - Branch fix/244-refresh-trial-after-cancel-20261031 passes a monotonically increasing availability revision to the existing server-backed booking component ONLY after cancellation ACK; its existing AbortController and loading state re-fetch authoritative selected-learner slots. Booking ACK still refreshes via its own existing path. No new client eligibility assumptions, payment, teacher assignment or backend write.

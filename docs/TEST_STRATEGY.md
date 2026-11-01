@@ -1,3 +1,9 @@
+## #21 signed Admin shell acceptance (candidate)
+- Backend: verify active account, Better Auth verified phone, non-revoked grant and exact signed subject; unauthorized/invalid subject denied without querying private records.
+- Frontend: reject malformed capability payloads, role claims and no-grant responses; static SSR never renders fake stats.
+- Required remote Dev: signed staff roles.manage vs attendance.review, owner, teacher, anonymous, revoked grant, inactive account, unverified phone, 360/390 RTL keyboard/mobile.
+- Exact-head CI + independent security review before merge; no production deployment or grants.
+
 ## #244 signed trial cancellation→availability refresh regression (candidate)
 - SSR smoke: connected learner lessons render only signed loading/availability states, not local booking preview fixtures.
 - Dev E2E still required: book a future trial on synthetic learner A, cancel it >=6h ahead, verify the same open Student Lessons page automatically re-queries D1 availability and offers a valid rebooking slot without manually clicking Update. Confirm cancellation failure does NOT reset eligibility; sibling B never inherits learner A's slots/booking; retries and refresh do not invent success. No payment/provider/media changes. CI alone cannot prove this React effect.

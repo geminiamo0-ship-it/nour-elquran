@@ -1,3 +1,10 @@
+## #21 signed Admin foundation candidate — 2026-11-01
+- apps/web/src/app/admin/page.tsx: thin static route.
+- apps/web/src/features/admin/AdminShell.tsx and AdminShell.module.css: Arabic RTL zero-mock shell, signed capability gate, accessible mobile navigation.
+- apps/web/src/features/admin/api.ts + api.test.ts: strict same-origin capability client and fail-closed parser.
+- workers/api/src/staff-capabilities.ts + tests/staff-capabilities.test.ts: signed D1 staff capability read only; wired in auth/routes.ts.
+- docs/ADMIN_FOUNDATION_21_20261101.md: explicit scope and Dev/review gates. No Production or admin mutations.
+
 ## #244 connected academic ledger UI (candidate)
 - apps/web/src/features/shared/subscription-ledger-client.ts: signed owner GET, strict non-bookable contract and invalid-response denial; adjacent parser tests.
 - apps/web/src/features/student/components/ConnectedSubscriptionLedger.tsx: read-only student D1 ledger view, loading/error/retry and no payment claims; adjacent initial-state test. SubscriptionWorkspace keeps payment UI disabled.
