@@ -13,7 +13,8 @@ const NOW=100000000,START=NOW+120000;
 type Query={sql:string;values:unknown[]};
 function mock(opts:{owner?:boolean;staff?:boolean;prior?:Record<string,unknown>|null;
  racePrior?:Record<string,unknown>|null;
- rows?:Record<string,unknown>[];error?:Error}={}){
+ rows?:Record<string,unknown>[];error?:Error;
+ ack?:{success:boolean;meta:{changes:number}}}={}){
  const queries:Query[]=[];
  let operationLookups=0;
  const db={
@@ -33,7 +34,7 @@ function mock(opts:{owner?:boolean;staff?:boolean;prior?:Record<string,unknown>|
     },
     async all(){queries.push({sql,values});return {results:opts.rows??[]};},
     async run(){queries.push({sql,values});if(opts.error)throw opts.error;
-     return {success:true,meta:{changes:1}};},
+     return opts.ack??{success:true,meta:{changes:1}};},
    };
    return stmt;
   },
@@ -187,4 +188,26 @@ test('staff denial, invalid input and database conflicts fail closed without fal
  await assert.rejects(
   staffPaidSlotDecision(mock({error:new Error('Unexpected database failure')}).db,
    'staff',decision,NOW),/Unexpected database failure/);
+});
+
+test('unconfirmed D1 write acknowledgements never claim a guardian proposal or staff debit',async()=>{
+ for(const ack of [{success:false,meta:{changes:0}},
+  {success:true,meta:{changes:0}}]){
+  const guardian=mock({ack});
+  const proposalResult=await ownerPaidSlotRequest(guardian.db,'owner',LEARNER,proposal,NOW);
+  assert.deepEqual(proposalResult,{
+   status:503,code:'ACADEMY_PAID_SLOT_WRITE_UNCONFIRMED'});
+  assert.equal(guardian.queries.filter(q=>q.sql.includes(
+   'INSERT INTO academy_paid_slot_request_events')).length,1);
+
+  const staff=mock({ack});
+  const decisionResult=await staffPaidSlotDecision(staff.db,'staff',decision,NOW);
+  assert.deepEqual(decisionResult,{
+   status:503,code:'ACADEMY_PAID_SLOT_WRITE_UNCONFIRMED'});
+  assert.equal(staff.queries.filter(q=>q.sql.includes(
+   'INSERT INTO academy_paid_slot_decision_events')).length,1);
+ }
+ // A confirmed single-row insert still returns the normal immutable ACK.
+ assert.equal((await ownerPaidSlotRequest(mock().db,'owner',LEARNER,proposal,NOW)).status,201);
+ assert.equal((await staffPaidSlotDecision(mock().db,'staff',decision,NOW)).status,201);
 });
