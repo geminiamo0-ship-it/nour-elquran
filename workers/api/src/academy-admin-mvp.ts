@@ -71,7 +71,7 @@ export async function ownerPackageRequest(db:CoreDatabase,subject:string,
  .bind(raw.operationId).first<{id:string;learnerId:string;actor:string;packageId:string}>();
  if(prior)return prior.actor===subject&&prior.learnerId===learnerId&&
   prior.packageId===raw.packageId?
-  {status:200,code:'ACADEMY_REQUEST_REPLAY',requestId:prior.id} as const:
+  {status:200,code:'ACADEMY_REQUEST_REPLAY',academyRequestId:prior.id} as const:
   {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
  const pkg=await currentPackage(db,raw.packageId);
  if(!pkg||pkg.active!==1)return {status:409,code:'ACADEMY_PACKAGE_UNAVAILABLE'} as const;
@@ -85,7 +85,7 @@ export async function ownerPackageRequest(db:CoreDatabase,subject:string,
   if(allowed(e))return {status:409,code:'ACADEMY_REQUEST_DENIED'} as const;
   throw e;
  }
- return {status:201,code:'ACADEMY_REQUEST_CREATED',requestId:id} as const;
+ return {status:201,code:'ACADEMY_REQUEST_CREATED',academyRequestId:id} as const;
 }
 export async function staffAcademy(db:CoreDatabase,subject:string){
  if(!await canManageTeachers(db,subject))
