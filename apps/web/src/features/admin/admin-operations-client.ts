@@ -30,8 +30,10 @@ export function validAdminAction(kind:AdminOperationKind,value:unknown):boolean{
   Object.keys(value).length===keys.length&&keys.every(k=>Object.hasOwn(value,k));
  const identifier=(key:string)=>typeof value[key]==='string'&&ID.test(value[key] as string);
  if(kind==='teacher'){
-  return exact(['operationId','reason','action','targetUserId'])&&identifier('targetUserId')&&
-   ['provision','qualify','activate','suspend','revoke_qualification'].includes(String(value.action));
+  if(value.action==='provision')
+   return exact(['operationId','reason','action','targetUserId'])&&identifier('targetUserId');
+  return exact(['operationId','reason','action','teacherId'])&&identifier('teacherId')&&
+   ['qualify','activate','suspend','revoke_qualification'].includes(String(value.action));
  }
  if(kind==='attendance'){
   return exact(['operationId','reason','decision','appealId'])&&identifier('appealId')&&
@@ -55,7 +57,9 @@ export async function submitAdminAction(kind:AdminOperationKind,command:unknown,
  if(!validAdminAction(kind,command))throw new AdminActionError('INVALID_ACTION_INPUT',400);
  let response:Response;
  try{
-  response=await fetch(paths[kind],{method:'POST',credentials:'same-origin',
+  const endpoint=kind==='teacher'&&asRecord(command)&&typeof command.teacherId==='string'
+   ?'/v1/staff/teachers/transition':paths[kind];
+  response=await fetch(endpoint,{method:'POST',credentials:'same-origin',
    cache:'no-store',redirect:'error',headers:{'Content-Type':'application/json'},
    body:JSON.stringify(command),...(signal?{signal}:{})});
  }catch{
