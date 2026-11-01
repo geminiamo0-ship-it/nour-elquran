@@ -1,10 +1,11 @@
 'use client';
 import Link from 'next/link';
-import {usePathname} from 'next/navigation';
+import {usePathname,useRouter} from 'next/navigation';
 import {useMemo,useState,type ReactNode} from 'react';
 import {ACCOUNT_UI_ENABLED,AccountGate,SessionControls,useAccount} from '@/features/account';
 import type {LearnerProfile} from './domain';
 import {StudentProvider,useStudent} from './StudentContext';
+import {DEMO_PROFILES} from './mock-adapter';
 import {StudentConnectedInbox} from './components/StudentConnectedInbox';
 import old from './StudentPortal.module.css';
 import css from './StudentPremium.module.css';
@@ -29,21 +30,36 @@ function Icon({name,size=22}:{name:IconName;size?:number}){
  default:return <svg {...common}><path d="m7 10 5 5 5-5"/></svg>;
  }
 }
-function Frame({children}:{children:ReactNode}){
+function Frame({children,preview=false}:{children:ReactNode;preview?:boolean}){
  const {learners,selectedId,selectLearner,selected}=useStudent();
  const pathname=usePathname();
+ const router=useRouter();
+ const destination=(href:string)=>preview?href.replace(/^\/student/,'/preview/student'):href;
  const [noticeOpen,setNoticeOpen]=useState(false);
  const [switchWarning,setSwitchWarning]=useState('');
- const inReader=pathname==='/student/mushaf';
- const active=(href:string)=>href==='/student/lessons'?['/student/lessons','/student/progress','/student/notebook'].includes(pathname):pathname===href;
- const nav=studentNavigation.map(item=><Link href={item.href} key={item.href}
+ const inReader=pathname===destination('/student/mushaf');
+ const active=(href:string)=>href==='/student/lessons'
+  ?[destination('/student/lessons'),destination('/student/progress'),destination('/student/notebook')].includes(pathname)
+  :pathname===destination(href);
+ function previewClick(event:import('react').MouseEvent<HTMLElement>){
+  if(!preview||event.defaultPrevented||!(event.target instanceof Element))return;
+  const href=event.target.closest('a[href]')?.getAttribute('href');
+  if(!href||!/^\/student(?:\/|$|#)/.test(href))return;
+  event.preventDefault();event.stopPropagation();
+  const next=href.startsWith('/student/progress')?'/preview/student/lessons#reports':
+   href.startsWith('/student/notebook')?'/preview/student/lessons#notebook':
+   href.startsWith('/student/account')||href.startsWith('/student/subscription')?'/preview/student':
+   href.replace(/^\/student/,'/preview/student');
+  router.push(next);
+ }
+ const nav=studentNavigation.map(item=><Link href={destination(item.href)} key={item.href}
    aria-current={active(item.href)?'page':undefined}
    className={active(item.href)?css.activeLink:css.navLink}>
    <Icon name={item.icon}/><span>{item.label}</span></Link>);
  return <div className={`${old.root} ${css.shell} ${inReader?`${old.mushafScreen} ${css.reader}`:''}`} id="student-top">
   <div className={css.frame}>
    <aside className={css.sidebar} aria-label="التنقل الرئيسي للطالب">
-    <Link href="/student" className={css.brand} aria-label="نور القرآن، الرئيسية">
+    <Link href={destination('/student')} className={css.brand} aria-label="نور القرآن، الرئيسية">
      <span className={css.brandSymbol} aria-hidden="true"><svg viewBox="0 0 84 84" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M42 9a19 19 0 0 0 18 28 22 22 0 1 1-18-28Z"/>
       <path d="M14 46c11-6 23-5 28 1 5-6 17-7 28-1v25c-12-4-22-4-28 2-6-6-16-6-28-2V46Zm28 1v26"/>
@@ -74,9 +90,11 @@ function Frame({children}:{children:ReactNode}){
       <details className={css.accountMenu}>
        <summary aria-label="الحساب والاشتراك"><Icon name="chevron" size={18}/></summary>
        <div className={css.accountPopover}>
+        {preview?<p className={css.previewMenuNote}>معاينة بصرية فقط؛ الحساب والاشتراك غير متصلين.</p>:<>
         <Link href="/student/account"><Icon name="user" size={17}/> الحساب والملفات</Link>
         <Link href="/student/subscription"><Icon name="settings" size={17}/> الاشتراك والدفع</Link>
         {!selected.profile.demo&&<div className={css.sessionMenu}><SessionControls/></div>}
+        </>}
        </div>
       </details>
      </div>
@@ -93,11 +111,12 @@ function Frame({children}:{children:ReactNode}){
       {switchWarning&&<p className={css.switchWarning} role="status">{switchWarning}</p>}
      </div>
     </header>
-    <main className={css.main} id="student-main">{children}</main>
+    {preview&&!inReader&&<div className={css.previewRibbon} role="note">معاينة التصميم فقط · جميع الأسماء والمواعيد والتقييمات أمثلة وليست حسابات حقيقية</div>}
+    <main className={css.main} id="student-main" onClickCapture={preview?previewClick:undefined}>{children}</main>
    </div>
   </div>
   <nav className={css.mobileNav} aria-label="الصفحات الرئيسية للطالب">
-   {studentNavigation.map(item=><Link href={item.href} key={item.href}
+   {studentNavigation.map(item=><Link href={destination(item.href)} key={item.href}
      aria-current={active(item.href)?'page':undefined}
      className={active(item.href)?css.mobileActive:css.mobileLink}>
      <Icon name={item.icon} size={22}/><span>{item.label}</span>
@@ -115,4 +134,13 @@ function ConnectedStudentShell({children}:{children:ReactNode}){
   ?state.learners.map(row=>({id:row.id,name:row.name,stage:'new',demo:false})):[],[state]);
  if(state.status!=='authenticated'||profiles.length===0)return <AccountGate/>;
  return <StudentProvider key={state.session.user.id} liveLearners={profiles}><Frame>{children}</Frame></StudentProvider>;
+}
+
+/** Public design-only route: signed account APIs and private learner data are never mounted. */
+const previewLearners:readonly LearnerProfile[]=DEMO_PROFILES.map(learner=>
+ learner.id==='demo-active'?{...learner,name:'أحمد محمد (مثال)'}:learner);
+export function StudentPreviewShell({children}:{children:ReactNode}){
+ return <StudentProvider liveLearners={previewLearners} initialSelectedId="demo-active">
+  <Frame preview>{children}</Frame>
+ </StudentProvider>;
 }
