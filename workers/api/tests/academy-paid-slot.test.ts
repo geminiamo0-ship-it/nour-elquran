@@ -151,6 +151,23 @@ test('staff decision uses server time, one D1 insert, fresh role and exact repla
  assert.equal(wrong.status,409);
 });
 
+test('concurrent staff approval replay returns original lesson without a second debit',async()=>{
+ const prior={id:'previous',actor:'staff',requestId:REQUEST,decision:'approved',
+  reason:decision.reason,lessonId:LEARNER};
+ const unique=new Error('D1_ERROR: UNIQUE constraint failed: academy_paid_slot_decision_events.operation_id');
+ const raced=mock({error:unique,racePrior:prior});
+ assert.deepEqual(await staffPaidSlotDecision(raced.db,'staff',decision,NOW),
+  {status:200,code:'ACADEMY_PAID_SLOT_DECISION_REPLAY',lessonId:LEARNER});
+ assert.equal(raced.queries.filter(q=>q.sql.includes('INSERT INTO')).length,1);
+ assert.equal(raced.queries.filter(q=>q.sql.includes('WHERE operation_id=?')).length,2);
+ const changed=mock({error:unique,racePrior:{...prior,requestId:LEARNER}});
+ assert.deepEqual(await staffPaidSlotDecision(changed.db,'staff',decision,NOW),
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'});
+ const denied=mock({staff:false,error:unique,racePrior:prior});
+ assert.equal((await staffPaidSlotDecision(denied.db,'staff',decision,NOW)).status,403);
+ assert.equal(denied.queries.some(q=>q.sql.includes('academy_paid_slot_decision_events')),false);
+});
+
 test('staff denial, invalid input and database conflicts fail closed without false booking',async()=>{
  const denied=mock({staff:false});
  assert.deepEqual(await staffPaidSlotDecision(denied.db,'staff',decision,NOW),
