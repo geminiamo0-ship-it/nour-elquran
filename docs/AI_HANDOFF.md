@@ -1,3 +1,8 @@
+## 2026-11-01 — Admin #302 default-off static export negative smoke
+- Live `main` unchanged. PR #304 still OPEN. Added fast `scripts/smoke.mjs` check of three default-disabled /admin paths, rejects rendered staff metrics/sensitive panels in public static HTML and requires Arabic RTL. Not a signed Dev positive proof; build flags OFF.
+- Expanded disposable local signed Worker smoke for stale staff cookies after D1 phone verification and account-state revocation while grant remains active. Exact-head GitHub Verify must be checked before reporting success. Revoke-grant test remains.
+- Continue to independent review + gated Cloudflare Dev role and mobile QA, no Production or finance change.
+
 ## 2026-11-01 — Admin #302 role-switch hardening in PR #304
 - Rechecked `main@0dee555b03f88a9d8943da17597c6980d9afedd4` and PR #304 still OPEN, mergeable, no APPROVED reviews, previous exact-head Verify PASS 4/4 on `27fad4a`. Found a source/QA gap: old staff counts could remain on an already-open tab after external D1 grant revocation or a new login with the same auth subject.
 - Implemented in the same PR: AdminShell's current AccountSession **object identity** guards cached metrics; abort/clear/reload on route/account changes, visibility/focus/pageshow and cross-tab updates, plus bounded 30-second foreground recheck. Browser UI never decides roles; server still revalidates D1 every GET.

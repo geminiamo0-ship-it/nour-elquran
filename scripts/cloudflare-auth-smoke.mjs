@@ -242,6 +242,18 @@ for(const secret of ['user','email','phone','password','learnerId']) {
  assert.equal(Object.hasOwn(realOverview.data,secret),false,'Admin overview exposed '+secret);
 }
 assert.equal((await call(adminOverview,{cookie:cookieB})).response.status,403);
+// A stale signed session must not retain Staff access if D1 account state or
+// verification is revoked independently from the role grant.
+sql("UPDATE auth_users SET phone_number_verified=0 WHERE id='"+teacherActor+"'");
+assert.equal((await call(adminOverview,{cookie:cookieA})).response.status,403,
+  'Staff overview must deny an unverified owner despite unchanged grant');
+sql("UPDATE auth_users SET phone_number_verified=1 WHERE id='"+teacherActor+"'");
+assert.equal((await call(adminOverview,{cookie:cookieA})).response.status,200);
+sql("UPDATE accounts SET status='disabled' WHERE auth_subject='"+teacherActor+"'");
+assert.equal((await call(adminOverview,{cookie:cookieA})).response.status,403,
+  'Staff overview must deny a disabled account despite unchanged grant');
+sql("UPDATE accounts SET status='active' WHERE auth_subject='"+teacherActor+"'");
+assert.equal((await call(adminOverview,{cookie:cookieA})).response.status,200);
 assert.equal((await call(adminOverview,{method:'POST',cookie:cookieA,body:{role:'admin'}})).response.status,405);
 assert.equal((await call(adminOverview,{cookie:cookieA,origin:'https://outside.invalid'})).response.status,403);
 console.log('Native signed Admin overview: pregrant 403, verified aggregate 200, spoof/foreign 403, POST 405, PII absent PASS');
