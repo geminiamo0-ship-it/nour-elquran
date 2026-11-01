@@ -9,7 +9,7 @@ describe('Admin Phase A readonly layout (#302)',()=>{
    metrics:{activeLearners:13,activeQualifiedTeachers:2,
     upcomingLessons:4,completedLessons:6}}} onRefresh={()=>{}}/>);
   expect(html).toContain('نظرة عامة على الأكاديمية');
-  expect(html).toContain('13');
+  expect(html).toContain((13).toLocaleString('ar-EG'));
   expect(html).toContain('قراءة فقط');
   expect(html).not.toContain('طالب تجريبي');
   expect(html).not.toContain('مبلغ مدفوع');
