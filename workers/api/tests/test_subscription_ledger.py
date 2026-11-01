@@ -76,7 +76,7 @@ class AcademicLedgerTests(unittest.TestCase):
   self.assertEqual(self.db.execute("SELECT rollover_sessions FROM subscription_cycles WHERE id=?",
      (second,)).fetchone(),(3,))
   with self.assertRaisesRegex(sqlite3.IntegrityError,'SUBSCRIPTION_RENEWAL_CHAIN_INVALID'):
-   self.cycle(start=T+MONTH+DAY,base=4,previous=first)
+   self.cycle(start=T+2*MONTH,base=4,previous=first)
   # Seven unused in the second cycle, but only four are new base credits.
   third=self.cycle(start=T+2*MONTH,base=4,carry=4,previous=second)
   self.assertEqual(self.db.execute("SELECT rollover_sessions FROM subscription_cycles WHERE id=?",
