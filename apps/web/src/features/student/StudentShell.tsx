@@ -44,7 +44,11 @@ function Frame({children}:{children:ReactNode}){
   <div className={css.frame}>
    <aside className={css.sidebar} aria-label="التنقل الرئيسي للطالب">
     <Link href="/student" className={css.brand} aria-label="نور القرآن، الرئيسية">
-     <span className={css.brandSymbol} aria-hidden="true">۞<span>✦</span></span>
+     <span className={css.brandSymbol} aria-hidden="true"><svg viewBox="0 0 84 84" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M42 9a19 19 0 0 0 18 28 22 22 0 1 1-18-28Z"/>
+      <path d="M14 46c11-6 23-5 28 1 5-6 17-7 28-1v25c-12-4-22-4-28 2-6-6-16-6-28-2V46Zm28 1v26"/>
+      <path d="M21 54c7-2 12-1 17 2m8 0c5-3 10-4 17-2M21 61c7-2 12-1 17 2m8 0c5-3 10-4 17-2"/>
+     </svg></span>
      <strong>نُورُ القُرْآن</strong><small>لتحفيظ القرآن الكريم</small>
     </Link>
     <nav className={css.sideNav} aria-label="الصفحات الرئيسية">{nav}</nav>
