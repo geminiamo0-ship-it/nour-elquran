@@ -8,7 +8,6 @@ describe('#317 admin paid-slot inbox initial privilege gate',()=>{
   const session={user:{id:'synthetic-staff',name:'Synthetic Staff'},phoneVerified:true};
   const html=renderToStaticMarkup(<AdminPaidSlotInbox session={session}/>);
   expect(html).toContain('جارٍ التحقق من صلاحيات الإدارة');
-  expect(html).toContain('جارٍ التحقق من صلاحيات الإدارة');
   expect(html).not.toContain('اعتماد الموعد وخصم حصة');
   expect(html).not.toContain('Synthetic Learner');
   expect(html).not.toContain('تم اعتماد الحصة');
