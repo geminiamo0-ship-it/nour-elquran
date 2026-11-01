@@ -326,6 +326,17 @@ const activated=await call('/v1/staff/teacher-actions',{
 });
 assert.equal(activated.response.status,200,JSON.stringify(activated.data));
 assert.equal(activated.data.state,'active');
+// #309: Signed new roster transition route must never trust arbitrary claims.
+const rosterRoute='/v1/staff/teachers/transition';
+const rosterCommand={teacherId:provision.data.teacherId,action:'suspend',
+  reason:'Synthetic signed teacher safety guard',operationId:randomUUID()};
+assert.equal((await call(rosterRoute,{method:'POST',body:rosterCommand})).response.status,401);
+assert.equal((await call(rosterRoute,{method:'POST',cookie:cookieB,body:rosterCommand})).response.status,403);
+assert.equal((await call(rosterRoute,{cookie:cookieA})).response.status,405);
+assert.equal((await call(rosterRoute,{method:'POST',cookie:cookieA,
+  body:{...rosterCommand,role:'admin'}})).response.status,400);
+assert.equal((await call(rosterRoute,{method:'POST',cookie:cookieA,
+  body:{...rosterCommand,teacherId:'does-not-exist'}})).response.status,404);
 const liveDirectory=await call(adminTeachers,{cookie:cookieA});
 assert.equal(liveDirectory.response.status,200,JSON.stringify(liveDirectory.data));
 assert.equal(liveDirectory.data.readOnly,true);
@@ -478,6 +489,14 @@ const bookRequest={action:'book',operationId:randomUUID(),
   teacherId:provision.data.teacherId,startsAtMs:learnerBookingStart,kind:'standard'};
 const lessonCreated=await schedule(bookRequest);
 assert.equal(lessonCreated.response.status,201,JSON.stringify(lessonCreated.data));
+// A signed administrative action still cannot orphan this booked learner.
+const blockedTeacherTransition=await call(rosterRoute,{method:'POST',
+  cookie:cookieA,body:rosterCommand});
+assert.equal(blockedTeacherTransition.response.status,409,
+  JSON.stringify(blockedTeacherTransition.data));
+assert.equal(blockedTeacherTransition.data.code,'ACTIVE_CLASSES_BLOCK_TRANSITION');
+assert.equal((await call(adminTeachers,{cookie:cookieA})).data.teachers[0].status,'active');
+console.log('Native signed Admin roster transition: anonymous/nonstaff denial, strict parsing, scheduled class guard PASS');
 const bookingRepeat=await schedule(bookRequest);
 assert.equal(bookingRepeat.data.code,'OPERATION_ALREADY_APPLIED');
 const overlapping=await schedule({...bookRequest,operationId:randomUUID(),startsAtMs:learnerBookingStart+1000});
