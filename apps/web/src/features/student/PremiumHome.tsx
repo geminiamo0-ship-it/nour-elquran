@@ -10,6 +10,7 @@ export function PremiumHome({name,lesson,tasks,grades,preview=false}:{
  preview?:boolean;
 }){
  const primary=lesson?.live?'lesson':tasks.length?'task':lesson?'lesson':'new';
+ const taskHref=tasks.length&&!preview?'/student/training#assignment-'+encodeURIComponent(tasks[0]!.id):'/student/training';
  return <div dir="rtl">
   <section className={css.hero} aria-label="مرحبًا بك في نور القرآن">
    <div><h1>مرحبًا بك يا {name}</h1>
@@ -38,7 +39,7 @@ export function PremiumHome({name,lesson,tasks,grades,preview=false}:{
      {tasks.slice(0,2).map(task=><div className={css.wirdRow} key={task.id}>
       <strong>{task.kind}</strong><span>{task.label}</span></div>)}
     </div>:<p className={css.emptyWird}>لم ينشر الشيخ واجبًا بعد. يمكنك بدء حفظ أو مراجعة ذاتية من تدريباتي.</p>}
-    <Link className={css.primaryGreen} href="/student/training">
+    <Link className={css.primaryGreen} href={taskHref}>
      {primary==='task'?'ابدأ واجبي الآن':'ابدأ تدريبي الآن'} <span aria-hidden="true">◀</span></Link>
    </section>
   </div>
@@ -68,7 +69,7 @@ export function PremiumHome({name,lesson,tasks,grades,preview=false}:{
      'لديك تكليف معتمد من الشيخ يمكنك البدء فيه.':lesson?
      'تابع موعد حصتك واستعد لها من تدريباتي.':
      'ابدأ بحجز حصتك الأولى، أو افتح المصحف للقراءة.'}</p>
-    <Link className={css.cardLink} href={primary==='lesson'&&lesson?lesson.href:primary==='task'?'/student/training':lesson?'/student/lessons':'/student/mushaf'}>
+    <Link className={css.cardLink} href={primary==='lesson'&&lesson?lesson.href:primary==='task'?taskHref:lesson?'/student/lessons':'/student/mushaf'}>
      {primary==='lesson'&&lesson?lesson.action:primary==='task'?'ابدأ الواجب':lesson?'عرض الحصص':'افتح المصحف'} ←
     </Link>
    </section>
