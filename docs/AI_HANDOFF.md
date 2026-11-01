@@ -1,3 +1,8 @@
+## 2026-11-01 / #21 — Admin shell first signed slice (candidate)
+- Branch feat/21-admin-verified-shell-20261101 from main 0dee555b: /admin shell, D1 signed staff capability read, strict parser and denial/loading/retry; no fake metrics or administrative writes.
+- Existing #286 P0 503 was remotely verified fixed in signed Dev run Santoreno #41236448482; do not reopen it without a new regression. #284 remains OPEN for real-device QA.
+- NEXT: inspect exact-head CI, independent security/UX review and isolated Cloudflare Dev multi-role + 360/390 tests. No Production, staff grant, payments, child audio, WhatsApp or cumulative-ink flag changes.
+
 ## #244 signed trial availability refresh after cancellation — 2026-10-31 (candidate)
 - Source branch fix/244-refresh-trial-after-cancel-20261031 based on verified main@196f3373589b04300b0c34573773c254f9197a4a. A successful owner trial cancellation previously reloaded only ConnectedClassroomLessons while StudentTrialBooking kept the previous eligible:false state and could not display rebooking slots until a manual refresh.
 - ConnectedClassroomLessons.tsx now increments a dedicated availability revision AFTER confirmed cancellation, and StudentTrialBooking.tsx includes that revision in its abortable signed availability effect. SSR regression ensures the connected route never falls back to synthetic booking preview. No optimistic booking, new backend/API, finance or child data.

@@ -25,6 +25,7 @@ import {readLessonQuranArchive} from '../lesson-quran-archive.ts';
 import {readOwnerLessonQuranHistory} from '../lesson-quran-history.ts';
 import {verifiedOwner} from '../published-assignments.ts';
 import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '../staff-teachers.ts';
+import {readStaffCapabilities} from '../staff-capabilities.ts';
 import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts';
 import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '../classroom-access.ts';
 import {forwardVerifiedPresence,parseClientPresenceAction} from '../classroom/presence.ts';
@@ -503,6 +504,11 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // The library re-reads the signed session from D1; cookie cache and unverified token auth are disabled.
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return reply(401, { code: 'UNAUTHENTICATED' }, requestId);
+  if(path==='/v1/staff/capabilities'){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const result=await readStaffCapabilities(env.DB,session.user.id);
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
   // Same-origin signed, read-only realtime hints. Neither role nor identity
   // comes from a WebSocket payload or client-asserted request headers.
   const teacherRealtime=new RegExp('^/v1/teacher/lessons/([a-zA-Z0-9-]{1,128})/realtime$').exec(path);
