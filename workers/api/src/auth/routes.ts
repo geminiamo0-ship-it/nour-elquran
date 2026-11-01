@@ -530,6 +530,13 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
     if(env.NOOR_ADMIN_PORTAL_ENABLED!=='true')
       return reply(404,{code:'NOT_FOUND'},requestId);
+    if(!await canManageTeachers(env.DB,session.user.id))
+      return reply(403,{code:'STAFF_ACCESS_DENIED'},requestId);
+    const guard=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='teacher_role_active_lesson_guard'"
+    ).first<{version:number}>();
+    if(guard?.version!==1)
+      return reply(503,{code:'TEACHER_ROLE_GUARD_NOT_READY'},requestId);
     const result=await transitionListedTeacher(env.DB,session.user.id,
       await readObject(request));
     const {status,...body}=result;return reply(status,body,requestId);
