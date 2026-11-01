@@ -18,6 +18,8 @@ import {listOwnerRescheduleSlots,rescheduleOwnerTrial} from '../trial-rescheduli
 import {readOwnerSubscriptionLedger} from '../subscription-ledger.ts';
 import {ownerAcademy,ownerPackageRequest,staffAcademy,staffPackage,staffActivate,
  staffReject,staffContact,staffInvite,claimInvite} from '../academy-admin-mvp.ts';
+import {ownerTrialRequest,ownerTrialRequests,staffTrialRequests,staffTrialDecision,
+ staffPaidBooking,staffBookableCycles} from '../academy-booking.ts';
 import {readTeacherInkDrafts,saveTeacherInkDraft,teacherAssignmentPageRange} from '../teacher-assignment-ink-drafts.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
@@ -534,6 +536,20 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
         await readObject(request));
     const {status,...body}=result;return reply(status,body,requestId);
   }
+  const trialRequestsRoute=/^\/v1\/me\/learners\/([a-zA-Z0-9_-]{1,128})\/trial-requests$/.exec(path);
+  if(trialRequestsRoute){
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='academy_requests_and_booking'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'ACADEMY_TRIAL_SCHEMA_NOT_READY'},requestId);
+    const result=request.method==='GET'
+      ?await ownerTrialRequests(env.DB,session.user.id,trialRequestsRoute[1]!)
+      :await ownerTrialRequest(env.DB,session.user.id,trialRequestsRoute[1]!,
+         await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
   if(path==='/v1/staff/academy'||path.startsWith('/v1/staff/academy/')){
     if(env.NOOR_ADMIN_PORTAL_ENABLED!=='true')
       return reply(404,{code:'NOT_FOUND'},requestId);
@@ -543,6 +559,29 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
       "SELECT version FROM noor_schema_meta WHERE component='academy_admin_mvp'"
     ).first<{version:number}>();
     if(schema?.version!==1)return reply(503,{code:'ACADEMY_SCHEMA_NOT_READY'},requestId);
+    if(path==='/v1/staff/academy/trials'||path==='/v1/staff/academy/cycles'){
+      if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+      const schema=await env.DB.prepare(
+       "SELECT version FROM noor_schema_meta WHERE component='academy_requests_and_booking'"
+      ).first<{version:number}>();
+      if(schema?.version!==1)return reply(503,{code:'ACADEMY_BOOKING_SCHEMA_NOT_READY'},requestId);
+      const result=path.endsWith('/trials')?
+       await staffTrialRequests(env.DB,session.user.id):
+       await staffBookableCycles(env.DB,session.user.id);
+      const {status,...body}=result;return reply(status,body,requestId);
+    }
+    if(path==='/v1/staff/academy/trial-decisions'||path==='/v1/staff/academy/book'){
+      if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+      const schema=await env.DB.prepare(
+       "SELECT version FROM noor_schema_meta WHERE component='academy_requests_and_booking'"
+      ).first<{version:number}>();
+      if(schema?.version!==1)return reply(503,{code:'ACADEMY_BOOKING_SCHEMA_NOT_READY'},requestId);
+      const body=await readObject(request);
+      const result=path.endsWith('/book')?
+       await staffPaidBooking(env.DB,session.user.id,body):
+       await staffTrialDecision(env.DB,session.user.id,body);
+      const {status,...safe}=result;return reply(status,safe,requestId);
+    }
     const handlers={
       '/v1/staff/academy/packages':staffPackage,
       '/v1/staff/academy/activate':staffActivate,
