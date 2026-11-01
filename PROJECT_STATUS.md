@@ -1,3 +1,8 @@
+## 2026-10-31 / #244 — trial rebooking availability refresh candidate (NOT merged)
+- Signed Student /student/lessons has real D1 booking and cancellation, but after a confirmed cancellation it refreshed only the lesson list. The separately mounted StudentTrialBooking retained its prior eligible:false/slot snapshot until the user manually clicked Update. This incorrectly hid newly re-eligible first-trial slots.
+- Branch fix/244-refresh-trial-after-cancel-20261031 passes a monotonically increasing availability revision to the existing server-backed booking component ONLY after cancellation ACK; its existing AbortController and loading state re-fetch authoritative selected-learner slots. Booking ACK still refreshes via its own existing path. No new client eligibility assumptions, payment, teacher assignment or backend write.
+- Added connected SSR boundary smoke; exact-head CI, independent review and signed Cloudflare Dev cancellation→rebook acceptance are PENDING. No Production or flag changes; #244/#155 remain OPEN.
+
 ## 2026-11-01 / #244 — connected read-only subscription ledger UI (candidate PR, CI pending)
 - After PR #299 merged to main 1686f445, the signed owner D1 GET exists but /student/subscription still displays only the unconnected placeholder. This branch adds strict client response validation, signed read-only academic units/compensation display, explicit no-paid-booking wording, loading/error/retry and sibling-safe request cancellation.
 - No payment activation, package prices, manual credit writer, paid reservation, WhatsApp, Production, or cumulative ink change. The UI must not infer spendable balance from ledger rows.

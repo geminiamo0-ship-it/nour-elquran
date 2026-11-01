@@ -1,3 +1,7 @@
+## #244 signed trial cancellation→availability refresh regression (candidate)
+- SSR smoke: connected learner lessons render only signed loading/availability states, not local booking preview fixtures.
+- Dev E2E still required: book a future trial on synthetic learner A, cancel it >=6h ahead, verify the same open Student Lessons page automatically re-queries D1 availability and offers a valid rebooking slot without manually clicking Update. Confirm cancellation failure does NOT reset eligibility; sibling B never inherits learner A's slots/booking; retries and refresh do not invent success. No payment/provider/media changes. CI alone cannot prove this React effect.
+
 ## #244 connected subscription read-only UI (candidate)
 - Unit: subscription-ledger-client.test.ts rejects malformed, contradictory or bookable server responses; ConnectedSubscriptionLedger.test.tsx asserts no fabricated counts before signed GET.
 - Required gates: exact-head lint/typecheck/Vitest/build; signed isolated Dev D1 0026, owner A / sibling B / foreign owner 404, refresh and mobile 360/390, offline retry. No Production or payments.

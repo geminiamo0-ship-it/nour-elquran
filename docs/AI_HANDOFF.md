@@ -1,3 +1,8 @@
+## #244 signed trial availability refresh after cancellation — 2026-10-31 (candidate)
+- Source branch fix/244-refresh-trial-after-cancel-20261031 based on verified main@196f3373589b04300b0c34573773c254f9197a4a. A successful owner trial cancellation previously reloaded only ConnectedClassroomLessons while StudentTrialBooking kept the previous eligible:false state and could not display rebooking slots until a manual refresh.
+- ConnectedClassroomLessons.tsx now increments a dedicated availability revision AFTER confirmed cancellation, and StudentTrialBooking.tsx includes that revision in its abortable signed availability effect. SSR regression ensures the connected route never falls back to synthetic booking preview. No optimistic booking, new backend/API, finance or child data.
+- NEXT: exact-head Verify and independent PR review; signed synthetic owner/learner Cloudflare Dev test: book → cancel >=6h → availability refresh without pressing Update → rebook, plus sibling/failed-cancel negative paths. Keep #244 and #155 OPEN until Dev acceptance. No Production, payment or WhatsApp changes.
+
 ## 2026-11-01 / #244 — connected student academic ledger read (candidate)
 - New branch from merged main 1686f445 wires the existing signed /v1/me/learners/:id/subscription-ledger GET into /student/subscription, with strict non-bookable response parser and no cross-profile stale data. The payment section remains explicitly unavailable.
 - Exact-head CI, independent review, remote 0026 D1 migration, signed owner/sibling 404 and mobile browser acceptance are NOT yet proven. No payment/production/WhatsApp/child media/feature flag changes.
