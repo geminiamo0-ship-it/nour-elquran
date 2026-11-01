@@ -177,6 +177,16 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
       "SELECT version FROM noor_schema_meta WHERE component='free_trial_booking'"
     ).first<{version:number}>();
     if(schema?.version!==1)return reply(503,{code:'TRIAL_SCHEMA_NOT_READY'},requestId);
+    // #315: when the Admin confirmation ledger is available, guardians may
+    // only REQUEST a slot. The legacy immediate-book API cannot bypass staff
+    // approval; approved staff decisions use the original D1 trigger safely.
+    if(mode==='trial-bookings'){
+      const academy=await db.prepare(
+       "SELECT version FROM noor_schema_meta WHERE component='academy_requests_and_booking'"
+      ).first<{version:number}>();
+      if(academy?.version===1)
+        return reply(409,{code:'TRIAL_ADMIN_APPROVAL_REQUIRED'},requestId);
+    }
     const result=mode==='trial-slots'
       ?await listOwnerTrialSlots(db,authSubject,learnerId)
       :await bookOwnerTrial(db,authSubject,learnerId,await readObject(request));
