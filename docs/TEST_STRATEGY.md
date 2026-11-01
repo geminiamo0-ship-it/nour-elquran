@@ -1,3 +1,7 @@
+## #317 D1 paid-slot write acknowledgement regression (2026-11-01)
+- Backend Node tests must reject both `run()={success:false,meta:{changes:0}}` and `run()={success:true,meta:{changes:0}}` for guardian proposals and staff decisions with a sanitized 503, never a 201/lesson or debit claim. Positive `success:true,changes:1` remains accepted.
+- Unknown D1 write outcomes require explicit same-operationId replay after fresh owner/staff authorization; only immutable matching events may return a successful replay. Unit tests are not proof of remote D1 trigger or credit atomicity. Exact-head CI, independent review and signed isolated Dev 0031 acceptance remain mandatory.
+
 ## #317 paid-slot staff decision UI acceptance (source-only, 2026-11-01)
 - Vitest: strict 201 created vs 200 replay, valid UUID lesson for approval and null for rejection; no PII/extraneous fields; exact same-origin POST body, no spoofed role/time; 409 denial and network-unknown fail closed. SSR initial staff inbox contains no learner records/action; pending decision starts disabled until reason and confirmation.
 - Native D1 0031 tests must still prove one atomic credit spend and booked 40-minute lesson, rejection without spend, stale grant/assignment/cycle denial, simultaneous decisions and replay.
