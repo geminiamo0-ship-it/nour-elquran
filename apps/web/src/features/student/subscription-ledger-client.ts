@@ -19,12 +19,15 @@ const id=/^[A-Za-z0-9_-]{1,128}$/;
 function object(value:unknown):value is Record<string,unknown>{
  return value!==null&&typeof value==='object'&&!Array.isArray(value);
 }
-function amount(value:unknown){
+function count(value:unknown){
  return Number.isSafeInteger(value)&&Number(value)>=0&&Number(value)<=100000;
+}
+function timestamp(value:unknown){
+ return Number.isSafeInteger(value)&&Number(value)>=0;
 }
 export function parseSubscriptionLedger(raw:unknown):SubscriptionLedgerView{
  if(!object(raw)||raw.code!=='SUBSCRIPTION_LEDGER'||raw.bookingEnabled!==false||
-    !amount(raw.compensationUnspentSessions)||!amount(raw.compensationGrantCount)||
+    !count(raw.compensationUnspentSessions)||!count(raw.compensationGrantCount)||
     !Object.hasOwn(raw,'latestCycle')){
   throw new SubscriptionLedgerError('INVALID_SUBSCRIPTION_RESPONSE');
  }
@@ -32,8 +35,9 @@ export function parseSubscriptionLedger(raw:unknown):SubscriptionLedgerView{
  if(raw.latestCycle!==null){
   const c=raw.latestCycle;
   if(!object(c)||
-     !['startsAtMs','endsAtMs','baseSessions','rolloverSessions',
-       'spentSessions','recordedUnspentSessions'].every(k=>amount(c[k]))||
+     !['startsAtMs','endsAtMs'].every(k=>timestamp(c[k]))||
+     !['baseSessions','rolloverSessions','spentSessions',
+       'recordedUnspentSessions'].every(k=>count(c[k]))||
      !['within_period','expired'].includes(String(c.state))||
      Number(c.endsAtMs)<=Number(c.startsAtMs)||
      Number(c.spentSessions)>Number(c.baseSessions)+Number(c.rolloverSessions)||
