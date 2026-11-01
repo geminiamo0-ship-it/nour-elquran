@@ -6,7 +6,7 @@ import {AdminActionError,submitAdminAction,validAdminAction}
 
 const operationId='124e4567-e89b-42d3-a456-426614174000';
 const reason='Verified academic action';
-const teacher={action:'activate',targetUserId:'verified-account',
+const teacher={action:'activate',teacherId:'teacher-1',
  operationId,reason};
 const schedule={action:'cancel',resourceId:'scheduled-lesson',
  operationId,reason};
@@ -18,11 +18,13 @@ afterEach(()=>vi.unstubAllGlobals());
 describe('Admin operational D1 client #309',()=>{
  it('accepts only exact auditable commands without role headers or accounts',()=>{
   expect(validAdminAction('teacher',teacher)).toBe(true);
+  expect(validAdminAction('teacher',{...teacher,action:'provision',
+   targetUserId:'verified-account',teacherId:undefined})).toBe(false);
   expect(validAdminAction('schedule',schedule)).toBe(true);
   expect(validAdminAction('attendance',review)).toBe(true);
   for(const bad of [
    {...teacher,grant:'roles.manage'},
-   {...teacher,targetUserId:'../../fake'},
+   {...teacher,teacherId:'../../fake'},
    {...teacher,reason:'short'},
    {...teacher,operationId:'not-uuid'},
    {...teacher,action:'grant_admin'},
@@ -48,7 +50,7 @@ describe('Admin operational D1 client #309',()=>{
   vi.stubGlobal('fetch',mock);
   expect(await submitAdminAction('teacher',teacher)).toEqual({
    code:'TEACHER_ROLE_CHANGED',resourceId:'teacher-1'});
-  expect(mock.mock.calls[0]?.[0]).toBe('/v1/staff/teacher-actions');
+  expect(mock.mock.calls[0]?.[0]).toBe('/v1/staff/teachers/transition');
   expect(mock.mock.calls[0]?.[1]).toMatchObject({
    method:'POST',credentials:'same-origin',cache:'no-store',redirect:'error',
    headers:{'Content-Type':'application/json'}});
