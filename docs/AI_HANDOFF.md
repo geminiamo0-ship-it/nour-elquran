@@ -1,3 +1,9 @@
+## 2026-11-02 — #317 / #242 signed learner-scope render guard (PR #318, Draft)
+- Fresh GitHub baseline: `main@4c15b59f`; PR #318 was open, mergeable and Draft at `c06b423b`; its exact-head Verify #41354659743 succeeded 4/4. Do not extrapolate that success to subsequent commits.
+- Confirmed source bug: `ConnectedClassroomLessons` kept `status='ready'` and old lesson rows until React `useEffect` cleanup on learner switch; old rows could render under the new learner's classroom link before cleanup. `StudentPaidSlotStatus` receives the same defense-in-depth boundary.
+- Changes: generic `components/learner-scope.ts` + learner-tagged fetch snapshots in both components, with a Vitest A/B switch guard in `paid-slot-requests-client.test.ts`. No changes to D1, booking/debit, auth policy, flags, payments, WhatsApp, R2 or Production.
+- **Next exact action:** check GitHub Verify for the NEW PR head, fix any failing lint/typecheck/Vitest/build/native D1. Then request independent security review and perform signed synthetic Cloudflare Dev immediate sibling A→B switching (old lesson titles and links never visible), mobile 360×667/390×844, and paid-slot guardian/staff/credit acceptance. Keep #317/#242 OPEN and PR #318 Draft; trusted published offers and guardian form are still absent.
+
 ## 2026-11-01 — #317 expired paid-slot proposal read model (PR #318, Draft)
 - Fetched current GitHub main, #317, PR #318, exact prior CI 41346071841 (4/4 PASS on `4e015eae`), required repo guardrails and current Worker/frontend source before editing.
 - New source: both signed owner/staff GET queries derive `expired` when `starts_at_ms <= serverNow+60s` **only if undecided**; settled approvals/rejections override. Staff cannot click approve on an already expired read-model row, and owner is no longer told the request is indefinitely pending. No D1 event mutation or automatic refund.
