@@ -136,6 +136,30 @@ class PaidSlotRequestD1(unittest.TestCase):
    "SELECT decision FROM academy_paid_slot_decision_events WHERE request_id=?",
    (req,)).fetchone(),('rejected',))
 
+ def test_archived_learner_or_dequalified_teacher_after_request_cannot_debit(self):
+  # The owner proposal is only an intent. Approval must re-check current
+  # learner and Sheikh eligibility in the same D1 transaction as the spend.
+  for mutate,restore in (
+   ("UPDATE learners SET status='archived' WHERE id='child-a'",
+    "UPDATE learners SET status='active' WHERE id='child-a'"),
+   ("UPDATE teachers SET qualified=0 WHERE id='id-teacher-a'",
+    "UPDATE teachers SET qualified=1 WHERE id='id-teacher-a'"),
+  ):
+   with self.subTest(mutate=mutate):
+    req=self.request()
+    self.db.execute(mutate)
+    with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_PAID_ASSIGNMENT_MISSING'):
+     self.decide(req)
+    self.assertEqual(self.db.execute(
+     'SELECT COUNT(*) FROM academy_paid_slot_decision_events').fetchone(),(0,))
+    self.assertEqual(self.db.execute('SELECT COUNT(*) FROM lessons').fetchone(),(0,))
+    self.assertEqual(self.db.execute(
+     'SELECT COUNT(*) FROM subscription_spend_events').fetchone(),(0,))
+    # Even a stale, no-longer-bookable proposal can be explicitly rejected.
+    self.decide(req,decision='rejected')
+    self.db.execute(restore)
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
+
  def test_staff_revocation_or_lost_verification_denies_both_decisions(self):
   req=self.request()
   for sql,params in (
