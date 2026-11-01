@@ -81,6 +81,6 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
     </article>)}
    </div>}
   </>}
-  {ready&&<AdminOperations kind="teacher" session={session} onApplied={()=>setRetry(n=>n+1)}/>}
+  {ready&&<AdminOperations kind="teacher" session={session} teachers={ready.teachers} onApplied={()=>setRetry(n=>n+1)}/>}
  </div>;
 }
