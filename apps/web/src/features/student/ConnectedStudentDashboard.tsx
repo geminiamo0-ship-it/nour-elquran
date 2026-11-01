@@ -59,5 +59,5 @@ export function ConnectedStudentDashboard({learnerId,name}:{learnerId:string;nam
   {label:'التلاوة',value:score(report.recitation)},
   {label:'التجويد',value:score(report.tajweed)}
  ]:[];
- return <PremiumHome name={name} lesson={lesson} tasks={tasks} grades={grades}/>;
+ return <PremiumHome name={name} lesson={lesson} tasks={tasks} grades={grades} learnerId={learnerId}/>;
 }
