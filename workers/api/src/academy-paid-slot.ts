@@ -93,14 +93,15 @@ export async function ownerPaidSlotRequest(db:CoreDatabase,subject:string,
  return {status:201,code:'ACADEMY_PAID_SLOT_CREATED',slotRequestId:id} as const;
 }
 
-export async function staffPaidSlotRequests(db:CoreDatabase,subject:string){
+export async function staffPaidSlotRequests(db:CoreDatabase,subject:string,now=Date.now()){
  if(!await canManageTeachers(db,subject))
   return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
  const rows=await db.prepare(`SELECT r.id AS requestId,r.learner_id AS learnerId,
  l.display_name AS learnerName,r.teacher_id AS teacherId,
  u.name AS teacherName,r.starts_at_ms AS startsAtMs,
  r.ends_at_ms AS endsAtMs,
- CASE WHEN d.decision IS NULL THEN 'pending' ELSE d.decision END AS state,
+ CASE WHEN d.decision IS NOT NULL THEN d.decision
+ WHEN r.starts_at_ms<=? THEN 'expired' ELSE 'pending' END AS state,
  d.lesson_id AS lessonId
  FROM academy_paid_slot_request_events r
  JOIN learners l ON l.id=r.learner_id
@@ -108,7 +109,7 @@ export async function staffPaidSlotRequests(db:CoreDatabase,subject:string){
  JOIN auth_users u ON u.id=t.auth_subject
  LEFT JOIN academy_paid_slot_decision_events d ON d.request_id=r.id
  ORDER BY r.requested_at_ms DESC,r.id DESC LIMIT 100`)
- .all<Record<string,unknown>>();
+ .bind(now+60000).all<Record<string,unknown>>();
  return {status:200,code:'ACADEMY_PAID_SLOT_STAFF',requests:rows.results} as const;
 }
 
