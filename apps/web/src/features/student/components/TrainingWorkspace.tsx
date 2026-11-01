@@ -7,6 +7,7 @@ import { nextBookedLesson, validAssignmentRange, VOLUNTARY_SAMPLES } from '../qu
 import { TrainingQuranSession } from './TrainingQuranSession';
 import {StudentPublishedAssignments} from './StudentPublishedAssignments';
 import {StudentConnectedPreparation} from './StudentConnectedPreparation';
+import {StudentAcademicPlanCard} from './StudentAcademicPlanCard';
 import css from './TrainingWorkspace.module.css';
 
 type Tab = 'homework' | 'prepare' | 'practice';
@@ -133,6 +134,8 @@ export function TrainingWorkspace(){
     </section>}
 
     {tab==='prepare'&&!selected.profile.demo&&
+      <StudentAcademicPlanCard key={'plan-'+selected.profile.id} learnerId={selected.profile.id}/>}
+    {tab==='prepare'&&!selected.profile.demo&&
       <StudentConnectedPreparation key={selected.profile.id}
        learnerId={selected.profile.id} onHomework={()=>changeTab('homework')}
        onPractice={()=>changeTab('practice')}/>}
@@ -154,7 +157,7 @@ export function TrainingWorkspace(){
           <div><span>٢</span><p>جرّب التسميع الذاتي للآيات المستهدفة، واستمع للتلاوة.</p>
             <button type="button" className={css.textAction} onClick={()=>changeTab('practice')}>تدريب حر</button></div>
           <div><span>٣</span><p>راجع آخر تصحيحات وملاحظات الشيخ في دفتر الحصص.</p>
-            <Link href="/student/notebook" className={css.textAction}>دفتر الحصص</Link></div>
+            <Link href="/student/lessons#notebook" className={css.textAction}>دفتر الحصص</Link></div>
         </div>
         <p className={css.subtle}>هذه الخطوات للمساعدة في التحضير؛ ليست مهامًا جديدة أو إثبات حضور.</p>
       </div>:<div className={css.emptyBox}>
