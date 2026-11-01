@@ -16,6 +16,8 @@ import {reportAttendanceIncident,submitAttendanceAppeal,listOwnerAttendance,list
 import {publishTrialSlot,listOwnerTrialSlots,bookOwnerTrial,closeTrialSlot,cancelOwnerTrial} from '../free-trial-booking.ts';
 import {listOwnerRescheduleSlots,rescheduleOwnerTrial} from '../trial-rescheduling.ts';
 import {readOwnerSubscriptionLedger} from '../subscription-ledger.ts';
+import {ownerAcademy,ownerPackageRequest,staffAcademy,staffPackage,staffActivate,
+ staffReject,staffContact,staffInvite,claimInvite} from '../academy-admin-mvp.ts';
 import {readTeacherInkDrafts,saveTeacherInkDraft,teacherAssignmentPageRange} from '../teacher-assignment-ink-drafts.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
@@ -507,6 +509,58 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
   // The library re-reads the signed session from D1; cookie cache and unverified token auth are disabled.
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return reply(401, { code: 'UNAUTHENTICATED' }, requestId);
+  // #315: signed academy catalog, owner requests, manual staff settlement
+  // and one-use Sheikh invitations. Never trust an asserted staff role.
+  if(path==='/v1/me/academy/invite-claim'){
+    if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await env.DB.prepare(
+     "SELECT version FROM noor_schema_meta WHERE component='academy_admin_mvp'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'ACADEMY_SCHEMA_NOT_READY'},requestId);
+    const result=await claimInvite(env.DB,session.user.id,await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
+  const ownerAcademyRoute=/^\/v1\/me\/learners\/([a-zA-Z0-9_-]{1,128})\/academy$/.exec(path);
+  if(ownerAcademyRoute){
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='academy_admin_mvp'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'ACADEMY_SCHEMA_NOT_READY'},requestId);
+    const result=request.method==='GET'
+      ?await ownerAcademy(env.DB,session.user.id,ownerAcademyRoute[1]!)
+      :await ownerPackageRequest(env.DB,session.user.id,ownerAcademyRoute[1]!,
+        await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
+  if(path==='/v1/staff/academy'||path.startsWith('/v1/staff/academy/')){
+    if(env.NOOR_ADMIN_PORTAL_ENABLED!=='true')
+      return reply(404,{code:'NOT_FOUND'},requestId);
+    if(!await canManageTeachers(env.DB,session.user.id))
+      return reply(403,{code:'STAFF_ACCESS_DENIED'},requestId);
+    const schema=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='academy_admin_mvp'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'ACADEMY_SCHEMA_NOT_READY'},requestId);
+    const handlers={
+      '/v1/staff/academy/packages':staffPackage,
+      '/v1/staff/academy/activate':staffActivate,
+      '/v1/staff/academy/reject':staffReject,
+      '/v1/staff/academy/contact':staffContact,
+      '/v1/staff/academy/invites':staffInvite,
+    } as const;
+    if(path==='/v1/staff/academy'){
+      if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+      const result=await staffAcademy(env.DB,session.user.id);
+      const {status,...body}=result;return reply(status,body,requestId);
+    }
+    const handler=handlers[path as keyof typeof handlers];
+    if(!handler)return reply(404,{code:'NOT_FOUND'},requestId);
+    if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const result=await handler(env.DB,session.user.id,await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
   // #302: build-time disabled Admin UI is never a role claim. This aggregate
   // route is separately disabled in Workers until explicitly enabled on Dev.
   // Every authorized GET revalidates Better Auth and a current D1 staff grant.
