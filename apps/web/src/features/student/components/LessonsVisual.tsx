@@ -22,7 +22,7 @@ export function UpcomingLessonCard({lesson}:{lesson?:DisplayLesson}){
    </span>
   </div>
   <h2>{lesson?.title??'لا توجد حصص قادمة'}</h2>
-  <p>{lesson?'استعد للقاءك القادم مع القرآن.':'تقدر تتابع المواعيد وتطلب حصة تجريبية من أسفل الصفحة.'}</p>
+  <p>{lesson?'استعد للقائك القادم مع القرآن.':'تقدر تتابع المواعيد وتطلب حصة تجريبية من أسفل الصفحة.'}</p>
   {lesson&&<div className={styles.facts}>
    <span className={styles.fact}>{calendar} {lesson.time}</span>
    <span className={styles.fact}>{clock} {lesson.description}</span>
