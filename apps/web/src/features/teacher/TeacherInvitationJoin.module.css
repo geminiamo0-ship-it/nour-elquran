@@ -1,0 +1,5 @@
+.card{max-width:540px;margin:40px auto;padding:clamp(18px,3vw,32px);background:#fffefa;color:#254331;border:1px solid #ded7c6;border-radius:18px;display:grid;gap:14px;direction:rtl}
+.card h1{font:700 30px 'Amiri',serif;margin:0}.card p{font-size:14px;line-height:1.9}.form{display:grid;gap:12px}
+.form label{display:grid;gap:5px;font-weight:700}.form input{padding:12px;border:1px solid #c8d3cb;border-radius:9px;width:100%;font:inherit}
+.button{padding:12px 18px;border:0;border-radius:9px;background:#2b6142;color:#fff!important;text-decoration:none;font:700 14px inherit;cursor:pointer;text-align:center}
+.button:disabled{opacity:.5}.card :is(button,input):focus-visible{outline:3px solid #b78e3b;outline-offset:2px}
