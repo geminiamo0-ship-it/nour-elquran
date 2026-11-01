@@ -1,3 +1,8 @@
+## 2026-11-01 — #317 continuation: guardian proposal network contract
+- Reviewed AGENTS/status/plan/security/tests and live PR #318. Previous `d071dc49` Verify [41331326021](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41331326021) completed 4/4 (not current-head evidence after new commits).
+- On existing Draft branch `feat/317-paid-slot-request-ledger`, added `submitPaidSlotProposal` + `parsePaidSlotProposalAck` in `apps/web/src/features/student/paid-slot-requests-client.ts`; strict exact-input/ACK, signed POST, explicit uncertain-network outcome. Added focused Vitest regressions in `paid-slot-requests-client.test.ts` including immutable retries and no false debit.
+- **NEXT exact action:** inspect latest PR HEAD GitHub Verify and repair any lint/type/test failures. Then add server-derived owner-visible eligible teacher/cycle/slot options (do not invent them in the browser), connect a small guardian proposal form, and perform independent SQL/security review + source-pinned D1 0031 signed Dev/360–390/sibling acceptance. No merge/Production/finance provider/WhatsApp/child audio/cumulative-ink flag.
+
 ## 2026-11-01 — #317 D1 false-success guard on PR #318
 - Read current main, open Issues/PRs and required guardrails. Continued existing Draft branch `feat/317-paid-slot-request-ledger` rather than reopening merged work.
 - Source-only fix in `workers/api/src/academy-paid-slot.ts`: both guardian and staff `run()` writes require `success===true` and positive safe integer `meta.changes`. Failed/zero-change acknowledgements return 503 `ACADEMY_PAID_SLOT_WRITE_UNCONFIRMED`; no confirmed booking or credit claim. Tests in `workers/api/tests/academy-paid-slot.test.ts` exercise both paths and successful baseline.
