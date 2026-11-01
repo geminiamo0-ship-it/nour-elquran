@@ -44,9 +44,9 @@ class TeacherActiveLessonGuard(unittest.TestCase):
             "('lesson-id','learner-id','teacher-id','trial','scheduled',?,?)",
             (T+8*HOUR,T+8*HOUR+40*60_000))
 
-    def suspend(self, ident):
+    def suspend(self, ident, now=T):
         return self.db.execute(ROLE_SQL,(ident,ident,'teacher-id','staff','sheikh',
-                          'suspend','Validated operations action',T))
+                          'suspend','Validated operations action',now))
 
     def test_active_lesson_rejects_role_event_atomically(self):
         before=self.db.execute(
@@ -60,11 +60,10 @@ class TeacherActiveLessonGuard(unittest.TestCase):
             "SELECT status FROM teachers WHERE id='teacher-id'").fetchone(),('active',))
 
     def test_live_past_reservation_end_still_blocks_suspension(self):
-        self.db.execute("UPDATE lessons SET status='live',ends_at_ms=? WHERE id='lesson-id'",
-                        (T-1,))
+        self.db.execute("UPDATE lessons SET status='live' WHERE id='lesson-id'")
         with self.assertRaisesRegex(sqlite3.IntegrityError,
                                     "active classes block teacher transition"):
-            self.suspend("live-overdue")
+            self.suspend("live-overdue", now=T+10*HOUR)
         self.assertEqual(self.db.execute(
             "SELECT status FROM teachers WHERE id='teacher-id'").fetchone(),('active',))
 
