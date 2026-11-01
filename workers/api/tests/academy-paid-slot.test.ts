@@ -12,8 +12,10 @@ const REQUEST='55555555-5555-4555-8555-555555555555';
 const NOW=100000000,START=NOW+120000;
 type Query={sql:string;values:unknown[]};
 function mock(opts:{owner?:boolean;staff?:boolean;prior?:Record<string,unknown>|null;
+ racePrior?:Record<string,unknown>|null;
  rows?:Record<string,unknown>[];error?:Error}={}){
  const queries:Query[]=[];
+ let operationLookups=0;
  const db={
   prepare(sql:string){
    let values:unknown[]=[];
@@ -23,7 +25,10 @@ function mock(opts:{owner?:boolean;staff?:boolean;prior?:Record<string,unknown>|
      queries.push({sql,values});
      if(sql.includes('FROM learners l'))return opts.owner===false?null:{allowed:1};
      if(sql.includes('FROM staff_grants'))return opts.staff===false?null:{subject:'staff'};
-     if(sql.includes('WHERE operation_id=?'))return opts.prior??null;
+     if(sql.includes('WHERE operation_id=?')){
+      operationLookups++;
+      return operationLookups>1?(opts.racePrior??opts.prior??null):(opts.prior??null);
+     }
      return null;
     },
     async all(){queries.push({sql,values});return {results:opts.rows??[]};},
@@ -75,6 +80,23 @@ test('guardian idempotency accepts only same owner, learner and immutable propos
   assert.equal((await ownerPaidSlotRequest(bad.db,'owner',LEARNER,proposal,NOW)).status,409);
   assert.equal(bad.queries.some(q=>q.sql.includes('INSERT INTO')),false);
  }
+});
+
+test('concurrent duplicate guardian POST replays winner without a false conflict',async()=>{
+ const prior={id:REQUEST,actor:'owner',learnerId:LEARNER,teacherId:TEACHER,
+  cycleId:CYCLE,startsAtMs:START};
+ const unique=new Error('D1_ERROR: UNIQUE constraint failed: academy_paid_slot_request_events.operation_id');
+ const raced=mock({error:unique,racePrior:prior});
+ assert.deepEqual(await ownerPaidSlotRequest(raced.db,'owner',LEARNER,proposal,NOW),
+  {status:200,code:'ACADEMY_PAID_SLOT_REPLAY',slotRequestId:REQUEST});
+ assert.equal(raced.queries.filter(q=>q.sql.includes('INSERT INTO')).length,1);
+ assert.equal(raced.queries.filter(q=>q.sql.includes('WHERE operation_id=?')).length,2);
+ const foreign=mock({error:unique,racePrior:{...prior,actor:'another-owner'}});
+ assert.deepEqual(await ownerPaidSlotRequest(foreign.db,'owner',LEARNER,proposal,NOW),
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'});
+ const unrelated=mock({error:unique});
+ assert.deepEqual(await ownerPaidSlotRequest(unrelated.db,'owner',LEARNER,proposal,NOW),
+  {status:409,code:'ACADEMY_PAID_SLOT_DENIED'});
 });
 
 test('guardian retry of the same proposal remains idempotent after the slot expires',async()=>{
