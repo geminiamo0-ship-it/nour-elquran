@@ -122,9 +122,11 @@ test('guardian and staff lists are bounded and deny foreign role before query',a
  assert.equal((await staffPaidSlotRequests(denied.db,'staff')).status,403);
  assert.equal(denied.queries.some(q=>q.sql.includes('academy_paid_slot_request_events')),false);
  const owner=mock({rows:[{requestId:REQUEST,state:'pending'}]});
- const result=await ownerPaidSlotRequests(owner.db,'owner',LEARNER);
+ const result=await ownerPaidSlotRequests(owner.db,'owner',LEARNER,NOW);
  assert.equal(result.status,200);
- assert.ok(owner.queries.some(q=>q.sql.includes('LIMIT 30')&&q.values[0]===LEARNER));
+ assert.ok(owner.queries.some(q=>q.sql.includes('LIMIT 30')&&
+  q.sql.includes("WHEN r.starts_at_ms<=? THEN 'expired'")&&
+  q.values[0]===NOW+60000&&q.values[1]===LEARNER));
  const staff=mock();
  assert.equal((await staffPaidSlotRequests(staff.db,'staff')).status,200);
  const sql=staff.queries.find(q=>q.sql.includes('LIMIT 100'))?.sql??'';
