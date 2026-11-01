@@ -92,6 +92,11 @@ export async function issueTeacherRoleAction(
       return same?{status:200,code:'OPERATION_ALREADY_APPLIED',teacherId:retry.teacher_id}:
         {status:409,code:'OPERATION_ID_CONFLICT'};
     }
+    // #309: The 0027 D1 trigger can win a race after the roster preflight
+    // (and legacy teacher-actions has no roster preflight). Map its exact,
+    // sanitized rejection to a conflict rather than an unexplained 503.
+    if(error instanceof Error && /active classes block teacher transition/i.test(error.message))
+      return {status:409,code:'ACTIVE_CLASSES_BLOCK_TRANSITION'};
     if(error instanceof Error && /constraint|denied|immutable|mismatch|provisioned|verified|grant/i.test(error.message))
       return {status:409,code:'TEACHER_ROLE_TRANSITION_DENIED'};
     throw error;
