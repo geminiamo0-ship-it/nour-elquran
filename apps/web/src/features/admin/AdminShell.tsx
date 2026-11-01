@@ -8,6 +8,7 @@ import {AdminOverviewPanel,AdminPendingSection} from './AdminSections';
 import {AdminTeacherDirectory} from './AdminTeacherDirectory';
 import {AdminCollectionPanel} from './AdminCollectionPanel';
 import {AdminAcademyMvp} from './AdminAcademyMvp';
+import {AdminBookingPanel} from './AdminBookingPanel';
 import {AdminOverviewError,fetchAdminOverview,type AdminOverview} from './admin-overview-client';
 import css from './AdminPortal.module.css';
 
@@ -148,7 +149,8 @@ export function AdminShell(){
       :route==='/admin/students'
        ?<AdminCollectionPanel key={route} session={account.session} view="students"/>
        :route==='/admin/schedule'
-        ?<AdminCollectionPanel key={route} session={account.session} view="schedule"/>
+        ?<><AdminCollectionPanel key={route} session={account.session} view="schedule"/>
+           <AdminBookingPanel session={account.session} mode="paid"/></>
         :route==='/admin/subscriptions'
          ?<AdminCollectionPanel key={route} session={account.session} view="subscriptions"/>
          :route==='/admin/attendance'
@@ -156,7 +158,8 @@ export function AdminShell(){
           :route==='/admin/packages'
            ?<AdminAcademyMvp key={route} session={account.session} mode="packages"/>
            :route==='/admin/requests'
-            ?<AdminAcademyMvp key={route} session={account.session} mode="requests"/>
+            ?<><AdminAcademyMvp key={route} session={account.session} mode="requests"/>
+              <AdminBookingPanel session={account.session} mode="trial"/></>
             :route==='/admin/settings'
              ?<AdminAcademyMvp key={route} session={account.session} mode="contact"/>
              :<AdminPendingSection route={route}/>}
