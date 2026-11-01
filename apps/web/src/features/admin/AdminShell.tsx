@@ -6,6 +6,7 @@ import {AccountGate,useAccount,type AccountSession} from '@/features/account';
 import {ADMIN_NAVIGATION,getAdminRoute} from './admin-navigation';
 import {AdminOverviewPanel,AdminPendingSection} from './AdminSections';
 import {AdminTeacherDirectory} from './AdminTeacherDirectory';
+import {AdminCollectionPanel} from './AdminCollectionPanel';
 import {AdminOverviewError,fetchAdminOverview,type AdminOverview} from './admin-overview-client';
 import css from './AdminPortal.module.css';
 
@@ -143,7 +144,15 @@ export function AdminShell(){
      ?<AdminOverviewPanel value={read.value} onRefresh={()=>setRetry(n=>n+1)}/>
      :route==='/admin/teachers'
       ?<AdminTeacherDirectory session={account.session}/>
-      :<AdminPendingSection route={route}/>}
+      :route==='/admin/students'
+       ?<AdminCollectionPanel key={route} session={account.session} view="students"/>
+       :route==='/admin/schedule'
+        ?<AdminCollectionPanel key={route} session={account.session} view="schedule"/>
+        :route==='/admin/subscriptions'
+         ?<AdminCollectionPanel key={route} session={account.session} view="subscriptions"/>
+         :route==='/admin/attendance'
+          ?<AdminCollectionPanel key={route} session={account.session} view="attendance"/>
+          :<AdminPendingSection route={route}/>}
    </main>
   </div>
   {menuOpen&&<nav id="admin-mobile-navigation" className={css.mobileNav}

@@ -1,3 +1,12 @@
+## #307 consolidated staff collections
+
+- `workers/api/src/staff-collections.ts`: four fixed SQL queries and exact field validators: student profiles, -7/+30-day lesson calendar, monthly subscription cycle lesson units and attendance appeal statuses. Every request checks current verified active D1 `roles.manage` grant before reading. Maximum 50 rows + honest `truncated`, no phone, guardian identity, incident reasons, finance or dynamic query values.
+- `workers/api/src/auth/routes.ts`: staff-only `GET /v1/staff/collections?view=...` with strict allowlist/one query parameter; method 405, disabled Worker 404, invalid view 400, signed staff 200, denial 401/403 and D1 failure 503. Static source uses existing default-off Dev Admin opt-in only.
+- `apps/web/src/features/admin/admin-collections-client.ts`: schema-checked same-origin no-store GET for four exact row shapes and signed error codes.
+- `apps/web/src/features/admin/AdminCollectionPanel.tsx`: one responsive RTL reusable read-only list with honest local-only search, no mutation, error/empty/loading/denied states and session-keyed abort.
+- `apps/web/src/features/admin/{AdminShell.tsx,admin-navigation.ts,AdminSections.tsx,AdminPortal.module.css}`: four real connected views alongside overview/Sheikh, links and responsive card layouts. Settings remains disabled.
+- `workers/api/tests/staff-collections.test.ts`, `apps/web/src/features/admin/{admin-collections-client.test.ts,AdminCollectionPanel.test.tsx}`, `scripts/cloudflare-auth-smoke.mjs`: fixed-allowlist, typed, signed native D1 tests. No new migrations, audio, WhatsApp or cash payments.
+
 ## #305 Admin teacher directory (source candidate)
 - `workers/api/src/staff-teacher-directory.ts`: bounded 50-row staff-only verified D1 query; deterministic order, counts, no contacts/learner identities, fail-closed on malformed results. `workers/api/src/auth/routes.ts` adds signed default-OFF `GET /v1/staff/teachers` beside overview.
 - `apps/web/src/features/admin/admin-teachers-client.ts`: strict response parser, signed same-origin no-store GET; `AdminTeacherDirectory.tsx`: mobile RTL read-only cards, real empty/error/denied/loading and 50-row warning; `AdminShell.tsx` mounts only after signed overview authorization.

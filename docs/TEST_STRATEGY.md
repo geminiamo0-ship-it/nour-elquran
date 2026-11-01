@@ -1,3 +1,11 @@
+## #307 full consolidated safe Admin Phase B source gates
+
+- Backend `workers/api/tests/staff-collections.test.ts`: four immutable SQL selectors and 51-row LIMIT, grant before query, static fields with no contacts/private reasons, strict row types/count/status, no duplicate IDs, zero-row truth, 50-row truncation, D1 malformed result 503. Invalid `view` or extra query parameters 400 before querying D1.
+- Browser `admin-collections-client.test.ts`: exactly four typed collection payloads, D1 values only, no role headers/client SQL, no-store signed GET, HTTP 403/bad JSON/network fail closed, rejects unexpected PII fields/coerced counts/duplicate IDs and mismatched collection type.
+- UI `AdminCollectionPanel.test.tsx`: four sections use loading gate with no fixture data; only genuine connected nav entries active. Existing default-off static public Admin smoke and signed teacher/overview smoke remain untouched.
+- Native disposable `scripts/cloudflare-auth-smoke.mjs`: all four admin views anonymous 401, ordinary Sheikh 403, synthetic signed verified staff 200/no-store, POST 405, unknown/duplicate/extra view 400 and immediate 403 on grant revocation on the same session. No persistent Dev or Production grant.
+- After exact-head Verify success, separate pinned-source **Cloudflare Dev** API and Chrome staff/teacher/anonymous role matrix and 360/390/1280 visual tests are required; PR CI does not prove remote Dev or payment/teacher operations. All finance/WhatsApp/recordings/role writes remain OFF.
+
 ## #305 staff teacher directory acceptance — 2026-11-01
 - Backend Node tests: current `roles.manage` D1 grant must precede all directory SQL; empty list is valid; invalid timestamp/rows/negative counts fail closed; limit 50 + `truncated` with deterministic name/id sort; no contact or learner identities in SQL response.
 - Client Vitest: strict typed response, reject extra teacher PII keys, spoofed flags, malformed rows/duplicates, overlong lists; signed same-origin GET only; initial SSR loading not demo records; no client role claims.
