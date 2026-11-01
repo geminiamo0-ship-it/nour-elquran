@@ -87,6 +87,24 @@ class PaidSlotRequestD1(unittest.TestCase):
   self.assertEqual(self.db.execute('SELECT count(*) FROM academy_paid_slot_decision_events').fetchone(),(1,))
   self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
 
+ def test_staff_decision_cannot_predate_guardian_proposal(self):
+  req=self.request(at=T)
+  for decision in ('approved','rejected'):
+   with self.subTest(decision=decision),self.assertRaisesRegex(
+    sqlite3.IntegrityError,'ACADEMY_DECISION_PRECEDES_REQUEST'):
+    self.decide(req,decision=decision,at=T-1)
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM academy_paid_slot_decision_events').fetchone(),(0,))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM lessons').fetchone(),(0,))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM subscription_spend_events').fetchone(),(0,))
+  self.decide(req,decision='rejected',at=T+1)
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM academy_paid_slot_decision_events').fetchone(),(1,))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM subscription_spend_events').fetchone(),(0,))
+
  def test_reject_revoked_staff_and_expired_request_never_spend(self):
   req=self.request()
   with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_STAFF_DENIED'):
