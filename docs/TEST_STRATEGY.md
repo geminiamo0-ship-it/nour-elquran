@@ -1,3 +1,7 @@
+## #317 guardian-paid slot request ledger (source candidate)
+- Full native SQLite migration suite must prove request insert is zero-debit, approved staff decision creates exactly one scheduled 40-minute lesson and one existing cycle spend, rejection zero-debit, foreign owner/learner/cycle/teacher denial, duplicate pending/idempotency uniqueness, window bounds, no-balance after concurrent spend, overlap after request rollback, unauthorized staff and append-only audit.
+- Exact-head Verify plus independent security/SQL review required before merge. A later HTTP/UI slice must test signed owner/staff/revocation/CSRF, sibling isolation, idempotent replay and mobile. Isolated Dev D1 0031 migration and source-pinned signed role E2E required before operational acceptance; this migration alone does not enable self-service booking.
+
 ## #309 Admin operation release gates (2026-11-01)
 - Unit: strict teacher roster transition parser, authorized staff pre-query, active class guard, exact client payload/action allowlist, 401/403, network-uncertain write (no false success/retry), SSR forms locked unless explicit consent.
 - Native SQL: all migrations through 0027; active scheduled/live Sheikh cannot be suspended or de-qualified, no immutable event on denial, cancellation then transition, unrelated teacher permitted, and legacy B2 endpoint inherits same trigger.
