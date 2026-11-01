@@ -3,7 +3,7 @@ import {useStudent} from './StudentContext';
 import {ConnectedStudentDashboard} from './ConnectedStudentDashboard';
 import {PremiumHome,type HomeTask} from './PremiumHome';
 
-export function StudentDashboard(){
+export function StudentDashboard({previewBasePath}:{previewBasePath?:string}={}){
  const {selected}=useStudent();
  const {profile,lessons,tasks,latestReport}=selected;
  if(!profile.demo)return <ConnectedStudentDashboard key={profile.id} learnerId={profile.id} name={profile.name}/>;
@@ -16,6 +16,6 @@ export function StudentDashboard(){
   {label:'التجويد',value:latestReport.tajweed===null?'لم يُقيّم':latestReport.tajweed+'/10'},
  ]:[];
  const lesson=upcoming?{time:upcoming.dayOffset===0?'اليوم '+upcoming.time:'بعد '+upcoming.dayOffset+' يوم · '+upcoming.time,
-  kind:upcoming.kind==='trial'?'حصة تجريبية':'حفظ ومراجعة',href:'/student/lessons',action:'عرض الحصص (معاينة)'}:undefined;
- return <PremiumHome name={profile.name} lesson={lesson} tasks={previewTasks} grades={grades} preview/>;
+  kind:upcoming.kind==='trial'?'حصة تجريبية':'حفظ ومراجعة',href:(previewBasePath??'/student')+'/lessons',action:'عرض الحصص (معاينة)'}:undefined;
+ return <PremiumHome name={profile.name} lesson={lesson} tasks={previewTasks} grades={grades} preview basePath={previewBasePath}/>;
 }
