@@ -1,3 +1,7 @@
+## #317 expired undecided paid-slot request regression (2026-11-01)
+- Native full-migration SQLite must reject a second proposal while the first is still approvable, permit a fresh proposal once the first start reaches the one-minute approval cutoff, retain the old immutable audit row, reject approval of the old proposal, and spend exactly one unit on the fresh staff approval with valid FKs.
+- The API must supply trusted server timestamps; a client may never choose `requested_at_ms` or staff decision `at_ms`. No source-only test proves signed Dev runtime acceptance. Require exact-head CI, independent SQL review, then 2-role/sibling Dev E2E before merge/activation.
+
 ## #317 guardian-paid slot request ledger (source candidate)
 - Full native SQLite migration suite must prove request insert is zero-debit, approved staff decision creates exactly one scheduled 40-minute lesson and one existing cycle spend, rejection zero-debit, foreign owner/learner/cycle/teacher denial, duplicate pending/idempotency uniqueness, window bounds, no-balance after concurrent spend, overlap after request rollback, unauthorized staff and append-only audit.
 - Exact-head Verify plus independent security/SQL review required before merge. A later HTTP/UI slice must test signed owner/staff/revocation/CSRF, sibling isolation, idempotent replay and mobile. Isolated Dev D1 0031 migration and source-pinned signed role E2E required before operational acceptance; this migration alone does not enable self-service booking.
