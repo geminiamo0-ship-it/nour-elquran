@@ -1,3 +1,8 @@
+## 2026-11-01 — #317 signed owner request-status slice (PR #318 still Draft)
+- Branch `feat/317-paid-slot-request-ledger` adds `apps/web/src/features/student/paid-slot-requests-client.ts` (strict 30-row parser), `components/StudentPaidSlotStatus.tsx` and Vitest regression; mounts in signed `ConnectedClassroomLessons` keyed by learner. Displays only server-backed pending/approved/rejected status, never fake booking, teacher availability or credit spend.
+- Network/schema/auth errors are explicit; a profile switch aborts old request. Does not expose staff details, contact, reason or sibling data. No new migration beyond existing 0031 and no operational flag changes.
+- NEXT exact action: check latest PR #318 HEAD SHA and Verify 4/4, repair failures, request independent SQL/privacy review, then source-pinned Cloudflare Dev signed guardian/staff/foreign-owner/sibling and 360/390 checks. Student proposal controls and Admin decision inbox are still absent. No merge/Production.
+
 ## 2026-11-01 — #317 D1 unique-race idempotency continuation (Draft PR #318)
 - Read current main/PR/Issue and guardrails. Fixed a source gap: simultaneous same-operation guardian or staff POST could both miss initial SELECT, then losing INSERT returned 409 although matching event was saved. The paid-slot module now re-reads operationId on recognized constraint failure and returns winner requestId/lessonId only for same actor and full immutable payload, otherwise 409.
 - Node regression simulates both race paths, mismatch and revoked-role cases. Candidate tests, NOT verified execution. Clone cannot resolve github.com here; no local test. Exact-head GitHub Verify absent for previous head and must be checked for new head.
