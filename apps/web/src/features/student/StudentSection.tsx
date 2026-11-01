@@ -23,13 +23,15 @@ const pages = {
 export function StudentSection({ section }: { section: StudentSectionName }) {
   const { selected } = useStudent();
   const Component = pages[section];
-  const meta = sections[section];
+  const meta = section==='progress'||section==='notebook'?sections.lessons:sections[section];
   // Profile key ensures no unsent note/input from another learner survives switching.
   return <div>
     {section !== 'mushaf' && <header className={styles.pageHeader}><div>
       <p className={styles.eyebrow}>مساحتي التعليمية / {meta.title}</p>
       <h1>{meta.title}</h1><p>{meta.caption}</p>
     </div></header>}
-    <Component key={selected.profile.id} />
+    {section==='progress'?<LessonHub key={selected.profile.id} initialTab="reports"/>:
+     section==='notebook'?<LessonHub key={selected.profile.id} initialTab="notebook"/>:
+     <Component key={selected.profile.id} />}
   </div>;
 }
