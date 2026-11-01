@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {useEffect,useState} from 'react';
 import {subscriptionLedgerClient,type SubscriptionLedger} from '../../shared';
 import {readOwnerAcademy,latestPendingAcademyRequest,currentCycleLabel,
- type OwnerAcademy} from '../../shared/academy-owner-client';
+ type OwnerAcademy} from '../../shared';
 import css from './StudentSubscription.module.css';
 
 type View={phase:'loading'}|{phase:'ready';ledger:SubscriptionLedger|null;academy:OwnerAcademy|null};
