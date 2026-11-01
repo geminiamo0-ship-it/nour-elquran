@@ -662,8 +662,8 @@ const cashCommand={operationId:randomUUID(),learnerId:learner,
  note:'Signed test receipt confirmed out of band by academy staff',
  manualConfirmed:true};
 assert.equal((await staffAcademy('activate',cashCommand,cookieB)).response.status,403);
-const activated=await staffAcademy('activate',cashCommand);
-assert.equal(activated.response.status,201,JSON.stringify(activated.data));
+const activatedSubscription=await staffAcademy('activate',cashCommand);
+assert.equal(activatedSubscription.response.status,201,JSON.stringify(activatedSubscription.data));
 assert.equal((await staffAcademy('activate',cashCommand)).response.status,200);
 const academicLedger=await call('/v1/me/learners/'+learner+'/subscription-ledger',
  {cookie:cookieA});
