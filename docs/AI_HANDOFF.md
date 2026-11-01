@@ -1,3 +1,9 @@
+## 2026-11-01 — #317 D1 false-success guard on PR #318
+- Read current main, open Issues/PRs and required guardrails. Continued existing Draft branch `feat/317-paid-slot-request-ledger` rather than reopening merged work.
+- Source-only fix in `workers/api/src/academy-paid-slot.ts`: both guardian and staff `run()` writes require `success===true` and positive safe integer `meta.changes`. Failed/zero-change acknowledgements return 503 `ACADEMY_PAID_SLOT_WRITE_UNCONFIRMED`; no confirmed booking or credit claim. Tests in `workers/api/tests/academy-paid-slot.test.ts` exercise both paths and successful baseline.
+- No local full workspace run: GitHub hostname could not resolve in container. Exact new-head Verify is required; prior Verify #41325954504 passed only older head `5b2a342d`. No Dev/Production mutation or feature flags.
+- NEXT: inspect PR #318 exact-head CI, repair regressions, independent SQL/auth/privacy review and source-pinned signed Dev 0031 guardian/staff/sibling/credit acceptance. Guardian trusted-slot proposal form remains outstanding. Leave PR Draft and Issue OPEN.
+
 ## 2026-11-01 — #317 CI lint failure found and syntax corrected
 - Previous PR #318 head `23cc802d0842d449a7196161c3275623ba4f3f49` DID run [Verify #41323404170](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41323404170): policy/governance/native D1 succeeded, code-quality failed at Lint (admin-paid-slot-client.test.ts line 32, extraneous `]`), so TS/unit/build/smoke never ran.
 - Corrected the 101-row limit test syntax on PR branch: commit `5c22c645b0f753e54e96a1416f6f6054b78c3c4c`. GitHub Actions new-head result was not yet available when checked; no full local run because github.com DNS resolution failed. Do not claim 4/4.
