@@ -115,6 +115,51 @@ class PaidSlotRequestD1(unittest.TestCase):
    'SELECT count(*) FROM academy_paid_slot_decision_events').fetchone(),(0,))
   self.assertEqual(self.db.execute('SELECT count(*) FROM lessons').fetchone(),(0,))
 
+ def test_request_survives_teacher_revocation_but_cannot_be_approved(self):
+  # A proposal is not a booking: staff may revoke the assignment while it
+  # awaits a decision. Approval must recheck the CURRENT teacher authority.
+  req=self.request()
+  assignment=self.db.execute(
+   "SELECT id FROM teacher_assignments WHERE learner_id='child-a' "
+   "AND teacher_id='id-teacher-a' AND revoked_at_ms IS NULL").fetchone()[0]
+  self.fixture.fixture.action('revoke',resource=assignment,now=T+1)
+  with self.assertRaises(sqlite3.IntegrityError):
+   self.decide(req,at=T+2)
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM academy_paid_slot_decision_events').fetchone(),(0,))
+  self.assertEqual(self.db.execute('SELECT COUNT(*) FROM lessons').fetchone(),(0,))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM subscription_spend_events').fetchone(),(0,))
+  # Staff can still explicitly reject the immutable stale request.
+  self.decide(req,decision='rejected',at=T+2)
+  self.assertEqual(self.db.execute(
+   "SELECT decision FROM academy_paid_slot_decision_events WHERE request_id=?",
+   (req,)).fetchone(),('rejected',))
+
+ def test_staff_revocation_or_lost_verification_denies_both_decisions(self):
+  req=self.request()
+  for sql,params in (
+   ("UPDATE staff_grants SET revoked_at_ms=? WHERE auth_subject='staff'",(T+1,)),
+   ("UPDATE auth_users SET phone_number_verified=0 WHERE id='staff'",()),
+   ("UPDATE accounts SET status='disabled' WHERE id='acct-staff'",()),
+  ):
+   # Each revoked identity condition independently blocks even a rejection.
+   self.db.execute(sql,params)
+   for decision in ('approved','rejected'):
+    with self.subTest(sql=sql,decision=decision),self.assertRaisesRegex(
+     sqlite3.IntegrityError,'ACADEMY_STAFF_DENIED'):
+     self.decide(req,decision=decision,at=T+2)
+   self.db.execute(
+    "UPDATE staff_grants SET revoked_at_ms=NULL WHERE auth_subject='staff'")
+   self.db.execute("UPDATE auth_users SET phone_number_verified=1 WHERE id='staff'")
+   self.db.execute("UPDATE accounts SET status='active' WHERE id='acct-staff'")
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM academy_paid_slot_decision_events').fetchone(),(0,))
+  self.assertEqual(self.db.execute('SELECT COUNT(*) FROM lessons').fetchone(),(0,))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM subscription_spend_events').fetchone(),(0,))
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
+
  def test_credit_exhausted_after_request_rolls_back_approval(self):
   req=self.request(start=T+20*SLOT)
   for i in range(8):
