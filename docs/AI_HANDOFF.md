@@ -1,3 +1,9 @@
+## 2026-11-01 — #317 expired paid-slot POST replay hardening (PR #318, source only)
+- Re-read current main, AGENTS/plan/security/test/engineering docs and #317 before editing. Found owner POST rejected identical idempotent retry when its original proposed slot became too old: time validation preceded operationId lookup.
+- On existing Draft PR #318, commits `7848381` (move temporal guard after owner-scoped exact replay) and `f96035c` (Node regression for expired exact retry, fresh expired denial and revoked owner) preserve immutable D1 request semantics without allowing stale new bookings.
+- **Do not claim tests passed yet**: exact-head GitHub Verify not evidenced at write time. Cloudflare preview build is not native CI or signed Dev D1 acceptance. No merge, production deploy or activation.
+- **NEXT:** inspect PR #318 exact HEAD, Verify 4/4 and independent SQL/security review; if green, continue signed owner/staff UI + Cloudflare Dev 0031 migration and sibling QA. Leave #317 open. Do not touch payments/WhatsApp/R2 audio/cumulative ink.
+
 ## 2026-11-01 — #317 signed owner/staff paid-slot API source continuation (PR #318)
 - Checked current GitHub main `4c15b59f713f41e2be9999bb082118cc48496c10`, open #317/#286/#155, PR #318 and exact-head prior Verify #41289256070 (4/4 on `ecdee494`). Read AGENTS, status, plan, architecture, test/security/privacy and existing #315 academy endpoints before editing.
 - Added `workers/api/src/academy-paid-slot.ts` and wired schema-gated signed owner/staff GET/POST routes in `auth/routes.ts`. Server-only timestamps and Better Auth subject, current D1 staff grant, strict request fields, replay-safe operation IDs; decision insert relies on 0031 + 0030 atomic triggers, never direct credit mutation. Staff flag remains OFF unless approved separately.
