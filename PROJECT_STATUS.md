@@ -1,3 +1,7 @@
+## 2026-11-01 — #317 post-request authorization revocation regression (Draft PR #318)
+- Added native full-migration tests on the existing #317 draft branch for (a) Sheikh assignment revoked after a guardian proposal but before staff approval, and (b) revoked staff grant, lost phone verification or disabled staff account before either approval or rejection. The tests require **zero** decision, lesson and spend on denial, while an authorized rejection can close a stale proposal without charging credit. These are regression checks of current SQL guards, not a signed HTTP API or remote Dev acceptance.
+- NEXT: check exact-head GitHub Verify on the new test commit, repair any failure, obtain independent D1/security review; then build signed server-timestamped guardian/staff endpoints and two-role/sibling Dev acceptance. #317/#155 stay OPEN; no Production, payments, WhatsApp, R2 audio or cumulative ink flag change.
+
 ## 2026-11-01 — #317 paid-slot request audit clock invariant (PR #318 candidate)
 - Reviewed current open #317 and Draft PR #318; identified a D1 audit gap: a staff decision could be inserted with `at_ms` earlier than its guardian proposal's `requested_at_ms`, for either approval or rejection. Added `ACADEMY_DECISION_PRECEDES_REQUEST` trigger denial and native SQLite regression covering both decisions, zero writes on denial, and valid subsequent rejection.
 - Files: migration 0031 and `test_academy_paid_slot_requests.py`. Trusted timestamps must still be supplied by future server-only API; SQL guard does not establish real wall-clock authority.
