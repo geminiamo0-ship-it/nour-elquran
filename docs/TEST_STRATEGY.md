@@ -1,3 +1,8 @@
+## #317 paid-slot staff decision UI acceptance (source-only, 2026-11-01)
+- Vitest: strict 201 created vs 200 replay, valid UUID lesson for approval and null for rejection; no PII/extraneous fields; exact same-origin POST body, no spoofed role/time; 409 denial and network-unknown fail closed. SSR initial staff inbox contains no learner records/action; pending decision starts disabled until reason and confirmation.
+- Native D1 0031 tests must still prove one atomic credit spend and booked 40-minute lesson, rejection without spend, stale grant/assignment/cycle denial, simultaneous decisions and replay.
+- **Required before merge:** exact-head Verify 4/4, independent security review, source-pinned Dev synthetic owner+staff+sibling+foreign-owner E2E and 360/390 mobile keyboard/touch. PR #318 diverged from main; reconcile conflict without overwriting premium student UI. No Production.
+
 ## #317 Admin paid-slot inbox source gate (2026-11-01)
 - Vitest `admin-paid-slot-client.test.ts`: accepts only verified staff GET contract, max 100 unique request IDs, UUIDs, padded but nonblank names, 40-minute intervals, approved lesson IDs, pending/rejected null IDs; rejects unexpected PII, invalid/coerced fields and duplicate requests.
 - Fetch uses same-origin credentials, no-store, redirect error and no client staff assertion. 403, 503, malformed JSON and offline are errors, never empty inbox. `AdminPaidSlotInbox.test.tsx` checks initial SSR renders loading gate with no synthetic student or false approval/debit.
