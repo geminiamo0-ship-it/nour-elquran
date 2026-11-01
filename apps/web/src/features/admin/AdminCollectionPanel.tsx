@@ -125,6 +125,9 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
    </div>:<div className={css.collectionCards} role="list"
       aria-label={config.title}>{rows.map(row=>
      <article className={css.collectionCard} role="listitem" key={row.id}>
+      {(view==='students'||view==='schedule')&&<div className={css.collectionField}>
+       <span>معرّف السجل الإداري</span><code dir="ltr">{row.id}</code>
+      </div>}
       {config.fields.map(field=><div className={css.collectionField} key={field.key}>
        <span>{field.label}</span>
        <strong>{show(field.key,row[field.key]!)}</strong>
