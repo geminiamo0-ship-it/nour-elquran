@@ -603,6 +603,14 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
       "SELECT version FROM noor_schema_meta WHERE component='attendance_cases'"
     ).first<{version:number}>();
     if(schema?.version!==1)return reply(503,{code:'ATTENDANCE_SCHEMA_NOT_READY'},requestId);
+    // #309: never accept a review before the verified-staff D1 guard exists.
+    if(!list){
+      const security=await env.DB.prepare(
+        "SELECT version FROM noor_schema_meta WHERE component='attendance_review_verified_actor_guard'"
+      ).first<{version:number}>();
+      if(security?.version!==1)
+        return reply(503,{code:'ATTENDANCE_REVIEW_GUARD_NOT_READY'},requestId);
+    }
     const result=list
       ?await listStaffAttendanceAppeals(env.DB,session.user.id)
       :await reviewAttendanceAppeal(env.DB,session.user.id,await readObject(request));
