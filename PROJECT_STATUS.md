@@ -1,3 +1,9 @@
+## 2026-11-01 — #317 paid-slot request audit clock invariant (PR #318 candidate)
+- Reviewed current open #317 and Draft PR #318; identified a D1 audit gap: a staff decision could be inserted with `at_ms` earlier than its guardian proposal's `requested_at_ms`, for either approval or rejection. Added `ACADEMY_DECISION_PRECEDES_REQUEST` trigger denial and native SQLite regression covering both decisions, zero writes on denial, and valid subsequent rejection.
+- Files: migration 0031 and `test_academy_paid_slot_requests.py`. Trusted timestamps must still be supplied by future server-only API; SQL guard does not establish real wall-clock authority.
+- Source commits edb8ef8 and d198a68 on existing Draft PR #318; exact-head CI, independent security review, signed API/UI, remote Dev migration and owner/staff/sibling acceptance remain PENDING. No Production, payments or WhatsApp change.
+- NEXT: inspect exact-head GitHub Verify; if green, request independent D1 audit review, then implement signed server-derived timestamp API in a separate reviewed slice before any Dev activation. Keep #317 OPEN.
+
 ## 2026-11-01 — #317 expired paid-slot proposal recovery (PR #318 follow-up; source-only)
 - Found a D1 lockout: the immutable one-pending-request check counted a proposal even after its reserved start had passed the one-minute approval cutoff, so the learner could never request another time without staff intervention. Updated migration 0031 to count only undecided proposals still eligible for approval at the NEW server-supplied request timestamp; old records remain immutable and can be rejected but not approved after expiry.
 - Native SQLite regression exercises pending denial before cutoff, new proposal after expiry, old approval denial, exactly one unit spent on fresh approval, and FK integrity. No endpoint, remote migration, Dev acceptance, or Production activation. Exact-head CI and independent SQL/security review PENDING; #317 remains OPEN.
