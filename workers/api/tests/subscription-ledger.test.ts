@@ -8,7 +8,8 @@ function fake(owned:boolean,cycle:unknown,comp:unknown){
  const db={
   prepare(sql:string){
    queries.push(sql);
-   return {bind(..._args:unknown[]){
+   return {bind(...args:unknown[]){
+    void args;
     return {async first(){
       if(sql.includes('FROM learners')&&sql.includes('auth_subject'))
        return owned?{allowed:1}:null;
