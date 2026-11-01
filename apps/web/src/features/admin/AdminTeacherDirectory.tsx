@@ -5,6 +5,7 @@ import {AdminTeachersError,fetchAdminTeachers,type AdminTeacherDirectoryValue}
  from './admin-teachers-client';
 import css from './AdminPortal.module.css';
 import {AdminOperations} from './AdminOperations';
+import type {AdminActionResult} from './admin-operations-client';
 
 type State=
  |{phase:'loading'}
@@ -18,6 +19,7 @@ const cairo=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',
 export function AdminTeacherDirectory({session}:{session:AccountSession}){
  const [state,setState]=useState<State>({phase:'loading'});
  const [retry,setRetry]=useState(0);
+ const [latestAck,setLatestAck]=useState<{session:AccountSession;value:AdminActionResult}|null>(null);
  useEffect(()=>{
   const controller=new AbortController();
   setState({phase:'loading'});
@@ -82,6 +84,10 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
     </article>)}
    </div>}
   </>}
-  {ready&&<AdminOperations kind="teacher" session={session} teachers={ready.teachers} onApplied={()=>setRetry(n=>n+1)}/>}
+  {latestAck?.session===session&&<p role="status" className={css.staffInfo}>
+   تم تأكيد الإجراء وحفظه: {latestAck.value.code}. جارٍ تحديث السجل من الخادم.
+  </p>}
+  {ready&&<AdminOperations kind="teacher" session={session} teachers={ready.teachers}
+   onApplied={value=>{setLatestAck({session,value});setRetry(n=>n+1);}}/>}
  </div>;
 }
