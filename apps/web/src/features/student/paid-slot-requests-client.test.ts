@@ -31,6 +31,10 @@ describe('#317 owner paid-slot status',()=>{
   ])expect(()=>parsePaidSlotRequests(bad)).toThrow(PaidSlotRequestsError);
   expect(parsePaidSlotRequests({...payload,requests:[
    {...row,state:'approved',lessonId:C}]})).toHaveLength(1);
+  expect(parsePaidSlotRequests({...payload,requests:[
+   {...row,state:'expired',lessonId:null}]})).toHaveLength(1);
+  expect(()=>parsePaidSlotRequests({...payload,requests:[
+   {...row,state:'expired',lessonId:C}]})).toThrow(PaidSlotRequestsError);
  });
  it('uses only signed no-store GET for selected learner',async()=>{
   const mock=vi.fn().mockResolvedValue(response(200,payload));
