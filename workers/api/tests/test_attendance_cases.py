@@ -71,6 +71,16 @@ class AttendanceCaseD1(unittest.TestCase):
   appeal=self.appeal(event)
   self.assertTrue(appeal)
   with self.assertRaises(sqlite3.IntegrityError):self.appeal(event)
+ def test_reviewer_grant_never_bypasses_identity_verification(self):
+  event=self.incident();appeal=self.appeal(event);self.db.commit()
+  # #309: same verified actor check in Worker and atomic D1 trigger.
+  self.db.execute("UPDATE auth_users SET phone_number_verified=0 WHERE id='staff'")
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'ATTENDANCE_STAFF_UNVERIFIED'):
+   self.decision(appeal)
+  self.assertEqual(self.db.execute("SELECT COUNT(*) FROM attendance_review_events").fetchone(),(0,))
+  self.db.execute("UPDATE auth_users SET phone_number_verified=1 WHERE id='staff'")
+  self.decision(appeal)
+  self.assertEqual(self.db.execute("SELECT COUNT(*) FROM attendance_review_events").fetchone(),(1,))
  def test_only_authorized_staff_can_issue_immutable_decision(self):
   event=self.incident();appeal=self.appeal(event);self.db.commit()
   with self.assertRaisesRegex(sqlite3.IntegrityError,'ATTENDANCE_STAFF_DENIED'):
