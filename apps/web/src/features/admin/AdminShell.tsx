@@ -8,7 +8,7 @@ import styles from './AdminShell.module.css';
 type Section='overview'|'teachers'|'attendance';
 type Access=
  | {kind:'idle'|'loading'|'denied'|'error'}
- | {kind:'ready';permissions:AdminCapabilities};
+ | {kind:'ready';subject:string;permissions:AdminCapabilities};
 const sectionInfo:Record<Section,{label:string;description:string}>={
  overview:{label:'الرئيسية',description:'المتابعة التشغيلية ستكون مرتبطة بسجلات D1 المصرح بها. لا توجد أرقام أو حصص افتراضية.'},
  teachers:{label:'إدارة الشيوخ',description:'تتوفر صلاحية إدارة الشيوخ. قوائم الدعوات والمراجعة والتفعيل ستُربط بالبيانات الموثقة في مرحلة لاحقة.'},
@@ -26,7 +26,7 @@ export function AdminShell(){
   const controller=new AbortController();
   setAccess({kind:'loading'});
   void adminApi.capabilities(controller.signal).then(permissions=>{
-   if(!controller.signal.aborted)setAccess({kind:'ready',permissions});
+   if(!controller.signal.aborted)setAccess({kind:'ready',subject,permissions});
   }).catch((error:unknown)=>{
    if(controller.signal.aborted)return;
    setAccess({kind:error instanceof AdminAccessError&&
@@ -34,7 +34,7 @@ export function AdminShell(){
   });
   return ()=>controller.abort();
  },[subject,retry]);
- const allowed=access.kind==='ready'?access.permissions:null;
+ const allowed=access.kind==='ready'&&access.subject===subject?access.permissions:null;
  const visible:Section[]=allowed?[
   'overview',...(allowed.manageTeachers?['teachers' as const]:[]),
   ...(allowed.reviewAttendance?['attendance' as const]:[]),
