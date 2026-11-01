@@ -63,7 +63,8 @@ describe('local student workflows and safe page components', () => {
   it('shows genuine blank states on new learner and separates practice preparation from submission', () => {
     const training = renderToStaticMarkup(<StudentProvider><StudentSection section="training" /></StudentProvider>);
     const notebook = renderToStaticMarkup(<StudentProvider><StudentSection section="notebook" /></StudentProvider>);
-    expect(training).toContain('لا توجد تكليفات معتمدة');
+    expect(training).toContain('اختر سورة وابدأ');
+    expect(training).not.toContain('مسودة غير معتمدة');
     expect(notebook).toContain('لا توجد حصص مكتملة');
   });
 });
