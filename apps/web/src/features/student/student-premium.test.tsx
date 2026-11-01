@@ -59,9 +59,9 @@ describe('approved premium learner experience #322',()=>{
  it('keeps report and private notebook workflows in the unified lessons view',()=>{
   const report=renderToStaticMarkup(<StudentProvider><LessonHub initialTab="reports"/></StudentProvider>);
   const notebook=renderToStaticMarkup(<StudentProvider><LessonHub initialTab="notebook"/></StudentProvider>);
-  expect(report).toContain('التقارير والتقدم');
+  expect(report).toContain('تقارير الشيخ');
   expect(report).toContain('لا توجد تقارير منشورة');
-  expect(notebook).toContain('دفتر الحصص');
+  expect(notebook).toContain('سجل الحصص');
   expect(notebook).toContain('لا توجد حصص مكتملة');
  });
 });
