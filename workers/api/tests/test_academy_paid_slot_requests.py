@@ -3,7 +3,8 @@ import sqlite3
 import unittest
 from uuid import uuid4
 from test_academy_booking import AcademyBookingD1
-from test_staff_schedule import T, SLOT, DAY
+from test_staff_schedule import T, SLOT
+DAY=86400000
 
 REQUEST = """INSERT INTO academy_paid_slot_request_events
  (id,operation_id,learner_id,teacher_id,cycle_id,actor_subject,
