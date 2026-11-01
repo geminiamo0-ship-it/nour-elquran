@@ -18,7 +18,7 @@ function view(lesson:LessonRow,learnerId:string):DisplayLesson{
   id:lesson.id,
   title:label(lesson.kind),
   time:formatted.format(new Date(lesson.startsAtMs)),
-  description:'مدة الحصة · '+Math.round((lesson.endsAtMs-lesson.startsAtMs)/60000)+' دقيقة',
+  description:'حصة '+(lesson.kind==='trial'?'تجريبية':'تعليمية')+' · 30 دقيقة',
   status:lesson.status==='live'?'live':'scheduled',
   // The authenticated Worker validates time, account and lesson membership again.
   href:'/classroom/live?role=learner&lessonId='+encodeURIComponent(lesson.id)+
