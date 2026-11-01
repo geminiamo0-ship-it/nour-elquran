@@ -1,3 +1,8 @@
+## #244 connected academic ledger UI (candidate)
+- apps/web/src/features/shared/subscription-ledger-client.ts: signed owner GET, strict non-bookable contract and invalid-response denial; adjacent parser tests.
+- apps/web/src/features/student/components/ConnectedSubscriptionLedger.tsx: read-only student D1 ledger view, loading/error/retry and no payment claims; adjacent initial-state test. SubscriptionWorkspace keeps payment UI disabled.
+- No credit writer, paid booking or Production. Exact-head CI and Dev E2E pending.
+
 ## #244 native D1 0023→0024 booked trial guard (PR #280 candidate)
 - `scripts/fixtures/trial-slot-native-pre0024.sql`: disposable verified-staff and owner booking fixture, real synthetic 40-minute scheduled lesson seeded after native 0023 and before 0024. No personal data.
 - `scripts/cloudflare-local-smoke.sh`: correctly stages historical 0022 then 0023 then 0024, rejects booked withdrawal atomically, permits closure only after owner cancellation, verifies replay and FK integrity. Existing Sheikh pen/highlight and sibling regression preserved.
