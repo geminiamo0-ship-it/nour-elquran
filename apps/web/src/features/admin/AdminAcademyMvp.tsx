@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useState,type FormEvent} from 'react';
 import type {AccountSession} from '@/features/account';
-import styles from './AdminOperations.module.css';
+import styles from './AdminAcademyMvp.module.css';
 
 type Package={id:string;packageId:string;title:string;priceEgp:number;sessions:number;active:number};
 type Request={id:string;learnerId:string;learnerName:string;title:string;priceEgp:number;
