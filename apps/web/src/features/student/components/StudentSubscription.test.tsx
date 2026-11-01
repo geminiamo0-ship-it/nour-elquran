@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {parseOwnerAcademy,latestPendingAcademyRequest,currentCycleLabel} from '../../shared/academy-owner-client';
+import {parseOwnerAcademy,latestPendingAcademyRequest,currentCycleLabel} from '../../shared';
 import {StudentProvider} from '../StudentContext';
 import {DEMO_PROFILES} from '../mock-adapter';
 import {SubscriptionWorkspace} from './SubscriptionWorkspace';
