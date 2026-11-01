@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {useStudent} from '../StudentContext';
 import styles from '../StudentPortal.module.css';
 import {ConnectedSubscriptionLedger} from './ConnectedSubscriptionLedger';
+import {ConnectedAcademyOffers} from './ConnectedAcademyOffers';
 
 /** Signed academic ledger facts are not payment or booking authorization. */
 export function SubscriptionWorkspace(){
@@ -30,16 +31,12 @@ export function SubscriptionWorkspace(){
     </div>)}
    </div>
   </section>:<ConnectedSubscriptionLedger learnerId={selected.profile.id}/>}
+  {!selected.profile.demo&&<ConnectedAcademyOffers learnerId={selected.profile.id}/>}
   <section className={styles.panel}>
-   <div className={styles.panelHead}><div>
-    <p className={styles.eyebrow}>بوابة المدفوعات</p><h2>تفعيل الباقات</h2>
-   </div></div>
-   <div className={styles.emptyBox}>
-    لا توجد عملية دفع أو تجديد متاحة قبل ربط مزود الدفع وسجل الرصيد على الخادم
-    والتحقق من ولي الأمر. لن نعرض أسعارًا أو خصومات أو إيصالات افتراضية.
-   </div>
+   <p>الحصة التجريبية مجانية مرة واحدة لكل طالب. بعد اختيار الموعد المتاح، يمكنك
+    مراجعة تفاصيل الحجز من صفحة الحصص.</p>
    <Link href="/student/lessons" className={styles.outlineButton}>
-    عرض حصصي الموثّقة</Link>
+    مواعيد الحصص والتجربة المجانية</Link>
   </section>
  </div>;
 }
