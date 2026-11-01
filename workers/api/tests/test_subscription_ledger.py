@@ -116,6 +116,10 @@ class AcademicLedgerTests(unittest.TestCase):
   with self.assertRaises(sqlite3.IntegrityError):
    self.grant(missed,T+8*3600000)
   future=self.booked(start=T+300*DAY)
+  # A late backdated debit must not consume credit against an already-started
+  # lesson, even when the grant is still unspent and valid indefinitely.
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'SUBSCRIPTION_COMPENSATION_NO_CREDIT'):
+   self.spend(future,credit,kind='compensation',at=T+301*DAY)
   # No expiry on this make-up credit even though 300 calendar days passed.
   self.spend(future,credit,kind='compensation',at=T+299*DAY)
   with self.assertRaisesRegex(sqlite3.IntegrityError,'SUBSCRIPTION_COMPENSATION_NO_CREDIT'):

@@ -1,3 +1,9 @@
+## 2026-11-01 / #244 — compensation spend temporal guard (PR #299, CI pending)
+- Source review found the 0026 compensation spend trigger checked grant issuance and remaining balance, but unlike cycle spends it did not restrict the debit timestamp to the target lesson start. A late staff ledger event could therefore consume a non-expiring grant against an already-started lesson.
+- Hardened the D1 INSERT trigger to require grant-issued <= spend-at <= target lesson start; added a regression that first rejects a late debit and then accepts a timely debit 299 days after grant issuance. No credit writer or paid booking endpoint was enabled.
+- Candidate commit on existing PR #299; **exact-head CI and independent SQL/security review are still required**, followed by isolated signed Dev 0026 acceptance. #244 remains OPEN; no Production, payments, child media, WhatsApp or cumulative-ink flag changes.
+- NEXT: inspect exact-head GitHub Verify and independent reviewer feedback, then isolated Dev migration/owner-sibling read acceptance; do not merge solely on source tests.
+
 ## 2026-11-01 — #244 subscriptions/entitlements: immutable 0026 foundation (DRAFT PR #299)
 
 - Noor source `main` at `157daaa0b139276be9d111cdc0085401a93fe056` has already merged the isolated Dev-verified atomic trial rescheduling #298 (Santoreno signed Dev #41254227146 PASS for D1 0025).

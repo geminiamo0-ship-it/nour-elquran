@@ -153,8 +153,13 @@ BEGIN
  SELECT RAISE(ABORT,'SUBSCRIPTION_COMPENSATION_NO_CREDIT') WHERE
   NEW.source_kind='compensation' AND NOT EXISTS(
    SELECT 1 FROM subscription_compensation_grants g
+   JOIN lessons lesson ON lesson.id=NEW.lesson_id
    WHERE g.id=NEW.source_id AND g.learner_id=NEW.learner_id
     AND NEW.at_ms>=g.issued_at_ms
+    -- Compensation may only reserve a future lesson. Never debit a grant
+    -- against a lesson already started or before the grant was issued.
+    AND NEW.at_ms<=lesson.starts_at_ms
+    AND lesson.starts_at_ms>=g.issued_at_ms
     AND (SELECT COUNT(*) FROM subscription_spend_events e
        WHERE e.source_kind='compensation' AND e.source_id=g.id)<g.sessions
  );
