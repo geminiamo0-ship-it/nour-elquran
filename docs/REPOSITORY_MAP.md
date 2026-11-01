@@ -1,3 +1,8 @@
+## #317 signed guardian paid-slot requests and staff decisions (Draft PR #318)
+- `workers/api/migrations/0031_academy_paid_slot_requests.sql`: immutable proposal/decision events, guarded 40-minute reservation and atomic #315 booking/spend on staff approval only.
+- `workers/api/src/academy-paid-slot.ts`: signed owner proposal/list, staff bounded list/decision, strict UUID and exact request allowlists, server clock and replay. `workers/api/src/auth/routes.ts`: 0031 schema-gated owner routes and staff routes behind existing Admin flag + verified role.
+- `workers/api/tests/academy-paid-slot.test.ts` and `workers/api/tests/test_academy_paid_slot_requests.py`: server use-case and native SQLite D1 constraints. Source candidate; signed Dev, independent review and UI not yet complete.
+
 ## #317 paid slot proposal D1 foundation (source-only)
 - `workers/api/migrations/0031_academy_paid_slot_requests.sql`: owner-bound immutable request and staff decision events. A request never books/debits; approved decision atomically inserts the existing #315 booking and one spend, while rejected decision never debits.
 - `workers/api/tests/test_academy_paid_slot_requests.py`: native full migration/fixture SQL invariants. No new public endpoint or UI yet; no production migration.
