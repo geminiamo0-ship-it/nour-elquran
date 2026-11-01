@@ -56,7 +56,7 @@ export function AdminShell(){
     aria-expanded={menuOpen} aria-controls="admin-navigation"
     onClick={()=>setMenuOpen(value=>!value)}>القائمة</button>}
   </header>
-  {account.status==='signed-out'?<main className={styles.gate}><AccountGate/></main>:
+  {account.status==='signed-out'?<div className={styles.gate}><AccountGate/></div>:
    account.status!=='authenticated'?<main className={styles.gate} role="status">
     {account.status==='checking'?'جارٍ التحقق من تسجيل الدخول…':
      'تعذر التحقق من الحساب. لا يمكن فتح لوحة الإدارة دون جلسة موثقة.'}
