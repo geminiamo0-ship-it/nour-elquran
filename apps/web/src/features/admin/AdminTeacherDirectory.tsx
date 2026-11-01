@@ -4,6 +4,7 @@ import type {AccountSession} from '@/features/account';
 import {AdminTeachersError,fetchAdminTeachers,type AdminTeacherDirectoryValue}
  from './admin-teachers-client';
 import css from './AdminPortal.module.css';
+import {AdminOperations} from './AdminOperations';
 
 type State=
  |{phase:'loading'}
@@ -35,7 +36,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
    <p className={css.kicker}>إدارة الشيوخ · قراءة فقط</p>
    <h1 id="admin-teachers-heading">دليل شيوخ الأكاديمية</h1>
    <p>بيانات أكاديمية محدودة من Cloudflare D1 بعد التحقق من تصريح الإدارة.
-    لا توجد هنا صلاحية تعيين الطلاب أو اعتماد مؤهلات الشيوخ أو تغيير حالة الحساب.</p>
+    السجل للعرض والتحقق. العمليات المعتمدة تظهر أسفله، وتتطلب هوية حساب موثقة وسببًا وتأكيدًا من قاعدة البيانات.</p>
   </section>
   <div className={css.staffTopline}>
    <h2>سجل الشيوخ</h2>
@@ -80,5 +81,6 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
     </article>)}
    </div>}
   </>}
+  {ready&&<AdminOperations kind="teacher" session={session} onApplied={()=>setRetry(n=>n+1)}/>}
  </div>;
 }
