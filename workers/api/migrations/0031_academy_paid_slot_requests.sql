@@ -73,6 +73,12 @@ BEFORE INSERT ON academy_paid_slot_decision_events BEGIN
   WHERE g.auth_subject=NEW.actor_subject AND g.permission='roles.manage'
    AND g.revoked_at_ms IS NULL AND u.phone_number_verified=1
    AND a.status='active');
+ -- The staff decision audit timestamp must not precede the owner's
+ -- proposal. This holds for approvals AND rejections, even if a caller
+ -- accidentally supplies a stale server timestamp.
+ SELECT RAISE(ABORT,'ACADEMY_DECISION_PRECEDES_REQUEST') WHERE
+  NEW.at_ms < (SELECT r.requested_at_ms
+   FROM academy_paid_slot_request_events r WHERE r.id=NEW.request_id);
  SELECT RAISE(ABORT,'ACADEMY_SLOT_REQUEST_EXPIRED') WHERE
   NEW.decision='approved' AND NOT EXISTS(
    SELECT 1 FROM academy_paid_slot_request_events r
