@@ -45,17 +45,22 @@ export async function ownerPaidSlotRequest(db:CoreDatabase,subject:string,
  !Number.isSafeInteger(raw.startsAtMs)||!safeClock(now))
  return {status:400,code:'ACADEMY_PAID_SLOT_INVALID'} as const;
  if(!await owner(db,subject,learnerId))return {status:404,code:'NOT_FOUND'} as const;
- const prior=await db.prepare(`SELECT id,actor_subject AS actor,
+ // Two requests with the same operationId may race after their initial
+ // lookup. Re-read after a constraint failure to preserve idempotent ACK.
+ const findPrior=()=>db.prepare(`SELECT id,actor_subject AS actor,
  learner_id AS learnerId,teacher_id AS teacherId,cycle_id AS cycleId,
  starts_at_ms AS startsAtMs FROM academy_paid_slot_request_events
  WHERE operation_id=?`).bind(raw.operationId).first<{
  id:string;actor:string;learnerId:string;teacherId:string;cycleId:string;startsAtMs:number
  }>();
- if(prior)return prior.actor===subject&&prior.learnerId===learnerId&&
- prior.teacherId===raw.teacherId&&prior.cycleId===raw.cycleId&&
- prior.startsAtMs===raw.startsAtMs?
- {status:200,code:'ACADEMY_PAID_SLOT_REPLAY',slotRequestId:prior.id} as const:
- {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const replay=(prior:NonNullable<Awaited<ReturnType<typeof findPrior>>>)=>
+  prior.actor===subject&&prior.learnerId===learnerId&&
+  prior.teacherId===raw.teacherId&&prior.cycleId===raw.cycleId&&
+  prior.startsAtMs===raw.startsAtMs?
+  {status:200,code:'ACADEMY_PAID_SLOT_REPLAY',slotRequestId:prior.id} as const:
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const prior=await findPrior();
+ if(prior)return replay(prior);
  // A retried, identical operation must remain replayable even after its
  // proposed slot expires. Only NEW proposals need the future-slot window.
  if(Number(raw.startsAtMs)<now+60000||Number(raw.startsAtMs)>now+WINDOW_MS)
@@ -68,7 +73,14 @@ export async function ownerPaidSlotRequest(db:CoreDatabase,subject:string,
   .bind(id,raw.operationId,learnerId,raw.teacherId,raw.cycleId,subject,
    raw.startsAtMs,Number(raw.startsAtMs)+SLOT_MS,now).run();
  }catch(e){
-  if(expected(e))return {status:409,code:'ACADEMY_PAID_SLOT_DENIED'} as const;
+  if(expected(e)){
+   // An identical concurrent insert can win between SELECT and INSERT.
+   // Only the exact same authorized operation may replay; other constraint
+   // failures still deny without claiming a booking or credit spend.
+   const raced=await findPrior();
+   if(raced)return replay(raced);
+   return {status:409,code:'ACADEMY_PAID_SLOT_DENIED'} as const;
+  }
   throw e;
  }
  return {status:201,code:'ACADEMY_PAID_SLOT_CREATED',slotRequestId:id} as const;
