@@ -33,8 +33,10 @@ export function AdminBookingPanel({mode,session}:{mode:'trial'|'paid';session:Ac
     credentials:'same-origin',cache:'no-store',signal:ctrl.signal
    }).then(async r=>{if(!r.ok)throw Error('DENIED');
     return r.json() as Promise<{teachers:Teacher[]}>;})]:[])]).then(list=>{
-   if(!ctrl.signal.aborted)setData({phase:'ready',trials:list[0]?.requests??[],
-    cycles:list[0]?.cycles??[],teachers:list[1]?.teachers??[]});
+   const first=list[0] as {requests?:Trial[];cycles?:Cycle[]}|undefined;
+   const second=list[1] as {teachers?:Teacher[]}|undefined;
+   if(!ctrl.signal.aborted)setData({phase:'ready',trials:first?.requests??[],
+    cycles:first?.cycles??[],teachers:second?.teachers??[]});
   }).catch(()=>{if(!ctrl.signal.aborted)setData({phase:'error',
    trials:[],cycles:[],teachers:[]});});
   return()=>ctrl.abort();
