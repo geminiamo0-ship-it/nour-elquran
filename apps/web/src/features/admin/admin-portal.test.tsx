@@ -2,7 +2,7 @@ import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminOverviewPanel,AdminPendingSection} from './AdminSections';
 import {ADMIN_NAVIGATION,getAdminRoute,type AdminRoute} from './admin-navigation';
-import {AdminShell,ADMIN_PORTAL_ENABLED} from './AdminShell';
+import {AdminShell,ADMIN_PORTAL_ENABLED,isStaleAdminRead} from './AdminShell';
 describe('Admin Phase A readonly layout (#302)',()=>{
  it('shows actual source counts only in the gated overview component',()=>{
   const html=renderToStaticMarkup(<AdminOverviewPanel value={{asOfMs:1793600000000,
@@ -27,6 +27,18 @@ describe('Admin Phase A readonly layout (#302)',()=>{
   expect(getAdminRoute('/admin/')).toBe('/admin');
   expect(getAdminRoute('/admin/teachers/')).toBe('/admin/teachers');
   expect(getAdminRoute('/admin/unknown/')).toBe('/admin');
+ });
+ it('invalidates a staff snapshot even after re-login as the same user ID',()=>{
+  const session={user:{id:'same-staff',name:'Synthetic Staff'},phoneVerified:true};
+  const snapshot={phase:'ready' as const,subject:'same-staff',session,
+   value:{asOfMs:1793600000000,metrics:{activeLearners:3,
+    activeQualifiedTeachers:2,upcomingLessons:1,completedLessons:5}}};
+  expect(isStaleAdminRead(snapshot,session)).toBe(false);
+  expect(isStaleAdminRead(snapshot,{...session})).toBe(true);
+  expect(isStaleAdminRead(snapshot,{...session,
+   user:{...session.user,id:'other-user'}})).toBe(true);
+  expect(isStaleAdminRead(snapshot,null)).toBe(true);
+  expect(isStaleAdminRead({phase:'idle'},session)).toBe(true);
  });
  it('never displays protected sections in default-off builds',()=>{
   if(!ADMIN_PORTAL_ENABLED){
