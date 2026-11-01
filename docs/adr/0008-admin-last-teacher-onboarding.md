@@ -24,3 +24,6 @@ Related: #155, #186, #45, #51, #120, #19.
 - Staff invitation issuer, legal/guardian verification, private document retention and professional credential validation require a dedicated later issue/PR and privacy acceptance.
 - Classroom event contract/real end events remain a separate delivery gate; a green source build is not proof that lessons can be completed.
 - Architecture remains Cloudflare-only per ADR 0004. This ADR changes delivery ownership and sequencing, not security requirements.
+
+## 2026-11-01 narrow owner amendment — start secure read-only shell in parallel (#302)
+The owner confirmed starting the Admin Dashboard foundation while remaining Student/Sheikh paths close. This **does not supersede** the original decision that complete operational administration and all privileged actions/finance/invitations are last. A temporary, **default-disabled** Arabic RTL staff landing, verified signed D1 authorization and aggregate counts may be authored and tested on a development branch. No real student details, admin mutation controls, teacher onboarding application, price, payout or payment provider is implied. Activate UI/Worker flags only after a separate independent source review and signed Cloudflare Dev two-role proof. All prior consent, privacy, role and production gates remain binding.

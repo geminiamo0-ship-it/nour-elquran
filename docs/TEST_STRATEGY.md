@@ -1,3 +1,9 @@
+## #302 protected Admin read-only foundation — mandatory tests
+- Source: `pnpm lint`, strict `pnpm typecheck`, `pnpm test`, `pnpm build` + static `pnpm smoke`; exact-head GitHub Verify 4/4, then independent privacy/security review. Do not merge/declare Dev-ready on green unit tests alone.
+- Worker: unsigned request 401; authenticated ordinary parent/Sheikh 403, revoked/expired/unverified staff 403 before aggregate query; valid D1 staff `roles.manage` returns only four nonnegative whole-count metrics with `Cache-Control:no-store`; POST 405; missing Worker opt-in 404; D1 outage/schema issues 503, never fake zero. No client role override, user ID list or financial rows.
+- Browser: static admin disabled by default, explicitly enable both Worker and Next build opt-ins **only on isolated Cloudflare Dev after owner approval and PR review**; test signed qualified staff/guardian/teacher with role revocation while tab open, no private data on account switch/logout, SSR no mock, no dead sensitive controls, mobile RTL/no horizontal overflow at 360×667 and 390×844, desktop 1280×900, keyboard nav.
+- This is not operational Admin acceptance. Keep #302/#21/#22 OPEN until signed Dev E2E and all required review gates pass; full finance/invitation/admin actions are separate issues.
+
 ## #244 signed trial cancellation→availability refresh regression (candidate)
 - SSR smoke: connected learner lessons render only signed loading/availability states, not local booking preview fixtures.
 - Dev E2E still required: book a future trial on synthetic learner A, cancel it >=6h ahead, verify the same open Student Lessons page automatically re-queries D1 availability and offers a valid rebooking slot without manually clicking Update. Confirm cancellation failure does NOT reset eligibility; sibling B never inherits learner A's slots/booking; retries and refresh do not invent success. No payment/provider/media changes. CI alone cannot prove this React effect.
