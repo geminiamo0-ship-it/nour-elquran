@@ -80,7 +80,9 @@ export function parsePaidSlotProposalAck(raw:unknown,status:number):PaidSlotProp
 }
 export async function submitPaidSlotProposal(learnerId:string,
  input:PaidSlotProposalInput):Promise<PaidSlotProposalAck>{
- if(!uuid(learnerId)||!uuid(input.operationId)||!uuid(input.teacherId)||
+ if(!uuid(learnerId)||!record(input)||Object.keys(input).length!==4||
+  !['operationId','teacherId','cycleId','startsAtMs'].every(k=>Object.hasOwn(input,k))||
+  !uuid(input.operationId)||!uuid(input.teacherId)||
   !uuid(input.cycleId)||!ms(input.startsAtMs))
   throw new PaidSlotRequestsError('INVALID_PAID_SLOT_PROPOSAL_INPUT',400);
  let response:Response;
