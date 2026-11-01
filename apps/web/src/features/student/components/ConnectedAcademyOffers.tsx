@@ -1,95 +1,90 @@
 'use client';
-import {useEffect,useState} from 'react';
-import styles from '../StudentPortal.module.css';
-type Offer={versionId:string;packageId:string;title:string;priceEgp:number;sessions:number};
-type Application={id:string;title:string;priceEgp:number;sessions:number;atMs:number;state:string};
-type Data={code:string;packages:Offer[];requests:Application[];whatsappNumber:string|null};
-type State={phase:'loading'|'error'|'ready'|'sending';value:Data|null;message:string};
-async function get(learnerId:string,signal:AbortSignal):Promise<Data>{
- const r=await fetch('/v1/me/learners/'+learnerId+'/academy',{
-  credentials:'same-origin',cache:'no-store',redirect:'error',signal});
- const d:unknown=await r.json();
- if(!r.ok||!d||typeof d!=='object'||Array.isArray(d)||
-   (d as Data).code!=='ACADEMY_OWNER'||!Array.isArray((d as Data).packages)||
-   !Array.isArray((d as Data).requests))throw new Error('تعذّر التحقق من الباقات');
- return d as Data;
-}
-const stateTitle:Record<string,string>={pending:'في انتظار موافقة الإدارة',
- activated:'تم تفعيل الاشتراك يدويًا',rejected:'لم تتم الموافقة على الطلب'};
+import {useEffect,useRef,useState} from 'react';
+import {readOwnerAcademy,latestPendingAcademyRequest,
+ type AcademyOffer,type OwnerAcademy} from '../../shared/academy-owner-client';
+import css from './StudentSubscription.module.css';
+
+type View={phase:'loading'|'error';message:string}|
+ {phase:'ready';data:OwnerAcademy;message:string};
+const stateLabel:Record<string,string>={
+ pending:'بانتظار موافقة الإدارة',activated:'تم التفعيل من الإدارة',rejected:'لم تتم الموافقة'
+};
 export function ConnectedAcademyOffers({learnerId}:{learnerId:string}){
- const [state,setState]=useState<State>({phase:'loading',value:null,message:''});
+ const [view,setView]=useState<View>({phase:'loading',message:''});
  const [retry,setRetry]=useState(0);
- const [busyPackage,setBusyPackage]=useState<string|null>(null);
+ const [sending,setSending]=useState(false);
+ const [uncertain,setUncertain]=useState(false);
+ const busyRef=useRef(false);
  useEffect(()=>{
-  const ctrl=new AbortController();setState({phase:'loading',value:null,message:''});
-  void get(learnerId,ctrl.signal).then(v=>{
-   if(!ctrl.signal.aborted)setState({phase:'ready',value:v,message:''});
-  }).catch(e=>{if(!ctrl.signal.aborted)setState({phase:'error',value:null,
-   message:e instanceof Error?e.message:'تعذّر قراءة البيانات'});});
+  const ctrl=new AbortController();
+  setView({phase:'loading',message:''});
+  void readOwnerAcademy(learnerId,ctrl.signal).then(data=>{
+   if(!ctrl.signal.aborted){setView({phase:'ready',data,message:''});setUncertain(false);}
+  }).catch(()=>{if(!ctrl.signal.aborted)
+   setView({phase:'error',message:'تعذّر تحميل الباقات وطلباتك.'});});
   return()=>ctrl.abort();
  },[learnerId,retry]);
- async function request(pkg:Offer){
-  if(state.phase!=='ready'||busyPackage)return;
-  setBusyPackage(pkg.packageId);
-  // Never grant credits or show a payment receipt from a browser action.
+ async function request(pkg:AcademyOffer){
+  if(view.phase!=='ready'||busyRef.current||uncertain||
+   latestPendingAcademyRequest(view.data))return;
+  busyRef.current=true;setSending(true);
   const operationId=crypto.randomUUID();
   try{
-   const response=await fetch('/v1/me/learners/'+learnerId+'/academy',{
+   const response=await fetch('/v1/me/learners/'+encodeURIComponent(learnerId)+'/academy',{
     method:'POST',credentials:'same-origin',redirect:'error',cache:'no-store',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({operationId,packageId:pkg.packageId})});
-   const value:unknown=await response.json();
-   if(!response.ok||!value||typeof value!=='object'||Array.isArray(value)||
-    !['ACADEMY_REQUEST_CREATED','ACADEMY_REQUEST_REPLAY'].includes(
-     String((value as {code?:unknown}).code)))throw new Error('تعذّر إرسال الطلب للخادم');
+   const raw:unknown=await response.json();
+   if(!response.ok||!raw||typeof raw!=='object'||Array.isArray(raw)||
+     !['ACADEMY_REQUEST_CREATED','ACADEMY_REQUEST_REPLAY'].includes(
+      String((raw as {code?:unknown}).code)))throw Error('ACADEMY_UNKNOWN_RESULT');
    setRetry(n=>n+1);
   }catch{
-   setState(prev=>({...prev,message:
-    'لا يمكن تأكيد نتيجة الإرسال. حدّث الطلبات أولًا قبل محاولة جديدة.'}));
-  }finally{setBusyPackage(null);}
+   setUncertain(true);
+   setView(prev=>prev.phase==='ready'?{...prev,
+    message:'نتيجة الطلب غير مؤكدة. حدّث الطلبات أولًا؛ لا ترسل طلبًا ثانيًا.'}:prev);
+  }finally{busyRef.current=false;setSending(false);}
  }
- const v=state.value;
- return <section className={styles.panel} dir="rtl" aria-label="باقات نور القرآن وطلبات الاشتراك">
-  <div className={styles.panelHead}><div>
-   <p className={styles.eyebrow}>اشتراك الطالب · باقات حقيقية</p>
-   <h2>اختيار باقة وطلب التفعيل</h2></div>
-   <button type="button" className={styles.outlineButton}
-    onClick={()=>setRetry(n=>n+1)}>تحديث</button></div>
-  <p>اختار الباقة، ثم الإدارة هتراجع الطلب. لإتمام الدفع تواصل
-   عبر واتساب؛ لن يبدأ اشتراكك لمجرد فتح واتساب أو إرسال الطلب.</p>
-  {state.phase==='loading'&&<p role="status">جارٍ تحميل الباقات من الأكاديمية…</p>}
-  {state.phase==='error'&&<p role="alert">{state.message}</p>}
-  {state.message&&state.phase==='ready'&&<p role="alert">{state.message}</p>}
-  {v&&<>
-   {v.packages.length===0?<p className={styles.emptyBox}>الباقات لم تُفعّل من الإدارة بعد.</p>:
-    <div className={styles.metricGrid}>
-    {v.packages.map(pkg=><article key={pkg.versionId} className={styles.metric}>
-     <strong>{pkg.title}</strong>
-     <span>{pkg.priceEgp.toLocaleString('ar-EG')} جنيه</span>
-     <small>{pkg.sessions.toLocaleString('ar-EG')} حصص / شهر</small>
-     <button type="button" className={styles.outlineButton}
-      disabled={busyPackage!==null||v.requests.some(r=>r.state==='pending')}
-      onClick={()=>void request(pkg)}>
-      {busyPackage===pkg.packageId?'جارٍ إرسال الطلب…':'طلب الباقة'}
-     </button>
-     {v.whatsappNumber&&<a className={styles.outlineButton}
-      target="_blank" rel="noopener noreferrer"
-      href={'https://wa.me/'+v.whatsappNumber+'?text='+encodeURIComponent(
-       'السلام عليكم، أريد استكمال دفع باقة '+pkg.title+
-       ' لملف الطالب '+learnerId+' بقيمة '+pkg.priceEgp+' جنيه.')}>
-       استكمال الدفع عبر واتساب</a>}
-    </article>)}
-    </div>}
-   <h3>طلباتي</h3>
-   {v.requests.length===0?<p>لا توجد طلبات سابقة لهذا الطالب.</p>:
-    <div className={styles.metricGrid}>
-     {v.requests.map(req=><article key={req.id} className={styles.metric}>
-      <strong>{req.title}</strong>
-      <small>{req.priceEgp.toLocaleString('ar-EG')} جنيه</small>
-      <span>{stateTitle[req.state]??'قيد المراجعة'}</span>
-     </article>)}
-    </div>}
-   {!v.whatsappNumber&&<p>لم تضبط الأكاديمية رقم واتساب الدفع بعد؛ يمكنك إرسال الطلب للإدارة.</p>}
+ const data=view.phase==='ready'?view.data:null;
+ const pending=data?latestPendingAcademyRequest(data):null;
+ return <section className={css.catalogSection} aria-label="باقات الأكاديمية">
+  <div className={css.catalogHeader}><h2 className={css.sectionTitle}>الباقات المتاحة</h2>
+   {(view.phase==='error'||uncertain)&&<button type="button" className={css.buttonOutline}
+    onClick={()=>setRetry(n=>n+1)}>تحديث</button>}</div>
+  {view.phase==='loading'?<p className={css.loading} role="status">جارٍ تحميل الباقات…</p>:
+   view.phase==='error'?<p className={css.message} role="alert">{view.message}</p>:<>
+   {pending&&<div className={css.pending} role="status">
+    <span>طلب {pending.title} قيد مراجعة الإدارة</span>
+    <span>استكمال الدفع عبر واتساب بعد التواصل مع الأكاديمية</span>
+   </div>}
+   {view.message&&<p className={css.message+' '+css.error} role="alert">{view.message}</p>}
+   {data!.packages.length===0?<p className={css.message}>
+    لا توجد باقات متاحة حاليًا. تواصل مع الأكاديمية للاستفسار.</p>:
+    <div className={css.packages}>{data!.packages.map(pkg=>
+     <article className={css.package} key={pkg.versionId}>
+      <h3>{pkg.title}</h3>
+      <div className={css.packagePrice}>{pkg.priceEgp.toLocaleString('ar-EG')}
+       <small> جنيه / شهر</small></div>
+      <div className={css.packageSessions}>{pkg.sessions.toLocaleString('ar-EG')} حصص شهريًا</div>
+      <button type="button" className={css.button}
+       disabled={sending||uncertain||!!pending}
+       onClick={()=>void request(pkg)}>
+       {sending?'جارٍ إرسال الطلب…':pending?'لديك طلب قيد المراجعة':'اطلب الباقة'}</button>
+     </article>)}</div>}
+   {data!.whatsappNumber&&<div className={css.contact}>
+    <p>لإتمام الدفع أو السؤال عن باقة، تواصل مع الأكاديمية.</p>
+    <a className={css.buttonOutline} target="_blank" rel="noopener noreferrer"
+     href={'https://wa.me/'+data!.whatsappNumber+'?text='+encodeURIComponent(
+      'السلام عليكم، أريد الاستفسار عن باقات نور القرآن واستكمال الاشتراك.')}>
+     تواصل عبر واتساب</a></div>}
+   {data!.requests.length>0&&<details className={css.requests}>
+    <summary>طلبات الاشتراك السابقة ({data!.requests.length})</summary>
+    {data!.requests.map(req=><div className={css.requestLine} key={req.id}>
+     <div><strong>{req.title}</strong>
+      <div className={css.meta}>{req.priceEgp.toLocaleString('ar-EG')} جنيه</div></div>
+     <span className={css.status}>{stateLabel[req.state]}</span>
+    </div>)}
+   </details>}
   </>}
  </section>;
 }
