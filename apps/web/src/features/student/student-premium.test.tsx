@@ -6,6 +6,7 @@ import {StudentDashboard} from './StudentDashboard';
 import {DEMO_PROFILES} from './mock-adapter';
 import {StudentProvider} from './StudentContext';
 import {LessonHub} from './components/LessonHub';
+import {TrainingWorkspace} from './components/TrainingWorkspace';
 
 describe('approved premium learner experience #322',()=>{
  it('exposes exactly four primary destinations in the agreed order',()=>{
@@ -55,6 +56,32 @@ describe('approved premium learner experience #322',()=>{
   expect(markup).not.toContain('أيام حصصي الأسبوعية');
   expect(markup).not.toContain('التجربة المجانية والجدول المنتظم');
   expect(markup).not.toContain('اختر يومًا من الأسبوع');
+ });
+ it('shows demo assignments as compact actions without always-open notes and fake totals',()=>{
+  const html=renderToStaticMarkup(<StudentProvider liveLearners={DEMO_PROFILES}
+   initialSelectedId="demo-active"><TrainingWorkspace/></StudentProvider>);
+  expect(html).toContain('مراجعة المحفوظ');
+  expect(html).toContain('ابدأ في المصحف');
+  expect(html).toContain('ملاحظتي');
+  expect(html).not.toContain('كل تدريب له هدف واضح');
+  expect(html).not.toContain('الواجبات في المعاينة');
+  expect(html).not.toContain('ملاحظتي قبل الحصة');
+  expect(html).not.toContain('إيه اللي هتعمله داخل التدريب؟');
+ });
+ it('selects useful self practice for new learners instead of empty homework',()=>{
+  const html=renderToStaticMarkup(<StudentProvider liveLearners={DEMO_PROFILES}
+   initialSelectedId="demo-new"><TrainingWorkspace/></StudentProvider>);
+  expect(html).toContain('اختر سورة وابدأ');
+  expect(html).toContain('سورة الإخلاص');
+  expect(html).toContain('المصحف الكامل');
+ });
+ it('never guesses the signed learner assignment count while the server loads',()=>{
+  const html=renderToStaticMarkup(<StudentProvider liveLearners={[{
+    id:'synthetic-child',name:'طالب موثق',stage:'new',demo:false
+  }]}><TrainingWorkspace/></StudentProvider>);
+  expect(html).toContain('جارٍ تحميل واجباتك');
+  expect(html).not.toContain('2 / 0');
+  expect(html).not.toContain('سورة الإخلاص');
  });
  it('keeps report and private notebook workflows in the unified lessons view',()=>{
   const report=renderToStaticMarkup(<StudentProvider><LessonHub initialTab="reports"/></StudentProvider>);
