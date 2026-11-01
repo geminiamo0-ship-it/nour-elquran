@@ -94,3 +94,19 @@ padding:14px 18px;border-radius:10px;border:1px solid var(--line);background:#ff
  .prepRows>div{grid-template-columns:25px minmax(0,1fr)}.prepRows .textAction{grid-column:2}
 }
 @media(prefers-reduced-motion:reduce){.workspace *{scroll-behavior:auto!important;transition:none!important}}
+
+/* #322: premium learner identity across practice and assignment workflows. */
+.workspace{--forest:#07513a;--gold:#cb9d48;--line:#e8d8c2;gap:19px}
+.intro{background:linear-gradient(125deg,#08513b,#003e2d);border-radius:20px;padding:28px 30px}
+.intro h2{font-size:clamp(24px,2.8vw,34px);line-height:1.5}
+.intro p:not(.overline){font-size:14px}
+.tabs{gap:12px}
+.tab,.tabActive{border-radius:14px;padding:16px 20px;min-height:75px}
+.tabActive{background:#07513a;border-color:#07513a}
+.tab span,.tabActive span{font-size:16px}
+.content{border-radius:20px;background:#fffaf4;padding:24px;box-shadow:0 7px 24px #3d301116}
+.card,.cardExpanded,.prepareCard,.softHint,.sample,.sampleActive{border-radius:15px}
+.card h4,.cardExpanded h4{font-size:25px}
+.card p,.cardExpanded p,.softHint p,.prepareCard p{font-size:14px}
+.primaryButton,.outlineButton{font-size:14px;min-height:45px;border-radius:11px}
+@media(max-width:650px){.intro{padding:20px;border-radius:16px}.content{padding:15px}.tab,.tabActive{padding:13px 9px}.tab span,.tabActive span{font-size:13px}.tab small,.tabActive small{font-size:10px}}
