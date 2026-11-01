@@ -1,3 +1,7 @@
+## 2026-11-01 — #317 pending-slot revocation gate regression (PR #318)
+- Reviewed live open #317, Draft #318 and 4/4 successful prior Verify #41286181693 on head 25c6f36. Added native regression to existing `test_academy_paid_slot_requests.py` for teacher assignment revocation after proposal, and staff grant/verification/account revocation before a decision; no lesson, decision or spend may be created on denial. Stale proposal can still be explicitly rejected by valid staff.
+- Test-only change commit f895ad3 on existing Draft branch. Exact new-head CI and independent review still required; do not mistake the prior 4/4 run for this commit. NEXT: inspect new Verify and fix failures, then server-derived timestamps, signed owner/staff API, student/Admin UI, staged 0031 migration and isolated role/sibling/mobile acceptance. No Production or paid integration activation.
+
 ## 2026-11-01 — #317 decision chronology hardening on Draft PR #318
 - Current repository rechecked; #317 remains OPEN, PR #318 Draft. Source D1 migration 0031 now rejects staff approval/rejection when decision `at_ms` precedes guardian proposal `requested_at_ms` (error `ACADEMY_DECISION_PRECEDES_REQUEST`). Added native SQLite regression for both decision types and no phantom booking/spend.
 - Commits edb8ef8 (SQL) and d198a68 (test) on branch `feat/317-paid-slot-request-ledger`. Do not confuse source push with CI, Dev acceptance, or release. Local full-repo clone unavailable in this run (container DNS could not resolve github.com); inspect GitHub Actions on exact new HEAD.
