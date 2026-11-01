@@ -8,7 +8,7 @@ import css from './StudentPremium.module.css';
 type Read={status:'loading'}|{status:'error'}|{
  status:'ready';lessons:readonly LessonRow[];tasks:readonly PublishedAssignment[];reports:readonly StudentReport[];
 };
-const taskClient=assignmentClient();
+const tasksClient=assignmentClient();
 const formatter=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short'});
 const score=(n:number|null)=>n===null?'لم يُقيّم':n+' / 10';
 /** No mocked lessons or derived fake progress for authenticated learners. */
@@ -20,7 +20,7 @@ export function ConnectedStudentDashboard({learnerId,name}:{learnerId:string;nam
   setData({status:'loading'});
   void Promise.all([
    notebookClient.lessons(learnerId,controller.signal),
-   taskClient.owner(learnerId,controller.signal),
+   tasksClient.owner(learnerId,controller.signal),
    lessonReportsClient.student(learnerId,controller.signal)
   ]).then(([lessons,tasks,reports])=>{
    if(!controller.signal.aborted)setData({status:'ready',
@@ -31,7 +31,7 @@ export function ConnectedStudentDashboard({learnerId,name}:{learnerId:string;nam
   return()=>controller.abort();
  },[learnerId,reload]);
  if(data.status==='loading')return <section className={css.loadingCard} role="status">
-  جارٍ تحميل بيانات الطالب الموثقة من الخادم…</section>;
+  <h1>مرحبًا بك يا {name}</h1>جارٍ تحميل بيانات الطالب الموثقة من الخادم…</section>;
  if(data.status==='error')return <section className={css.errorCard} role="alert">
   <h2>تعذّر تحميل بيانات الطالب</h2>
   <p>بيانات الحصص والتقارير لا تُستبدل بمعلومات تجريبية أو أرقام فارغة.</p>
