@@ -41,7 +41,7 @@ export function ConnectedClassroomLessons({learnerId}:{learnerId:string}){
       <Link className={styles.outlineButton} href={'/classroom/live?role=learner&lessonId='+
        encodeURIComponent(l.id)+'&learnerId='+encodeURIComponent(learnerId)}>
        فتح غرفة الانتظار</Link>:
-      l.status==='completed'?<Link href="/student/notebook">دفتر الحصة</Link>:<span>غير متاح</span>}
+      l.status==='completed'?<Link href="/student/lessons#notebook">دفتر الحصة</Link>:<span>غير متاح</span>}
      {l.kind==='trial'&&l.status==='scheduled'&&
       <StudentTrialReschedule learnerId={learnerId} lessonId={l.id}
        startsAtMs={l.startsAtMs} onRescheduled={()=>setRetry(n=>n+1)}/>}
