@@ -263,7 +263,13 @@ export async function claimInvite(db:CoreDatabase,subject:string,raw:unknown,now
  const response=await db.prepare(`UPDATE academy_teacher_invites SET claimed_subject=?,claimed_at_ms=?
  WHERE id=? AND claimed_subject IS NULL AND expires_at_ms>=?`)
  .bind(subject,now,current.id,now).run();
- if(response.meta.changes!==1)return {status:409,code:'ACADEMY_INVITE_USED'} as const;
+ // The same atomic UPDATE creates the Sheikh row in an AFTER trigger.
+ // D1 meta.changes may count the trigger's write as well; it is not a
+ // trustworthy "exactly one invite row" receipt.
+ const confirmed=await db.prepare(`SELECT claimed_subject AS claimedSubject
+ FROM academy_teacher_invites WHERE id=?`).bind(current.id)
+ .first<{claimedSubject:string|null}>();
+ if(confirmed?.claimedSubject!==subject)return {status:409,code:'ACADEMY_INVITE_USED'} as const;
+ return {status:response.meta.changes>0?201:200,code:'ACADEMY_INVITE_CLAIMED'} as const;
  }catch(e){if(allowed(e))return {status:409,code:'ACADEMY_INVITE_DENIED'} as const;throw e;}
- return {status:201,code:'ACADEMY_INVITE_CLAIMED'} as const;
 }
