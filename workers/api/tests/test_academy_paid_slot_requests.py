@@ -71,6 +71,22 @@ class PaidSlotRequestD1(unittest.TestCase):
   self.assertEqual(self.db.execute('SELECT count(*) FROM subscription_spend_events').fetchone(),(0,))
   self.assertIsNotNone(self.request(start=self.start+SLOT))
 
+ def test_expired_pending_proposal_does_not_lock_learner_out(self):
+  old=self.request()
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_SLOT_REQUEST_PENDING'):
+   self.request(start=self.start+3*SLOT)
+  now=self.start+60000
+  fresh=self.request(start=self.start+3*SLOT,at=now)
+  self.assertNotEqual(old,fresh)
+  self.assertEqual(self.db.execute('SELECT count(*) FROM academy_paid_slot_request_events').fetchone(),(2,))
+  self.assertEqual(self.db.execute('SELECT count(*) FROM subscription_spend_events').fetchone(),(0,))
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_SLOT_REQUEST_EXPIRED'):
+   self.decide(old,at=now)
+  lesson=self.decide(fresh,at=now)
+  self.assertEqual(self.db.execute('SELECT count(*) FROM subscription_spend_events WHERE lesson_id=?',(lesson,)).fetchone(),(1,))
+  self.assertEqual(self.db.execute('SELECT count(*) FROM academy_paid_slot_decision_events').fetchone(),(1,))
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
+
  def test_reject_revoked_staff_and_expired_request_never_spend(self):
   req=self.request()
   with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_STAFF_DENIED'):
