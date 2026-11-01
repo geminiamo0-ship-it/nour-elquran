@@ -26,14 +26,14 @@ export async function ownerTrialRequest(db:CoreDatabase,subject:string,child:str
  slot_id AS slotId FROM academy_trial_request_events WHERE operation_id=?`)
  .bind(raw.operationId).first<{id:string;learnerId:string;actor:string;slotId:string}>();
  if(previous)return previous.learnerId===child&&previous.actor===subject&&previous.slotId===raw.slotId?
- {status:200,code:'ACADEMY_TRIAL_REPLAY',requestId:previous.id} as const:
+ {status:200,code:'ACADEMY_TRIAL_REPLAY',trialRequestId:previous.id} as const:
  {status:409,code:'ACADEMY_TRIAL_OPERATION_CONFLICT'} as const;
  const id=crypto.randomUUID();
  try{await db.prepare(`INSERT INTO academy_trial_request_events
  (id,operation_id,learner_id,slot_id,actor_subject,requested_at_ms)
  VALUES(?,?,?,?,?,?)`).bind(id,raw.operationId,child,raw.slotId,subject,now).run();}
  catch(e){if(expected(e))return {status:409,code:'ACADEMY_TRIAL_REQUEST_DENIED'} as const;throw e;}
- return {status:201,code:'ACADEMY_TRIAL_REQUESTED',requestId:id} as const;
+ return {status:201,code:'ACADEMY_TRIAL_REQUESTED',trialRequestId:id} as const;
 }
 export async function ownerTrialRequests(db:CoreDatabase,subject:string,child:string){
  if(!await owned(db,subject,child))return {status:404,code:'NOT_FOUND'} as const;
