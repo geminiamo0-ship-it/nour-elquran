@@ -47,15 +47,14 @@ export function AdminOverviewPanel({value,onRefresh}:{value:AdminOverview;onRefr
  </div>;
 }
 
-const notes:Record<Exclude<AdminRoute,'/admin'>,string>={
+const notes:Record<Exclude<AdminRoute,'/admin'|'/admin/teachers'>,string>={
  '/admin/students':'سجلات الأسر والملفات المنفصلة للإخوة تحتاج قائمة مشروطة بصلاحيات دقيقة. لن تظهر أسماء أو أرقام تواصل قبل اعتماد مسار القراءة.',
- '/admin/teachers':'دعوات التسجيل والمؤهلات والاعتماد وإسناد الطلاب إجراءات إدارية لها سجلات تدقيق. لم تُربط أزرار الموافقة أو الإيقاف بهذه الواجهة.',
  '/admin/schedule':'إنشاء المواعيد وإعادة الجدولة والتعويض يحتاج عرضًا آمنًا للموارد وقواعد التعارض. لا ننشئ حجزًا من هذه الصفحة.',
  '/admin/subscriptions':'التجديد اليدوي والرصيد والفواتير والمدفوعات تحتاج قرارات أسعار ومزوّد دفع ومراجعة صلاحيات مستقلة. لا تظهر أي مبالغ غير مؤكدة.',
  '/admin/attendance':'البلاغات واعتراضات أولياء الأمور والتعويضات تحتاج مصدرًا موثقًا ومراجعة مستقلة قبل اتخاذ القرار أو خصم أي حصة.',
  '/admin/settings':'إعدادات الصلاحيات والإشعارات والربط الخارجي ستُفتح فقط بعد اعتماد التحقق والتدقيق وأذونات مزودي الخدمات.',
 };
-export function AdminPendingSection({route}:{route:Exclude<AdminRoute,'/admin'>}){
+export function AdminPendingSection({route}:{route:Exclude<AdminRoute,'/admin'|'/admin/teachers'>}){
  const section=ADMIN_NAVIGATION.find(n=>n.href===route);
  return <section className={css.pending} aria-labelledby="admin-section-heading">
   <p className={css.kicker}>تأسيس الإدارة · مرحلة أولى</p>

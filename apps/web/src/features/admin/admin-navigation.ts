@@ -1,10 +1,10 @@
-/** #302: only admin landing is connected in Phase A.
+/** #302/#305: landing and role-scoped teacher directory are connected.
  * These links are navigation to clearly labelled, non-actionable sections.
  */
 export const ADMIN_NAVIGATION=[
  {href:'/admin',label:'الرئيسية',short:'لوحة المتابعة',symbol:'⌂',connected:true},
  {href:'/admin/students',label:'الطلاب والأسر',short:'الطلاب',symbol:'♙',connected:false},
- {href:'/admin/teachers',label:'الشيوخ',short:'الشيوخ',symbol:'♧',connected:false},
+ {href:'/admin/teachers',label:'الشيوخ',short:'الشيوخ',symbol:'♧',connected:true},
  {href:'/admin/schedule',label:'الحصص والجدول',short:'الحصص',symbol:'▦',connected:false},
  {href:'/admin/subscriptions',label:'الاشتراكات',short:'الاشتراكات',symbol:'◈',connected:false},
  {href:'/admin/attendance',label:'الحضور والتعويضات',short:'الحضور',symbol:'◷',connected:false},

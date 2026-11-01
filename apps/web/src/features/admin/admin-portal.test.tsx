@@ -17,7 +17,7 @@ describe('Admin Phase A readonly layout (#302)',()=>{
  it('makes every pending section honest and non-actionable',()=>{
   for(const route of ADMIN_NAVIGATION.filter(n=>!n.connected)){
    const html=renderToStaticMarkup(<AdminPendingSection
-    route={route.href as Exclude<AdminRoute,'/admin'>}/>);
+    route={route.href as Exclude<AdminRoute,'/admin'|'/admin/teachers'>}/>);
    expect(html).toContain('غير مفعل تشغيليًا');
    expect(html).not.toContain('<input');
    expect(html).not.toContain('تم اعتماد');

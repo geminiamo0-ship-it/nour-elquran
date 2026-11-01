@@ -213,6 +213,11 @@ const teacherCommand=(action,operationId=randomUUID())=>({
 });
 // #302: local-only admin opt-in validates the actual signed Better Auth + D1 route.
 const adminOverview='/v1/staff/overview';
+const adminTeachers='/v1/staff/teachers';
+assert.equal((await call(adminTeachers)).response.status,401);
+assert.equal((await call(adminTeachers,{cookie:cookieA})).response.status,403);
+assert.equal((await call(adminTeachers,{cookie:cookieB})).response.status,403);
+assert.equal((await call(adminTeachers,{cookie:cookieA,headers:{'x-user-role':'admin'}})).response.status,403);
 assert.equal((await call(adminOverview)).response.status,401);
 assert.equal((await call(adminOverview,{cookie:cookieA})).response.status,403);
 assert.equal((await call(adminOverview,{cookie:cookieB})).response.status,403);
@@ -227,6 +232,11 @@ const outsider=await call('/v1/staff/teacher-actions',{
 assert.equal(outsider.response.status,403);
 sql("UPDATE auth_users SET phone_number_verified=1 WHERE id IN ('"+teacherActor+"','"+teacherSubject+"')");
 sql("INSERT INTO staff_grants(auth_subject,permission) VALUES('"+teacherActor+"','roles.manage')");
+const emptyDirectory=await call(adminTeachers,{cookie:cookieA});
+assert.equal(emptyDirectory.response.status,200,JSON.stringify(emptyDirectory.data));
+assert.equal(emptyDirectory.data.code,'STAFF_TEACHER_DIRECTORY');
+assert.deepEqual(emptyDirectory.data.teachers,[]);
+assert.equal(emptyDirectory.data.truncated,false);
 const realOverview=await call(adminOverview,{cookie:cookieA});
 assert.equal(realOverview.response.status,200,JSON.stringify(realOverview.data));
 assert.equal(realOverview.data.code,'STAFF_OVERVIEW');
@@ -287,6 +297,20 @@ const activated=await call('/v1/staff/teacher-actions',{
 });
 assert.equal(activated.response.status,200,JSON.stringify(activated.data));
 assert.equal(activated.data.state,'active');
+const liveDirectory=await call(adminTeachers,{cookie:cookieA});
+assert.equal(liveDirectory.response.status,200,JSON.stringify(liveDirectory.data));
+assert.equal(liveDirectory.data.readOnly,true);
+assert.equal(liveDirectory.data.teachers.length,1);
+assert.deepEqual(liveDirectory.data.teachers[0],{
+ id:provision.data.teacherId,name:'Fixture Owner B',qualified:true,
+ status:'active',currentLearners:0,upcomingLessons:0,
+});
+for(const forbidden of ['auth_subject','email','phone_number','phone','learnerId','password']){
+ assert.equal(JSON.stringify(liveDirectory.data).includes(forbidden),false);
+}
+assert.equal((await call(adminTeachers,{cookie:cookieB})).response.status,403);
+assert.equal((await call(adminTeachers,{cookie:cookieA,method:'POST',body:{role:'admin'}})).response.status,405);
+assert.equal((await call(adminTeachers,{cookie:cookieA,origin:'https://outside.invalid'})).response.status,403);
 assert.deepEqual((await call('/v1/teacher/learners',{cookie:cookieB})).data.learners,[]);
 assert.deepEqual((await call('/v1/teacher/lessons',{cookie:cookieB})).data.lessons,[]);
 // B3: synthetic staff creates an actual primary assignment and a 40m booked lesson.
@@ -478,6 +502,8 @@ assert.equal((await call(planWrite,{method:'POST',cookie:cookieB,body:planComman
 sql("UPDATE staff_grants SET revoked_at_ms=1000 WHERE auth_subject='"+teacherActor+"'");
 const revokedAdmin=await call(adminOverview,{cookie:cookieA});
 assert.equal(revokedAdmin.response.status,403,'Revoked staff grant must lose overview access immediately');
+assert.equal((await call(adminTeachers,{cookie:cookieA})).response.status,403,
+ 'Revoked staff grant must lose teacher directory access immediately');
 assert.equal((await call(adminOverview,{cookie:cookieB})).response.status,403);
 console.log('Native signed Admin overview: postgrant revocation denies immediately without cached role PASS');
 const afterRevocation=await call('/v1/staff/teacher-actions',{

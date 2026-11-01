@@ -26,6 +26,7 @@ import {readOwnerLessonQuranHistory} from '../lesson-quran-history.ts';
 import {verifiedOwner} from '../published-assignments.ts';
 import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '../staff-teachers.ts';
 import {readStaffOverview} from '../staff-overview.ts';
+import {readAdminTeachers} from '../staff-teacher-directory.ts';
 import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts';
 import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '../classroom-access.ts';
 import {forwardVerifiedPresence,parseClientPresenceAction} from '../classroom/presence.ts';
@@ -512,6 +513,14 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     if(env.NOOR_ADMIN_PORTAL_ENABLED!=='true')
       return reply(404,{code:'NOT_FOUND'},requestId);
     const result=await readStaffOverview(env.DB,session.user.id);
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
+  // #305: same verified session + fresh staff D1 grant as overview.
+  if(path==='/v1/staff/teachers'){
+    if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    if(env.NOOR_ADMIN_PORTAL_ENABLED!=='true')
+      return reply(404,{code:'NOT_FOUND'},requestId);
+    const result=await readAdminTeachers(env.DB,session.user.id);
     const {status,...body}=result;return reply(status,body,requestId);
   }
   // Same-origin signed, read-only realtime hints. Neither role nor identity

@@ -1,3 +1,9 @@
+## 2026-11-01 — #305 independent continuation, admin teacher directory
+- Read current main `382a2603a54fd356f106b351c621e012abc80413`, open PRs/issues/Verify before coding. `#286` P0 native D1 issue has signed synthetic Dev PASS in Santoreno run 41236448482 but remains OPEN for governance and cumulative-ink flag; do not duplicate its migration or claim Production.
+- #305 branch implements bounded authenticated staff-only teacher directory, strict browser parser, RTL read-only cards, native Better Auth/D1 role-scope smoke, backend/frontend tests. Source-only until exact-head CI and signed Dev review. Parent/teacher sessions cannot see data, no financial state or activation writes.
+- **NEXT exact action:** check PR #305 exact-head CI; fix any typecheck/native D1 errors; request independent review; run signed isolated Dev role and 360/390/1280 tests before merge. Do not auto-activate an admin account based on GitHub identity; require verified Noor auth subject and trusted operator bootstrap.
+- No remote D1 write, media/WhatsApp/payment, Production flag, personal data, or cumulative-ink rollout.
+
 ## 2026-11-01 — Admin #302 default-off static export negative smoke
 - Live `main` unchanged. PR #304 still OPEN. Added fast `scripts/smoke.mjs` check of three default-disabled /admin paths, rejects rendered staff metrics/sensitive panels in public static HTML and requires Arabic RTL. Not a signed Dev positive proof; build flags OFF.
 - Expanded disposable local signed Worker smoke for stale staff cookies after D1 phone verification and account-state revocation while grant remains active. Exact-head GitHub Verify must be checked before reporting success. Revoke-grant test remains.
