@@ -1,3 +1,9 @@
+## 2026-11-01 — #317 owner paid-slot request status in signed Lessons (Draft PR #318)
+- Added strict browser parser and no-store owner GET client for D1 `ACADEMY_PAID_SLOT_REQUESTS`; rejects unexpected fields, duplicate IDs, invalid 40-minute windows, impossible approved/rejected states and PII. No client-selected roles or fabricated records.
+- Signed `ConnectedClassroomLessons` now mounts learner-keyed read-only request status, with honest loading/empty/denied/offline states and Cairo-local times; no booking form, credit debit or automatic retry. A learner switch remounts and aborts prior GET. Tests cover parser and HTTP failures in `paid-slot-requests-client.test.ts`.
+- Source-only, **not verified on this head**: local GitHub clone DNS unavailable; exact-head GitHub Verify and independent review pending. D1 0031, staff UI, available-slot proposal UI and signed Dev role/sibling/mobile acceptance remain OPEN. No Production, payment, WhatsApp, child audio or cumulative ink flag changes.
+- NEXT: obtain exact-head Verify on PR #318; fix failures, independently review SQL/auth and test signed Dev before any merge. UI status must not be mistaken for approval of the booking workflow.
+
 ## 2026-11-01 — #317 concurrent paid-slot idempotency hardening (PR #318; source-only)
 - Signed guardian proposal and staff decision endpoints now re-read immutable D1 events by operationId after a recognized constraint failure. If a concurrent identical insert won, they return the original requestId/lessonId instead of misleading 409; a mismatched actor/payload remains 409, and revoked owner/staff fails before replay.
 - New Node regressions simulate both SELECT-to-INSERT unique races, mismatch and revoked staff. No extra lesson/credit write is made during recovery; D1 triggers still own atomic booking/spend.
