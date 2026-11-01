@@ -20,6 +20,14 @@ export function StudentPublishedAssignments({learnerId}:{learnerId:string}){
   });
   return()=>{active=false;controller.abort();};
  },[learnerId,retry]);
+ useEffect(()=>{
+  if(data.status!=='loaded')return;
+  const id=window.location.hash.match(/^#assignment-([0-9a-f-]{36})$/i)?.[1];
+  if(!id||!data.tasks.some(task=>task.id===id))return;
+  setOpened(id);
+  const frame=requestAnimationFrame(()=>document.getElementById('assignment-'+id)?.scrollIntoView({block:'start',behavior:'smooth'}));
+  return()=>cancelAnimationFrame(frame);
+ },[data]);
  return <div className={css.content} aria-label="واجباتي المنشورة">
   <div className={css.sectionHeading}>
     <div><p className={css.overline}>الواجبات المنشورة من الشيخ</p><h3>واجباتي الفعلية</h3></div>
@@ -32,7 +40,7 @@ export function StudentPublishedAssignments({learnerId}:{learnerId:string}){
     <p>التدريب الذاتي متاح، لكنه ليس واجبًا معتمدًا.</p>
    </div>:<div className={css.cards}>{data.tasks.map(task=>{
      const open=task.id===opened;
-     return <article key={task.id} className={open?css.cardExpanded:css.card}>
+     return <article key={task.id} id={"assignment-"+task.id} className={open?css.cardExpanded:css.card}>
       <div className={css.rowBetween}><span className={css.tag}>{kinds[task.kind]}</span>
        <span className={css.statusPending}>تكليف منشور</span></div>
       <h4>سورة {task.surah} · الآيات {task.fromAyah}–{task.toAyah}</h4>
