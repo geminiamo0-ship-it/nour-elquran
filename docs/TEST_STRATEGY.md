@@ -1,3 +1,7 @@
+## #317 concurrent operationId race regression — 2026-11-01
+- Node academy-paid-slot.test.ts: two signed POSTs may both observe no prior event; losing D1 unique insert must read winner by operationId and return original guardian requestId or staff lessonId only if actor and immutable payload match. Changed actor/payload remains 409; revoked owner/staff denies before replay. No second booking/spend write.
+- Required: exact-head GitHub Verify including native D1, strict TypeScript and security smoke; independent review; synthetic signed Cloudflare Dev two-role/sibling/idempotency acceptance. No CI/Dev pass claimed for this change yet.
+
 ## #317 paid-slot API acceptance gate — 2026-11-01
 - Unit: signed guardian GET/POST exact allowlist and trusted Worker time, 404 foreign learner, idempotent same-payload replay vs 409 conflicting operation; staff GET/POST deny before any sensitive D1 query, validated permission and immutable staff decision, sanitized expected D1 constraint failures.
 - Native SQLite: apply full migrations through 0031 and verify proposal never spends, staff approval books+spends once, race/overlap/expired/revoked grant/teacher/owner/cycle denial and no partial events. `academy-paid-slot.test.ts` and `test_academy_paid_slot_requests.py`.
