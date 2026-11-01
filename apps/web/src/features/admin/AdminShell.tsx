@@ -7,6 +7,7 @@ import {ADMIN_NAVIGATION,getAdminRoute} from './admin-navigation';
 import {AdminOverviewPanel,AdminPendingSection} from './AdminSections';
 import {AdminTeacherDirectory} from './AdminTeacherDirectory';
 import {AdminCollectionPanel} from './AdminCollectionPanel';
+import {AdminAcademyMvp} from './AdminAcademyMvp';
 import {AdminOverviewError,fetchAdminOverview,type AdminOverview} from './admin-overview-client';
 import css from './AdminPortal.module.css';
 
@@ -152,7 +153,13 @@ export function AdminShell(){
          ?<AdminCollectionPanel key={route} session={account.session} view="subscriptions"/>
          :route==='/admin/attendance'
           ?<AdminCollectionPanel key={route} session={account.session} view="attendance"/>
-          :<AdminPendingSection route={route}/>}
+          :route==='/admin/packages'
+           ?<AdminAcademyMvp key={route} session={account.session} mode="packages"/>
+           :route==='/admin/requests'
+            ?<AdminAcademyMvp key={route} session={account.session} mode="requests"/>
+            :route==='/admin/settings'
+             ?<AdminAcademyMvp key={route} session={account.session} mode="contact"/>
+             :<AdminPendingSection route={route}/>}
    </main>
   </div>
   {menuOpen&&<nav id="admin-mobile-navigation" className={css.mobileNav}
