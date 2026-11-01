@@ -114,16 +114,19 @@ export async function staffPaidSlotDecision(db:CoreDatabase,subject:string,
  return {status:400,code:'ACADEMY_PAID_SLOT_INVALID_DECISION'} as const;
  if(!await canManageTeachers(db,subject))
   return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
- const prior=await db.prepare(`SELECT id,actor_subject AS actor,request_id AS requestId,
+ const findPrior=()=>db.prepare(`SELECT id,actor_subject AS actor,request_id AS requestId,
  decision,reason,lesson_id AS lessonId
  FROM academy_paid_slot_decision_events WHERE operation_id=?`)
  .bind(raw.operationId).first<{
  id:string;actor:string;requestId:string;decision:string;reason:string;lessonId:string|null
  }>();
- if(prior)return prior.actor===subject&&prior.requestId===raw.requestId&&
- prior.decision===raw.decision&&prior.reason===raw.reason?
- {status:200,code:'ACADEMY_PAID_SLOT_DECISION_REPLAY',lessonId:prior.lessonId} as const:
- {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const replay=(prior:NonNullable<Awaited<ReturnType<typeof findPrior>>>)=>
+  prior.actor===subject&&prior.requestId===raw.requestId&&
+  prior.decision===raw.decision&&prior.reason===raw.reason?
+  {status:200,code:'ACADEMY_PAID_SLOT_DECISION_REPLAY',lessonId:prior.lessonId} as const:
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const prior=await findPrior();
+ if(prior)return replay(prior);
  const lessonId=raw.decision==='approved'?crypto.randomUUID():null;
  try{
   // One D1 INSERT; the SQL trigger atomically creates the lesson and spend.
@@ -132,7 +135,13 @@ export async function staffPaidSlotDecision(db:CoreDatabase,subject:string,
   VALUES(?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(),raw.operationId,
    raw.requestId,subject,raw.decision,lessonId,raw.reason,now).run();
  }catch(e){
-  if(expected(e))return {status:409,code:'ACADEMY_PAID_SLOT_DECISION_DENIED'} as const;
+  if(expected(e)){
+   // Preserve the original lessonId on an identical concurrent decision.
+   // Authorization was freshly checked before both reads.
+   const raced=await findPrior();
+   if(raced)return replay(raced);
+   return {status:409,code:'ACADEMY_PAID_SLOT_DECISION_DENIED'} as const;
+  }
   throw e;
  }
  return {status:201,code:'ACADEMY_PAID_SLOT_DECIDED',lessonId} as const;
