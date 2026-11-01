@@ -19,6 +19,13 @@ describe('approved premium learner experience #322',()=>{
   expect(html).not.toContain('46%');
   expect(html).not.toContain('0 / 10');
  });
+ it('links from the home to a specific authenticated published assignment',()=>{
+  const id='11111111-2222-4333-8444-555555555555';
+  const html=renderToStaticMarkup(<PremiumHome name="طالب" grades={[]}
+    tasks={[{id,label:'الملك 1–5',kind:'حفظ'}]}/>);
+  expect(html).toContain('#assignment-'+id);
+  expect(html).toContain('ابدأ واجبي الآن');
+ });
  it('only offers the live entry link for a real live lesson',()=>{
   const target='/classroom/live?role=learner&lessonId=synthetic&learnerId=student';
   const html=renderToStaticMarkup(<PremiumHome name="طالب" tasks={[]} grades={[]}
