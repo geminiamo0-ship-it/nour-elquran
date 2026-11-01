@@ -44,3 +44,10 @@ The full academy operating dashboard defined in #20–#36 remains wider than thi
 ## Rollback
 
 Revert new Admin operations UI, transition handler and optional new route, while leaving existing read-only pages. Migration 0027 only tightens behavior; rolling it back would reopen a race, so use a reviewed forward migration rather than removing the guard from a live D1 database. No production rollback needed because no production deployment is authorized.
+
+## 2026-11-01 follow-up security review (still source-only)
+
+- Identified that legacy `attendance.review` grant checks required an active account but **not** `auth_users.phone_number_verified=1`. The signed Worker helper `staffAllowed()` now independently requires a verified account, and additive migration **0028_attendance_verified_staff_guard.sql** rejects the same violation atomically for direct D1 review inserts. The attendance review POST returns 503 until the 0028 guard metadata is confirmed, preserving fail-closed deployment sequencing.
+- Refined migration **0027** and roster Worker check: `status='live'` blocks teacher suspension and de-qualification **regardless of scheduled end time**, because a teacher must explicitly end a classroom even after overtime. Future `scheduled` lessons also block these transitions.
+- Added native signed Worker smoke to `scripts/cloudflare-auth-smoke.mjs`: unknown/unsigned/non-staff/malformed roster transition denial; actual booked lesson blocks suspension with 409 and the teacher remains active. Python full-migration tests cover overdue `live` and unverified attendance reviewer denial; Node tests cover query-first permission gating.
+- Next isolated Dev release requires migrations **0027 AND 0028** and role/case/booking signed acceptance, and independent code/permissions/privacy review. Source green is not Dev accepted, and no Production operation is authorized.
