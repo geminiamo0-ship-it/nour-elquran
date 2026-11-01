@@ -1,3 +1,9 @@
+## 2026-11-01 — #307 Admin padded academic names availability regression (source-only)
+
+- Read current AGENTS/status/plan/security/testing and GitHub. Baseline Noor `main@bd1224be3beffa14476be1305e40713c770b51e7`; #308 merged with exact-head/main Verify and signed isolated Dev run #41270412463 PASS per Issue #307. Operational Admin and independent review remain OPEN.
+- Branch `fix/307-normalize-readonly-d1-names-20261101`: the actual 0001 learners D1 CHECK accepts padded `display_name`, whereas the strict #307 collection parser rejects padded names, failing an entire authorized Admin view. Fixed only SELECT labels via SQL TRIM; added `workers/api/tests/test_staff_collection_display_names.py` to execute source SQL with synthetic valid padded names. No D1 mutation, child/guardian contact, feature flag or external service.
+- **NEXT exact action:** open linked Draft PR, check exact-head Verify and native tests, fix any failure, independently review SQL/privacy, then repeat Dev signed staff/Sheikh/anonymous role and 360/390 browser tests before acceptance. No Production, finance, audio or cumulative-ink rollout.
+
 ## 2026-11-01 — Admin consolidated read-only four-view delivery (#307)
 
 - Baseline Noor `main@1c9791540d6bc1b6500da27d2bb613209387a8d3` verified GitHub Actions. Owner personally accessed signed Admin landing (auth grant already provisioned by DB owner) and asked to finish all at once. Do not confuse this with Production security review; staff MFA and phone verification lifecycle still pending.

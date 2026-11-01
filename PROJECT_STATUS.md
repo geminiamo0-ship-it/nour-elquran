@@ -1,3 +1,10 @@
+## 2026-11-01 — #307 Admin academic display-name D1 read hardening (candidate)
+
+- Verified Noor main `bd1224be3beffa14476be1305e40713c770b51e7` after merged PR #308. Existing signed Cloudflare Dev four-view acceptance is recorded in Issue #307 (Santoreno run #41270412463); this follow-up is **not** deployed or Dev-accepted.
+- Independent source/schema review found a legitimate fail-closed availability edge: migration 0001 permits leading/trailing spaces in `learners.display_name` via `length(trim(display_name))`, but the #307 read-model validator requires already-trimmed labels. One valid stored name could make an entire 50-row Admin collection return HTTP 503. Teacher account names can also be padded.
+- The read-only fixed SQL now selects `TRIM` for learner/Sheikh academic labels in students, schedule and subscription cycle lists. Stored names, D1 constraints, staff authorization, data scope and all writes are unchanged. A new Python SQLite regression executes the actual SQL from the TypeScript source with valid synthetic padded names and verifies source data is not mutated.
+- **NEXT:** inspect exact-head GitHub Verify (including Python unittest/native D1), repair failures, request independent privacy/SQL review and only then perform source-pinned signed Cloudflare Dev acceptance if approved. Do not merge on unverified source, alter Production, enable payments/WhatsApp/voice or turn on cumulative ink.
+
 ## 2026-11-01 — Admin consolidated Phase B (Issue #307, source candidate)
 
 - Owner requested closing the Admin Dashboard in one integrated pass rather than many small tasks. The approved safe scope is **four more real, staff-gated read-only D1 views**, alongside the already deployed signed overview and teacher directory. Full 16-program operational Admin is **NOT complete**: finance provider, payment settlement, staff invites/reviews, attendance decisions, billing/compensations and WhatsApp remain separately gated.

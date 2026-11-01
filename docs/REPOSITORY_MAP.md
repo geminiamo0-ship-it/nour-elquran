@@ -1,3 +1,8 @@
+## #307 staff read-model padded-name regression
+
+- `workers/api/src/staff-collections.ts` now normalizes selected academic learner/Sheikh display names using SQLite TRIM; existing fixed SQL, row validators and D1 authorization remain unchanged. This matches the original D1 `length(trim(display_name))` learner constraint without modifying stored records.
+- `workers/api/tests/test_staff_collection_display_names.py` runs the real extracted students/schedule/subscriptions SELECTs against synthetic SQLite rows with valid padded names. No production data, remote resources or feature flags.
+
 ## #307 consolidated staff collections
 
 - `workers/api/src/staff-collections.ts`: four fixed SQL queries and exact field validators: student profiles, -7/+30-day lesson calendar, monthly subscription cycle lesson units and attendance appeal statuses. Every request checks current verified active D1 `roles.manage` grant before reading. Maximum 50 rows + honest `truncated`, no phone, guardian identity, incident reasons, finance or dynamic query values.

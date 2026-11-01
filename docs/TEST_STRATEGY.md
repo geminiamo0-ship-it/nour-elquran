@@ -1,3 +1,8 @@
+## #307 padded-name regression after merged read-only Admin Dev acceptance
+
+- Run `python3 -m unittest discover -s workers/api/tests -p 'test_*.py' -v` through `pnpm test:backend`. `test_staff_collection_display_names.py` extracts and executes the **real fixed TypeScript SQL** against a disposable SQLite schema matching the canonical D1 learner display-name CHECK. A valid stored `'  طالب  تجريبي  '` must appear trimmed in staff student/schedule/subscription views, without UPDATE or loss of internal spacing. Teacher display name is normalized too.
+- This is a local SQL/availability regression, not a signed remote Cloudflare Dev test. Preserve existing 401/403/404/405/503, staff grant freshness, PII exclusion and 50-row cap tests; exact-head Verify and independent review are still required before a Dev rollout.
+
 ## #307 full consolidated safe Admin Phase B source gates
 
 - Backend `workers/api/tests/staff-collections.test.ts`: four immutable SQL selectors and 51-row LIMIT, grant before query, static fields with no contacts/private reasons, strict row types/count/status, no duplicate IDs, zero-row truth, 50-row truncation, D1 malformed result 503. Invalid `view` or extra query parameters 400 before querying D1.
