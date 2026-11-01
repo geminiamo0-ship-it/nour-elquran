@@ -29,7 +29,7 @@ describe('#317 signed staff paid-slot inbox',()=>{
    {...payload,requests:[{...row,endsAtMs:row.endsAtMs+1}]},
    {...payload,requests:[{...row,state:'approved'}]},
    {...payload,requests:[{...row,state:'rejected',lessonId:D}]},
-   {...payload,requests:Array.from({length:101},()=>row)]},
+   {...payload,requests:Array.from({length:101},()=>row)},
    {...payload,guardianContact:'private'},
    {...payload,requestId:{}},
   ])expect(()=>parseAdminPaidSlots(bad)).toThrow(AdminPaidSlotError);
