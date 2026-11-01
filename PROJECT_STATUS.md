@@ -1,3 +1,8 @@
+## 2026-11-01 / #244 — connected read-only subscription ledger UI (candidate PR, CI pending)
+- After PR #299 merged to main 1686f445, the signed owner D1 GET exists but /student/subscription still displays only the unconnected placeholder. This branch adds strict client response validation, signed read-only academic units/compensation display, explicit no-paid-booking wording, loading/error/retry and sibling-safe request cancellation.
+- No payment activation, package prices, manual credit writer, paid reservation, WhatsApp, Production, or cumulative ink change. The UI must not infer spendable balance from ledger rows.
+- NEXT: inspect exact-head Verify, independent review and isolated signed Dev 0026 migration/owner+sibling UI acceptance. #244 remains OPEN.
+
 ## 2026-11-01 / #244 — compensation spend temporal guard (PR #299, CI pending)
 - Source review found the 0026 compensation spend trigger checked grant issuance and remaining balance, but unlike cycle spends it did not restrict the debit timestamp to the target lesson start. A late staff ledger event could therefore consume a non-expiring grant against an already-started lesson.
 - Hardened the D1 INSERT trigger to require grant-issued <= spend-at <= target lesson start; added a regression that first rejects a late debit and then accepts a timely debit 299 days after grant issuance. No credit writer or paid booking endpoint was enabled.

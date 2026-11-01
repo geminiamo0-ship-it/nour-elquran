@@ -23,3 +23,6 @@ export type {AttendanceCase,TeacherAttendanceCase} from './attendance-cases-clie
 
 export {trialBookingClient,parseTrialAvailability,TrialBookingError} from './trial-booking-client';
 export type {TrialSlot,TrialAvailability} from './trial-booking-client';
+
+export {subscriptionLedgerClient,parseSubscriptionLedger,SubscriptionLedgerError} from './subscription-ledger-client';
+export type {SubscriptionLedger,SubscriptionCycle} from './subscription-ledger-client';

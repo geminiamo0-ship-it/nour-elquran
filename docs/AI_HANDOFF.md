@@ -1,3 +1,8 @@
+## 2026-11-01 / #244 — connected student academic ledger read (candidate)
+- New branch from merged main 1686f445 wires the existing signed /v1/me/learners/:id/subscription-ledger GET into /student/subscription, with strict non-bookable response parser and no cross-profile stale data. The payment section remains explicitly unavailable.
+- Exact-head CI, independent review, remote 0026 D1 migration, signed owner/sibling 404 and mobile browser acceptance are NOT yet proven. No payment/production/WhatsApp/child media/feature flag changes.
+- NEXT: inspect Verify and fix any failures; independently review; test signed Dev owner A, sibling B and foreign owner, including refresh/profile switch. Keep #244 OPEN.
+
 ## 2026-11-01 / #244 — compensation spend temporal guard (PR #299, CI pending)
 - Source review found the 0026 compensation spend trigger checked grant issuance and remaining balance, but unlike cycle spends it did not restrict the debit timestamp to the target lesson start. A late staff ledger event could therefore consume a non-expiring grant against an already-started lesson.
 - Hardened the D1 INSERT trigger to require grant-issued <= spend-at <= target lesson start; added a regression that first rejects a late debit and then accepts a timely debit 299 days after grant issuance. No credit writer or paid booking endpoint was enabled.
