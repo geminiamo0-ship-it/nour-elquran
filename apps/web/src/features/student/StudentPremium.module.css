@@ -106,3 +106,8 @@
 .heroVisual:before{display:none}
 @media(max-width:800px){.heroVisual{height:120px;min-width:125px}}
 @media(max-width:650px){.heroVisual{height:86px;min-width:98px;width:34%}}
+
+/* Align account controls to the left like the exact approved desktop reference. */
+.header{flex-direction:row-reverse;justify-content:flex-start;gap:16px}
+.identity{flex-direction:row-reverse}
+@media(max-width:650px){.header{gap:6px}.identity{gap:2px}}
