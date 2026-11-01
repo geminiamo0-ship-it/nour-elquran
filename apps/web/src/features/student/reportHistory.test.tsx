@@ -11,7 +11,7 @@ function report(id: string, lessonId: string, learnerId: string, publishedAt: st
     memorizedAyat:4, reviewedAyat:null, summary:'ملخص موثق للتجربة' };
 }
 
-describe('academic reports: approved table specification', () => {
+describe('academic reports: approved premium card specification', () => {
   it('keeps just the latest published revision per lesson and selected learner', () => {
     const rows = latestPublishedReports([
       report('old','a','one','2026-10-01T10:00:00Z'),
@@ -34,9 +34,9 @@ describe('academic reports: approved table specification', () => {
     expect(nextReportCount(10,14)).toBe(14);
     expect(nextReportCount(0,0)).toBe(0);
   });
-  it('renders a table and no filters or charts in the learner progress page', () => {
+  it('renders the clean reports hub without fake charts or filters', () => {
     const html=renderToStaticMarkup(<StudentProvider><StudentSection section="progress" /></StudentProvider>);
-    expect(html).toContain('السجل الأكاديمي');
+    expect(html).toContain('تقارير الشيخ');
     expect(html).toContain('لا توجد تقارير منشورة');
     expect(html).not.toContain('تصفية التقارير');
     expect(html).not.toContain('<canvas');

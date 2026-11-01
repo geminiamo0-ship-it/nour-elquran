@@ -23,9 +23,9 @@ function requireProfile(profile: LearnerProfile | undefined): LearnerProfile {
   return profile;
 }
 
-export function StudentProvider({ children, liveLearners }: { children: ReactNode; liveLearners?: readonly LearnerProfile[] }) {
+export function StudentProvider({ children, liveLearners, initialSelectedId = 'demo-new' }: { children: ReactNode; liveLearners?: readonly LearnerProfile[]; initialSelectedId?: string }) {
   const [demoLearners, setLearners] = useState<readonly LearnerProfile[]>(DEMO_PROFILES);
-  const [selectedId, setSelectedId] = useState('demo-new');
+  const [selectedId, setSelectedId] = useState(initialSelectedId);
   const [completed, setCompleted] = useState<Record<string, string[]>>({});
   const [notesByLearner, setNotesByLearner] = useState<Record<string, LocalStudyNote[]>>({});
   const [draftsByLearner, setDraftsByLearner] = useState<Record<string, Record<string, string>>>({});

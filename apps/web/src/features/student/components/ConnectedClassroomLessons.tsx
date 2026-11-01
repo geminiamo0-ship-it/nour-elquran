@@ -1,60 +1,86 @@
 'use client';
-import Link from 'next/link';
 import {useEffect,useState} from 'react';
 import {notebookClient,type LessonRow} from '../../shared';
 import {StudentConnectedAttendanceCases} from './StudentConnectedAttendanceCases';
 import {StudentTrialBooking} from './StudentTrialBooking';
 import {StudentTrialCancellation} from './StudentTrialCancellation';
 import {StudentTrialReschedule} from './StudentTrialReschedule';
-import styles from '../StudentPortal.module.css';
-const formatter=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short'});
+import {UpcomingLessonCard,UpcomingLessonList,type DisplayLesson} from './LessonsVisual';
+import css from './LessonsPremium.module.css';
+
+const formatted=new Intl.DateTimeFormat('ar-EG',{
+ timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short'
+});
+const label=(kind:LessonRow['kind'])=>kind==='trial'?'حصة تجريبية':
+ kind==='makeup'?'حصة تعويضية':'حفظ ومراجعة';
+function view(lesson:LessonRow,learnerId:string):DisplayLesson{
+ return {
+  id:lesson.id,
+  title:label(lesson.kind),
+  time:formatted.format(new Date(lesson.startsAtMs)),
+  description:'حصة '+(lesson.kind==='trial'?'تجريبية':'تعليمية')+' · 30 دقيقة',
+  status:lesson.status==='live'?'live':'scheduled',
+  // The authenticated Worker validates time, account and lesson membership again.
+  href:'/classroom/live?role=learner&lessonId='+encodeURIComponent(lesson.id)+
+   '&learnerId='+encodeURIComponent(learnerId)
+ };
+}
+
 export function ConnectedClassroomLessons({learnerId}:{learnerId:string}){
  const [status,setStatus]=useState<'loading'|'ready'|'error'>('loading');
  const [lessons,setLessons]=useState<readonly LessonRow[]>([]);
  const [retry,setRetry]=useState(0);
  const [availabilityRevision,setAvailabilityRevision]=useState(0);
+ const [bookingOpen,setBookingOpen]=useState(false);
+ const [attendanceOpen,setAttendanceOpen]=useState(false);
  useEffect(()=>{
   const abort=new AbortController();
   setStatus('loading');setLessons([]);
   void notebookClient.lessons(learnerId,abort.signal).then(rows=>{
    if(abort.signal.aborted)return;
-   setLessons(rows);setStatus('ready');
+   setLessons(rows.filter(l=>l.learnerId===learnerId));setStatus('ready');
   }).catch(()=>{if(!abort.signal.aborted)setStatus('error');});
   return()=>abort.abort();
  },[learnerId,retry]);
- return <div className={styles.workspace}>
-  <section className={styles.panel}>
-   <div className={styles.panelHead}><div>
-    <p className={styles.eyebrow}>مواعيد حساب الطالب الحقيقي</p><h2>حصصي وغرف الانتظار</h2>
-   </div></div>
-   <p>يمكنك فتح غرفة الانتظار للحصة المجدولة أو الجارية فقط.
-    الانضمام لا يبدأ الحصة ولا يشغّل الصوت أو الفيديو.</p>
-   {status==='loading'?<p role="status">جارٍ تحميل مواعيدك من الخادم...</p>:
-    status==='error'?<div role="alert"><p>تعذر التحقق من المواعيد.</p>
-     <button type="button" onClick={()=>setRetry(n=>n+1)}>إعادة المحاولة</button>
-    </div>:!lessons.length?<p>لا توجد مواعيد حقيقية في حسابك حاليًا.</p>:
-    <div className={styles.stack}>{lessons.map(l=><article key={l.id} className={styles.lessonRow}>
-     <div className={styles.lessonInfo}><strong>{formatter.format(new Date(l.startsAtMs))}</strong>
-      <span>{l.status==='scheduled'?'مجدولة':l.status==='live'?'جارية':
-       l.status==='completed'?'مكتملة':'ملغاة'}</span></div>
-     {l.status==='scheduled'||l.status==='live'?
-      <Link className={styles.outlineButton} href={'/classroom/live?role=learner&lessonId='+
-       encodeURIComponent(l.id)+'&learnerId='+encodeURIComponent(learnerId)}>
-       فتح غرفة الانتظار</Link>:
-      l.status==='completed'?<Link href="/student/notebook">دفتر الحصة</Link>:<span>غير متاح</span>}
-     {l.kind==='trial'&&l.status==='scheduled'&&
-      <StudentTrialReschedule learnerId={learnerId} lessonId={l.id}
-       startsAtMs={l.startsAtMs} onRescheduled={()=>setRetry(n=>n+1)}/>}
-     {l.kind==='trial'&&l.status==='scheduled'&&
-      <StudentTrialCancellation key={l.id} learnerId={learnerId} lessonId={l.id}
-       startsAtMs={l.startsAtMs} onCancelled={()=>{
-        // A confirmed D1 cancellation refreshes both lessons and trial eligibility.
-        setRetry(n=>n+1);setAvailabilityRevision(n=>n+1);
-       }}/>}
-    </article>)}</div>}
-  </section>
-  <StudentTrialBooking key={learnerId} learnerId={learnerId}
-   refreshRevision={availabilityRevision} onBooked={()=>setRetry(x=>x+1)}/>
-  <StudentConnectedAttendanceCases key={learnerId} learnerId={learnerId}/>
+ const upcoming=lessons.filter(l=>(l.status==='scheduled'||l.status==='live')&&
+  l.endsAtMs>Date.now()).slice().sort((a,b)=>{
+    if(a.status!==b.status)return a.status==='live'?-1:1;
+    return a.startsAtMs-b.startsAtMs;
+  });
+ const next=upcoming[0];
+ return <div className={css.schedule}>
+  {status==='loading'?<section className={css.emptyState} role="status">جارٍ تحميل مواعيدك…</section>:
+   status==='error'?<section className={css.emptyState} role="alert">
+    <p>تعذّر تحميل المواعيد، ولن نعرض مواعيد بديلة غير مؤكدة.</p>
+    <button type="button" className={css.ghostLink} onClick={()=>setRetry(x=>x+1)}>إعادة المحاولة</button>
+   </section>:<>
+    <UpcomingLessonCard lesson={next?view(next,learnerId):undefined}/>
+    {upcoming.length>1&&<UpcomingLessonList lessons={upcoming.slice(1).map(l=>view(l,learnerId))}/>}
+    {next?.kind==='trial'&&next.status==='scheduled'&&
+     <section className={css.panel} aria-label="تعديل موعد الحصة">
+      <div className={css.panelHead}><h2>تعديل موعد التجربة</h2></div>
+      <div className={css.controls}>
+       <StudentTrialReschedule learnerId={learnerId} lessonId={next.id}
+        startsAtMs={next.startsAtMs} onRescheduled={()=>setRetry(x=>x+1)}/>
+       <StudentTrialCancellation learnerId={learnerId} lessonId={next.id}
+        startsAtMs={next.startsAtMs} onCancelled={()=>{
+         setRetry(x=>x+1);setAvailabilityRevision(x=>x+1);
+        }}/>
+      </div>
+     </section>}
+   </>}
+  <details className={css.expansion} id="lesson-booking" onToggle={e=>setBookingOpen(e.currentTarget.open)}>
+   <summary>حجز حصة تجريبية</summary>
+   {bookingOpen&&<div className={css.expansionBody}>
+    <StudentTrialBooking key={learnerId} learnerId={learnerId}
+      refreshRevision={availabilityRevision} onBooked={()=>setRetry(x=>x+1)}/>
+   </div>}
+  </details>
+  <details className={css.expansion} onToggle={e=>setAttendanceOpen(e.currentTarget.open)}>
+   <summary>الحضور وطلبات المراجعة</summary>
+   {attendanceOpen&&<div className={css.expansionBody}>
+    <StudentConnectedAttendanceCases key={learnerId} learnerId={learnerId}/>
+   </div>}
+  </details>
  </div>;
 }
