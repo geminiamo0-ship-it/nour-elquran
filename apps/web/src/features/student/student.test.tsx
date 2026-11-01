@@ -63,7 +63,8 @@ describe('local student workflows and safe page components', () => {
   it('shows genuine blank states on new learner and separates practice preparation from submission', () => {
     const training = renderToStaticMarkup(<StudentProvider><StudentSection section="training" /></StudentProvider>);
     const notebook = renderToStaticMarkup(<StudentProvider><StudentSection section="notebook" /></StudentProvider>);
-    expect(training).toContain('لا توجد تكليفات معتمدة');
+    expect(training).toContain('اختر سورة وابدأ');
+    expect(training).not.toContain('مسودة غير معتمدة');
     expect(notebook).toContain('لا توجد حصص مكتملة');
   });
 });
@@ -104,8 +105,9 @@ describe('connected learner isolation', () => {
 describe('connected trial lessons server boundary (#244)', () => {
   it('renders real signed loading states rather than a local booking preview', () => {
     const html = renderToStaticMarkup(<ConnectedClassroomLessons learnerId="synthetic-child" />);
-    expect(html).toContain('جارٍ تحميل مواعيدك من الخادم');
-    expect(html).toContain('جارٍ التحقق من استحقاق التجربة والمواعيد');
+    expect(html).toContain('جارٍ تحميل مواعيدك');
+    expect(html).toContain('حجز حصة تجريبية');
+    expect(html).not.toContain('جارٍ التحقق من استحقاق التجربة والمواعيد');
     expect(html).not.toContain('معاينة طلب حصة تجريبية');
     expect(html).not.toContain('حصة تجريبية مدرجة كمثال');
   });

@@ -1,3 +1,6 @@
+import {createElement} from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {ConnectedClassroomLessons} from './components/ConnectedClassroomLessons';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {fetchPaidSlotRequests,parsePaidSlotRequests,PaidSlotRequestsError} from
  './paid-slot-requests-client';
@@ -51,5 +54,16 @@ describe('#317 owner paid-slot status',()=>{
    [200,'INVALID_PAID_SLOT_RESPONSE'],[0,'NETWORK_UNAVAILABLE']] as const){
    await expect(fetchPaidSlotRequests(A)).rejects.toMatchObject({status,code});
   }
+ });
+});
+
+// #317 + #322: premium Lessons must retain the signed paid-slot request status.
+describe('premium Lessons paid-slot integration',()=>{
+ it('renders a signed request loading gate without a fake booking or debit',()=>{
+  const html=renderToStaticMarkup(createElement(ConnectedClassroomLessons,{learnerId:A}));
+  expect(html).toContain('طلبات مواعيد الحصص المدفوعة');
+  expect(html).toContain('جارٍ التحقق من الطلبات');
+  expect(html).toContain('حجز حصة تجريبية');
+  expect(html).not.toContain('تم اعتماد الحجز');
  });
 });

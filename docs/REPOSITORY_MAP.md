@@ -22,6 +22,13 @@
 - `workers/api/migrations/0031_academy_paid_slot_requests.sql`: owner-bound immutable request and staff decision events. A request never books/debits; approved decision atomically inserts the existing #315 booking and one spend, while rejected decision never debits.
 - `workers/api/tests/test_academy_paid_slot_requests.py`: native full migration/fixture SQL invariants. No new public endpoint or UI yet; no production migration.
 
+## #322 Premium learner portal refresh (PR #323; source candidate)
+- `apps/web/src/features/student/{StudentShell.tsx,StudentPremium.module.css}`: reusable premium RTL sidebar/header/profile/bell and four-item mobile navigation; preserve authenticated session and profile-swap Quran save safeguards.
+- `apps/web/src/features/student/{PremiumHome.tsx,StudentDashboard.tsx,ConnectedStudentDashboard.tsx}`: same screen for demo and signed learner, server-authoritative home lesson/task/report content and fail-closed loading/error states.
+- `apps/web/src/features/student/{StudentSection.tsx,components/LessonHub.tsx}`: 3-tab unified Lessons destination; legacy progress/notebook routes render the same functionality; `components/TrainingWorkspace.tsx` keeps the teacher-approved plan.
+- `apps/web/public/noor-hero.webp`: extracted UI decoration from approved owner screenshot; not canonical Quran text or R2 media.
+- `apps/web/src/features/student/student-premium.test.tsx`: four-route, state/CTA and merged history SSR contract tests. Design decision: `docs/adr/0010-premium-student-portal.md`. Exact visual/Dev verification remains pending.
+
 ## 2026-11-01 Admin operational package #309
 - apps/web/src/features/admin/{AdminOperations.tsx,AdminOperations.module.css,admin-operations-client.ts,admin-operations.test.tsx} — signed, confirmed and audit-aware operations UI/client for existing teacher, schedule and attendance pages; deliberately no paid booking.
 - workers/api/src/staff-teacher-transition.ts — server-only teacher roster ID -> private auth subject resolution and role-action reuse; registered in workers/api/src/auth/routes.ts via POST /v1/staff/teachers/transition.

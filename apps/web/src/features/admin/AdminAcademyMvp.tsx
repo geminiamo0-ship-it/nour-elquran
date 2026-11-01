@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useState,type FormEvent} from 'react';
+import {useEffect,useRef,useState,type FormEvent} from 'react';
 import type {AccountSession} from '@/features/account';
 import styles from './AdminAcademyMvp.module.css';
 
@@ -26,6 +26,23 @@ async function readAcademy(signal:AbortSignal):Promise<Academy>{
   throw new Error('تعذّر قراءة الإدارة من الخادم');
  return v as Academy;
 }
+const operationErrors:Record<string,string>={
+ ACADEMY_REQUEST_ALREADY_ACTIVATED:'الطلب اتفعّل بالفعل. اضغط تحديث وشوف الاشتراك في ملف الطالب.',
+ ACADEMY_REQUEST_NOT_FOUND:'طلب الاشتراك غير موجود. حدّث قائمة الطلبات.',
+ ACADEMY_REQUEST_REJECTED:'الطلب مرفوض ولا يمكن تفعيله. راجع الطلب قبل المحاولة.',
+ ACADEMY_REQUEST_MISMATCH:'الطلب لا يطابق الطالب أو سعر الباقة المختار. اختر الطلب الأصلي من القائمة.',
+ ACADEMY_PACKAGE_VERSION_UNAVAILABLE:'الباقة دي اتغيّرت أو اتوقفت. حدّث الباقات واختر الإصدار الصحيح.',
+ ACADEMY_CYCLE_OVERLAP:'فيه اشتراك متداخل لنفس الطالب. راجع مدة الباقة الحالية قبل التجديد.',
+ ACADEMY_RENEWAL_CONFLICT:'سلسلة تجديد الباقة تغيّرت. حدّث الملف وتحقق من الاشتراك الموجود.',
+ ACADEMY_ROLLOVER_CONFLICT:'رصيد الترحيل تغيّر. حدّث بيانات الطالب ثم جرّب مرة واحدة.',
+ ACADEMY_STAFF_ACCESS_CHANGED:'صلاحية الإدارة اتغيرت. سجّل الدخول بحساب إداري معتمد.',
+ ACADEMY_LEARNER_UNAVAILABLE:'ملف الطالب غير نشط أو غير متاح. راجع ملف الطالب.',
+ ACADEMY_REFERENCE_UNAVAILABLE:'الطالب أو إصدار الباقة غير موجود في قاعدة البيانات.',
+ ACADEMY_ACTIVATION_DENIED:'تعذّر تنفيذ التفعيل بسبب قيد في سجل الاشتراكات. لا تكرر استلام الدفع؛ راجع الاشتراك الحالي أو بلّغ الإدارة.',
+};
+class AcademyCommandError extends Error{
+ constructor(readonly code:string,readonly status:number){super(code);}
+}
 async function submit(path:string,command:unknown){
  const res=await fetch('/v1/staff/academy/'+path,{method:'POST',
   credentials:'same-origin',cache:'no-store',redirect:'error',
@@ -34,7 +51,7 @@ async function submit(path:string,command:unknown){
  if(!v||typeof v!=='object'||Array.isArray(v)||typeof (v as {code?:unknown}).code!=='string')
   throw new Error('استجابة غير صالحة');
  const code=(v as {code:string}).code;
- if(!res.ok)throw new Error(code);
+ if(!res.ok)throw new AcademyCommandError(code,res.status);
  return {code,...(v as object)};
 }
 /** Operations never optimistically claim a payment or an activation. */
@@ -53,6 +70,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const [whatsapp,setWhatsapp]=useState('');
  const [inviteUrl,setInviteUrl]=useState('');
  const [pendingOp,setPendingOp]=useState<{path:string;payload:unknown}|null>(null);
+ const sending=useRef(false);
  useEffect(()=>{
   const ctrl=new AbortController();
   setData(null);setResult({phase:'idle',message:''});setInviteUrl('');
@@ -64,6 +82,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  },[session,refresh]);
  const busy=result.phase==='busy';
  async function send(path:string,payload:unknown){
+  if(sending.current)return;
+  sending.current=true;
   setResult({phase:'busy',message:'جارٍ تسجيل العملية لدى الخادم…'});
   setPendingOp({path,payload});
   try{
@@ -73,11 +93,20 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    if(path==='invites'&&typeof (ack as {token?:unknown}).token==='string'){
     const token=(ack as {code:string;token?:string}).token!;
     setInviteUrl(window.location.origin+'/teacher/join?token='+token);
-   }else{setRefresh(n=>n+1);}
+   }else{
+    // Refresh the authoritative list without erasing the confirmed receipt.
+    const ctrl=new AbortController();
+    void readAcademy(ctrl.signal).then(v=>setData(v)).catch(()=>{});
+   }
   }catch(e){
-   setResult({phase:'uncertain',message:
-    e instanceof Error?e.message:'نتيجة العملية غير معروفة؛ لا تُكررها بمعرّف جديد.'});
-  }
+   if(e instanceof AcademyCommandError){
+    setPendingOp(null);
+    setResult({phase:'error',message:operationErrors[e.code]??'تعذّر تنفيذ العملية: '+e.code});
+   }else{
+    setResult({phase:'uncertain',message:
+      'تعذّر معرفة نتيجة الاتصال. لا تنشئ طلب تفعيل جديدًا؛ أعد نفس العملية بمعرّفها.'});
+   }
+  }finally{sending.current=false;}
  }
  function guard(event:FormEvent,action:()=>void){
   event.preventDefault();if(!confirmed||busy||!data)return;action();
@@ -131,7 +160,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    <div className={styles.options}>
    {data.requests.length===0?<p>لا توجد طلبات اشتراك بعد.</p>:
     data.requests.map(r=><label key={r.id}>
-     <input type="radio" name="req" checked={selectedRequest===r.id}
+     <input type="radio" name="req" disabled={r.state!=='pending'}
+      checked={selectedRequest===r.id}
       onChange={()=>{setSelectedRequest(r.id);setLearnerId(r.learnerId);
        setSelectedPackage(r.packageVersionId);setConfirmed(false);}}/>
      {r.learnerName} · {r.title} · {label(r.priceEgp)} جنيه
@@ -151,6 +181,10 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     <label>الباقة (إصدار سعر ثابت)<select required value={selectedPackage}
      onChange={e=>{setSelectedPackage(e.target.value);setSelectedRequest('');}}>
      <option value="">اختر الباقة</option>
+     {selectedRequest&&!data.packages.some(p=>p.id===selectedPackage)&&
+      <option value={selectedPackage}>
+       إصدار السعر الأصلي المرتبط بطلب الطالب
+      </option>}
      {data.packages.filter(p=>p.active===1).map(p=><option key={p.id} value={p.id}>
       {p.title} — {p.priceEgp} ج / {p.sessions} حصص</option>)}
     </select></label>

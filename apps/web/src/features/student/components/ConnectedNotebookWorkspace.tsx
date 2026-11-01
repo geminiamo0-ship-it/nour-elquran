@@ -69,14 +69,7 @@ export function ConnectedNotebookWorkspace({learnerId}:{learnerId:string}){
  const submit=(event:FormEvent<HTMLFormElement>)=>{event.preventDefault();void write('put');};
  return <div className={styles.workspace}>
   <section className={styles.panel}>
-   <div className={styles.panelHead}><div>
-    <p className={styles.eyebrow}>دفتر الحصص المتصل بالحساب</p>
-    <h2>دفتر حصصي</h2>
-   </div><span className={styles.statusNeutral}>ملاحظات شخصية خاصة</span></div>
-   <p className={styles.panelIntro}>
-    الحصص والتقارير المعتمدة تأتي من الخادم. ملاحظاتك محفوظة لكل طالب وحصة على حدة.
-    علامة المصحف وأرشيف PDF لا يظهران حتى يتوفر الأرشيف التعليمي المعتمد.
-   </p>
+   <div className={styles.panelHead}><h2>تفاصيل الحصة</h2></div>
    {state.status==='loading'?<p role="status">جارٍ التحقق من حصص الطالب وتقاريره...</p>:
     state.status==='error'?<div role="alert"><p>تعذر تحميل دفتر الحصص الحقيقي.</p>
      <button type="button" onClick={()=>setReload(x=>x+1)}>إعادة المحاولة</button>
@@ -99,7 +92,6 @@ export function ConnectedNotebookWorkspace({learnerId}:{learnerId:string}){
        <p><b>مواضع التصحيح:</b> {report.corrections||'—'}</p>
        <p><b>المراجعة القادمة:</b> {report.nextPlan||'—'}</p>
       </div>:<p>انتهت الحصة، وتقرير الشيخ قيد الإعداد أو لم يُنشر بعد.</p>}
-      <p className={styles.muted}>تنزيل PDF/PNG غير متاح حتى اكتمال ختم المصدر والتصدير الخاص.</p>
      </div>
      <LessonQuranHistory learnerId={learnerId} lessonId={lessonId}/>
      <PublishedLessonArchive learnerId={learnerId} lessonId={lessonId}
@@ -125,8 +117,8 @@ export function ConnectedNotebookWorkspace({learnerId}:{learnerId:string}){
         disabled={!body.trim()||busy||uncertain||notesState!=='loaded'}>
         {busy?'جارٍ تأكيد الحفظ…':'حفظ ملاحظة على الخادم'}
        </button>
-       <button type="button" className={styles.actionButton} disabled={busy}
-        onClick={()=>{setNotesReload(x=>x+1);setUncertain(false);}}>تحديث الملاحظات</button>
+       {uncertain&&<button type="button" className={styles.actionButton} disabled={busy}
+        onClick={()=>{setNotesReload(x=>x+1);setUncertain(false);}}>تحديث الملاحظات</button>}
       </div>
       {uncertain&&<p role="alert">نتيجة التغيير غير مؤكدة؛ اقرأ الملاحظات مجددًا قبل إعادة العملية.</p>}
       {message&&<p role="status">{message}</p>}

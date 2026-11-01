@@ -273,3 +273,28 @@
   .mushafScreen .topBar { display:none; }
   .mushafScreen .layout, .mushafScreen .main { min-height:100dvh; height:100dvh; }
 }
+
+/* #322: premium styling shared by lesson, report, notebook and account pages. */
+.pageHeader{padding:26px 4px 8px;margin-bottom:14px}
+.pageHeader h1{font-size:clamp(30px,3.1vw,43px);color:#063f2e}
+.pageHeader p:not(.eyebrow){font-size:15px;color:#576d61}
+.eyebrow{font-size:12px;color:#ac7b28;letter-spacing:0}
+.panel{border-radius:20px;border-color:#eadac5;background:#fffaf4;box-shadow:0 7px 28px #3f311116;padding:24px}
+.panelHead h2,.panel h2{font-size:clamp(23px,2.2vw,30px);color:#0a4733}
+.panelIntro,.panel p{line-height:1.9}
+.workspace{gap:20px;max-width:none}
+.lessonRow,.detailItem,.formCard,.noteSheet{border-radius:14px;background:#f8f2e9}
+.lessonInfo strong{font-size:15px}
+.lessonInfo span{font-size:13px}
+.outlineButton,.actionButton,.goldButton{border-radius:10px;min-height:44px;font-size:14px}
+.outlineButton{border-color:#c8a46b}
+.emptyBox{border-radius:14px;font-size:14px;background:#f9f5ed}
+.filterButton,.filterActive{font-size:14px;border-radius:10px;min-height:45px}
+.gradeRow .grade{border-radius:12px}
+@media(max-width:650px){
+ .pageHeader{padding-top:18px}
+ .pageHeader h1{font-size:30px}
+ .panel{padding:18px;border-radius:17px}
+ .lessonRow{flex-wrap:wrap}
+ .panelHead h2,.panel h2{font-size:24px}
+}

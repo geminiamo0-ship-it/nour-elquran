@@ -64,7 +64,11 @@ export function AdminShell(){
    if(!mounted)return;
    current?.abort();
    const ctrl=new AbortController();current=ctrl;
-   setRead({phase:'loading',subject,session});
+   // #319: retain a currently authorized same-session overview while D1
+   // silently revalidates on focus and at the 30-second cadence.
+   // Role swaps, logout, pagehide and 401/403 still clear the snapshot.
+   setRead(previous=>previous.phase==='ready'&&previous.subject===subject&&
+    previous.session===session?previous:{phase:'loading',subject,session});
    void fetchAdminOverview(ctrl.signal).then(value=>{
     if(mounted&&!ctrl.signal.aborted)
      setRead({phase:'ready',subject,session,value});
