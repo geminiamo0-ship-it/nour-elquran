@@ -1,3 +1,8 @@
+## #317 staff paid-slot inbox (PR #318, source-only)
+- `apps/web/src/features/admin/admin-paid-slot-client.ts`: strict signed staff GET for `/v1/staff/academy/paid-slot-requests`, exact 100-row D1 response and 40-minute/state/PII validation, no client role claims.
+- `apps/web/src/features/admin/AdminPaidSlotInbox.tsx`: session-scoped RTL read-only pending/approved/rejected list, no fabricated records or staff decision actions; mounted on existing `/admin/requests` by `AdminShell.tsx`.
+- `apps/web/src/features/admin/{admin-paid-slot-client.test.ts,AdminPaidSlotInbox.test.tsx}`: parser, signed fetch, authorization/outage and initial privacy-gate regressions. Requires exact-head CI, independent security review and signed Dev QA; staff approve/reject and owner proposal remain pending.
+
 ## #317 Student paid-slot request status (Draft PR #318)
 - `apps/web/src/features/student/paid-slot-requests-client.ts`: strict owner-only no-store GET parser, exact response shape, 30-row cap, 40-minute slot and state/lesson invariants, no PII.
 - `apps/web/src/features/student/components/StudentPaidSlotStatus.tsx`: learner-keyed signed read-only request state; explicit loading/empty/error and no fake booking controls. Mounted by `components/ConnectedClassroomLessons.tsx`.
