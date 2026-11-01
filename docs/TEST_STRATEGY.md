@@ -1,3 +1,7 @@
+## #309 atomic teacher guard response regression — 2026-11-01
+
+- `workers/api/tests/staff-teachers.test.ts` now simulates the exact `0027_teacher_active_lesson_guard.sql` trigger denial in the legacy teacher role handler (which lacks the new roster preflight), and asserts a deterministic `409 ACTIVE_CLASSES_BLOCK_TRANSITION`, no successful event, and unchanged handling of unrelated D1 failures. The separate Python full-migration SQLite test continues to prove the actual trigger blocks the write atomically; the Node test verifies HTTP-domain error translation. Require exact-head CI and isolated signed Dev verification; no local/remote passing tests claimed by this documentation entry.
+
 ## #309 Admin operation release gates (2026-11-01)
 - Unit: strict teacher roster transition parser, authorized staff pre-query, active class guard, exact client payload/action allowlist, 401/403, network-uncertain write (no false success/retry), SSR forms locked unless explicit consent.
 - Native SQL: all migrations through 0027; active scheduled/live Sheikh cannot be suspended or de-qualified, no immutable event on denial, cancellation then transition, unrelated teacher permitted, and legacy B2 endpoint inherits same trigger.
