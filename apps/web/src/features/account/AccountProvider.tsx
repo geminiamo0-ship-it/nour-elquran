@@ -26,6 +26,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const verifiedAt=useRef(0), verifying=useRef(false);
   const begin = useCallback((preserveAuthenticated=false) => {
     controller.current?.abort();controller.current=new AbortController();
+    verifying.current=false;
     const id=++lease.current;
     setState(current=>preserveAuthenticated&&current.status==='authenticated'
       ?current:{status:'checking'});
@@ -45,8 +46,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   }, []);
   const refresh = useCallback(async (force=false) => {
     if(!ACCOUNT_UI_ENABLED||verifying.current&&!force)return;
-    verifying.current=true;
     const {id,signal}=begin(!force);
+    verifying.current=true;
     try {
       const session=await client.session(signal);
       const learners=await client.learners(signal);
