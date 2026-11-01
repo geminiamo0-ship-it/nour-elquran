@@ -68,6 +68,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
     {ready.teachers.map(teacher=><article className={css.staffCard} key={teacher.id}>
      <div className={css.staffIdentity}>
       <strong>{teacher.name}</strong>
+      <small>معرّف الشيخ للجدولة: <code dir="ltr">{teacher.id}</code></small>
       <span className={teacher.status==='active'?css.staffState:
        `${css.staffState} ${css.staffStateOff}`}>
        {teacher.status==='active'?'نشط':'موقوف'}
