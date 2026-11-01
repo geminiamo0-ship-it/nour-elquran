@@ -1,13 +1,14 @@
 'use client';
 import Link from 'next/link';
 import css from './StudentPremium.module.css';
+import {HomeSubscriptionStatus} from './components/HomeSubscriptionStatus';
 
 export type HomeLesson={time:string;kind?:string;href:string;action:string;live?:boolean};
 export type HomeTask={id:string;label:string;kind:string};
 export type HomeGrade={label:string;value:string};
-export function PremiumHome({name,lesson,tasks,grades,preview=false,basePath='/student'}:{
+export function PremiumHome({name,lesson,tasks,grades,preview=false,basePath='/student',learnerId}:{
  name:string;lesson?:HomeLesson;tasks:readonly HomeTask[];grades:readonly HomeGrade[];
- preview?:boolean;basePath?:string;
+ preview?:boolean;basePath?:string;learnerId?:string;
 }){
  const primary=lesson?.live?'lesson':tasks.length?'task':lesson?'lesson':'new';
  const taskHref=tasks.length&&!preview?basePath+'/training#assignment-'+encodeURIComponent(tasks[0]!.id):basePath+'/training';
@@ -43,6 +44,7 @@ export function PremiumHome({name,lesson,tasks,grades,preview=false,basePath='/s
      {primary==='task'?'ابدأ واجبي الآن':'ابدأ تدريبي الآن'} <span aria-hidden="true">◀</span></Link>
    </section>
   </div>
+  <HomeSubscriptionStatus learnerId={learnerId} preview={preview} basePath={basePath}/>
   <div className={css.quickGrid} aria-label="روابط سريعة">
    <Link className={css.quickLink} href={basePath+"/mushaf"}>
     <svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M12 6C9 4 5 4 2 5v14c4-1 8-1 10 2 2-3 6-3 10-2V5c-3-1-7-1-10 1Zm0 0v15"/></svg>
