@@ -102,7 +102,8 @@ function Frame({children}:{children:ReactNode}){
  </div>;
 }
 export function StudentShell({children}:{children:ReactNode}){
- return ACCOUNT_UI_ENABLED?<ConnectedStudentShell>{children}</ConnectedStudentShell>:<AccountGate/>;
+ return ACCOUNT_UI_ENABLED ? <ConnectedStudentShell>{children}</ConnectedStudentShell>
+    : <AccountGate/>;
 }
 function ConnectedStudentShell({children}:{children:ReactNode}){
  const {state}=useAccount();
