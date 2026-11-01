@@ -1,3 +1,8 @@
+## #317 signed staff decision UI (source candidate; 2026-11-01)
+- apps/web/src/features/admin/admin-paid-slot-decision-client.ts: strict staff POST /v1/staff/academy/paid-slot-decisions, 201/200 typed ACK and network-uncertain error; no browser role or client timestamp.
+- apps/web/src/features/admin/AdminPaidSlotDecision.tsx: reason+confirmation only for pending requests, operationId retained on uncertain retry; mounted in AdminPaidSlotInbox.tsx.
+- apps/web/src/features/admin/{admin-paid-slot-decision-client.test.ts,AdminPaidSlotInbox.test.tsx}: parser, denial, unknown outcome and SSR no-optimistic-spend tests. Requires CI and signed Dev acceptance.
+
 ## #317 staff paid-slot inbox (PR #318, source-only)
 - `apps/web/src/features/admin/admin-paid-slot-client.ts`: strict signed staff GET for `/v1/staff/academy/paid-slot-requests`, exact 100-row D1 response and 40-minute/state/PII validation, no client role claims.
 - `apps/web/src/features/admin/AdminPaidSlotInbox.tsx`: session-scoped RTL read-only pending/approved/rejected list, no fabricated records or staff decision actions; mounted on existing `/admin/requests` by `AdminShell.tsx`.
