@@ -14,7 +14,7 @@ export function PremiumHome({name,lesson,tasks,grades,preview=false}:{
   <section className={css.hero} aria-label="مرحبًا بك في نور القرآن">
    <div><h1>مرحبًا بك يا {name}</h1>
     <p>مبارك عليك رحلتك مع كتاب الله ♡</p></div>
-   <span className={css.heroVisual} aria-hidden="true">۞</span>
+   <span className={css.heroVisual} aria-hidden="true"/>
   </section>
   <div className={css.homeGrid}>
    <section className={css.lessonCard} aria-label="الحصص والجدول">
