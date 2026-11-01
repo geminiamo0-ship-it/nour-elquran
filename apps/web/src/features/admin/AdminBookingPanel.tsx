@@ -29,10 +29,10 @@ export function AdminBookingPanel({mode,session}:{mode:'trial'|'paid';session:Ac
    const r=await fetch(root+p,{credentials:'same-origin',cache:'no-store',signal:ctrl.signal});
    if(!r.ok)throw Error('DENIED');
    return r.json() as Promise<{requests?:Trial[];cycles?:Cycle[]}>;
-  }),...([fetch('/v1/staff/teachers',{
+  }),fetch('/v1/staff/teachers',{
     credentials:'same-origin',cache:'no-store',signal:ctrl.signal
    }).then(async r=>{if(!r.ok)throw Error('DENIED');
-    return r.json() as Promise<{teachers:Teacher[]}>;})])).then(list=>{
+    return r.json() as Promise<{teachers:Teacher[]}>;})]).then(list=>{
    const first=list[0] as {requests?:Trial[];cycles?:Cycle[]}|undefined;
    const second=list[1] as {teachers?:Teacher[]}|undefined;
    if(!ctrl.signal.aborted)setData({phase:'ready',trials:first?.requests??[],
