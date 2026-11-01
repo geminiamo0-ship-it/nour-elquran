@@ -19,10 +19,13 @@ const exact=(r:Row,keys:readonly string[])=>
 
 /** Do not select auth subject, guardian phone, emails, attendance reasons,
  * grades, audio or finance. All rows are bounded and deterministic.
+ * D1 permits padded display names (CHECK validates length(TRIM(name)), not
+ * stored whitespace); normalize selected labels rather than failing the
+ * entire staff collection on otherwise valid academic records.
  */
 export const COLLECTION_QUERIES:Record<AdminCollectionView,string>={
  students:`
- SELECT learner.id AS id,learner.display_name AS name,
+ SELECT learner.id AS id,TRIM(learner.display_name) AS name,
   learner.learner_type AS learnerType,learner.status AS status,
   (SELECT COUNT(*) FROM lessons l WHERE l.learner_id=learner.id) AS lessonCount
  FROM learners learner
@@ -34,7 +37,7 @@ export const COLLECTION_QUERIES:Record<AdminCollectionView,string>={
  schedule:`
  SELECT lesson.id AS id,lesson.starts_at_ms AS startsAtMs,
   lesson.kind AS kind,lesson.status AS status,
-  learner.display_name AS learnerName,staff.name AS teacherName
+  TRIM(learner.display_name) AS learnerName,TRIM(staff.name) AS teacherName
  FROM lessons lesson
  JOIN learners learner ON learner.id=lesson.learner_id
  JOIN teachers teacher ON teacher.id=lesson.actual_teacher_id
@@ -44,7 +47,7 @@ export const COLLECTION_QUERIES:Record<AdminCollectionView,string>={
  LIMIT 51
  `,
  subscriptions:`
- SELECT cycle.id AS id,learner.display_name AS learnerName,
+ SELECT cycle.id AS id,TRIM(learner.display_name) AS learnerName,
   cycle.starts_at_ms AS startsAtMs,cycle.ends_at_ms AS endsAtMs,
   cycle.base_sessions AS baseSessions,
   cycle.rollover_sessions AS rolloverSessions,
