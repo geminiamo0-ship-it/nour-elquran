@@ -1,0 +1,102 @@
+/* Owner-approved premium Islamic learner shell, Issue #322. All content is real React markup. */
+.shell{--noor-forest:#063f2e;--noor-forest-2:#07543b;--noor-gold:#d9ab53;--noor-cream:#fbf5eb;--noor-ink:#123d2f;--noor-line:#e9d9c3;background:#f8f0e5;color:var(--noor-ink);direction:rtl;min-height:100vh;font-family:'Tajawal','Noto Kufi Arabic',Tahoma,sans-serif;font-size:16px}
+.shell *{box-sizing:border-box}
+.frame{display:grid;grid-template-columns:clamp(212px,19vw,275px) minmax(0,1fr);min-height:100vh}
+.sidebar{background:radial-gradient(ellipse at 50% 120%,#19714f 0%,transparent 58%),linear-gradient(145deg,#064330,#003d2b);color:#fff;min-height:100vh;position:sticky;top:0;align-self:start;height:100vh;overflow:hidden;padding:26px 16px;display:flex;flex-direction:column}
+.brand{color:#fff;display:flex;flex-direction:column;align-items:center;gap:0;text-decoration:none;margin:0 0 43px;text-align:center}
+.brandSymbol{height:83px;width:94px;display:grid;place-items:center;font:66px 'Amiri',serif;color:#dfb76a;line-height:1;position:relative}
+.brandSymbol span{position:absolute;top:1px;font-size:22px;right:34px}
+.brand strong{font:700 clamp(25px,2.6vw,37px)/1.4 'Amiri',serif;white-space:nowrap}
+.brand small{font-size:12px;color:#faedce;font-weight:700}
+.sideNav{display:grid;gap:10px;position:relative;z-index:1}
+.navLink,.activeLink{min-height:60px;padding:14px 20px;border-radius:13px;display:flex;align-items:center;gap:15px;font-weight:800;font-size:19px;color:#f7f3e9;text-decoration:none;transition:background .2s}
+.navLink:hover{background:#ffffff18}
+.activeLink{background:linear-gradient(105deg,#4d9368,#2b764f);box-shadow:0 5px 15px #001f1444;color:white}
+.sidebarArt{margin-top:auto;min-height:175px;color:#deb56b;display:flex;align-items:end;justify-content:center;font:100px 'Amiri',serif;opacity:.55;position:relative}
+.sidebarArt span+span{position:absolute;font-size:190px;bottom:-154px;opacity:.35}
+.contentArea{min-width:0}
+.header{height:80px;background:#fffaf5ed;border-bottom:1px solid #e6d7c3;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,3.1vw,50px);position:relative;z-index:10}
+.identity{display:flex;align-items:center;gap:12px}
+.avatar{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#dce5db;color:#204b3b;border:2px solid #b4caba;flex-shrink:0}
+.learnerSwitch{display:flex;flex-direction:column;gap:0}
+.learnerSwitch label{font-size:11px;color:#6c756e}
+.learnerSwitch select{background:transparent;color:#202e25;border:0;font:800 18px 'Tajawal',sans-serif;padding:5px 3px;max-width:220px;cursor:pointer}
+.accountMenu{position:relative}
+.accountMenu summary{cursor:pointer;display:grid;place-items:center;list-style:none;width:30px;height:35px}
+.accountMenu summary::-webkit-details-marker{display:none}
+.accountPopover{position:absolute;top:43px;right:0;background:#fffdf9;border:1px solid var(--noor-line);box-shadow:0 12px 40px #173b2229;border-radius:15px;width:270px;padding:10px;z-index:20;display:grid;gap:6px}
+.accountPopover>a{padding:10px;border-radius:10px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:10px}
+.accountPopover>a:hover{background:#f4ead7}
+.sessionMenu{border-top:1px solid var(--noor-line);padding-top:10px;max-height:190px;overflow:auto}
+.headerActions{position:relative;display:flex;align-items:center}
+.bell{cursor:pointer;border:0;background:transparent;color:#254638;min-height:48px;min-width:48px;display:grid;place-items:center;border-radius:50%}
+.bell:hover{background:#e9f0e8}
+.notices{position:absolute;top:57px;left:0;z-index:21;width:min(490px,calc(100vw - 25px));max-height:min(75vh,650px);overflow:auto;border:1px solid #e4d6c3;background:#fffdf9;border-radius:17px;padding:16px;box-shadow:0 20px 50px #143d2e30}
+.noticeTitle{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ebdec8;padding:0 0 10px;margin-bottom:10px}
+.noticeTitle button{border:0;background:#f1eadc;border-radius:8px;width:32px;height:32px;cursor:pointer}
+.switchWarning{position:absolute;left:60px;top:60px;max-width:320px;color:#8a302b;background:#fff4ef;border:1px solid #bf9085;padding:8px;border-radius:8px;font-size:12px}
+.main{padding:0 clamp(16px,2.5vw,42px) 45px;max-width:1700px;margin-inline:auto;min-width:0}
+.mobileNav{display:none}
+.reader .sidebar{display:none}
+.reader .frame{grid-template-columns:1fr}
+.reader .header{display:none}
+.reader .main{padding:0;max-width:none}
+.reader .mobileNav{display:none}
+.hero{min-height:190px;position:relative;overflow:hidden;margin:0 calc(-1 * clamp(16px,2.5vw,42px)) 0;padding:34px clamp(25px,4.5vw,70px) 22px;background:radial-gradient(circle at 12% 80%,#efd0a870 0%,transparent 35%),linear-gradient(95deg,#f0dfca,#fffbf4 76%);display:flex;align-items:center;justify-content:space-between;gap:15px}
+.hero h1{font:700 clamp(32px,3.5vw,54px)/1.42 'Amiri',serif;color:#063f2e;margin:0}
+.hero p{font-size:clamp(15px,1.35vw,21px);color:#384239;margin:3px 0 0}
+.heroVisual{font:120px/1 'Amiri',serif;color:#bb8b45;opacity:.7;position:relative;width:30%;min-width:150px;text-align:center}
+.heroVisual:before{content:'';position:absolute;inset:-45px 0 -65px;border:7px double #d5a55f56;border-radius:48% 48% 0 0;opacity:.55}
+.homeGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;margin-top:24px}
+.lessonCard,.wirdCard,.softCard,.quickLink{border:1px solid #e9d9c4;border-radius:24px;box-shadow:0 8px 24px #4a382016;min-width:0}
+.lessonCard{background:radial-gradient(circle at 9% 80%,#19795677,transparent 49%),linear-gradient(125deg,#07533b,#003e2d);color:white;padding:28px;position:relative;overflow:hidden;min-height:290px}
+.lessonCard:before{content:'۞';position:absolute;left:12px;bottom:-100px;font:250px 'Amiri',serif;color:#d5ad5b29;pointer-events:none}
+.cardHeading{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.cardHeading svg{flex-shrink:0}
+.cardHeading h2{font:700 clamp(25px,2.5vw,35px)/1.45 'Amiri',serif;margin:0;color:inherit}
+.lessonCard .cardHeading svg{color:#dfb45f}
+.cardSub{margin:0 0 16px;color:inherit;opacity:.89;font-size:15px}
+.lessonFacts{display:flex;flex-wrap:wrap;gap:12px;position:relative;margin:15px 0}
+.lessonFacts>span{border:1px solid #ffffff32;border-radius:12px;padding:11px 14px;background:#ffffff0c;line-height:1.6;font-weight:800}
+.primaryGold,.primaryGreen{min-height:52px;border-radius:13px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:17px;text-decoration:none;position:relative;padding:12px 18px;transition:transform .15s ease}
+.primaryGold:hover,.primaryGreen:hover{transform:translateY(-2px)}
+.primaryGold{background:linear-gradient(140deg,#f7d991,#e6b859);color:#193428;border:1px solid #f4dc9c}
+.primaryGreen{background:linear-gradient(125deg,#177450,#05543c);color:#fff;border:1px solid #0a5037}
+.wirdCard{background:#fffaf3;padding:28px;min-height:290px}
+.wirdCard .cardHeading{color:#183d30}
+.wirdCard .cardHeading svg{color:#b88636}
+.wirdRows{display:grid;gap:10px;margin:18px 0}
+.wirdRow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;background:#eef2e5;border-radius:13px;font-size:15px}
+.wirdRow strong{white-space:nowrap}
+.wirdRow span{font-weight:700;line-height:1.7}
+.wirdRow:nth-child(even){background:#f4edde}
+.emptyWird{color:#65716a;font-size:15px;line-height:1.85;margin:17px 0}
+.quickGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin:18px 0}
+.quickLink{background:#fffaf4;display:flex;align-items:center;justify-content:space-between;padding:18px 21px;gap:10px;text-decoration:none;color:#1b4032}
+.quickLink:hover{border-color:#c9a26c;box-shadow:0 8px 26px #694a2528}
+.quickLink svg{color:#b48035;flex-shrink:0}
+.quickLink strong{font-size:19px}
+.quickLink span{display:block;font-size:13px;color:#6b716a}
+.homeBottom{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+.softCard{background:#fffbf6;padding:24px}
+.softCard h2{font:700 26px 'Amiri',serif;margin:0 0 12px}
+.softCard p{font-size:15px;line-height:1.85;color:#58655b}
+.gradeSummary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.gradeSummary div{background:#f6f0e5;border-radius:11px;padding:12px;text-align:center}
+.gradeSummary strong{display:block;color:#114a34}
+.gradeSummary span{font-size:12px}
+.cardLink{font-weight:800;color:#9b6b23;text-decoration:none}
+.errorCard{padding:28px;background:#fff4f0;border:1px solid #b9897e;border-radius:18px;margin:24px 0}
+.errorCard button{background:#07533b;color:#fff;padding:10px 15px;border:0;border-radius:9px;cursor:pointer}
+.loadingCard{padding:25px;background:#fffbf5;border:1px solid #eadccb;border-radius:18px;margin-top:24px}
+.lessonTabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}
+.lessonTab,.lessonTabActive{border:1px solid #e4d3bc;background:#fffaf2;color:#315344;border-radius:12px;min-height:46px;padding:10px 18px;font-weight:800;font-size:15px;cursor:pointer}
+.lessonTabActive{background:#07513a;border-color:#07513a;color:#fff}
+.sectionIntro{padding-top:25px}
+.sectionIntro h1{font:700 clamp(28px,3vw,42px) 'Amiri',serif;margin:0;color:#063f2e}
+.sectionIntro p{color:#6b756c;margin:0}
+.shell :global(a:focus-visible),.shell :global(button:focus-visible){outline:3px solid #d4ab50;outline-offset:3px}
+@media(max-width:1100px){.frame{grid-template-columns:210px minmax(0,1fr)}.navLink,.activeLink{font-size:16px;padding:12px}.homeGrid{gap:13px}.lessonCard,.wirdCard{padding:20px}.hero{min-height:155px}}
+@media(max-width:800px){.frame{display:block}.sidebar{display:none}.header{height:69px;padding:0 16px}.main{padding:0 15px 105px}.hero{margin:0 -15px;padding:23px 21px;min-height:136px}.heroVisual{font-size:75px;min-width:90px}.homeGrid{gap:12px}.mobileNav{position:fixed;bottom:0;right:0;left:0;z-index:40;display:grid;grid-template-columns:repeat(4,1fr);background:#fffaf2;box-shadow:0 -5px 24px #102f2020;border-top:1px solid #e2d4bf;padding:8px 6px max(8px,env(safe-area-inset-bottom))}.mobileLink,.mobileActive{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;min-height:54px;color:#557062;text-decoration:none;border-radius:10px;font-size:12px;font-weight:800}.mobileActive{background:#e8f2e7;color:#064c36}.reader .mobileNav{display:none}}
+@media(max-width:650px){.homeGrid,.homeBottom{grid-template-columns:1fr}.quickGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.quickLink{padding:12px 7px;display:grid;justify-items:center;text-align:center;gap:4px;border-radius:14px}.quickLink strong{font-size:13px}.quickLink span{font-size:10px}.quickLink svg{width:22px}.hero h1{font-size:32px}.hero p{font-size:13px}.heroVisual{font-size:65px;min-width:62px}.lessonCard,.wirdCard{padding:20px;min-height:0;border-radius:18px}.lessonCard:before{font-size:190px}.cardHeading h2{font-size:27px}.softCard{padding:17px}.softCard h2{font-size:23px}.learnerSwitch select{font-size:15px;max-width:163px}.learnerSwitch label{display:none}.avatar{width:39px;height:39px}.header{padding:0 10px}.identity{gap:5px}.lessonFacts>span{padding:9px}.primaryGold,.primaryGreen{min-height:48px}.sectionIntro{padding-top:16px}}
+@media(prefers-reduced-motion:reduce){.shell *{transition:none!important;animation:none!important}}
