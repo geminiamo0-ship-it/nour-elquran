@@ -1,3 +1,8 @@
+## #317 Admin paid-slot inbox source gate (2026-11-01)
+- Vitest `admin-paid-slot-client.test.ts`: accepts only verified staff GET contract, max 100 unique request IDs, UUIDs, padded but nonblank names, 40-minute intervals, approved lesson IDs, pending/rejected null IDs; rejects unexpected PII, invalid/coerced fields and duplicate requests.
+- Fetch uses same-origin credentials, no-store, redirect error and no client staff assertion. 403, 503, malformed JSON and offline are errors, never empty inbox. `AdminPaidSlotInbox.test.tsx` checks initial SSR renders loading gate with no synthetic student or false approval/debit.
+- Exact-head lint/typecheck/Vitest/build and native D1 required before review; isolated Cloudflare Dev 0031 signed staff vs ungranted/revoked, guardian/sibling, mobile 360/390/1280 and real decision replay still OPEN. This is **not** evidence of CI or Dev pass.
+
 ## #317 owner paid-slot status read UI (source-only, 2026-11-01)
 - Vitest `paid-slot-requests-client.test.ts` asserts strict response fields, bounded unique requests, 40-minute intervals, approved lesson ID vs pending/rejected null, PII rejection, same-origin signed no-store GET, malformed learner ID denied before fetch, 404/503/offline never rendered as zero rows.
 - Signed Lessons component is learner-keyed and aborts old request on switch. Browser 360/390 and sibling/foreign-owner/Dev D1 0031 checks remain required. Exact-head CI not yet observed for this slice; no operational acceptance.
