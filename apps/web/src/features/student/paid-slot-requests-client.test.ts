@@ -103,9 +103,6 @@ describe('#317 signed guardian paid-slot proposal contract',()=>{
    {...input,startsAtMs:'2026-11-01'},
    {...input,paid:true},
   ]){
-   // The runtime validates the declared fields; unknown keys are rejected
-   // by the signed Worker rather than becoming a browser authorization source.
-   if('paid' in invalid)continue;
    await expect(submitPaidSlotProposal(A,invalid as typeof input))
     .rejects.toMatchObject({status:400});
   }
