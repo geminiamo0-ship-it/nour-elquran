@@ -1,3 +1,9 @@
+## 2026-11-01 — #317 Draft PR #318: CI regression and approval guard repair
+- Inspected actual [Verify 41342708600](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41342708600) on head `7e51b1af`: 3/4 jobs success; code-quality failed in Python unit tests, not lint or TS. Repro was a post-request Sheikh qualification revocation still allowing approval and one decision row.
+- Updated migration 0031 to enforce **fresh, transactional approval-time** learner/owner and Sheikh qualification/status/assignment eligibility. Added suspended-Sheikh negative regression to the native test. Rejection of a stale proposal remains permitted, without a lesson/spend.
+- No local full test or remote Dev test was run in this turn. **New head CI must be checked before claiming success**; source-only changes remain on `feat/317-paid-slot-request-ledger`. No merge, feature flag, Production, provider, WhatsApp or audio changes.
+- NEXT: inspect latest PR #318 head and its matching Verify jobs; if red, fetch failing job logs and repair; if green, obtain independent review and signed isolated Dev migration 0031 + owner/staff/sibling/credit and mobile acceptance before ready-for-review/merge.
+
 ## 2026-11-01 — #317 paid-slot security test follow-up
 - Prior Draft head `f8d0aa3b8f9caa2240920db5978bc101e3ee6b56` completed [Verify 41337169021](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41337169021) SUCCESS 4/4. Do not transfer that status to a later HEAD.
 - Branch `feat/317-paid-slot-request-ledger` now includes a native regression for post-request learner archival/Sheikh qualification revocation: approval must atomically fail with no lesson/credit debit; explicit staff rejection remains possible. Await exact-head Verify and independent review.
