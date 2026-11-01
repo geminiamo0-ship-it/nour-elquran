@@ -1,3 +1,8 @@
+## 2026-11-01 — #317 D1 expired pending request recovery, continuation of Draft PR #318
+- Latest checked main `b54eeb84ac3cf3715bebbaa27f492e85a4d761fd`; Draft #318 head was `447b8b9` with prior 4/4 Verify #41280097038 before this follow-up. No independent PR reviews.
+- Migration 0031 pending-request guard previously treated an expired undecided proposal as pending forever. It now excludes old slots at/before the approval cutoff relative to NEW.requested_at_ms (must be trusted server time when API is implemented). Added native regression proving old approval still fails and fresh approval debits exactly once.
+- NEXT: inspect exact-head PR #318 GitHub Verify after this change, fix failures, obtain independent D1/security review, then implement signed owner/staff API + UI as separately verified slices; test actual Dev migration and sibling isolation. No Production/WhatsApp/payments/child audio or cumulative ink flag changes. Keep #317 OPEN.
+
 ## 2026-11-01 — #317 guardian paid slot requests, migration-only slice
 - Re-read AGENTS, status, master plan, engineering/security/test guidance and current GitHub #315/#316/#317/#314. Baseline main `1d8abffaea34d1da5faac9f91c34ff761b4617b8` after merged Admin MVP #316. New branch `feat/317-paid-slot-request-ledger` implements only D1 0031 + full-migration native tests, with no HTTP exposure.
 - Decision: never debit credit on a guardian proposal; approval must pass fresh staff grant and reuse #315 booking trigger in the SAME SQLite transaction. On any conflict the decision insert rolls back and request remains pending. Rejection never creates lesson or spends. Preserve immutable audit and profile isolation.
