@@ -128,7 +128,7 @@ export function AdminShell(){
    <div className={css.brand}><span className={css.brandMark} aria-hidden="true">۞</span>
     <div><strong>نور القرآن</strong><small>لوحة إدارة الأكاديمية</small></div></div>
    <div className={css.topActions}>
-    <span className={css.readonlyTag}>وضع القراءة فقط</span>
+    <span className={css.readonlyTag}>الصلاحيات تُراجع قبل كل إجراء</span>
     <button type="button" className={css.menuButton}
      aria-controls="admin-mobile-navigation" aria-expanded={menuOpen}
      onClick={()=>setMenuOpen(v=>!v)}>القائمة</button>
