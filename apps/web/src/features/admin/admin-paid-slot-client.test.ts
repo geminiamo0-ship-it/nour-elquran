@@ -19,6 +19,8 @@ describe('#317 signed staff paid-slot inbox',()=>{
   expect(parseAdminPaidSlots(payload)).toEqual([row]);
   expect(parseAdminPaidSlots({...payload,requests:[
    {...row,state:'approved',lessonId:D}]})).toHaveLength(1);
+  expect(parseAdminPaidSlots({...payload,requests:[
+   {...row,state:'expired',lessonId:null}]})).toHaveLength(1);
   for(const bad of [
    {...payload,requests:[row,row]},
    {...payload,requests:[{...row,phone:'private'}]},
@@ -29,6 +31,7 @@ describe('#317 signed staff paid-slot inbox',()=>{
    {...payload,requests:[{...row,endsAtMs:row.endsAtMs+1}]},
    {...payload,requests:[{...row,state:'approved'}]},
    {...payload,requests:[{...row,state:'rejected',lessonId:D}]},
+   {...payload,requests:[{...row,state:'expired',lessonId:D}]},
    {...payload,requests:Array.from({length:101},()=>row)},
    {...payload,guardianContact:'private'},
    {...payload,requestId:{}},
