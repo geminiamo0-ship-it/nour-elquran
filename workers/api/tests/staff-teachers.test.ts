@@ -1,6 +1,6 @@
 import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
-import {parseTeacherAction,canManageTeachers,VERIFIED_STAFF_MANAGE_SQL} from '../src/staff-teachers.ts';
+import {parseTeacherAction,canManageTeachers,issueTeacherRoleAction,VERIFIED_STAFF_MANAGE_SQL} from '../src/staff-teachers.ts';
 import type {CoreDatabase} from '../src/bindings.ts';
 
 const valid={targetUserId:'teacher-subject',action:'provision',reason:'Documentation verified',
@@ -31,4 +31,38 @@ test('unverified actor fails closed before database access and missing grant den
   assert.equal(await canManageTeachers(never,''),false);
   const denied={prepare:()=>({bind:()=>({first:async()=>null})})} as unknown as CoreDatabase;
   assert.equal(await canManageTeachers(denied,'random-user'),false);
+});
+
+test('atomic active-lesson trigger becomes 409 even through legacy teacher-actions',async()=>{
+  const calls:string[]=[];
+  const db={prepare:(sql:string)=>{
+    calls.push(sql);
+    return {bind:()=>({
+      first:async()=>sql.includes('staff_grants')?{subject:'verified-staff'}:
+        sql.includes('SELECT id FROM teachers')?{id:'teacher-1'}:null,
+      run:async()=>{throw Error('D1_ERROR: active classes block teacher transition');},
+    })};
+  }} as unknown as CoreDatabase;
+  const response=await issueTeacherRoleAction(db,'verified-staff',{
+    targetUserId:'teacher-subject',action:'suspend',
+    reason:'Scheduled lesson must remain staffed',
+    operationId:'00000000-0000-4000-8000-000000000002',
+  },1800000000000);
+  assert.deepEqual(response,{status:409,code:'ACTIVE_CLASSES_BLOCK_TRANSITION'});
+  assert.equal(calls.filter(sql=>sql.includes('INSERT INTO teacher_role_events')).length,1);
+  // The failed INSERT has no committed event; no false success or replay.
+  assert.equal(calls.filter(sql=>sql.includes('WHERE operation_id=?')).length,2);
+});
+
+test('unrelated D1 write failures are not silently reported as policy conflicts',async()=>{
+  const db={prepare:(sql:string)=>({bind:()=>({
+    first:async()=>sql.includes('staff_grants')?{subject:'verified-staff'}:
+      sql.includes('SELECT id FROM teachers')?{id:'teacher-1'}:null,
+    run:async()=>{throw Error('database connection unavailable');},
+  })})} as unknown as CoreDatabase;
+  await assert.rejects(issueTeacherRoleAction(db,'verified-staff',{
+    targetUserId:'teacher-subject',action:'suspend',
+    reason:'Scheduled lesson must remain staffed',
+    operationId:'00000000-0000-4000-8000-000000000003',
+  },1800000000000),/database connection unavailable/);
 });

@@ -1,3 +1,9 @@
+## 2026-11-01 — Single Admin operations candidate #309
+- After owner confirmed their signed Dev Admin worked, source branch feat/admin-consolidated-operations-20261101 wires 3 existing audited D1 workflows into existing RTL Admin pages. Preserve current read-only GET lists and bounded roles; source does NOT imply deployment.
+- A new POST /v1/staff/teachers/transition resolves roster teacherId to private auth subject on the SERVER after fresh roles.manage grant, then uses existing issueTeacherRoleAction and immutable D1 role event. New migration 0027 prevents suspension/de-qualification with a future/live class at database write time. Never show the underlying auth subject in staff roster API or logs.
+- /admin/schedule: assign/revoke/cancel only; booking intentionally excluded until proper trial and paid academic entitlement checks. /admin/attendance: review only with independent attendance.review D1 permission; no automatic compensation, no financial adjustments. Any network-unknown write requires SAME operationId/payload explicit replay.
+- Code and acceptance: docs/ADMIN_OPERATIONS_PACKAGE_20261101.md. NEXT examine exact-head 4/4 Verify, fix typecheck/unit/native migration regressions, get independent auth/privacy review, merge only after gates; source-pinned Cloudflare staging 0027 plus signed staff/guardian/Sheikh and 360/390/1280 verification. Do not touch Production, finance or WhatsApp; #20–#36 remain open.
+
 ## 2026-11-01 — Admin consolidated read-only four-view delivery (#307)
 
 - Baseline Noor `main@1c9791540d6bc1b6500da27d2bb613209387a8d3` verified GitHub Actions. Owner personally accessed signed Admin landing (auth grant already provisioned by DB owner) and asked to finish all at once. Do not confuse this with Production security review; staff MFA and phone verification lifecycle still pending.

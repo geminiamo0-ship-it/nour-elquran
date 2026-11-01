@@ -27,6 +27,7 @@ import {verifiedOwner} from '../published-assignments.ts';
 import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '../staff-teachers.ts';
 import {readStaffOverview} from '../staff-overview.ts';
 import {readAdminTeachers} from '../staff-teacher-directory.ts';
+import {transitionListedTeacher} from '../staff-teacher-transition.ts';
 import {isAdminCollectionView,readStaffCollection} from '../staff-collections.ts';
 import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts';
 import { checkTeacherClassroomAccess, checkOwnedLearnerClassroomAccess } from '../classroom-access.ts';
@@ -524,6 +525,22 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     const result=await readAdminTeachers(env.DB,session.user.id);
     const {status,...body}=result;return reply(status,body,requestId);
   }
+  // #309: roster transition resolves auth subject on D1, never in the browser.
+  if(path==='/v1/staff/teachers/transition'){
+    if(request.method!=='POST')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    if(env.NOOR_ADMIN_PORTAL_ENABLED!=='true')
+      return reply(404,{code:'NOT_FOUND'},requestId);
+    if(!await canManageTeachers(env.DB,session.user.id))
+      return reply(403,{code:'STAFF_ACCESS_DENIED'},requestId);
+    const guard=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='teacher_role_active_lesson_guard'"
+    ).first<{version:number}>();
+    if(guard?.version!==1)
+      return reply(503,{code:'TEACHER_ROLE_GUARD_NOT_READY'},requestId);
+    const result=await transitionListedTeacher(env.DB,session.user.id,
+      await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
   // #307: four strict fixed-query D1 views; never accept a caller role/SQL.
   if(path==='/v1/staff/collections'){
     if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
@@ -586,6 +603,14 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
       "SELECT version FROM noor_schema_meta WHERE component='attendance_cases'"
     ).first<{version:number}>();
     if(schema?.version!==1)return reply(503,{code:'ATTENDANCE_SCHEMA_NOT_READY'},requestId);
+    // #309: never accept a review before the verified-staff D1 guard exists.
+    if(!list){
+      const security=await env.DB.prepare(
+        "SELECT version FROM noor_schema_meta WHERE component='attendance_review_verified_actor_guard'"
+      ).first<{version:number}>();
+      if(security?.version!==1)
+        return reply(503,{code:'ATTENDANCE_REVIEW_GUARD_NOT_READY'},requestId);
+    }
     const result=list
       ?await listStaffAttendanceAppeals(env.DB,session.user.id)
       :await reviewAttendanceAppeal(env.DB,session.user.id,await readObject(request));

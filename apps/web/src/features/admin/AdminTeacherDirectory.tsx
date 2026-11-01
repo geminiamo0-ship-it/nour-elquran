@@ -4,6 +4,8 @@ import type {AccountSession} from '@/features/account';
 import {AdminTeachersError,fetchAdminTeachers,type AdminTeacherDirectoryValue}
  from './admin-teachers-client';
 import css from './AdminPortal.module.css';
+import {AdminOperations} from './AdminOperations';
+import type {AdminActionResult} from './admin-operations-client';
 
 type State=
  |{phase:'loading'}
@@ -17,6 +19,7 @@ const cairo=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',
 export function AdminTeacherDirectory({session}:{session:AccountSession}){
  const [state,setState]=useState<State>({phase:'loading'});
  const [retry,setRetry]=useState(0);
+ const [latestAck,setLatestAck]=useState<{session:AccountSession;value:AdminActionResult}|null>(null);
  useEffect(()=>{
   const controller=new AbortController();
   setState({phase:'loading'});
@@ -35,7 +38,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
    <p className={css.kicker}>إدارة الشيوخ · قراءة فقط</p>
    <h1 id="admin-teachers-heading">دليل شيوخ الأكاديمية</h1>
    <p>بيانات أكاديمية محدودة من Cloudflare D1 بعد التحقق من تصريح الإدارة.
-    لا توجد هنا صلاحية تعيين الطلاب أو اعتماد مؤهلات الشيوخ أو تغيير حالة الحساب.</p>
+    السجل للعرض والتحقق. العمليات المعتمدة تظهر أسفله، وتتطلب هوية حساب موثقة وسببًا وتأكيدًا من قاعدة البيانات.</p>
   </section>
   <div className={css.staffTopline}>
    <h2>سجل الشيوخ</h2>
@@ -67,6 +70,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
     {ready.teachers.map(teacher=><article className={css.staffCard} key={teacher.id}>
      <div className={css.staffIdentity}>
       <strong>{teacher.name}</strong>
+      <small>معرّف الشيخ للجدولة: <code dir="ltr">{teacher.id}</code></small>
       <span className={teacher.status==='active'?css.staffState:
        `${css.staffState} ${css.staffStateOff}`}>
        {teacher.status==='active'?'نشط':'موقوف'}
@@ -80,5 +84,10 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
     </article>)}
    </div>}
   </>}
+  {latestAck?.session===session&&<p role="status" className={css.staffInfo}>
+   تم تأكيد الإجراء وحفظه: {latestAck.value.code}. جارٍ تحديث السجل من الخادم.
+  </p>}
+  {ready&&<AdminOperations kind="teacher" session={session} teachers={ready.teachers}
+   onApplied={value=>{setLatestAck({session,value});setRetry(n=>n+1);}}/>}
  </div>;
 }

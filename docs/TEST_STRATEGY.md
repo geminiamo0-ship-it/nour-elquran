@@ -1,3 +1,9 @@
+## #309 Admin operation release gates (2026-11-01)
+- Unit: strict teacher roster transition parser, authorized staff pre-query, active class guard, exact client payload/action allowlist, 401/403, network-uncertain write (no false success/retry), SSR forms locked unless explicit consent.
+- Native SQL: all migrations through 0027; active scheduled/live Sheikh cannot be suspended or de-qualified, no immutable event on denial, cancellation then transition, unrelated teacher permitted, and legacy B2 endpoint inherits same trigger.
+- Isolated Dev: verified roles.manage staff vs unsigned/guardian/Sheikh/revoked; independent attendance.review grant; D1 audit uniqueness and explicit same UUID replay; all three pages signed and RTL at 360/390/768/1280/1440. Hide real child names in logs/screenshots.
+- Block merges/deploy until GitHub Verify at exact HEAD, independent security review and staged 0027 migration + signed remote acceptance. No Production, payment or WhatsApp claims.
+
 ## #307 full consolidated safe Admin Phase B source gates
 
 - Backend `workers/api/tests/staff-collections.test.ts`: four immutable SQL selectors and 51-row LIMIT, grant before query, static fields with no contacts/private reasons, strict row types/count/status, no duplicate IDs, zero-row truth, 50-row truncation, D1 malformed result 503. Invalid `view` or extra query parameters 400 before querying D1.

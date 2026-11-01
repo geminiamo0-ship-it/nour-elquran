@@ -1,3 +1,9 @@
+## 2026-11-01 — Admin operational package #309 (source candidate; NOT deployed)
+- Consolidated operational Admin UI source connects existing signed D1 teacher, schedule and attendance audit commands while keeping read-only overviews and subscription ledger intact. New roster teacher transition endpoint resolves private auth subject only inside authorized Worker; no browser contact/identity leak.
+- D1 0027 adds atomic prohibition on suspension or qualification revocation while scheduled/live lessons remain. UI exposes assignment/revocation and 6h-policy cancellation, **not** manual paid lesson creation; attendance adjudication requires separate attendance.review role. All actions demand reason, confirmation, operationId, authoritative ACK, and explicit uncertain-network replay.
+- Files: apps/web/src/features/admin/AdminOperations*, admin-operations-client*, staff-teacher-transition.ts, auth/routes.ts, migration 0027, backend/frontend and Python tests; canonical runbook docs/ADMIN_OPERATIONS_PACKAGE_20261101.md.
+- NOT done: verified GitHub CI, independent security review, staging D1 migration and signed two-role E2E/browser acceptance, teacher applicant invite/CV, payments, WhatsApp, compensation and full Admin program. No Production change. NEXT: exact-head CI/repair, review, isolated Dev signed staging and screen acceptance.
+
 ## 2026-11-01 — Admin consolidated Phase B (Issue #307, source candidate)
 
 - Owner requested closing the Admin Dashboard in one integrated pass rather than many small tasks. The approved safe scope is **four more real, staff-gated read-only D1 views**, alongside the already deployed signed overview and teacher directory. Full 16-program operational Admin is **NOT complete**: finance provider, payment settlement, staff invites/reviews, attendance decisions, billing/compensations and WhatsApp remain separately gated.

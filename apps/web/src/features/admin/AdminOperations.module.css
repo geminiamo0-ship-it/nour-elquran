@@ -1,0 +1,42 @@
+.panel{
+ margin-top:1.25rem;padding:1.25rem;max-width:100%;
+ border:1px solid #d8dfd0;border-radius:18px;
+ background:#fffefa;color:#26382d;box-shadow:0 10px 26px rgb(35 66 44 / 5%);
+ direction:rtl;
+}
+.header{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.header h2{margin:.25rem 0 .5rem;font-size:clamp(1.08rem,2vw,1.45rem)}
+.header small{font-weight:700;color:#668165}
+.panel>p{line-height:1.85;color:#425a48;font-size:.92rem}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:.95rem 1rem;margin-top:1rem}
+.form label{display:flex;flex-direction:column;gap:.35rem;
+ font-size:.9rem;font-weight:700;min-width:0}
+.form input:not([type=checkbox]),.form textarea,.form select{
+ padding:.72rem .75rem;border:1px solid #c6d2c5;
+ border-radius:10px;color:#1f392b;background:white;
+ font:inherit;width:100%;min-width:0;box-sizing:border-box}
+.form :is(input,select,textarea):focus-visible,
+.form button:focus-visible,.warning button:focus-visible{
+ outline:3px solid #b99237;outline-offset:3px}
+.form textarea{resize:vertical;min-height:82px}
+.form .check{grid-column:1/-1;flex-direction:row;align-items:flex-start;
+ font-size:.88rem;font-weight:500;line-height:1.7;padding:.6rem;
+ background:#f8f9f4;border-radius:10px}
+.check input{flex:none;margin-top:.32rem;accent-color:#326445}
+.form button,.warning button{
+ border:0;border-radius:10px;padding:.8rem 1.15rem;
+ background:#276243;color:white;font:inherit;font-weight:700;
+ cursor:pointer;width:fit-content}
+.form button:disabled{opacity:.5;cursor:not-allowed}
+.error,.ok,.warning{margin-top:1rem;padding:.9rem 1rem;border-radius:12px}
+.error{background:#fff0ee;color:#8c302c!important}
+.ok{background:#edf7ee;color:#24552d!important}
+.warning{background:#fff7e8;border:1px solid #e5d2a8;color:#655019}
+.warning p{margin:.4rem 0;line-height:1.7}
+.warning code{display:block;direction:ltr;overflow-wrap:anywhere;margin:.65rem 0}
+.warning button{background:#7b591d}
+.panel .note{border-top:1px solid #e5e9de;padding-top:.8rem;
+ font-size:.8rem;color:#637366}
+@media(max-width:720px){.form{grid-template-columns:minmax(0,1fr)}.panel{padding:.95rem}
+.form button{width:100%}}

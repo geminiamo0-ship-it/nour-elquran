@@ -164,10 +164,14 @@ export async function listTeacherAttendance(db:CoreDatabase,subject:string){
  return {status:200,code:'ATTENDANCE_CASES',incidents:rows.results} as const;
 }
 async function staffAllowed(db:CoreDatabase,subject:string){
+ // #309: attendance reviewers must meet the same independently-verified
+ // identity standard as staff teachers. Never accept a caller role assertion.
  const row=await db.prepare(`SELECT 1 AS allowed FROM staff_grants g
   JOIN accounts a ON a.auth_subject=g.auth_subject
+  JOIN auth_users u ON u.id=g.auth_subject
   WHERE g.auth_subject=? AND g.permission='attendance.review'
-   AND g.revoked_at_ms IS NULL AND a.status='active' LIMIT 1`)
+   AND g.revoked_at_ms IS NULL AND a.status='active'
+   AND u.phone_number_verified=1 LIMIT 1`)
  .bind(subject).first<{allowed:number}>();
  return row?.allowed===1;
 }

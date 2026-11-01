@@ -1,3 +1,9 @@
+## 2026-11-01 Admin operational package #309
+- apps/web/src/features/admin/{AdminOperations.tsx,AdminOperations.module.css,admin-operations-client.ts,admin-operations.test.tsx} — signed, confirmed and audit-aware operations UI/client for existing teacher, schedule and attendance pages; deliberately no paid booking.
+- workers/api/src/staff-teacher-transition.ts — server-only teacher roster ID -> private auth subject resolution and role-action reuse; registered in workers/api/src/auth/routes.ts via POST /v1/staff/teachers/transition.
+- workers/api/migrations/0027_teacher_active_lesson_guard.sql — transaction-safe no-orphan active lessons when Sheikh status changes; workers/api/tests/{staff-teacher-transition.test.ts,test_teacher_role_active_lesson_guard.py} verify contracts.
+- docs/ADMIN_OPERATIONS_PACKAGE_20261101.md — current scope, remaining Admin blockers, permission and Dev acceptance matrix.
+
 ## #307 consolidated staff collections
 
 - `workers/api/src/staff-collections.ts`: four fixed SQL queries and exact field validators: student profiles, -7/+30-day lesson calendar, monthly subscription cycle lesson units and attendance appeal statuses. Every request checks current verified active D1 `roles.manage` grant before reading. Maximum 50 rows + honest `truncated`, no phone, guardian identity, incident reasons, finance or dynamic query values.
