@@ -23,7 +23,6 @@ const actions:Record<AdminOperationKind,readonly {id:string;label:string}[]>={
  schedule:[
   {id:'assign',label:'إسناد شيخ لطالب'},
   {id:'revoke',label:'إلغاء إسناد'},
-  {id:'book',label:'حجز حصة'},
   {id:'cancel',label:'إلغاء حصة'}],
  attendance:[{id:'accepted',label:'قبول الاعتراض'},{id:'rejected',label:'رفض الاعتراض'}],
 };
@@ -33,7 +32,7 @@ const titles:Record<AdminOperationKind,string>={
 };
 const notes:Record<AdminOperationKind,string>={
  teacher:'الهوية المطلوبة هي معرّف حساب المصادقة الموثق، وليست اسم الشيخ أو معرّف ملفه. لا يوجد إرسال دعوة تلقائي.',
- schedule:'الجدولة تُطبَّق فقط عند نجاح فحوص التوفر والإسناد والتعارض على D1. الحجز ٤٠ دقيقة والإلغاء يخضع لحد الست ساعات.',
+ schedule:'تُطبّق عمليات الإسناد وإلغاؤه وإلغاء الحصص فقط بعد التحقق من D1. الحجز المدفوع أو اليدوي غير متاح هنا حتى تكتمل أهلية الرصيد.',
  attendance:'قرار الحضور يحتاج صلاحية attendance.review مستقلة. القرار لا يخصم رصيدًا ولا يصدر تعويضًا تلقائيًا.',
 };
 const errors:Record<string,string>={
