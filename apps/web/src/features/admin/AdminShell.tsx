@@ -142,7 +142,7 @@ export function AdminShell(){
     {route==='/admin'
      ?<AdminOverviewPanel value={read.value} onRefresh={()=>setRetry(n=>n+1)}/>
      :route==='/admin/teachers'
-      ?<AdminTeacherDirectory session={session}/>
+      ?<AdminTeacherDirectory session={account.session}/>
       :<AdminPendingSection route={route}/>}
    </main>
   </div>
