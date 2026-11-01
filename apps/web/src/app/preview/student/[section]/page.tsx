@@ -1,5 +1,5 @@
 import {notFound} from 'next/navigation';
-import {StudentSection} from '@/features/student/StudentSection';
+import {StudentSection} from '@/features/student';
 const allowed=['lessons','training','mushaf'] as const;
 export function generateStaticParams(){
  return allowed.map(section=>({section}));
