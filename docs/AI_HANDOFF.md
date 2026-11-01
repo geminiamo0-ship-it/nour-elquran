@@ -1,3 +1,8 @@
+## 2026-11-01 — #317 D1 unique-race idempotency continuation (Draft PR #318)
+- Read current main/PR/Issue and guardrails. Fixed a source gap: simultaneous same-operation guardian or staff POST could both miss initial SELECT, then losing INSERT returned 409 although matching event was saved. The paid-slot module now re-reads operationId on recognized constraint failure and returns winner requestId/lessonId only for same actor and full immutable payload, otherwise 409.
+- Node regression simulates both race paths, mismatch and revoked-role cases. Candidate tests, NOT verified execution. Clone cannot resolve github.com here; no local test. Exact-head GitHub Verify absent for previous head and must be checked for new head.
+- NEXT: check PR HEAD and CI, fix failures, independent SQL/auth review, then connected Student/Admin UI and signed Cloudflare Dev D1 0031 owner/staff/sibling/mobile E2E. No merge, remote migration, Production or sensitive feature activation.
+
 ## 2026-11-01 — #317 expired paid-slot POST replay hardening (PR #318, source only)
 - Re-read current main, AGENTS/plan/security/test/engineering docs and #317 before editing. Found owner POST rejected identical idempotent retry when its original proposed slot became too old: time validation preceded operationId lookup.
 - On existing Draft PR #318, commits `7848381` (move temporal guard after owner-scoped exact replay) and `f96035c` (Node regression for expired exact retry, fresh expired denial and revoked owner) preserve immutable D1 request semantics without allowing stale new bookings.
