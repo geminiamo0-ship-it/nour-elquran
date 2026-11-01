@@ -5,12 +5,12 @@ import css from './StudentPremium.module.css';
 export type HomeLesson={time:string;kind?:string;href:string;action:string;live?:boolean};
 export type HomeTask={id:string;label:string;kind:string};
 export type HomeGrade={label:string;value:string};
-export function PremiumHome({name,lesson,tasks,grades,preview=false}:{
+export function PremiumHome({name,lesson,tasks,grades,preview=false,basePath='/student'}:{
  name:string;lesson?:HomeLesson;tasks:readonly HomeTask[];grades:readonly HomeGrade[];
- preview?:boolean;
+ preview?:boolean;basePath?:string;
 }){
  const primary=lesson?.live?'lesson':tasks.length?'task':lesson?'lesson':'new';
- const taskHref=tasks.length&&!preview?'/student/training#assignment-'+encodeURIComponent(tasks[0]!.id):'/student/training';
+ const taskHref=tasks.length&&!preview?basePath+'/training#assignment-'+encodeURIComponent(tasks[0]!.id):basePath+'/training';
  return <div dir="rtl">
   <section className={css.hero} aria-label="مرحبًا بك في نور القرآن">
    <div><h1>مرحبًا بك يا {name}</h1>
@@ -27,7 +27,7 @@ export function PremiumHome({name,lesson,tasks,grades,preview=false}:{
      <div className={css.lessonFacts}><span>{lesson.time}</span>{lesson.kind&&<span>{lesson.kind}</span>}</div>
      <Link href={lesson.href} className={css.primaryGold}>{lesson.action} <span aria-hidden="true">◀</span></Link>
     </>:<><p className={css.cardSub}>لا توجد حصة مجدولة الآن. ابدأ رحلتك من صفحة الحصص.</p>
-     <Link href="/student/lessons" className={css.primaryGold}>عرض المواعيد والحجز <span aria-hidden="true">◀</span></Link></>}
+     <Link href={basePath+"/lessons"} className={css.primaryGold}>عرض المواعيد والحجز <span aria-hidden="true">◀</span></Link></>}
    </section>
    <section className={css.wirdCard} aria-label="وردي اليومي">
     <div className={css.cardHeading}>
@@ -44,13 +44,13 @@ export function PremiumHome({name,lesson,tasks,grades,preview=false}:{
    </section>
   </div>
   <div className={css.quickGrid} aria-label="روابط سريعة">
-   <Link className={css.quickLink} href="/student/mushaf">
+   <Link className={css.quickLink} href={basePath+"/mushaf"}>
     <svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M12 6C9 4 5 4 2 5v14c4-1 8-1 10 2 2-3 6-3 10-2V5c-3-1-7-1-10 1Zm0 0v15"/></svg>
     <div><strong>المصحف</strong><span>قراءة وتلاوة وتدبر</span></div></Link>
-   <Link className={css.quickLink} href="/student/training">
+   <Link className={css.quickLink} href={basePath+"/training"}>
     <svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><circle cx="11" cy="13" r="8"/><circle cx="11" cy="13" r="4"/><path d="m11 13 10-10m-6 0h6v6"/></svg>
     <div><strong>تدريباتي</strong><span>الواجبات والتسميع</span></div></Link>
-   <Link className={css.quickLink} href="/student/lessons#notebook">
+   <Link className={css.quickLink} href={basePath+"/lessons#notebook"}>
     <svg width="33" height="33" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h8M8 17h5"/></svg>
     <div><strong>سجل الحصص</strong><span>التقارير والتقييمات</span></div></Link>
   </div>
@@ -60,7 +60,7 @@ export function PremiumHome({name,lesson,tasks,grades,preview=false}:{
     {grades.length?<div className={css.gradeSummary}>
       {grades.map(g=><div key={g.label}><span>{g.label}</span><strong>{g.value}</strong></div>)}
      </div>:<p>لم يُنشَر أي تقرير بعد. سيظهر تقييم الشيخ بعد اعتماد أول تقرير.</p>}
-    <p><Link href="/student/lessons#reports" className={css.cardLink}>عرض تقاريري وتقدمي ←</Link></p>
+    <p><Link href={basePath+"/lessons#reports"} className={css.cardLink}>عرض تقاريري وتقدمي ←</Link></p>
    </section>
    <section className={css.softCard}>
     <h2>خطوتي التالية</h2>
@@ -69,7 +69,7 @@ export function PremiumHome({name,lesson,tasks,grades,preview=false}:{
      'لديك تكليف معتمد من الشيخ يمكنك البدء فيه.':lesson?
      'تابع موعد حصتك واستعد لها من تدريباتي.':
      'ابدأ بحجز حصتك الأولى، أو افتح المصحف للقراءة.'}</p>
-    <Link className={css.cardLink} href={primary==='lesson'&&lesson?lesson.href:primary==='task'?taskHref:lesson?'/student/lessons':'/student/mushaf'}>
+    <Link className={css.cardLink} href={primary==='lesson'&&lesson?lesson.href:primary==='task'?taskHref:lesson?basePath+'/lessons':basePath+'/mushaf'}>
      {primary==='lesson'&&lesson?lesson.action:primary==='task'?'ابدأ الواجب':lesson?'عرض الحصص':'افتح المصحف'} ←
     </Link>
    </section>
