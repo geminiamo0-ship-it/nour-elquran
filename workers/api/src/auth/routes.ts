@@ -118,7 +118,7 @@ async function profiles(env: Env, db: CoreDatabase, accountId: string, authSubje
   }
   // #244: factual, signed read of academic ledger only. Never claim the
   // units are payment-confirmed, bookable or a configured paid package.
-  const ownedLedger=/^\\/v1\\/me\\/learners\\/([a-zA-Z0-9-]{1,128})\\/subscription-ledger$/.exec(path);
+  const ownedLedger=/^\/v1\/me\/learners\/([a-zA-Z0-9-]{1,128})\/subscription-ledger$/.exec(path);
   if(ownedLedger){
     if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
     const schema=await db.prepare(
