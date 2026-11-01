@@ -54,11 +54,32 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied}:Pro
  const [starts,setStarts]=useState('');
  const [ends,setEnds]=useState('');
  const [lessonKind,setLessonKind]=useState('trial');
+ const [students,setStudents]=useState<{id:string;name:string}[]>([]);
+ const [sheikhs,setSheikhs]=useState<{id:string;name:string}[]>([]);
  const [reason,setReason]=useState('');
  const [confirmed,setConfirmed]=useState(false);
  const [result,setResult]=useState<Result>({phase:'idle'});
  const current=useRef<AbortController|null>(null);
  useEffect(()=>()=>{current.current?.abort();current.current=null;},[session,kind]);
+ useEffect(()=>{
+  if(kind!=='schedule')return;
+  const ctrl=new AbortController();
+  async function options(path:string){
+   const r=await fetch(path,{credentials:'same-origin',cache:'no-store',signal:ctrl.signal});
+   if(!r.ok)throw Error('DENIED');
+   return r.json() as Promise<{rows?:{id:string;name:string}[];
+    teachers?:{id:string;name:string;status:string;qualified:boolean}[]}>;
+  }
+  void Promise.all([
+   options('/v1/staff/collections?view=students'),
+   options('/v1/staff/teachers'),
+  ]).then(([a,b])=>{
+   if(ctrl.signal.aborted)return;
+   setStudents((a.rows??[]).filter(x=>typeof x.id==='string'&&typeof x.name==='string'));
+   setSheikhs((b.teachers??[]).filter(x=>x.status==='active'&&x.qualified));
+  }).catch(()=>{if(!ctrl.signal.aborted){setStudents([]);setSheikhs([]);}});
+  return()=>ctrl.abort();
+ },[kind,session]);
  const busy=result.phase==='sending'||result.phase==='uncertain';
  function changeAction(v:string){
   if(busy)return;
@@ -124,12 +145,24 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied}:Pro
      </option>)}
     </select></label>}
    {kind==='schedule'&&['assign','book'].includes(action)&&<>
-    <label>معرّف الطالب
+    <label>اختر الطالب
+     {students.length>0&&<select disabled={busy} value={learner}
+      onChange={e=>setLearner(e.target.value)}>
+      <option value="">اختر الطالب من سجلات الأكاديمية</option>
+      {students.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}
+     </select>}
      <input required disabled={busy} maxLength={128} value={learner}
-      onChange={e=>setLearner(e.target.value)}/></label>
-    <label>معرّف ملف الشيخ
+      aria-label="معرّف الطالب عند عدم ظهوره في السجل"
+      onChange={e=>setLearner(e.target.value)} placeholder="معرّف الطالب"/></label>
+    <label>اختر الشيخ
+     {sheikhs.length>0&&<select disabled={busy} value={teacher}
+      onChange={e=>setTeacher(e.target.value)}>
+      <option value="">اختر الشيخ النشط</option>
+      {sheikhs.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}
+     </select>}
      <input required disabled={busy} maxLength={128} value={teacher}
-      onChange={e=>setTeacher(e.target.value)}/></label>
+      aria-label="معرّف الشيخ عند عدم ظهوره في السجل"
+      onChange={e=>setTeacher(e.target.value)} placeholder="معرّف الشيخ"/></label>
     <label>بداية الموعد (بتوقيت جهازك)
      <input required disabled={busy} type="datetime-local" value={starts}
       onChange={e=>setStarts(e.target.value)}/></label>

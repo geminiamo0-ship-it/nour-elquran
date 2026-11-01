@@ -58,7 +58,9 @@ export function AdminOverviewPanel({value,onRefresh}:{value:AdminOverview;onRefr
 }
 
 const notes:Record<Exclude<AdminRoute,'/admin'|'/admin/teachers'|'/admin/students'|'/admin/schedule'|'/admin/subscriptions'|'/admin/attendance'>,string>={
- '/admin/settings':'إعدادات الصلاحيات والإشعارات والربط الخارجي ستُفتح فقط بعد اعتماد التحقق والتدقيق وأذونات مزودي الخدمات.',
+ '/admin/packages':'إدارة باقات الاشتراك تتطلب استجابة موثقة من D1.',
+ '/admin/requests':'طلبات الطلاب تتطلب صلاحية إدارية موثقة.',
+ '/admin/settings':'إعدادات واتساب تتطلب صلاحية إدارية موثقة.',
 };
 export function AdminPendingSection({route}:{route:Exclude<AdminRoute,'/admin'|'/admin/teachers'|'/admin/students'|'/admin/schedule'|'/admin/subscriptions'|'/admin/attendance'>}){
  const section=ADMIN_NAVIGATION.find(n=>n.href===route);

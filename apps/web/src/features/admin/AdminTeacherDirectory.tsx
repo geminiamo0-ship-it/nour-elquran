@@ -5,6 +5,7 @@ import {AdminTeachersError,fetchAdminTeachers,type AdminTeacherDirectoryValue}
  from './admin-teachers-client';
 import css from './AdminPortal.module.css';
 import {AdminOperations} from './AdminOperations';
+import {AdminAcademyMvp} from './AdminAcademyMvp';
 import type {AdminActionResult} from './admin-operations-client';
 
 type State=
@@ -87,6 +88,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
   {latestAck?.session===session&&<p role="status" className={css.staffInfo}>
    تم تأكيد الإجراء وحفظه: {latestAck.value.code}. جارٍ تحديث السجل من الخادم.
   </p>}
+  <AdminAcademyMvp key={session.user.id} session={session} mode="invites"/>
   {ready&&<AdminOperations kind="teacher" session={session} teachers={ready.teachers}
    onApplied={value=>{setLatestAck({session,value});setRetry(n=>n+1);}}/>}
  </div>;

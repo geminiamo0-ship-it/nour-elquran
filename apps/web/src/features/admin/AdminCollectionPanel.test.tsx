@@ -13,12 +13,12 @@ describe('Admin Phase B connected four collections (#307)',()=>{
    expect(html).not.toContain('تم الدفع');
   });
  }
- it('marks only the six confirmed read-only Admin entries as connected',()=>{
+ it('connects verified Academy MVP Admin sections without dead navigation',()=>{
   for(const route of ['/admin','/admin/teachers','/admin/students',
-   '/admin/schedule','/admin/subscriptions','/admin/attendance']){
+   '/admin/schedule','/admin/subscriptions','/admin/attendance',
+   '/admin/packages','/admin/requests','/admin/settings']){
    expect(ADMIN_NAVIGATION.find(x=>x.href===route)?.connected).toBe(true);
    expect(getAdminRoute(route+'/')).toBe(route);
   }
-  expect(ADMIN_NAVIGATION.find(x=>x.href==='/admin/settings')?.connected).toBe(false);
  });
 });
