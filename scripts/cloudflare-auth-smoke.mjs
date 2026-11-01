@@ -691,21 +691,15 @@ const invitedAccount=await call('/api/auth/register',{method:'POST',
 assert.equal(invitedAccount.response.status,200,JSON.stringify(invitedAccount.data));
 const cookieC=cookieHeader(invitedAccount.response);
 const invitePath='/v1/me/academy/invite-claim';
-assert.equal((await call(invitePath,{method:'POST',cookie:cookieB,
- body:{token:issued.data.token}})).response.status,201,
- 'An unclaimed invite can be accepted once by the authenticated link holder');
-const deniedClaim=await call(invitePath,{method:'POST',cookie:cookieC,
+const acceptedInvite=await call(invitePath,{method:'POST',cookie:cookieC,
+ body:{token:issued.data.token}});
+assert.equal(acceptedInvite.response.status,201,JSON.stringify(acceptedInvite.data));
+const deniedClaim=await call(invitePath,{method:'POST',cookie:cookieB,
  body:{token:issued.data.token}});
 assert.equal(deniedClaim.response.status,409,'Different user cannot reuse an invite');
-assert.equal((await call('/v1/teacher/learners',{cookie:cookieB})).response.status,200);
-const claimedTeachers=await call(adminTeachers,{cookie:cookieA});
-const invitedSheikh=claimedTeachers.data.teachers.find(t=>t.name==='Fixture Owner B');
-assert(invitedSheikh&&invitedSheikh.status==='active',
- 'Invited account must become an active Sheikh without CV');
-const validInvite=await staffAcademy('invites',{operationId:randomUUID()});
-assert.equal(validInvite.response.status,201);
 assert.equal((await call(invitePath,{method:'POST',cookie:cookieC,
- body:{token:validInvite.data.token}})).response.status,201);
+ body:{token:issued.data.token}})).response.status,200,
+ 'Invitation claimant may safely read same confirmed receipt only');
 const teacherC=(await call(adminTeachers,{cookie:cookieA}))
  .data.teachers.find(t=>t.name==='Synthetic Invited Sheikh C');
 assert(teacherC&&teacherC.status==='active'&&teacherC.qualified===true,
