@@ -337,6 +337,87 @@ assert.equal((await call(rosterRoute,{method:'POST',cookie:cookieA,
   body:{...rosterCommand,role:'admin'}})).response.status,400);
 assert.equal((await call(rosterRoute,{method:'POST',cookie:cookieA,
   body:{...rosterCommand,teacherId:'does-not-exist'}})).response.status,404);
+// #312: Positive attendance review is exercised over the actual signed Worker
+// and ephemeral LOCAL D1 only. The no-show and guardian appeal below are
+// strictly synthetic DB fixtures; never seed immutable attendance history into
+// persistent Cloudflare Dev, and never bypass the actual review HTTP endpoint.
+const appealLessonId=randomUUID(),appealGrantId=randomUUID();
+const incidentId=randomUUID(),appealId=randomUUID();
+const incidentOperationId=randomUUID(),appealOperationId=randomUUID();
+const historicStart=Date.now()-3*24*60*60*1000;
+const historicEnd=historicStart+40*60*1000;
+const reportedAt=historicStart+16*60*1000;
+const appealedAt=reportedAt+60*1000;
+const q=(x)=>"'"+String(x).replaceAll("'","''")+"'";
+// One Wrangler invocation seeds the self-contained valid local-only audit
+// chain. Avoid repeatedly starting independent D1 engines while workerd is
+// serving the signed HTTP smoke; a four-invocation fixture destabilized CI.
+const fixtureStatements=[
+ "INSERT INTO lessons(id,learner_id,actual_teacher_id,kind,status,starts_at_ms,ends_at_ms) VALUES("+
+  [appealLessonId,learner,provision.data.teacherId,'standard','scheduled'].map(q).join(',')+
+  ","+historicStart+","+historicEnd+")",
+ "INSERT INTO lesson_access_grants(id,lesson_id,learner_id,teacher_id,kind,starts_at_ms,ends_at_ms) VALUES("+
+  [appealGrantId,appealLessonId,learner,provision.data.teacherId,'primary'].map(q).join(',')+
+  ","+historicStart+","+historicEnd+")",
+ "INSERT INTO attendance_incident_events(id,operation_id,lesson_id,learner_id,actor_subject,kind,reason,reported_at_ms) VALUES("+
+  [incidentId,incidentOperationId,appealLessonId,learner,teacherSubject,'student_no_show',
+   'Synthetic no-show only in ephemeral local D1'].map(q).join(',')+","+reportedAt+")",
+ "INSERT INTO attendance_appeal_events(id,operation_id,incident_id,learner_id,actor_subject,reason,submitted_at_ms) VALUES("+
+  [appealId,appealOperationId,incidentId,learner,teacherActor,
+   'Synthetic guardian contests absence for native local signed review'].map(q).join(',')+
+  ","+appealedAt+")",
+];
+sql(fixtureStatements.join(";\n")+";");
+const reviewUrl='/v1/staff/attendance-appeals/review';
+const reviewBody={operationId:randomUUID(),appealId,decision:'accepted',
+ reason:'Synthetic evidence accepted without charges or automatic compensation'};
+assert.equal((await call(reviewUrl,{method:'POST',body:reviewBody})).response.status,401);
+assert.equal((await call(reviewUrl,{method:'POST',cookie:cookieB,body:reviewBody})).response.status,403);
+assert.equal((await call(reviewUrl,{method:'POST',cookie:cookieA,body:reviewBody})).response.status,403,
+  'roles.manage does not imply attendance.review');
+sql("INSERT INTO staff_grants(auth_subject,permission,revoked_at_ms) VALUES("+
+ q(teacherActor)+",'attendance.review',NULL)");
+const preReview=await call('/v1/staff/attendance-appeals',{cookie:cookieA});
+assert.equal(preReview.response.status,200,JSON.stringify(preReview.data));
+assert(preReview.data.appeals.some(x=>x.appealId===appealId&&!x.decision),
+  'Verified reviewer must see real pending synthetic appeal');
+const approvedReview=await call(reviewUrl,{method:'POST',cookie:cookieA,body:reviewBody});
+assert.equal(approvedReview.response.status,201,JSON.stringify(approvedReview.data));
+assert.equal(approvedReview.data.code,'ATTENDANCE_REVIEW_RECORDED');
+assert.match(approvedReview.data.decisionId,/^[0-9a-f-]{36}$/i);
+const replayReview=await call(reviewUrl,{method:'POST',cookie:cookieA,body:reviewBody});
+assert.equal(replayReview.response.status,200,JSON.stringify(replayReview.data));
+assert.equal(replayReview.data.code,'ATTENDANCE_REVIEW_REPLAY');
+assert.equal(replayReview.data.decisionId,approvedReview.data.decisionId);
+const tamperedReview=await call(reviewUrl,{method:'POST',cookie:cookieA,
+ body:{...reviewBody,decision:'rejected'}});
+assert.equal(tamperedReview.response.status,409,JSON.stringify(tamperedReview.data));
+assert.equal(tamperedReview.data.code,'ATTENDANCE_REVIEW_CONFLICT');
+const ownerCasePath='/v1/me/learners/'+learner+'/attendance-cases';
+const reviewedOwner=await call(ownerCasePath,{cookie:cookieA});
+assert.equal(reviewedOwner.response.status,200,JSON.stringify(reviewedOwner.data));
+assert(reviewedOwner.data.incidents.some(x=>x.incidentId===incidentId&&
+  x.appealId===appealId&&x.decision==='accepted'));
+assert.equal((await call(ownerCasePath,{cookie:cookieB})).response.status,404);
+const reviewedStaff=await call('/v1/staff/attendance-appeals',{cookie:cookieA});
+assert(reviewedStaff.data.appeals.some(x=>x.appealId===appealId&&x.decision==='accepted'));
+sql("UPDATE staff_grants SET revoked_at_ms=1000 WHERE auth_subject="+
+ q(teacherActor)+" AND permission='attendance.review'");
+assert.equal((await call(reviewUrl,{method:'POST',cookie:cookieA,body:reviewBody})).response.status,403,
+ 'Revoked attendance reviewer loses even idempotent replay');
+sql("UPDATE staff_grants SET revoked_at_ms=NULL WHERE auth_subject="+
+ q(teacherActor)+" AND permission='attendance.review'");
+sql("UPDATE auth_users SET phone_number_verified=0 WHERE id="+q(teacherActor));
+assert.equal((await call(reviewUrl,{method:'POST',cookie:cookieA,body:reviewBody})).response.status,403,
+ 'An unverified reviewer loses rights even while permission remains granted');
+sql("UPDATE auth_users SET phone_number_verified=1 WHERE id="+q(teacherActor));
+sql("UPDATE staff_grants SET revoked_at_ms=1000 WHERE auth_subject="+
+ q(teacherActor)+" AND permission='attendance.review'");
+console.log('Native signed attendance review: 401/403, verified grant 201, exact replay 200, tamper 409, guardian readback, separate permission and verification revocation PASS');
+
+
+
+
 const liveDirectory=await call(adminTeachers,{cookie:cookieA});
 assert.equal(liveDirectory.response.status,200,JSON.stringify(liveDirectory.data));
 assert.equal(liveDirectory.data.readOnly,true);
@@ -352,7 +433,11 @@ assert.equal((await call(adminTeachers,{cookie:cookieB})).response.status,403);
 assert.equal((await call(adminTeachers,{cookie:cookieA,method:'POST',body:{role:'admin'}})).response.status,405);
 assert.equal((await call(adminTeachers,{cookie:cookieA,origin:'https://outside.invalid'})).response.status,403);
 assert.deepEqual((await call('/v1/teacher/learners',{cookie:cookieB})).data.learners,[]);
-assert.deepEqual((await call('/v1/teacher/lessons',{cookie:cookieB})).data.lessons,[]);
+const historicalTeacherLessons=await call('/v1/teacher/lessons',{cookie:cookieB});
+assert.equal(historicalTeacherLessons.response.status,200);
+assert.equal(historicalTeacherLessons.data.lessons.length,1,
+ 'Only the synthetic historical attendance lesson may be present before future booking');
+assert.equal(historicalTeacherLessons.data.lessons[0].id,appealLessonId);
 // B3: synthetic staff creates an actual primary assignment and a 40m booked lesson.
 // The read-only teacher endpoints must immediately reflect only this family's data.
 const schedule=(body,cookie=cookieA,origin=base)=>call('/v1/staff/schedule-actions',{
@@ -497,18 +582,23 @@ assert.equal(blockedTeacherTransition.response.status,409,
 assert.equal(blockedTeacherTransition.data.code,'ACTIVE_CLASSES_BLOCK_TRANSITION');
 assert.equal((await call(adminTeachers,{cookie:cookieA})).data.teachers[0].status,'active');
 console.log('Native signed Admin roster transition: anonymous/nonstaff denial, strict parsing, scheduled class guard PASS');
+
 const bookingRepeat=await schedule(bookRequest);
 assert.equal(bookingRepeat.data.code,'OPERATION_ALREADY_APPLIED');
 const overlapping=await schedule({...bookRequest,operationId:randomUUID(),startsAtMs:learnerBookingStart+1000});
 assert.equal(overlapping.response.status,409);
 const teacherSchedule=await call('/v1/teacher/lessons',{cookie:cookieB});
 assert.equal(teacherSchedule.response.status,200);
-assert.equal(teacherSchedule.data.lessons.length,1);
-assert.equal(teacherSchedule.data.lessons[0].id,lessonCreated.data.resourceId);
-assert.equal(teacherSchedule.data.lessons[0].endsAtMs-teacherSchedule.data.lessons[0].startsAtMs,2400000);
+// Find the booked slot by its immutable resource ID. A separate historical
+// synthetic attendance fixture is legitimately present in the local calendar.
+const bookedTeacherSlot=teacherSchedule.data.lessons.find(
+ x=>x.id===lessonCreated.data.resourceId);
+assert(bookedTeacherSlot,'Booked slot missing from signed teacher timetable');
+assert.equal(bookedTeacherSlot.endsAtMs-bookedTeacherSlot.startsAtMs,2400000);
 const learnerTimetable=await call('/v1/me/learners/'+learner+'/lessons',{cookie:cookieA});
 assert.equal(learnerTimetable.response.status,200);
-assert.equal(learnerTimetable.data.lessons[0].id,lessonCreated.data.resourceId);
+assert(learnerTimetable.data.lessons.some(x=>x.id===lessonCreated.data.resourceId),
+ 'Booked slot missing from signed owner timetable');
 const unsafeArchive=await call(profilePath,{method:'POST',cookie:cookieA,body:{
   action:'archive',operationId:randomUUID(),expectedRevision:2,
 }});
