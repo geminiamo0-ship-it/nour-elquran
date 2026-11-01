@@ -7,7 +7,7 @@ import {verifiedOwner} from './published-assignments.ts';
 
 type CycleRow={id:string;startsAtMs:number;endsAtMs:number;
  baseSessions:number;rolloverSessions:number;spentSessions:number};
-type CompensationRow={id:string;issuedAtMs:number;sessions:number;spentSessions:number};
+type CompensationTotals={grantCount:number;totalSessions:number;spentSessions:number};
 
 export async function readOwnerSubscriptionLedger(
  db:CoreDatabase,subject:string,learnerId:string,now=Date.now()
@@ -25,16 +25,16 @@ export async function readOwnerSubscriptionLedger(
  FROM subscription_cycles c WHERE c.learner_id=?
  ORDER BY c.starts_at_ms DESC,c.id DESC LIMIT 1`)
  .bind(learnerId).first<CycleRow>();
- const compensation=await db.prepare(`SELECT g.id,g.issued_at_ms AS issuedAtMs,
- g.sessions,
- (SELECT COUNT(*) FROM subscription_spend_events e
-  WHERE e.source_kind='compensation' AND e.source_id=g.id) AS spentSessions
- FROM subscription_compensation_grants g WHERE g.learner_id=?
- ORDER BY g.issued_at_ms DESC,g.id DESC LIMIT 100`)
- .bind(learnerId).all<CompensationRow>();
+ const compensation=await db.prepare(`SELECT COUNT(*) AS grantCount,
+ COALESCE(SUM(g.sessions),0) AS totalSessions,
+ COALESCE(SUM((SELECT COUNT(*) FROM subscription_spend_events e
+  WHERE e.source_kind='compensation' AND e.source_id=g.id)),0) AS spentSessions
+ FROM subscription_compensation_grants g WHERE g.learner_id=?`)
+ .bind(learnerId).first<CompensationTotals>();
  if((cycle&&(cycle.spentSessions<0||cycle.spentSessions>
       cycle.baseSessions+cycle.rolloverSessions))||
-    compensation.results.some(g=>g.spentSessions<0||g.spentSessions>g.sessions))
+    !compensation||compensation.spentSessions<0||
+    compensation.spentSessions>compensation.totalSessions)
   return {status:503,code:'LEDGER_INCONSISTENT'} as const;
  const current=cycle?{
    startsAtMs:cycle.startsAtMs,endsAtMs:cycle.endsAtMs,
@@ -47,9 +47,8 @@ export async function readOwnerSubscriptionLedger(
  return {status:200,code:'SUBSCRIPTION_LEDGER',
   bookingEnabled:false as const,
   latestCycle:current,
-  compensationUnspentSessions:compensation.results.reduce(
-    (sum,g)=>sum+g.sessions-g.spentSessions,0),
-  // Lifetime grant counts; no automatic expiry and no personal data.
-  compensationGrantCount:compensation.results.length,
+  compensationUnspentSessions:compensation.totalSessions-compensation.spentSessions,
+  // Lifetime grant count; aggregate across ALL grants (never a truncated list).
+  compensationGrantCount:compensation.grantCount,
  } as const;
 }
