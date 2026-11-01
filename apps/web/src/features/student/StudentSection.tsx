@@ -11,7 +11,7 @@ import { AccountWorkspace } from './components/AccountWorkspace';
 import styles from './StudentPortal.module.css';
 
 const pages = {
-  lessons: LessonHub,
+  lessons: () => <LessonHub />,
   mushaf: MushafWorkspace,
   training: TrainingWorkspace,
   progress: ProgressWorkspace,
