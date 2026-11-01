@@ -1,3 +1,7 @@
+## 2026-11-01 Admin consolidated owner directive — read-only delivery now, operational contracts later (#307)
+
+Owner asked to finish the Admin Dashboard in one large development pass. Implement the maximum **source-backed signed read-only** People/Calendar/Academic Credit/Attendance views together instead of sprinkling unconnected UI, building on verified #302 and #305. This does **not** authorize unsafe defaults: phone OTP remains incomplete, teacher identity invitations, detailed safeguarding, attendance dispute decisions, fixed subscription package policy, payment settlement/refunds, integrations and external communication all require independent approved workflows and security/legal tests. Do not claim full operational Admin is complete or activate Production because front-end routes exist. See ADR 0008, #23–#36.
+
 ## 2026-11-01 owner sequencing addendum — Admin shell starts, operational Admin remains last
 Owner explicitly authorized a **read-only secured Admin dashboard foundation** in parallel with final Student/Sheikh tests (Issue #302; cross-reference #21/#22). This is a narrow exception to ADR 0008's original sequencing: only a staff-gated empty shell and factual D1 aggregate read may ship as Dev source. Invitations, manual subscription activation, balances, attendance judgments, refunds, payment integrations, external notifications and full Admin release **remain deferred to final program** with independent approval, security review and real Dev acceptance. Neither static route availability nor CI permits Production activation.
 

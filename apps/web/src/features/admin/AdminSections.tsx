@@ -35,6 +35,16 @@ export function AdminOverviewPanel({value,onRefresh}:{value:AdminOverview;onRefr
      <small>{c.detail}</small>
     </article>)}</div>
   </section>
+  <section className={css.nextSteps} aria-label="السجلات الإدارية المتصلة">
+   <div className={css.sectionHeading}><h2>السجلات الموثقة</h2>
+    <span>قراءة فقط · D1</span></div>
+   <div className={css.linksGrid}>{ADMIN_NAVIGATION.filter(n=>n.connected&&
+     n.href!=='/admin').map(n=>
+    <Link className={css.nextLink} href={n.href} key={n.href}>
+     <span aria-hidden="true">{n.symbol}</span><strong>{n.label}</strong>
+     <small>عرض السجل بعد التحقق من الصلاحية</small>
+    </Link>)}</div>
+  </section>
   <section className={css.nextSteps} aria-label="أقسام الإدارة التي تنتظر الربط">
    <div className={css.sectionHeading}><h2>الأقسام قيد الاستكمال</h2>
     <span>بدون عمليات حساسة</span></div>
@@ -47,14 +57,10 @@ export function AdminOverviewPanel({value,onRefresh}:{value:AdminOverview;onRefr
  </div>;
 }
 
-const notes:Record<Exclude<AdminRoute,'/admin'|'/admin/teachers'>,string>={
- '/admin/students':'سجلات الأسر والملفات المنفصلة للإخوة تحتاج قائمة مشروطة بصلاحيات دقيقة. لن تظهر أسماء أو أرقام تواصل قبل اعتماد مسار القراءة.',
- '/admin/schedule':'إنشاء المواعيد وإعادة الجدولة والتعويض يحتاج عرضًا آمنًا للموارد وقواعد التعارض. لا ننشئ حجزًا من هذه الصفحة.',
- '/admin/subscriptions':'التجديد اليدوي والرصيد والفواتير والمدفوعات تحتاج قرارات أسعار ومزوّد دفع ومراجعة صلاحيات مستقلة. لا تظهر أي مبالغ غير مؤكدة.',
- '/admin/attendance':'البلاغات واعتراضات أولياء الأمور والتعويضات تحتاج مصدرًا موثقًا ومراجعة مستقلة قبل اتخاذ القرار أو خصم أي حصة.',
+const notes:Record<Exclude<AdminRoute,'/admin'|'/admin/teachers'|'/admin/students'|'/admin/schedule'|'/admin/subscriptions'|'/admin/attendance'>,string>={
  '/admin/settings':'إعدادات الصلاحيات والإشعارات والربط الخارجي ستُفتح فقط بعد اعتماد التحقق والتدقيق وأذونات مزودي الخدمات.',
 };
-export function AdminPendingSection({route}:{route:Exclude<AdminRoute,'/admin'|'/admin/teachers'>}){
+export function AdminPendingSection({route}:{route:Exclude<AdminRoute,'/admin'|'/admin/teachers'|'/admin/students'|'/admin/schedule'|'/admin/subscriptions'|'/admin/attendance'>}){
  const section=ADMIN_NAVIGATION.find(n=>n.href===route);
  return <section className={css.pending} aria-labelledby="admin-section-heading">
   <p className={css.kicker}>تأسيس الإدارة · مرحلة أولى</p>

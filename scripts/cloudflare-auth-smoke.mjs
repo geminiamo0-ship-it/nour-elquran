@@ -214,6 +214,13 @@ const teacherCommand=(action,operationId=randomUUID())=>({
 // #302: local-only admin opt-in validates the actual signed Better Auth + D1 route.
 const adminOverview='/v1/staff/overview';
 const adminTeachers='/v1/staff/teachers';
+const adminCollections=(view)=>'/v1/staff/collections?view='+view;
+const collectionViews=['students','schedule','subscriptions','attendance'];
+for(const view of collectionViews){
+ assert.equal((await call(adminCollections(view))).response.status,401);
+ assert.equal((await call(adminCollections(view),{cookie:cookieB})).response.status,403);
+ assert.equal((await call(adminCollections(view),{cookie:cookieA,headers:{'x-user-role':'admin'}})).response.status,403);
+}
 assert.equal((await call(adminTeachers)).response.status,401);
 assert.equal((await call(adminTeachers,{cookie:cookieA})).response.status,403);
 assert.equal((await call(adminTeachers,{cookie:cookieB})).response.status,403);
@@ -222,6 +229,8 @@ assert.equal((await call(adminOverview)).response.status,401);
 assert.equal((await call(adminOverview,{cookie:cookieA})).response.status,403);
 assert.equal((await call(adminOverview,{cookie:cookieB})).response.status,403);
 assert.equal((await call(adminOverview,{cookie:cookieA,headers:{'x-user-role':'admin'}})).response.status,403);
+assert.equal((await call(adminCollections('finance'),{cookie:cookieA})).response.status,400,
+ 'Unrecognized staff collection view must be rejected without touching D1');
 const beforeGrant=await call('/v1/staff/teacher-actions',{
   method:'POST',cookie:cookieA,body:teacherCommand('provision'),
 });
@@ -237,6 +246,26 @@ assert.equal(emptyDirectory.response.status,200,JSON.stringify(emptyDirectory.da
 assert.equal(emptyDirectory.data.code,'STAFF_TEACHER_DIRECTORY');
 assert.deepEqual(emptyDirectory.data.teachers,[]);
 assert.equal(emptyDirectory.data.truncated,false);
+for(const view of collectionViews){
+ const request=await call(adminCollections(view),{cookie:cookieA});
+ assert.equal(request.response.status,200,JSON.stringify(request.data));
+ assert.equal(request.data.code,'STAFF_COLLECTION');
+ assert.equal(request.data.view,view);
+ assert.equal(request.data.readOnly,true);
+ assert.equal(request.response.headers.get('cache-control'),'no-store');
+ assert(Array.isArray(request.data.rows)&&request.data.rows.length<=50);
+ assert(request.data.rows.every(row=>typeof row.id==='string'));
+ assert.equal((await call(adminCollections(view),{cookie:cookieB})).response.status,403);
+}
+assert.equal((await call(adminCollections('students'),{cookie:cookieA,
+ method:'POST',body:{role:'admin'}})).response.status,405);
+assert.equal((await call(adminCollections('students'),{cookie:cookieA,
+ origin:'https://outside.invalid'})).response.status,403);
+assert.equal((await call('/v1/staff/collections?view=students&view=schedule',
+ {cookie:cookieA})).response.status,400);
+assert.equal((await call('/v1/staff/collections?view=students&limit=1000',
+ {cookie:cookieA})).response.status,400);
+console.log('Native signed four Admin D1 collections: qualified staff 200, denied guest/Sheikh 401/403, allowlist, no-store, POST 405 PASS');
 const realOverview=await call(adminOverview,{cookie:cookieA});
 assert.equal(realOverview.response.status,200,JSON.stringify(realOverview.data));
 assert.equal(realOverview.data.code,'STAFF_OVERVIEW');
@@ -504,6 +533,10 @@ const revokedAdmin=await call(adminOverview,{cookie:cookieA});
 assert.equal(revokedAdmin.response.status,403,'Revoked staff grant must lose overview access immediately');
 assert.equal((await call(adminTeachers,{cookie:cookieA})).response.status,403,
  'Revoked staff grant must lose teacher directory access immediately');
+for(const view of collectionViews){
+ assert.equal((await call(adminCollections(view),{cookie:cookieA})).response.status,403,
+  'Revoked staff must lose '+view+' directory immediately');
+}
 assert.equal((await call(adminOverview,{cookie:cookieB})).response.status,403);
 console.log('Native signed Admin overview: postgrant revocation denies immediately without cached role PASS');
 const afterRevocation=await call('/v1/staff/teacher-actions',{

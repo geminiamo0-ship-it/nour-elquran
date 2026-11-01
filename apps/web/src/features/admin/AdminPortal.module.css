@@ -61,3 +61,33 @@
 .staffError{padding:21px;background:#fff8f3;border:1px solid #eedacf;border-radius:10px;color:#78503a;display:grid;gap:12px}
 .staffError button{justify-self:start;padding:8px 16px;border-radius:8px;border:1px solid #dac5b5;background:#fff;color:#58412f}
 @media(max-width:620px){.staffCard{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}.staffIdentity{grid-column:1/-1;padding-bottom:9px;border-bottom:1px solid #eee6d9}.staffCount strong{font-size:20px}}
+
+/* #307 four verified academic D1 collections; every card is strictly read-only */
+.collection{display:grid;gap:18px;min-width:0}
+.collectionHero{padding:clamp(19px,3vw,32px);background:#fffdf8;border:1px solid #e4ddcf;
+ border-radius:16px;min-width:0}
+.collectionHero h1{font:700 clamp(26px,3vw,35px)/1.45 'Amiri',Georgia,serif;
+ margin:0 0 9px;color:#274532}
+.collectionHero p:not(.kicker){font-size:13px;line-height:2;color:#576b5d;
+ max-width:900px;margin:0}
+.collectionToolbar{display:flex;gap:16px;flex-wrap:wrap;
+ align-items:end;justify-content:space-between}
+.collectionSearch{display:grid;gap:6px;min-width:0;flex:1;max-width:490px;
+ font-size:12px;font-weight:800;color:#49644c}
+.collectionSearch input{background:#fff;border:1px solid #d9cdb7;border-radius:9px;
+ padding:11px 14px;color:#284533;font:inherit;min-width:0;width:100%}
+.collectionSearch input:focus-visible{outline:3px solid #cda55a;outline-offset:2px}
+.collectionSearch input:disabled{opacity:.6}
+.collectionCards{display:grid;gap:11px;min-width:0}
+.collectionCard{background:#fffdf8;border:1px solid #e4ddcf;border-radius:13px;
+ padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+ gap:15px;min-width:0}
+.collectionField{min-width:0;display:grid;align-content:start;gap:7px}
+.collectionField span{font-size:11px;color:#768679;font-weight:700}
+.collectionField strong{font-size:14px;color:#294d38;overflow-wrap:anywhere;font-weight:800}
+.collectionDisclaimer{border-right:4px solid #bd9b5b;background:#f2efe5;
+ border-radius:9px;padding:15px 17px;color:#5d6457;font-size:12px;line-height:1.95;margin:0}
+@media(max-width:640px){.collectionToolbar{display:grid;gap:10px}
+.collectionSearch{max-width:none}.collectionCard{grid-template-columns:repeat(2,minmax(0,1fr));padding:14px;gap:15px 10px}
+.collectionField strong{font-size:13px}}
+@media(max-width:370px){.collectionCard{grid-template-columns:minmax(0,1fr)}}

@@ -3,11 +3,11 @@
  */
 export const ADMIN_NAVIGATION=[
  {href:'/admin',label:'الرئيسية',short:'لوحة المتابعة',symbol:'⌂',connected:true},
- {href:'/admin/students',label:'الطلاب والأسر',short:'الطلاب',symbol:'♙',connected:false},
+ {href:'/admin/students',label:'الطلاب والأسر',short:'الطلاب',symbol:'♙',connected:true},
  {href:'/admin/teachers',label:'الشيوخ',short:'الشيوخ',symbol:'♧',connected:true},
- {href:'/admin/schedule',label:'الحصص والجدول',short:'الحصص',symbol:'▦',connected:false},
- {href:'/admin/subscriptions',label:'الاشتراكات',short:'الاشتراكات',symbol:'◈',connected:false},
- {href:'/admin/attendance',label:'الحضور والتعويضات',short:'الحضور',symbol:'◷',connected:false},
+ {href:'/admin/schedule',label:'الحصص والجدول',short:'الحصص',symbol:'▦',connected:true},
+ {href:'/admin/subscriptions',label:'الاشتراكات',short:'الاشتراكات',symbol:'◈',connected:true},
+ {href:'/admin/attendance',label:'الحضور والتعويضات',short:'الحضور',symbol:'◷',connected:true},
  {href:'/admin/settings',label:'الإعدادات',short:'الإعدادات',symbol:'⚙',connected:false},
 ] as const;
 export type AdminRoute=typeof ADMIN_NAVIGATION[number]['href'];
