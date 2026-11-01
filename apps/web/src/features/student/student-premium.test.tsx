@@ -2,6 +2,8 @@ import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {PremiumHome} from './PremiumHome';
 import {studentNavigation} from './StudentShell';
+import {StudentDashboard} from './StudentDashboard';
+import {DEMO_PROFILES} from './mock-adapter';
 import {StudentProvider} from './StudentContext';
 import {LessonHub} from './components/LessonHub';
 
@@ -25,6 +27,16 @@ describe('approved premium learner experience #322',()=>{
     tasks={[{id,label:'الملك 1–5',kind:'حفظ'}]}/>);
   expect(html).toContain('#assignment-'+id);
   expect(html).toContain('ابدأ واجبي الآن');
+ });
+ it('shows the same premium sample UI on a route that needs no account',()=>{
+  const sample=renderToStaticMarkup(<StudentProvider liveLearners={DEMO_PROFILES}
+   initialSelectedId="demo-active"><StudentDashboard previewBasePath="/preview/student"/></StudentProvider>);
+  expect(sample).toContain('/preview/student/lessons');
+  expect(sample).toContain('/preview/student/training');
+  expect(sample).toContain('/preview/student/mushaf');
+  expect(sample).toContain('الحفظ');
+  expect(sample).not.toContain('خدمة الحسابات غير متاحة');
+  expect(sample).not.toContain('href="/student/');
  });
  it('only offers the live entry link for a real live lesson',()=>{
   const target='/classroom/live?role=learner&lessonId=synthetic&learnerId=student';
