@@ -1,3 +1,8 @@
+## #317 expired paid-slot read-state regression (2026-11-01; source-only)
+- Worker tests assert both signed GET selectors use server clock plus 60-second cutoff and keep learner-scope/role authorization before reading. Immutable decision rows override derived expiration; SQL state never writes a rejection or debits a credit.
+- Guardian and staff Vitest strict parsers accept `expired` only with `lessonId:null`, reject extra PII/invalid combinations; staff UI shows no approve/reject form for expired rows.
+- Required acceptance still includes exact-head GitHub Verify 4/4, independent SQL/privacy review and signed Cloudflare Dev D1 0031 owner/staff/sibling/credit plus mobile RTL. No claim of live Dev behavior from unit tests.
+
 ## #317 D1 paid-slot write acknowledgement regression (2026-11-01)
 - Backend Node tests must reject both `run()={success:false,meta:{changes:0}}` and `run()={success:true,meta:{changes:0}}` for guardian proposals and staff decisions with a sanitized 503, never a 201/lesson or debit claim. Positive `success:true,changes:1` remains accepted.
 - Unknown D1 write outcomes require explicit same-operationId replay after fresh owner/staff authorization; only immutable matching events may return a successful replay. Unit tests are not proof of remote D1 trigger or credit atomicity. Exact-head CI, independent review and signed isolated Dev 0031 acceptance remain mandatory.
