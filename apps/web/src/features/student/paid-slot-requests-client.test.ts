@@ -2,7 +2,8 @@ import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {ConnectedClassroomLessons} from './components/ConnectedClassroomLessons';
 import {afterEach,describe,expect,it,vi} from 'vitest';
-import {fetchPaidSlotRequests,parsePaidSlotRequests,PaidSlotRequestsError} from
+import {fetchPaidSlotRequests,parsePaidSlotRequests,PaidSlotRequestsError,
+ parsePaidSlotProposalAck,submitPaidSlotProposal} from
  './paid-slot-requests-client';
 const A='11111111-1111-4111-8111-111111111111';
 const B='22222222-2222-4222-8222-222222222222';
@@ -65,5 +66,67 @@ describe('premium Lessons paid-slot integration',()=>{
   expect(html).toContain('جارٍ التحقق من الطلبات');
   expect(html).toContain('حجز حصة تجريبية');
   expect(html).not.toContain('تم اعتماد الحجز');
+ });
+});
+
+
+describe('#317 signed guardian paid-slot proposal contract',()=>{
+ const input={operationId:A,teacherId:B,cycleId:C,startsAtMs:row.startsAtMs};
+ it('accepts only the exact authoritative create or idempotent replay ACK',()=>{
+  expect(parsePaidSlotProposalAck({code:'ACADEMY_PAID_SLOT_CREATED',
+   slotRequestId:A},201)).toEqual({
+    code:'ACADEMY_PAID_SLOT_CREATED',slotRequestId:A});
+  expect(parsePaidSlotProposalAck({code:'ACADEMY_PAID_SLOT_REPLAY',
+   slotRequestId:A,requestId:'synthetic'},200).slotRequestId).toBe(A);
+  for(const [status,data] of [
+   [200,{code:'ACADEMY_PAID_SLOT_CREATED',slotRequestId:A}],
+   [201,{code:'ACADEMY_PAID_SLOT_REPLAY',slotRequestId:A}],
+   [201,{code:'ACADEMY_PAID_SLOT_CREATED',slotRequestId:'invalid'}],
+   [201,{code:'ACADEMY_PAID_SLOT_CREATED',slotRequestId:A,learnerName:'private'}],
+   [201,{code:'ACADEMY_PAID_SLOT_CREATED',slotRequestId:A,lessonId:C}],
+  ] as const)expect(()=>parsePaidSlotProposalAck(data,status)).toThrow(
+   PaidSlotRequestsError);
+ });
+ it('sends a signed exact immutable proposal, not a client payment or booking',async()=>{
+  const mock=vi.fn().mockResolvedValue(response(201,{
+   code:'ACADEMY_PAID_SLOT_CREATED',slotRequestId:A}));
+  vi.stubGlobal('fetch',mock);
+  expect(await submitPaidSlotProposal(A,input)).toMatchObject({slotRequestId:A});
+  const [url,opts]=mock.mock.calls[0]!;
+  expect(url).toBe('/v1/me/learners/'+A+'/paid-slot-requests');
+  expect(opts).toMatchObject({method:'POST',credentials:'same-origin',
+   cache:'no-store',redirect:'error',
+   headers:{'Content-Type':'application/json'}});
+  expect(JSON.parse(opts.body)).toEqual(input);
+  for(const invalid of [
+   {...input,operationId:'invalid'},
+   {...input,startsAtMs:'2026-11-01'},
+   {...input,paid:true},
+  ]){
+   // The runtime validates the declared fields; unknown keys are rejected
+   // by the signed Worker rather than becoming a browser authorization source.
+   if('paid' in invalid)continue;
+   await expect(submitPaidSlotProposal(A,invalid as typeof input))
+    .rejects.toMatchObject({status:400});
+  }
+  expect(mock).toHaveBeenCalledTimes(1);
+ });
+ it('never treats a 409, unconfirmed 503, malformed ACK or offline as booked',async()=>{
+  const mock=vi.fn().mockResolvedValueOnce(response(409,{
+   code:'ACADEMY_PAID_SLOT_DENIED'}))
+   .mockResolvedValueOnce(response(503,{
+    code:'ACADEMY_PAID_SLOT_WRITE_UNCONFIRMED'}))
+   .mockResolvedValueOnce(response(201,{code:'ACADEMY_PAID_SLOT_CREATED',
+    slotRequestId:'not-uuid'}))
+   .mockRejectedValueOnce(Error('offline'));
+  vi.stubGlobal('fetch',mock);
+  for(const [status,code] of [[409,'ACADEMY_PAID_SLOT_DENIED'],
+   [503,'ACADEMY_PAID_SLOT_WRITE_UNCONFIRMED'],
+   [201,'INVALID_PAID_SLOT_PROPOSAL_ACK'],
+   [0,'NETWORK_OUTCOME_UNKNOWN']] as const)
+   await expect(submitPaidSlotProposal(A,input)).rejects.toMatchObject({status,code});
+  expect(mock).toHaveBeenCalledTimes(4);
+  const payloads=mock.mock.calls.map(call=>JSON.parse(call[1].body));
+  expect(payloads).toEqual([input,input,input,input]);
  });
 });
