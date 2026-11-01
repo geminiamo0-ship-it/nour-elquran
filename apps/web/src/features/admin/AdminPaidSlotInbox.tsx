@@ -4,6 +4,7 @@ import type {AccountSession} from '@/features/account';
 import {AdminPaidSlotError,fetchAdminPaidSlots,type AdminPaidSlot}
  from './admin-paid-slot-client';
 import css from './AdminPortal.module.css';
+import {AdminPaidSlotDecision} from './AdminPaidSlotDecision';
 
 type Read=
  |{phase:'loading'}
@@ -15,7 +16,7 @@ const date=new Intl.DateTimeFormat('ar-EG',{
 const states={pending:'بانتظار قرار الإدارة',
  approved:'تم اعتماد الحصة',rejected:'رُفض الطلب'} as const;
 
-/** Signed staff inbox. No action is offered until the audited decision UI is reviewed. */
+/** Signed staff inbox; only immutable pending requests offer audited decisions. */
 export function AdminPaidSlotInbox({session}:{session:AccountSession}){
  const [read,setRead]=useState<Read>({phase:'loading'});
  const [retry,setRetry]=useState(0);
@@ -45,7 +46,7 @@ export function AdminPaidSlotInbox({session}:{session:AccountSession}){
   <div className={css.collectionToolbar}>
    <p className={css.collectionDisclaimer}>
     تعرض القائمة أحدث ١٠٠ طلب بحد أقصى؛ قد توجد طلبات أقدم غير معروضة.
-    الموافقة والرفض قيد الربط والمراجعة الأمنية، ولا يوجد إجراء وهمي هنا.
+    اعتماد الطلبات يتطلب صلاحية إدارة فعلية، وإقرارًا صريحًا، وتأكيد D1.
    </p>
    <button type="button" className={css.staffRefresh}
     disabled={phase==='loading'} onClick={()=>setRetry(n=>n+1)}>
@@ -83,6 +84,9 @@ export function AdminPaidSlotInbox({session}:{session:AccountSession}){
       <span>معرّف الطلب للتدقيق</span>
       <code dir="ltr">{item.requestId}</code>
      </div>
+     {item.state==='pending'&&<AdminPaidSlotDecision
+      key={item.requestId+session.user.id} request={item}
+      onCommitted={()=>setRetry(n=>n+1)}/>}
     </article>)}
    </div>
   )}
