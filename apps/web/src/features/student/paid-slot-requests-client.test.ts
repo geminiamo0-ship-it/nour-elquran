@@ -2,6 +2,8 @@ import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {ConnectedClassroomLessons} from './components/ConnectedClassroomLessons';
 import {currentLearnerRead} from './components/learner-scope';
+import {StudentPaidSlotProposal,proposalFromPublishedOffer} from
+ './components/StudentPaidSlotProposal';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {fetchPaidSlotRequests,parsePaidSlotRequests,PaidSlotRequestsError,
  parsePaidSlotProposalAck,submitPaidSlotProposal} from
@@ -186,5 +188,32 @@ describe('#317 published paid-offer read boundary',()=>{
   await expect(fetchPaidSlotOffers('invalid')).rejects.toMatchObject({
    status:400,code:'INVALID_LEARNER'});
   expect(mock).toHaveBeenCalledTimes(4);
+ });
+});
+
+
+describe('#317 trusted published paid-slot form',()=>{
+ const offer={offerId:A,teacherId:B,cycleId:C,
+  startsAtMs:1793600000000,endsAtMs:1793602400000};
+ it('builds a proposal only from a matching signed offer, not arbitrary user IDs',()=>{
+  expect(proposalFromPublishedOffer([offer],A,C)).toEqual({
+   operationId:C,teacherId:B,cycleId:C,startsAtMs:offer.startsAtMs
+  });
+  expect(proposalFromPublishedOffer([offer],B,C)).toBeNull();
+  expect(proposalFromPublishedOffer([],A,C)).toBeNull();
+ });
+ it('renders a fail-closed signed loading gate, never fabricated slots or payment',()=>{
+  const html=renderToStaticMarkup(createElement(StudentPaidSlotProposal,{
+   learnerId:A,onSubmitted:()=>undefined
+  }));
+  expect(html).toContain('جارٍ قراءة المواعيد المدفوعة المعتمدة');
+  expect(html).toContain('لا يخصم من الباقة');
+  expect(html).not.toContain('تم تسجيل طلب الموعد');
+  expect(html).not.toContain('type="radio"');
+  const lessons=renderToStaticMarkup(createElement(ConnectedClassroomLessons,{
+   learnerId:A
+  }));
+  expect(lessons).toContain('طلب موعد حصة مدفوعة');
+  expect(lessons).toContain('طلبات مواعيد الحصص المدفوعة');
  });
 });
