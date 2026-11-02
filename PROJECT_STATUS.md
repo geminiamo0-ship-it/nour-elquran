@@ -1,3 +1,7 @@
+## 2026-11-02 — #317 strict student paid-offers client (Draft source)
+- `apps/web/src/features/student/paid-slot-offers-client.ts` adds signed, no-store owner GET and exact bounded runtime parser for the D1 paid-offer response; rejects duplicate offers, invalid UUIDs/times, extra PII and server failures rather than inventing available slots. `paid-slot-requests-client.test.ts` covers parser and transport.
+- This is a **client contract only**, not yet mounted as a guardian form. Staff publication API, offer selection UI, CI on current head, independent security review and signed Dev acceptance remain open. No Production changes.
+
 ## 2026-11-02 — #317 signed paid-offer read continuation (source-only)
 - Added owner-only `GET /v1/me/learners/:id/paid-slot-offers`, gated by migration 0031. Its D1 query returns at most 30 published, unwithdrawn paid offers only when the signed learner is owned, Sheikh is active/qualified and assigned for the full 40 minutes, an active cycle has remaining lesson units, no pending request exists, and no booked lesson/open free-trial slot conflicts. No client-supplied role, credit, availability or PII; GET does not book or debit.
 - `workers/api/src/academy-paid-slot.ts`, `workers/api/src/auth/routes.ts`, and focused `workers/api/tests/academy-paid-slot.test.ts` changed. **Not yet CI/Dev verified**; no staff publish/withdraw endpoints or guardian selection form. Draft #318 / Issue #317 remain OPEN. No Production changes.
