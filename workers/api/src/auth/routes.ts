@@ -21,7 +21,8 @@ import {ownerAcademy,ownerPackageRequest,staffAcademy,staffPackage,staffActivate
 import {ownerTrialRequest,ownerTrialRequests,staffTrialRequests,staffTrialDecision,
  staffPaidBooking,staffBookableCycles} from '../academy-booking.ts';
 import {ownerPaidSlotRequests,ownerPaidSlotRequest,ownerPaidSlotOffers,
- staffPaidSlotRequests,staffPaidSlotDecision} from '../academy-paid-slot.ts';
+ staffPaidSlotRequests,staffPaidSlotDecision,staffPaidSlotOffers,
+ staffPaidSlotPublish,staffPaidSlotWithdraw} from '../academy-paid-slot.ts';
 import {readTeacherInkDrafts,saveTeacherInkDraft,teacherAssignmentPageRange} from '../teacher-assignment-ink-drafts.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
@@ -599,6 +600,25 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
       "SELECT version FROM noor_schema_meta WHERE component='academy_admin_mvp'"
     ).first<{version:number}>();
     if(schema?.version!==1)return reply(503,{code:'ACADEMY_SCHEMA_NOT_READY'},requestId);
+    // #317: audited staff-only paid offers. Neither endpoint books or debits.
+    if(path==='/v1/staff/academy/paid-slot-offers'||
+       path==='/v1/staff/academy/paid-slot-withdrawals'){
+      const list=request.method==='GET'&&path.endsWith('/paid-slot-offers');
+      const publish=request.method==='POST'&&path.endsWith('/paid-slot-offers');
+      const withdraw=request.method==='POST'&&path.endsWith('/paid-slot-withdrawals');
+      if(!list&&!publish&&!withdraw)
+        return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+      const schema=await env.DB.prepare(
+        "SELECT version FROM noor_schema_meta WHERE component='academy_paid_slot_requests'"
+      ).first<{version:number}>();
+      if(schema?.version!==1)return reply(503,{code:'ACADEMY_PAID_SLOT_SCHEMA_NOT_READY'},requestId);
+      const result=list
+        ?await staffPaidSlotOffers(env.DB,session.user.id)
+        :publish
+          ?await staffPaidSlotPublish(env.DB,session.user.id,await readObject(request))
+          :await staffPaidSlotWithdraw(env.DB,session.user.id,await readObject(request));
+      const {status,...body}=result;return reply(status,body,requestId);
+    }
     if(path==='/v1/staff/academy/paid-slot-requests'||
        path==='/v1/staff/academy/paid-slot-decisions'){
       const list=path.endsWith('/paid-slot-requests');
