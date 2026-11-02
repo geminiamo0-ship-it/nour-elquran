@@ -6,7 +6,8 @@ import {DEMO_PROFILES} from '../mock-adapter';
 import {SubscriptionWorkspace} from './SubscriptionWorkspace';
 import {HomeSubscriptionStatus} from './HomeSubscriptionStatus';
 import {ConnectedSubscriptionLedger} from './ConnectedSubscriptionLedger';
-import {ConnectedAcademyOffers} from './ConnectedAcademyOffers';
+import {ConnectedAcademyOffers,createAcademyPackageRequestGate,
+ classifyAcademyPackageRequestResponse} from './ConnectedAcademyOffers';
 
 describe('clean, truthful subscriptions #324',()=>{
  const sample={code:'ACADEMY_OWNER',
@@ -20,6 +21,47 @@ describe('clean, truthful subscriptions #324',()=>{
   expect(()=>parseOwnerAcademy({...sample,whatsappNumber:'https://example.com'})).toThrow();
   expect(()=>parseOwnerAcademy({...sample,packages:[{...sample.packages[0],priceEgp:-2}]})).toThrow();
   expect(()=>parseOwnerAcademy({...sample,requests:[{...sample.requests[0],state:'paid'}]})).toThrow();
+ });
+ it('requires the exact D1 create/replay ACK before calling a package request confirmed',()=>{
+  const id='11111111-1111-4111-8111-111111111111';
+  expect(classifyAcademyPackageRequestResponse(201,{
+   code:'ACADEMY_REQUEST_CREATED',academyRequestId:id})).toBe('ack');
+  expect(classifyAcademyPackageRequestResponse(200,{
+   code:'ACADEMY_REQUEST_REPLAY',academyRequestId:id,requestId:'synthetic'})).toBe('ack');
+  for(const [status,payload] of [
+   [201,{code:'ACADEMY_REQUEST_CREATED'}],
+   [201,{code:'ACADEMY_REQUEST_CREATED',academyRequestId:'invalid'}],
+   [200,{code:'ACADEMY_REQUEST_CREATED',academyRequestId:id}],
+   [201,{code:'ACADEMY_REQUEST_REPLAY',academyRequestId:id}],
+   [201,{code:'ACADEMY_REQUEST_CREATED',academyRequestId:id,paid:true}],
+   [408,null],[425,null],[429,null],[503,{code:'ACADEMY_UNAVAILABLE'}],
+   [0,null]
+  ] as const)expect(classifyAcademyPackageRequestResponse(status,payload))
+   .toBe('uncertain');
+  for(const status of [400,401,403,404,409,422])
+   expect(classifyAcademyPackageRequestResponse(status,{code:'ACADEMY_REQUEST_DENIED'}))
+    .toBe('denied');
+ });
+ it('latches one operationId across double taps, ambiguous outcomes and explicit replay',()=>{
+  const gate=createAcademyPackageRequestGate();
+  expect(gate.begin()).toBe(true);
+  expect(gate.begin()).toBe(false);
+  expect(gate.begin(true)).toBe(false);
+  gate.finish(true);
+  expect(gate.status()).toBe('uncertain');
+  expect(gate.releaseAfterRead()).toBe(false);
+  expect(gate.begin()).toBe(false);
+  expect(gate.begin(true)).toBe(true);
+  expect(gate.begin(true)).toBe(false);
+  gate.finish(false);
+  expect(gate.status()).toBe('closed');
+  expect(gate.begin()).toBe(false);
+  expect(gate.begin(true)).toBe(false);
+  // A confirmed ACK still needs a signed D1 read of the immutable request.
+  expect(gate.releaseAfterRead()).toBe(true);
+  expect(gate.begin()).toBe(true);
+  gate.finish(false);
+  expect(gate.releaseAfterRead()).toBe(true);
  });
  it('never calls expired academic units an active subscription',()=>{
   expect(currentCycleLabel('expired',1800000000000,1760000000000)).toContain('انتهت');
