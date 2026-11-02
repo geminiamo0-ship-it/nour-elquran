@@ -1,3 +1,7 @@
+## #317 paid/trial partial-overlap guard regression (2026-11-02)
+- Native SQLite regression now checks paid-first and trial-first publication for start times half a 40-minute slot before, exactly aligned, and half a slot after the existing offer. All overlapping INSERTs must abort with the channel-specific guard; no phantom trial/paid offer, lesson or subscription debit may remain. Existing paid-withdrawal release test is preserved.
+- This is test-only source coverage. Verify on the exact new PR head, including native D1, before claiming pass. Independent SQL/privacy review and signed Cloudflare Dev remain mandatory.
+
 ## #317 cross-channel paid/trial slot publication regression (2026-11-02)
 - Native SQLite/D1: publishing paid then overlapping free-trial for the same Sheikh must fail atomically with `ACADEMY_TRIAL_PAID_OFFER_CONFLICT`; after an audited paid withdrawal the trial publication may proceed. Publishing trial first then overlapping paid must continue to fail with `ACADEMY_PAID_OFFER_TRIAL_CONFLICT`. Rejections create no lesson, debit, or ghost offer.
 - Full exact-head CI (including Wrangler native D1), independent SQL/auth review, and signed Cloudflare Dev 0031 staff/guardian/learner-sibling/concurrent booking/credit tests remain required before merge. No Production deployment or feature flag changes.
