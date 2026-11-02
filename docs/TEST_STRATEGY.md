@@ -1,3 +1,7 @@
+## #317 guardian paid-slot rapid-tap regression (2026-11-02; source candidate)
+- `paid-slot-requests-client.test.ts` exercises a synchronous per-learner write gate: two submits before React rerender cannot create two accepted operationIds or overwrite the first retry payload; unknown result permits only same-operation replay, no refresh; successful ACK or definitive denial locks until an explicit signed D1 refresh.
+- Required exact-head GitHub Verify: governance, repository policy, code quality, native Cloudflare D1; no local full-suite claim because git clone DNS unavailable. After CI, independent security review and signed Cloudflare Dev E2E must prove one D1 request under rapid taps, lost-response replay, role/sibling isolation, no debit on submission and correct 360×667/390×844 UI. No Production changes.
+
 ## 2026-11-02 — #317 staff decision rapid-tap regression
 - `AdminPaidSlotInbox.test.tsx` exercises a synchronous per-decision write gate: first approval submit wins, second tap before React rerender is ignored, retry cannot run while busy, uncertain response allows only same-payload retry, and definitive rejection/ACK blocks all new attempts. The UI still requires actual staff D1 approval ACK and independently verified Dev credit atomicity; this unit guard is not a substitute for Dev concurrency testing.
 
