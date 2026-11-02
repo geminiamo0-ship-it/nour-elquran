@@ -40,6 +40,8 @@ export function createPaidOfferWriteGate(){
 export function AdminPaidOffers({session}:{session:AccountSession}){
  const liveSession=useRef(session);liveSession.current=session;
  const writeGate=useRef(createPaidOfferWriteGate());
+ // Invalidate pre-ACK reads immediately, before React runs effect cleanup.
+ const readEpoch=useRef(0);
  const [read,setRead]=useState<Read>({phase:'loading'});
  const [retry,setRetry]=useState(0);
  const [write,setWrite]=useState<Write|null>(null);
@@ -51,11 +53,12 @@ export function AdminPaidOffers({session}:{session:AccountSession}){
  const [withdrawConfirm,setWithdrawConfirm]=useState(false);
  useEffect(()=>{
   const ctrl=new AbortController();
+  const epoch=readEpoch.current;
   setRead({phase:'loading'});
   void Promise.all([
    fetchAdminPaidOffers(ctrl.signal),fetchAdminTeachers(ctrl.signal)
   ]).then(([offers,directory])=>{
-   if(ctrl.signal.aborted)return;
+   if(ctrl.signal.aborted||epoch!==readEpoch.current)return;
    setRead({phase:'ready',session,offers,
     teachers:directory.teachers,truncated:directory.truncated});
    // A confirmed write remains locked until this authoritative staff read.
@@ -64,7 +67,7 @@ export function AdminPaidOffers({session}:{session:AccountSession}){
     previous?.session===session&&previous.phase==='saved'?
      {...previous,phase:'settled'}:previous);
   }).catch(error=>{
-   if(ctrl.signal.aborted)return;
+   if(ctrl.signal.aborted||epoch!==readEpoch.current)return;
    const denied=(error instanceof AdminPaidSlotError||
     error instanceof AdminTeachersError)&&[401,403,404].includes(error.status);
    setRead({phase:denied?'denied':'error',session});
@@ -95,7 +98,8 @@ export function AdminPaidOffers({session}:{session:AccountSession}){
     'أكد الخادم نشر الموعد. لم تُحجز حصة ولم يُخصم رصيد.':
     'أكد الخادم سحب العرض. لم يُلغَ أي حجز قائم.'});
    setPublishConfirm(false);setWithdrawConfirm(false);setReason('');
-   setWithdrawId('');setRead({phase:'loading'});setRetry(n=>n+1);
+   setWithdrawId('');
+   readEpoch.current+=1;setRead({phase:'loading'});setRetry(n=>n+1);
   }catch(error){
    const known=error instanceof AdminPaidSlotError&&
     error.status>=400&&error.status<500;
@@ -124,7 +128,7 @@ export function AdminPaidOffers({session}:{session:AccountSession}){
       setWrite(null);
      }
      // A confirmed write is still locked until a successful signed GET.
-     setRead({phase:'loading'});setRetry(n=>n+1);
+     readEpoch.current+=1;setRead({phase:'loading'});setRetry(n=>n+1);
     }}>
     تحديث المواعيد والصلاحيات
    </button>}
