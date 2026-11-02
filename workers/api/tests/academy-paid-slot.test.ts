@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type {CoreDatabase} from '../src/bindings.ts';
 import {ownerPaidSlotRequest,ownerPaidSlotRequests,ownerPaidSlotOffers,
- staffPaidSlotRequests,staffPaidSlotDecision} from '../src/academy-paid-slot.ts';
+ staffPaidSlotRequests,staffPaidSlotDecision,staffPaidSlotOffers,
+ staffPaidSlotPublish,staffPaidSlotWithdraw} from '../src/academy-paid-slot.ts';
 
 const LEARNER='11111111-1111-4111-8111-111111111111';
 const TEACHER='22222222-2222-4222-8222-222222222222';
@@ -240,4 +241,100 @@ test('unconfirmed D1 write acknowledgements never claim a guardian proposal or s
  // A confirmed single-row insert still returns the normal immutable ACK.
  assert.equal((await ownerPaidSlotRequest(mock().db,'owner',LEARNER,proposal,NOW)).status,201);
  assert.equal((await staffPaidSlotDecision(mock().db,'staff',decision,NOW)).status,201);
+});
+
+
+const paidOffer={operationId:OP,teacherId:TEACHER,startsAtMs:START};
+const paidWithdrawal={operationId:OP,offerId:REQUEST,reason:'Slot withdrawn by staff'};
+
+test('staff published paid-offer list is bounded, scoped and read-only',async()=>{
+ const denied=mock({staff:false});
+ assert.deepEqual(await staffPaidSlotOffers(denied.db,'nonstaff',NOW),
+  {status:403,code:'STAFF_ACCESS_DENIED'});
+ assert.equal(denied.queries.some(q=>q.sql.includes('academy_paid_open_slot_events')),false);
+ const offer={offerId:REQUEST,teacherId:TEACHER,teacherName:'Synthetic Sheikh',
+  startsAtMs:START,endsAtMs:START+2400000,state:'published'};
+ const m=mock({rows:[offer]});
+ assert.deepEqual(await staffPaidSlotOffers(m.db,'staff',NOW),
+  {status:200,code:'ACADEMY_PAID_SLOT_STAFF_OFFERS',offers:[offer]});
+ const query=m.queries.find(q=>q.sql.includes('FROM academy_paid_open_slot_events'));
+ assert.ok(query);
+ assert.match(query.sql,/LIMIT 100/);
+ assert.match(query.sql,/academy_paid_open_slot_closure_events/);
+ assert.doesNotMatch(query.sql,/phone_number|email|reason|password|learner_id/i);
+ assert.deepEqual(query.values,[NOW-86400000,NOW+30*86400000]);
+ assert.deepEqual(await staffPaidSlotOffers(mock().db,'staff',-1),
+  {status:503,code:'CLOCK_UNAVAILABLE'});
+});
+
+test('staff publication enforces exact input, verified role, immutable D1 ACK and replay',async()=>{
+ const denied=mock({staff:false});
+ assert.equal((await staffPaidSlotPublish(denied.db,'other',paidOffer,NOW)).status,403);
+ assert.equal(denied.queries.some(q=>q.sql.includes('academy_paid_open_slot_events')),false);
+ for(const invalid of [{...paidOffer,actorSubject:'staff'},
+  {...paidOffer,startsAtMs:'later'},
+  {...paidOffer,startsAtMs:NOW+60000},
+  {...paidOffer,startsAtMs:NOW+30*86400000}]){
+  const m=mock();
+  assert.equal((await staffPaidSlotPublish(m.db,'staff',invalid,NOW)).status,400);
+  assert.equal(m.queries.some(q=>q.sql.includes('INSERT INTO')),false);
+ }
+ const m=mock();
+ const result=await staffPaidSlotPublish(m.db,'staff',paidOffer,NOW);
+ assert.equal(result.status,201);
+ assert.equal(result.code,'ACADEMY_PAID_OFFER_PUBLISHED');
+ const insert=m.queries.find(q=>q.sql.includes('INSERT INTO academy_paid_open_slot_events'));
+ assert.ok(insert);
+ assert.deepEqual(insert.values.slice(1),[OP,TEACHER,'staff',START,START+2400000,NOW]);
+ const prior={id:REQUEST,actor:'staff',teacherId:TEACHER,startsAtMs:START};
+ assert.deepEqual(await staffPaidSlotPublish(mock({prior}).db,'staff',paidOffer,NOW),
+  {status:200,code:'ACADEMY_PAID_OFFER_REPLAY',offerId:REQUEST});
+ assert.equal((await staffPaidSlotPublish(mock({prior:{...prior,actor:'other'}}).db,
+  'staff',paidOffer,NOW)).status,409);
+ const raced=mock({error:new Error('D1_ERROR: UNIQUE constraint failed'),
+  racePrior:prior});
+ assert.deepEqual(await staffPaidSlotPublish(raced.db,'staff',paidOffer,NOW),
+  {status:200,code:'ACADEMY_PAID_OFFER_REPLAY',offerId:REQUEST});
+ const conflict=mock({error:new Error('D1_ERROR: ACADEMY_PAID_OFFER_OVERLAP')});
+ assert.deepEqual(await staffPaidSlotPublish(conflict.db,'staff',paidOffer,NOW),
+  {status:409,code:'ACADEMY_PAID_OFFER_DENIED'});
+ for(const ack of [{success:false,meta:{changes:0}},{success:true,meta:{changes:0}}]){
+  assert.deepEqual(await staffPaidSlotPublish(mock({ack}).db,'staff',paidOffer,NOW),
+   {status:503,code:'ACADEMY_PAID_OFFER_WRITE_UNCONFIRMED'});
+ }
+});
+
+test('staff withdrawal requires reason and immutable idempotent D1 closure',async()=>{
+ const denied=mock({staff:false});
+ assert.equal((await staffPaidSlotWithdraw(denied.db,'other',paidWithdrawal,NOW)).status,403);
+ assert.equal(denied.queries.some(q=>q.sql.includes('academy_paid_open_slot_closure_events')),false);
+ for(const invalid of [{...paidWithdrawal,reason:'short'},
+  {...paidWithdrawal,reason:' Slot withdrawn by staff'},
+  {...paidWithdrawal,atMs:NOW}]){
+  const m=mock();
+  assert.equal((await staffPaidSlotWithdraw(m.db,'staff',invalid,NOW)).status,400);
+  assert.equal(m.queries.length,0);
+ }
+ const m=mock();
+ const result=await staffPaidSlotWithdraw(m.db,'staff',paidWithdrawal,NOW);
+ assert.equal(result.status,201);
+ assert.equal(result.code,'ACADEMY_PAID_OFFER_WITHDRAWN');
+ const insert=m.queries.find(q=>q.sql.includes('INSERT INTO academy_paid_open_slot_closure_events'));
+ assert.ok(insert);
+ assert.deepEqual(insert.values.slice(1),[OP,REQUEST,'staff',paidWithdrawal.reason,NOW]);
+ const prior={id:LEARNER,actor:'staff',offerId:REQUEST,reason:paidWithdrawal.reason};
+ assert.deepEqual(await staffPaidSlotWithdraw(mock({prior}).db,'staff',paidWithdrawal,NOW),
+  {status:200,code:'ACADEMY_PAID_WITHDRAWAL_REPLAY',withdrawalId:LEARNER});
+ assert.equal((await staffPaidSlotWithdraw(mock({prior:{...prior,offerId:TEACHER}}).db,
+  'staff',paidWithdrawal,NOW)).status,409);
+ const raced=mock({error:new Error('D1_ERROR: UNIQUE constraint failed'),
+  racePrior:prior});
+ assert.deepEqual(await staffPaidSlotWithdraw(raced.db,'staff',paidWithdrawal,NOW),
+  {status:200,code:'ACADEMY_PAID_WITHDRAWAL_REPLAY',withdrawalId:LEARNER});
+ const occupied=mock({error:new Error('D1_ERROR: ACADEMY_PAID_OFFER_CLOSE_DENIED')});
+ assert.deepEqual(await staffPaidSlotWithdraw(occupied.db,'staff',paidWithdrawal,NOW),
+  {status:409,code:'ACADEMY_PAID_WITHDRAWAL_DENIED'});
+ assert.deepEqual(await staffPaidSlotWithdraw(mock({ack:{
+  success:true,meta:{changes:0}}}).db,'staff',paidWithdrawal,NOW),
+  {status:503,code:'ACADEMY_PAID_WITHDRAWAL_WRITE_UNCONFIRMED'});
 });
