@@ -3,7 +3,7 @@ import {useEffect,useRef,useState} from 'react';
 import type {AccountSession} from '@/features/account';
 import {fetchAdminTeachers,AdminTeachersError,type AdminTeacher}
  from './admin-teachers-client';
-import {isDefinitivePaidSlotWriteDenial} from './admin-paid-slot-client';
+import {AdminPaidSlotError,isDefinitivePaidSlotWriteDenial} from './admin-paid-slot-client';
 import {fetchAdminPaidOffers,submitPaidOfferAction,
  type AdminPaidOffer,type PaidOfferAction} from './admin-paid-offers-client';
 import css from './AdminAcademyMvp.module.css';
