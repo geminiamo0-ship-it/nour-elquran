@@ -1,3 +1,7 @@
+## #317 ambiguous HTTP write outcomes — mandatory regression (2026-11-02)
+- Guardian paid-slot proposal, staff paid-slot decision, and staff paid-offer publish/withdraw must treat HTTP 408/425/429 as **uncertain**, retaining exact operationId/payload for replay; known 400/401/403/404/409/422 remain definitive. Unit cases cover both classifications and preserve existing double-tap gates.
+- Exact-head CI 4/4, independent security review and source-pinned signed Dev staff/guardian/sibling/credit/concurrency/360×667/390×844 are still required. No Production/payment/WhatsApp/audio change.
+
 ## #317 booked paid offer cannot be withdrawn — native regression (2026-11-02)
 - `test_booked_paid_offer_cannot_be_withdrawn_or_republished`: publish a trusted 40-minute offer, submit a guardian request and approve exactly one paid lesson; attempt to withdraw the now-occupied offer and to publish a duplicate interval. Both SQL writes must abort, the original offer must remain published, exactly one cycle spend must remain, and `PRAGMA foreign_key_check` must be empty.
 - This is source/local D1 guard coverage, **not** signed Cloudflare Dev proof. Require exact-head GitHub Verify, independent SQL/security review and source-pinned staff/guardian/two-sibling Dev/viewport acceptance before merge. No Production or financial integrations.
