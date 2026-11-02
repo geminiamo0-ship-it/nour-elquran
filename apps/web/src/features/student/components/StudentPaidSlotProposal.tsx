@@ -8,6 +8,10 @@ import styles from '../StudentPortal.module.css';
 
 type Attempt=Readonly<{learnerId:string;offerId:string;input:PaidSlotProposalInput}>;
 type Phase='idle'|'sending'|'uncertain'|'accepted'|'denied';
+/** A confirmed proposal can be refreshed to observe a later staff decision.
+ * An uncertain POST must only be replayed with its original operationId. */
+export const canRefreshPaidSlotProposal=(phase:Phase)=>
+ phase!=='sending'&&phase!=='uncertain';
 const date=new Intl.DateTimeFormat('ar-EG',{
  timeZone:'Africa/Cairo',dateStyle:'full',timeStyle:'short'
 });
@@ -82,7 +86,7 @@ export function StudentPaidSlotProposal({learnerId,onSubmitted}:{
   void send(next);
  }
  function refresh(){
-  if(locked)return;
+  if(!canRefreshPaidSlotProposal(phase))return;
   setAttempt(null);setPhase('idle');setRevision(v=>v+1);
  }
  return <section className={styles.panel} dir="rtl" aria-label="طلب موعد حصة مدفوعة">
@@ -90,7 +94,7 @@ export function StudentPaidSlotProposal({learnerId,onSubmitted}:{
    <p className={styles.eyebrow}>مواعيد منشورة من الإدارة</p>
    <h2>طلب موعد حصة مدفوعة</h2>
   </div><button type="button" className={styles.outlineButton}
-   disabled={locked} onClick={refresh}>تحديث المواعيد</button></div>
+   disabled={!canRefreshPaidSlotProposal(phase)} onClick={refresh}>تحديث المواعيد</button></div>
   <p>اختر موعدًا متاحًا لهذا الطالب من الخادم. إرسال الطلب لا يحجز الحصة
    ولا يخصم من الباقة؛ القرار النهائي للإدارة بعد إعادة فحص الرصيد والجدول.</p>
   {visible.status==='loading'?<p role="status">جارٍ قراءة المواعيد المدفوعة المعتمدة…</p>:
@@ -120,7 +124,7 @@ export function StudentPaidSlotProposal({learnerId,onSubmitted}:{
    disabled={!selected||!confirmed} onClick={submit}>إرسال طلب الموعد للإدارة</button>}
   {phase==='sending'&&<p role="status">جارٍ إرسال الطلب، دون خصم أو حجز فوري…</p>}
   {phase==='accepted'&&<p role="status">
-   تم تسجيل طلب الموعد لدى الإدارة. انتظر قرار الاعتماد؛ لم يُحجز موعد بعد.</p>}
+   تم تسجيل طلب الموعد لدى الإدارة. انتظر قرار الاعتماد؛ لم يُحجز موعد بعد. يمكنك تحديث المواعيد لاحقًا بعد قرار الإدارة.</p>}
   {phase==='denied'&&<p role="alert">
    رفض الخادم هذا الطلب أو انتهت صلاحيته. حدّث المواعيد قبل تقديم طلب جديد.</p>}
   {phase==='uncertain'&&activeAttempt&&<div role="alert">
