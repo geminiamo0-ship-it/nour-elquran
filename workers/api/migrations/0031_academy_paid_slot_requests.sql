@@ -1,6 +1,86 @@
 -- #317: immutable guardian paid-lesson slot proposals and staff decisions.
 -- A request never books a lesson or spends a cycle unit. Only a verified
 -- staff approval atomically invokes the existing #315 paid booking trigger.
+-- Staff-published PAID availability is distinct from free trial slots.
+-- No guardian may invent a time by supplying a valid-looking timestamp.
+CREATE TABLE academy_paid_open_slot_events (
+ id TEXT PRIMARY KEY NOT NULL CHECK(length(id)=36),
+ operation_id TEXT NOT NULL UNIQUE CHECK(length(operation_id)=36),
+ teacher_id TEXT NOT NULL REFERENCES teachers(id),
+ actor_subject TEXT NOT NULL REFERENCES auth_users(id),
+ starts_at_ms INTEGER NOT NULL,
+ ends_at_ms INTEGER NOT NULL CHECK(ends_at_ms=starts_at_ms+2400000),
+ published_at_ms INTEGER NOT NULL CHECK(published_at_ms>=0),
+ UNIQUE(teacher_id,starts_at_ms)
+) STRICT;
+CREATE INDEX academy_paid_open_slots_time
+ ON academy_paid_open_slot_events(starts_at_ms,teacher_id,id);
+CREATE TRIGGER academy_paid_open_slot_guard
+BEFORE INSERT ON academy_paid_open_slot_events BEGIN
+ SELECT RAISE(ABORT,'ACADEMY_STAFF_DENIED') WHERE NOT EXISTS(
+  SELECT 1 FROM staff_grants g JOIN auth_users u ON u.id=g.auth_subject
+  JOIN accounts a ON a.auth_subject=u.id
+  WHERE g.auth_subject=NEW.actor_subject AND g.permission='roles.manage'
+   AND g.revoked_at_ms IS NULL AND u.phone_number_verified=1
+   AND a.status='active');
+ SELECT RAISE(ABORT,'ACADEMY_PAID_OFFER_WINDOW') WHERE
+  NEW.starts_at_ms<=NEW.published_at_ms+60000 OR
+  NEW.ends_at_ms>NEW.published_at_ms+2592000000;
+ SELECT RAISE(ABORT,'ACADEMY_PAID_OFFER_TEACHER') WHERE NOT EXISTS(
+  SELECT 1 FROM teachers t WHERE t.id=NEW.teacher_id
+   AND t.status='active' AND t.qualified=1);
+ SELECT RAISE(ABORT,'ACADEMY_PAID_OFFER_OVERLAP') WHERE EXISTS(
+  SELECT 1 FROM academy_paid_open_slot_events s
+  WHERE s.teacher_id=NEW.teacher_id
+   AND NOT EXISTS(SELECT 1 FROM academy_paid_open_slot_closure_events x
+    WHERE x.slot_id=s.id)
+   AND s.starts_at_ms<NEW.ends_at_ms AND s.ends_at_ms>NEW.starts_at_ms);
+ SELECT RAISE(ABORT,'ACADEMY_PAID_OFFER_OCCUPIED') WHERE EXISTS(
+  SELECT 1 FROM lessons l WHERE l.actual_teacher_id=NEW.teacher_id
+   AND l.status IN ('scheduled','live')
+   AND l.starts_at_ms<NEW.ends_at_ms AND l.ends_at_ms>NEW.starts_at_ms);
+ SELECT RAISE(ABORT,'ACADEMY_PAID_OFFER_TRIAL_CONFLICT') WHERE EXISTS(
+  SELECT 1 FROM trial_open_slot_events t WHERE t.teacher_id=NEW.teacher_id
+   AND NOT EXISTS(SELECT 1 FROM trial_slot_closure_events x WHERE x.slot_id=t.id)
+   AND t.starts_at_ms<NEW.ends_at_ms AND t.ends_at_ms>NEW.starts_at_ms);
+END;
+CREATE TABLE academy_paid_open_slot_closure_events (
+ id TEXT PRIMARY KEY NOT NULL CHECK(length(id)=36),
+ operation_id TEXT NOT NULL UNIQUE CHECK(length(operation_id)=36),
+ slot_id TEXT NOT NULL UNIQUE REFERENCES academy_paid_open_slot_events(id),
+ actor_subject TEXT NOT NULL REFERENCES auth_users(id),
+ reason TEXT NOT NULL CHECK(length(trim(reason)) BETWEEN 8 AND 500),
+ at_ms INTEGER NOT NULL CHECK(at_ms>=0)
+) STRICT;
+CREATE TRIGGER academy_paid_open_slot_close_guard
+BEFORE INSERT ON academy_paid_open_slot_closure_events BEGIN
+ SELECT RAISE(ABORT,'ACADEMY_STAFF_DENIED') WHERE NOT EXISTS(
+  SELECT 1 FROM staff_grants g JOIN auth_users u ON u.id=g.auth_subject
+  JOIN accounts a ON a.auth_subject=u.id
+  WHERE g.auth_subject=NEW.actor_subject AND g.permission='roles.manage'
+   AND g.revoked_at_ms IS NULL AND u.phone_number_verified=1
+   AND a.status='active');
+ SELECT RAISE(ABORT,'ACADEMY_PAID_OFFER_CLOSE_DENIED') WHERE NOT EXISTS(
+  SELECT 1 FROM academy_paid_open_slot_events s
+  WHERE s.id=NEW.slot_id AND NEW.at_ms>=s.published_at_ms
+   AND NEW.at_ms<s.starts_at_ms
+   AND NOT EXISTS(SELECT 1 FROM lessons l
+    WHERE l.actual_teacher_id=s.teacher_id AND l.status IN ('scheduled','live')
+     AND l.starts_at_ms<s.ends_at_ms AND l.ends_at_ms>s.starts_at_ms));
+END;
+CREATE TRIGGER academy_paid_open_slot_no_update
+ BEFORE UPDATE ON academy_paid_open_slot_events
+ BEGIN SELECT RAISE(ABORT,'ACADEMY_IMMUTABLE'); END;
+CREATE TRIGGER academy_paid_open_slot_no_delete
+ BEFORE DELETE ON academy_paid_open_slot_events
+ BEGIN SELECT RAISE(ABORT,'ACADEMY_IMMUTABLE'); END;
+CREATE TRIGGER academy_paid_open_slot_close_no_update
+ BEFORE UPDATE ON academy_paid_open_slot_closure_events
+ BEGIN SELECT RAISE(ABORT,'ACADEMY_IMMUTABLE'); END;
+CREATE TRIGGER academy_paid_open_slot_close_no_delete
+ BEFORE DELETE ON academy_paid_open_slot_closure_events
+ BEGIN SELECT RAISE(ABORT,'ACADEMY_IMMUTABLE'); END;
+
 CREATE TABLE academy_paid_slot_request_events (
  id TEXT PRIMARY KEY NOT NULL CHECK(length(id)=36),
  operation_id TEXT NOT NULL UNIQUE CHECK(length(operation_id)=36),
@@ -41,6 +121,14 @@ BEFORE INSERT ON academy_paid_slot_request_events BEGIN
   WHERE g.learner_id=NEW.learner_id AND g.teacher_id=NEW.teacher_id
    AND g.revoked_at_ms IS NULL AND g.starts_at_ms<=NEW.starts_at_ms
    AND g.ends_at_ms>=NEW.ends_at_ms AND t.qualified=1 AND t.status='active');
+ -- Match a currently published, unwithdrawn PAID offer. Trial slots
+ -- never authorize a paid proposal. Staff can publish only via audited D1.
+ SELECT RAISE(ABORT,'ACADEMY_PAID_OFFER_MISSING') WHERE NOT EXISTS(
+  SELECT 1 FROM academy_paid_open_slot_events s
+  WHERE s.teacher_id=NEW.teacher_id AND s.starts_at_ms=NEW.starts_at_ms
+   AND s.ends_at_ms=NEW.ends_at_ms AND s.published_at_ms<=NEW.requested_at_ms
+   AND NOT EXISTS(SELECT 1 FROM academy_paid_open_slot_closure_events x
+    WHERE x.slot_id=s.id));
  SELECT RAISE(ABORT,'ACADEMY_SLOT_CYCLE_DENIED') WHERE NOT EXISTS(
   SELECT 1 FROM subscription_cycles c WHERE c.id=NEW.cycle_id
    AND c.learner_id=NEW.learner_id AND NEW.requested_at_ms>=c.starts_at_ms
@@ -86,6 +174,17 @@ BEFORE INSERT ON academy_paid_slot_decision_events BEGIN
  -- #317: A valid proposal does not reserve eligibility. Re-check the
  -- learner, owner, teacher qualification and assignment AT APPROVAL time.
  -- Rejections must remain possible for stale proposals without spending.
+ -- A withdrawn offer cannot be approved later. Rejection is still
+ -- allowed to preserve the immutable audit without spending a credit.
+ SELECT RAISE(ABORT,'ACADEMY_PAID_OFFER_MISSING') WHERE
+  NEW.decision='approved' AND NOT EXISTS(
+   SELECT 1 FROM academy_paid_slot_request_events r
+   JOIN academy_paid_open_slot_events s
+    ON s.teacher_id=r.teacher_id AND s.starts_at_ms=r.starts_at_ms
+    AND s.ends_at_ms=r.ends_at_ms
+   WHERE r.id=NEW.request_id AND s.published_at_ms<=r.requested_at_ms
+    AND NOT EXISTS(SELECT 1 FROM academy_paid_open_slot_closure_events x
+     WHERE x.slot_id=s.id));
  SELECT RAISE(ABORT,'ACADEMY_PAID_ASSIGNMENT_MISSING') WHERE
   NEW.decision='approved' AND NOT EXISTS(
    SELECT 1 FROM academy_paid_slot_request_events r
