@@ -4,7 +4,7 @@ import {parseOwnerAcademy,latestPendingAcademyRequest,currentCycleLabel} from '.
 import {StudentProvider} from '../StudentContext';
 import {DEMO_PROFILES} from '../mock-adapter';
 import {SubscriptionWorkspace} from './SubscriptionWorkspace';
-import {HomeSubscriptionStatus} from './HomeSubscriptionStatus';
+import {HomeSubscriptionStatus,homeSubscriptionSummary} from './HomeSubscriptionStatus';
 import {ConnectedSubscriptionLedger} from './ConnectedSubscriptionLedger';
 import {ConnectedAcademyOffers,createAcademyPackageRequestGate,
  classifyAcademyPackageRequestResponse} from './ConnectedAcademyOffers';
@@ -21,6 +21,16 @@ describe('clean, truthful subscriptions #324',()=>{
   expect(()=>parseOwnerAcademy({...sample,whatsappNumber:'https://example.com'})).toThrow();
   expect(()=>parseOwnerAcademy({...sample,packages:[{...sample.packages[0],priceEgp:-2}]})).toThrow();
   expect(()=>parseOwnerAcademy({...sample,requests:[{...sample.requests[0],state:'paid'}]})).toThrow();
+ });
+ it('does not claim a missing subscription when only the catalog succeeded',()=>{
+  const academy=parseOwnerAcademy({...sample,requests:[]});
+  const unknown=homeSubscriptionSummary(null,academy,1760000000000);
+  expect(unknown.status).toContain('تعذّر التحقق');
+  expect(unknown.status).not.toContain('لم يُؤكَّد الاشتراك');
+  const pending=homeSubscriptionSummary(null,parseOwnerAcademy(sample),1760000000000);
+  expect(pending.status).toContain('قيد المراجعة');
+  expect(homeSubscriptionSummary(null,null,1760000000000).status)
+   .toContain('تعذّر التحقق');
  });
  it('requires the exact D1 create/replay ACK before calling a package request confirmed',()=>{
   const id='11111111-1111-4111-8111-111111111111';
