@@ -1,3 +1,124 @@
+## #317 staff paid-slot inbox refresh read epoch (2026-11-02)
+- Fast Vitest: `createPaidSlotInboxReadEpoch` rejects any previous GET completion after a refresh/decision ACK, even before React effect cleanup; consecutive refreshes invalidate earlier reads. Inbox immediately hides prior staff rows while awaiting signed D1.
+- The unit guard is **not** a substitute for signed Cloudflare Dev test of refresh during in-flight GET and staff decision replay. Verify role revocation, sibling isolation, one-credit spend, and 360/390 mobile interaction against source-pinned D1 0031.
+- Prior PR #318 exact HEAD `f096cdfc` passed [Verify 41503199604](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41503199604) 4/4; the new code requires a fresh exact-head run. Keep Draft and #317 OPEN.
+
+## #317 ambiguous HTTP write outcomes — mandatory regression (2026-11-02)
+- Guardian paid-slot proposal, staff paid-slot decision, and staff paid-offer publish/withdraw must treat HTTP 408/425/429 as **uncertain**, retaining exact operationId/payload for replay; known 400/401/403/404/409/422 remain definitive. Unit cases cover both classifications and preserve existing double-tap gates.
+- Exact-head CI 4/4, independent security review and source-pinned signed Dev staff/guardian/sibling/credit/concurrency/360×667/390×844 are still required. No Production/payment/WhatsApp/audio change.
+
+## #317 booked paid offer cannot be withdrawn — native regression (2026-11-02)
+- `test_booked_paid_offer_cannot_be_withdrawn_or_republished`: publish a trusted 40-minute offer, submit a guardian request and approve exactly one paid lesson; attempt to withdraw the now-occupied offer and to publish a duplicate interval. Both SQL writes must abort, the original offer must remain published, exactly one cycle spend must remain, and `PRAGMA foreign_key_check` must be empty.
+- This is source/local D1 guard coverage, **not** signed Cloudflare Dev proof. Require exact-head GitHub Verify, independent SQL/security review and source-pinned staff/guardian/two-sibling Dev/viewport acceptance before merge. No Production or financial integrations.
+
+## #317 staff paid-offer submit latch regression (2026-11-02)
+- Vitest `admin-paid-offers-client.test.tsx`: synchronous gate denies two submit handlers before React rerender, blocks refresh while busy/unknown, permits only same-action replay after unknown outcome, and keeps confirmed writes closed until a signed staff GET/explicit refresh resets the gate.
+- Native D1 booking/credit and isolated signed Cloudflare Dev staff+guardian+sibling E2E remain separate required acceptance; a unit gate test is not remote proof. The source read-epoch guard must also be exercised by signed Dev rapid-refresh/ACK E2E. Verify exact PR HEAD in GitHub Actions before claiming success.
+
+## #317 guardian paid-slot rapid-tap regression (2026-11-02; source candidate)
+- `paid-slot-requests-client.test.ts` exercises a synchronous per-learner write gate: two submits before React rerender cannot create two accepted operationIds or overwrite the first retry payload; unknown result permits only same-operation replay, no refresh; successful ACK or definitive denial locks until an explicit signed D1 refresh.
+- Required exact-head GitHub Verify: governance, repository policy, code quality, native Cloudflare D1; no local full-suite claim because git clone DNS unavailable. After CI, independent security review and signed Cloudflare Dev E2E must prove one D1 request under rapid taps, lost-response replay, role/sibling isolation, no debit on submission and correct 360×667/390×844 UI. No Production changes.
+
+## 2026-11-02 — #317 staff decision rapid-tap regression
+- `AdminPaidSlotInbox.test.tsx` exercises a synchronous per-decision write gate: first approval submit wins, second tap before React rerender is ignored, retry cannot run while busy, uncertain response allows only same-payload retry, and definitive rejection/ACK blocks all new attempts. The UI still requires actual staff D1 approval ACK and independently verified Dev credit atomicity; this unit guard is not a substitute for Dev concurrency testing.
+
+## #317 refresh stale-selection boundary (2026-11-02)
+- After a confirmed paid-slot request or known denial, refresh must synchronously clear the previously selected offer ID, explicit guardian confirmation, retained attempt and old D1 offer rows, entering a loading state **before** a subsequent effect begins a new signed GET. Otherwise a stale, previously confirmed offer could be submitted from the old render. `paid-slot-requests-client.test.ts` checks the two-learner reset contract. Unknown write outcomes remain locked to exact operationId replay; server D1 remains the final authority.
+- Source-only regression; exact-head CI and signed Dev/browser acceptance still required. No payment or Production changes.
+
+## #317 confirmed request refresh / uncertain replay boundary (2026-11-02)
+- Student paid-slot UI must allow an explicit authoritative D1 offers refresh after a confirmed `201/200` proposal ACK or a known rejection, so a later staff decision does not require a full page remount. The server remains the source of truth and prevents duplicate pending requests.
+- A request in `sending` or network-`uncertain` must **not** allow a fresh operationId/slot; only exact immutable payload replay may resolve the unknown outcome. `paid-slot-requests-client.test.ts` covers idle/accepted/denied/sending/uncertain policy. This source regression does not substitute for signed Dev browser E2E, which must prove staff decision then guardian refresh with no double spend and sibling isolation.
+
+## #317 expired guardian paid-slot decision regression (2026-11-02)
+- Native SQLite `test_expired_pending_proposal_does_not_lock_learner_out` now checks the expired original can be rejected **after** the newer request was approved, without an extra booking/credit spend; immutable second decision is denied and foreign keys remain valid.
+- Previous `bd0140df` [Verify #41415655657](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41415655657) 4/4 PASS; the new test commit needs exact-head CI. This is not Cloudflare Dev or mobile acceptance.
+
+## #317 expired request administrative closure regression (2026-11-02)
+- SSR + pure state: staff inbox exposes a decision only for pending or expired requests; an expired request offers **rejection only**, never an approval option or debit claim. The explicit reason and confirmation remain required; server D1 guard already rejects approval after cutoff and records rejection without spend. Existing pending approval path stays intact.
+- Exact-head GitHub Verify and isolated signed Dev staff/guardian/expired/credit + 360/390 acceptance still required. No Production or payment provider activation.
+
+## #317 same-time paid-offer republish after withdrawal (2026-11-02)
+- Native SQLite/D1: active paid offers cannot overlap even at identical teacher/start; a withdrawn paid offer's 40-minute interval may be re-published with a NEW immutable event ID. Historical withdrawn offer remains in ledger, and a guardian request made before withdrawal must not be approved against the later publication. Staff explicitly rejects the old request, then a new owner proposal and staff approval create exactly one lesson and one credit spend. Assert FK integrity.
+- Isolated SQLite active-overlap/republication reproduction passed; exact-head GitHub Verify and real signed Dev 0031 acceptance still required. Keep Draft and issue OPEN; no Production/finance/WhatsApp/voice/ink change.
+
+## 2026-11-02 — #317 paid/trial adjacent-boundary regression (source candidate)
+- Verified Draft PR #318 HEAD `404b372d42353d083b64722133c2ff68058235b1` on GitHub Verify [41397900076](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41397900076): repository-policy, governance-tests, code-quality and cloudflare-local-d1 all SUCCESS 4/4. `main` was `4c15b59f713f41e2be9999bb082118cc48496c10`; branch protection reported **false** (Issue #1 still needs owner setting).
+- Added native SQLite test ensuring a paid 40-minute offer and trial 40-minute offer can touch endpoints in either publication order without falsely conflicting, booking a lesson or spending a credit. This is a **new source candidate**; the new commit's exact-head Verify has not yet run. PR remains Draft with no independent review or signed isolated Cloudflare Dev role/sibling/credit/mobile acceptance.
+- NEXT: inspect new exact-head CI, obtain independent security review, then signed Dev 0031 staff publish/withdraw → owner sibling slot request → staff approval/credit and 360/390 mobile checks. Do not merge, enable Production, payments, WhatsApp, child audio or cumulative ink.
+
+## #317 paid/trial partial-overlap guard regression (2026-11-02)
+- Native SQLite regression now checks paid-first and trial-first publication for start times half a 40-minute slot before, exactly aligned, and half a slot after the existing offer. All overlapping INSERTs must abort with the channel-specific guard; no phantom trial/paid offer, lesson or subscription debit may remain. Existing paid-withdrawal release test is preserved.
+- This is test-only source coverage. Verify on the exact new PR head, including native D1, before claiming pass. Independent SQL/privacy review and signed Cloudflare Dev remain mandatory.
+
+## #317 cross-channel paid/trial slot publication regression (2026-11-02)
+- Native SQLite/D1: publishing paid then overlapping free-trial for the same Sheikh must fail atomically with `ACADEMY_TRIAL_PAID_OFFER_CONFLICT`; after an audited paid withdrawal the trial publication may proceed. Publishing trial first then overlapping paid must continue to fail with `ACADEMY_PAID_OFFER_TRIAL_CONFLICT`. Rejections create no lesson, debit, or ghost offer.
+- Full exact-head CI (including Wrangler native D1), independent SQL/auth review, and signed Cloudflare Dev 0031 staff/guardian/learner-sibling/concurrent booking/credit tests remain required before merge. No Production deployment or feature flag changes.
+
+## #317 paid-offer Admin UI source gates (2026-11-02)
+- Validate exact 100-row D1 staff offer response, 40-minute interval, UUIDs, duplicates, rejected extra PII, publish/withdraw 201 vs same-operation 200 replay, denial and unknown POST outcome.
+- SSR must never expose a Sheikh/offer or an enabled mutation before signed staff reads. Admin staff dropdown is from the existing bounded signed directory; no client-proposed teacher role or finance state.
+- **Still required before merge:** exact-head Verify 4/4, independent privacy/auth/SQL review, source-pinned Cloudflare Dev 0031 staff vs parent/teacher/foreign sibling, duplicate/concurrent publish/withdraw and 360/390 touch/keyboard acceptance. No payment or Production activation.
+
+## #317 paid offer staff publication API — pending exact-head acceptance
+- Source Node: signed staff-only 100-row offer read; no contacts/learner data; strict UUID, timestamp and reason; identical operationId replay; D1 overlap/occupied/withdrawal conflicts; no false success on unconfirmed D1 writes.
+- Native D1: migration 0031 trigger rejects unauthorized/unqualified/overlapping offers and booked withdrawals; staff closure and owner approval are append-only and revalidated.
+- Remaining release gates: exact-head Verify 4/4, independent SQL/auth/privacy review, source-pinned Cloudflare Dev signed staff/guardian/foreign/sibling/replay/one-credit and 360/390 mobile; staff UI for publication/withdrawal. No Production, real payment or child audio.
+
+## #317 paid-slot guardian proposal UI gates (2026-11-02)
+- Unit/SSR: proposal fields must come exclusively from an exact parsed signed offer; foreign offer ID cannot create an input; no synthetic options during initial loading; premium Lessons retains both request form and signed status.
+- Pending Dev: verify 0031 migration, staff-published offer read, selected guardian create/replay and staff approve/reject, one-credit atomicity and no partial spend; negative foreign sibling/unsigned/revoked teacher/staff and expired/withdrawn offers; mobile 360x667/390x844, keyboard and touch. An unknown network response must allow ONLY identical operation replay, never a fresh operation.
+- GitHub exact-head Verify and independent SQL/auth/privacy review are required before merge. Local/CI evidence alone cannot establish Cloudflare Dev acceptance or permission to activate Production.
+
+## #317 published paid-offer source verification (2026-11-02)
+- Native SQLite migration 0031: reject invented/unpublished or withdrawn teacher/time at guardian proposal and staff approval; allow audited rejection without spend, enforce verified staff publication, non-overlap and immutable withdrawal events.
+- Node owner GET: current learner authorization before any offers query, D1 published/active cycle/assignment/credit/lesson/trial/pending filters, bounded 30 and no PII.
+- Before merging Draft #318: exact-head Verify 4/4, independent SQL/privacy review, staff offer publish/withdraw API + strict guardian offer/form, source-pinned signed Dev guardian/staff/sibling/concurrency/one-credit and 360/390 mobile E2E. No Production or payment-provider acceptance.
+
+## #317 expired paid-slot read-state regression (2026-11-01; source-only)
+- Worker tests assert both signed GET selectors use server clock plus 60-second cutoff and keep learner-scope/role authorization before reading. Immutable decision rows override derived expiration; SQL state never writes a rejection or debits a credit.
+- Guardian and staff Vitest strict parsers accept `expired` only with `lessonId:null`, reject extra PII/invalid combinations; staff UI shows no approve/reject form for expired rows.
+- Required acceptance still includes exact-head GitHub Verify 4/4, independent SQL/privacy review and signed Cloudflare Dev D1 0031 owner/staff/sibling/credit plus mobile RTL. No claim of live Dev behavior from unit tests.
+
+## #317 D1 paid-slot write acknowledgement regression (2026-11-01)
+- Backend Node tests must reject both `run()={success:false,meta:{changes:0}}` and `run()={success:true,meta:{changes:0}}` for guardian proposals and staff decisions with a sanitized 503, never a 201/lesson or debit claim. Positive `success:true,changes:1` remains accepted.
+- Unknown D1 write outcomes require explicit same-operationId replay after fresh owner/staff authorization; only immutable matching events may return a successful replay. Unit tests are not proof of remote D1 trigger or credit atomicity. Exact-head CI, independent review and signed isolated Dev 0031 acceptance remain mandatory.
+
+## #317 paid-slot staff decision UI acceptance (source-only, 2026-11-01)
+- Vitest: strict 201 created vs 200 replay, valid UUID lesson for approval and null for rejection; no PII/extraneous fields; exact same-origin POST body, no spoofed role/time; 409 denial and network-unknown fail closed. SSR initial staff inbox contains no learner records/action; pending decision starts disabled until reason and confirmation.
+- Native D1 0031 tests must still prove one atomic credit spend and booked 40-minute lesson, rejection without spend, stale grant/assignment/cycle denial, simultaneous decisions and replay.
+- **Required before merge:** exact-head Verify 4/4, independent security review, source-pinned Dev synthetic owner+staff+sibling+foreign-owner E2E and 360/390 mobile keyboard/touch. PR #318 diverged from main; reconcile conflict without overwriting premium student UI. No Production.
+
+## #317 Admin paid-slot inbox source gate (2026-11-01)
+- Vitest `admin-paid-slot-client.test.ts`: accepts only verified staff GET contract, max 100 unique request IDs, UUIDs, padded but nonblank names, 40-minute intervals, approved lesson IDs, pending/rejected null IDs; rejects unexpected PII, invalid/coerced fields and duplicate requests.
+- Fetch uses same-origin credentials, no-store, redirect error and no client staff assertion. 403, 503, malformed JSON and offline are errors, never empty inbox. `AdminPaidSlotInbox.test.tsx` checks initial SSR renders loading gate with no synthetic student or false approval/debit.
+- Exact-head lint/typecheck/Vitest/build and native D1 required before review; isolated Cloudflare Dev 0031 signed staff vs ungranted/revoked, guardian/sibling, mobile 360/390/1280 and real decision replay still OPEN. This is **not** evidence of CI or Dev pass.
+
+## #317 owner paid-slot status read UI (source-only, 2026-11-01)
+- Vitest `paid-slot-requests-client.test.ts` asserts strict response fields, bounded unique requests, 40-minute intervals, approved lesson ID vs pending/rejected null, PII rejection, same-origin signed no-store GET, malformed learner ID denied before fetch, 404/503/offline never rendered as zero rows.
+- Signed Lessons component is learner-keyed and aborts old request on switch. Browser 360/390 and sibling/foreign-owner/Dev D1 0031 checks remain required. Exact-head CI not yet observed for this slice; no operational acceptance.
+
+## #317 concurrent operationId race regression — 2026-11-01
+- Node academy-paid-slot.test.ts: two signed POSTs may both observe no prior event; losing D1 unique insert must read winner by operationId and return original guardian requestId or staff lessonId only if actor and immutable payload match. Changed actor/payload remains 409; revoked owner/staff denies before replay. No second booking/spend write.
+- Required: exact-head GitHub Verify including native D1, strict TypeScript and security smoke; independent review; synthetic signed Cloudflare Dev two-role/sibling/idempotency acceptance. No CI/Dev pass claimed for this change yet.
+
+## #317 paid-slot API acceptance gate — 2026-11-01
+- Unit: signed guardian GET/POST exact allowlist and trusted Worker time, 404 foreign learner, idempotent same-payload replay vs 409 conflicting operation; staff GET/POST deny before any sensitive D1 query, validated permission and immutable staff decision, sanitized expected D1 constraint failures.
+- Native SQLite: apply full migrations through 0031 and verify proposal never spends, staff approval books+spends once, race/overlap/expired/revoked grant/teacher/owner/cycle denial and no partial events. `academy-paid-slot.test.ts` and `test_academy_paid_slot_requests.py`.
+- Isolated Dev: 0031 migration must be staged before source-pinned API, signed guardian A and sibling B + foreign guardian + verified staff + revoked staff; confirm CSRF Origin, 401/403/404, one debit only after staff approval, replay after network uncertainty and no cross-household data. RTL Student Lessons and Admin Requests UI at 360/390/1280 plus touch and reload.
+- Do NOT infer live booking, payment, Production readiness or feature-flag approval from source/CI. Keep #317 OPEN until independent review and signed Dev acceptance.
+
+## #317 decision chronology regression — 2026-11-01
+- Native SQLite migration 0031: both `approved` and `rejected` decisions timestamped earlier than their guardian request must fail with `ACADEMY_DECISION_PRECEDES_REQUEST`, leaving no decision/lesson/spend; a later legitimate rejection must succeed. Future signed API must generate all audit timestamps server-side. Exact-head GitHub Verify and isolated Dev still required.
+
+## #317 expired undecided paid-slot request regression (2026-11-01)
+- Native full-migration SQLite must reject a second proposal while the first is still approvable, permit a fresh proposal once the first start reaches the one-minute approval cutoff, retain the old immutable audit row, reject approval of the old proposal, and spend exactly one unit on the fresh staff approval with valid FKs.
+- The API must supply trusted server timestamps; a client may never choose `requested_at_ms` or staff decision `at_ms`. No source-only test proves signed Dev runtime acceptance. Require exact-head CI, independent SQL review, then 2-role/sibling Dev E2E before merge/activation.
+
+## #317 guardian-paid slot request ledger (source candidate)
+- Full native SQLite migration suite must prove request insert is zero-debit, approved staff decision creates exactly one scheduled 40-minute lesson and one existing cycle spend, rejection zero-debit, foreign owner/learner/cycle/teacher denial, duplicate pending/idempotency uniqueness, window bounds, no-balance after concurrent spend, overlap after request rollback, unauthorized staff and append-only audit.
+- Exact-head Verify plus independent security/SQL review required before merge. A later HTTP/UI slice must test signed owner/staff/revocation/CSRF, sibling isolation, idempotent replay and mobile. Isolated Dev D1 0031 migration and source-pinned signed role E2E required before operational acceptance; this migration alone does not enable self-service booking.
+
 ## #309 Admin operation release gates (2026-11-01)
 - Unit: strict teacher roster transition parser, authorized staff pre-query, active class guard, exact client payload/action allowlist, 401/403, network-uncertain write (no false success/retry), SSR forms locked unless explicit consent.
 - Native SQL: all migrations through 0027; active scheduled/live Sheikh cannot be suspended or de-qualified, no immutable event on denial, cancellation then transition, unrelated teacher permitted, and legacy B2 endpoint inherits same trigger.
