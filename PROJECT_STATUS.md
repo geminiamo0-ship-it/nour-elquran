@@ -1,3 +1,9 @@
+## 2026-11-02 — #317 staff paid-offer write latch (Draft PR #318, source only)
+- Source review found `AdminPaidOffers` used a temporary `inFlight` boolean, which released immediately after a POST settled; a second submit before React committed its disabled state could mint another operationId. A network-unknown write could also race with stale UI before rerender.
+- Replaced it with a synchronous idle/busy/uncertain/closed gate: double taps are denied, uncertain outcomes can replay **only the retained action**, and a confirmed publish/withdraw remains closed until a fresh signed staff GET succeeds. A definitive denial requires an explicit refresh. Staff data is cleared while revalidating.
+- Changed `apps/web/src/features/admin/AdminPaidOffers.tsx` and `admin-paid-offers-client.test.tsx` with a gate regression. No D1 migration, payment, staff role, Production or feature-flag change.
+- **Pending:** exact-head GitHub Verify, independent security/privacy/SQL review, source-pinned signed Cloudflare Dev staff/guardian/sibling/credit/replay and 360/390 mobile acceptance. Keep PR #318 Draft and Issue #317 OPEN.
+
 ## 2026-11-02 — #317 guardian paid-slot double-tap single-flight guard (Draft PR #318)
 - Source review found `StudentPaidSlotProposal` relied on asynchronous React phase state to block a second rapid submit. A second click before rerender could generate a different `operationId` and replace the first attempt, making an unknown network outcome impossible to replay safely.
 - Added a synchronous per-mounted-learner gate in `StudentPaidSlotProposal.tsx`: first submit retains its immutable payload before fetch; concurrent taps cannot overwrite it; uncertain outcomes permit **only** explicit same-operation retry; confirmed ACK or definitive denial requires a new signed D1 refresh. Refresh cannot discard an in-flight or uncertain write. Parent UI callback is outside the D1 ACK exception handler.
