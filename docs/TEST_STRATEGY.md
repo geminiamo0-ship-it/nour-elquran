@@ -1,3 +1,7 @@
+## #317 confirmed request refresh / uncertain replay boundary (2026-11-02)
+- Student paid-slot UI must allow an explicit authoritative D1 offers refresh after a confirmed `201/200` proposal ACK or a known rejection, so a later staff decision does not require a full page remount. The server remains the source of truth and prevents duplicate pending requests.
+- A request in `sending` or network-`uncertain` must **not** allow a fresh operationId/slot; only exact immutable payload replay may resolve the unknown outcome. `paid-slot-requests-client.test.ts` covers idle/accepted/denied/sending/uncertain policy. This source regression does not substitute for signed Dev browser E2E, which must prove staff decision then guardian refresh with no double spend and sibling isolation.
+
 ## #317 expired guardian paid-slot decision regression (2026-11-02)
 - Native SQLite `test_expired_pending_proposal_does_not_lock_learner_out` now checks the expired original can be rejected **after** the newer request was approved, without an extra booking/credit spend; immutable second decision is denied and foreign keys remain valid.
 - Previous `bd0140df` [Verify #41415655657](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41415655657) 4/4 PASS; the new test commit needs exact-head CI. This is not Cloudflare Dev or mobile acceptance.
