@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import type {AccountSession} from '@/features/account';
 import {AdminPaidSlotError,fetchAdminPaidSlots,type AdminPaidSlot}
  from './admin-paid-slot-client';
@@ -21,16 +21,29 @@ const states={pending:'بانتظار قرار الإدارة',
  * proposals can only be rejected to close their immutable audit trail. */
 export const canAdjudicatePaidSlot=(state:AdminPaidSlot['state'])=>
  state==='pending'||state==='expired';
+/** A refresh invalidates pending reads synchronously, before React effect
+ * cleanup. A late GET must never repopulate stale actionable staff rows. */
+export function createPaidSlotInboxReadEpoch(){
+ let epoch=0;
+ return {
+  current:()=>epoch,
+  invalidate:()=>++epoch,
+  isCurrent:(observed:number)=>observed===epoch
+ };
+}
 export function AdminPaidSlotInbox({session}:{session:AccountSession}){
  const [read,setRead]=useState<Read>({phase:'loading'});
  const [retry,setRetry]=useState(0);
+ const readEpoch=useRef(createPaidSlotInboxReadEpoch());
  useEffect(()=>{
   const controller=new AbortController();
+  const epoch=readEpoch.current.current();
   setRead({phase:'loading'});
   void fetchAdminPaidSlots(controller.signal).then(rows=>{
-   if(!controller.signal.aborted)setRead({phase:'ready',session,rows});
+   if(!controller.signal.aborted&&readEpoch.current.isCurrent(epoch))
+    setRead({phase:'ready',session,rows});
   }).catch(error=>{
-   if(controller.signal.aborted)return;
+   if(controller.signal.aborted||!readEpoch.current.isCurrent(epoch))return;
    setRead({phase:error instanceof AdminPaidSlotError&&
     [401,403,404].includes(error.status)?'denied':'error',session});
   });
@@ -40,6 +53,11 @@ export function AdminPaidSlotInbox({session}:{session:AccountSession}){
  const current='session' in read&&read.session===session?read:null;
  const ready=current?.phase==='ready'?current.rows:null;
  const phase=current?.phase??'loading';
+ function refresh(){
+  readEpoch.current.invalidate();
+  setRead({phase:'loading'});
+  setRetry(n=>n+1);
+ }
  return <section className={css.collection} aria-labelledby="admin-paid-slot-heading" dir="rtl">
   <header className={css.collectionHero}>
    <p className={css.kicker}>سجل D1 · طلبات المواعيد المدفوعة</p>
@@ -53,7 +71,7 @@ export function AdminPaidSlotInbox({session}:{session:AccountSession}){
     اعتماد الطلبات السارية أو رفض المنتهية يتطلب صلاحية إدارة فعلية، وإقرارًا صريحًا، وتأكيد D1.
    </p>
    <button type="button" className={css.staffRefresh}
-    disabled={phase==='loading'} onClick={()=>setRetry(n=>n+1)}>
+    disabled={phase==='loading'} onClick={refresh}>
     تحديث الطلبات
    </button>
   </div>
@@ -63,7 +81,7 @@ export function AdminPaidSlotInbox({session}:{session:AccountSession}){
    ليس لهذا الحساب صلاحية قراءة طلبات المواعيد. لا تُعرض سجلات سابقة.</p>}
   {phase==='error'&&<div role="alert" className={css.staffError}>
    <p>تعذّر التحقق من الطلبات الآن؛ لن نعرض بيانات افتراضية أو نفترض عدم وجود طلبات.</p>
-   <button type="button" onClick={()=>setRetry(n=>n+1)}>إعادة المحاولة</button>
+   <button type="button" onClick={refresh}>إعادة المحاولة</button>
   </div>}
   {ready&&(
    ready.length===0?<p role="status" className={css.staffEmpty}>
@@ -90,7 +108,7 @@ export function AdminPaidSlotInbox({session}:{session:AccountSession}){
      </div>
      {canAdjudicatePaidSlot(item.state)&&<AdminPaidSlotDecision
       key={item.requestId+item.state+session.user.id} request={item}
-      onCommitted={()=>setRetry(n=>n+1)}/>}
+      onCommitted={refresh}/>}
     </article>)}
    </div>
   )}
