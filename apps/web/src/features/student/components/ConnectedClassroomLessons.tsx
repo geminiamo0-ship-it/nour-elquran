@@ -6,6 +6,7 @@ import {StudentTrialBooking} from './StudentTrialBooking';
 import {StudentTrialCancellation} from './StudentTrialCancellation';
 import {StudentTrialReschedule} from './StudentTrialReschedule';
 import {StudentPaidSlotStatus} from './StudentPaidSlotStatus';
+import {StudentPaidSlotProposal} from './StudentPaidSlotProposal';
 import {currentLearnerRead,type LearnerScoped} from './learner-scope';
 import {UpcomingLessonCard,UpcomingLessonList,type DisplayLesson} from './LessonsVisual';
 import css from './LessonsPremium.module.css';
@@ -34,6 +35,7 @@ export function ConnectedClassroomLessons({learnerId}:{learnerId:string}){
  });
  const [retry,setRetry]=useState(0);
  const [availabilityRevision,setAvailabilityRevision]=useState(0);
+ const [paidRevision,setPaidRevision]=useState(0);
  const [bookingOpen,setBookingOpen]=useState(false);
  const [attendanceOpen,setAttendanceOpen]=useState(false);
  useEffect(()=>{
@@ -83,7 +85,10 @@ export function ConnectedClassroomLessons({learnerId}:{learnerId:string}){
       refreshRevision={availabilityRevision} onBooked={()=>setRetry(x=>x+1)}/>
    </div>}
   </details>
-  <StudentPaidSlotStatus key={learnerId} learnerId={learnerId}/>
+  <StudentPaidSlotProposal key={learnerId} learnerId={learnerId}
+   onSubmitted={()=>setPaidRevision(v=>v+1)}/>
+  <StudentPaidSlotStatus key={learnerId} learnerId={learnerId}
+   refreshRevision={paidRevision}/>
   <details className={css.expansion} onToggle={e=>setAttendanceOpen(e.currentTarget.open)}>
    <summary>الحضور وطلبات المراجعة</summary>
    {attendanceOpen&&<div className={css.expansionBody}>
