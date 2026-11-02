@@ -1,9 +1,30 @@
 import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminPaidSlotInbox,canAdjudicatePaidSlot} from './AdminPaidSlotInbox';
-import {AdminPaidSlotDecision} from './AdminPaidSlotDecision';
+import {AdminPaidSlotDecision,createPaidSlotDecisionGate} from './AdminPaidSlotDecision';
 
 describe('#317 admin paid-slot inbox initial privilege gate',()=>{
+ it('latches a staff decision synchronously across double taps and retries',()=>{
+  const gate=createPaidSlotDecisionGate();
+  // Two submit handlers may fire before React commits disabled state.
+  expect(gate.begin()).toBe(true);
+  expect(gate.begin()).toBe(false);
+  expect(gate.begin(true)).toBe(false);
+  // A lost ACK permits only a retry with the SAME immutable operationId.
+  gate.finish(true);
+  expect(gate.begin()).toBe(false);
+  expect(gate.begin(true)).toBe(true);
+  expect(gate.begin(true)).toBe(false);
+  gate.finish(false);
+  expect(gate.begin()).toBe(false);
+  expect(gate.begin(true)).toBe(false);
+  // A definitive 4xx denial also cannot trigger a new decision.
+  const denied=createPaidSlotDecisionGate();
+  expect(denied.begin()).toBe(true);
+  denied.finish(false);
+  expect(denied.begin()).toBe(false);
+  expect(denied.begin(true)).toBe(false);
+ });
  it('permits rejection-only audit of expired undecided proposals',()=>{
   expect(canAdjudicatePaidSlot('pending')).toBe(true);
   expect(canAdjudicatePaidSlot('expired')).toBe(true);
