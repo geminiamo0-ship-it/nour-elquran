@@ -1,3 +1,7 @@
+## #317 cross-channel paid/trial slot publication regression (2026-11-02)
+- Native SQLite/D1: publishing paid then overlapping free-trial for the same Sheikh must fail atomically with `ACADEMY_TRIAL_PAID_OFFER_CONFLICT`; after an audited paid withdrawal the trial publication may proceed. Publishing trial first then overlapping paid must continue to fail with `ACADEMY_PAID_OFFER_TRIAL_CONFLICT`. Rejections create no lesson, debit, or ghost offer.
+- Full exact-head CI (including Wrangler native D1), independent SQL/auth review, and signed Cloudflare Dev 0031 staff/guardian/learner-sibling/concurrent booking/credit tests remain required before merge. No Production deployment or feature flag changes.
+
 ## #317 paid-offer Admin UI source gates (2026-11-02)
 - Validate exact 100-row D1 staff offer response, 40-minute interval, UUIDs, duplicates, rejected extra PII, publish/withdraw 201 vs same-operation 200 replay, denial and unknown POST outcome.
 - SSR must never expose a Sheikh/offer or an enabled mutation before signed staff reads. Admin staff dropdown is from the existing bounded signed directory; no client-proposed teacher role or finance state.
