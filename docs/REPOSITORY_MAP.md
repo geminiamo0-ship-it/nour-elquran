@@ -1,3 +1,8 @@
+## #317 signed paid-slot proposal UI (2026-11-02, Draft PR #318)
+- `apps/web/src/features/student/components/StudentPaidSlotProposal.tsx`: learner-scoped, published-offer-only 40-minute proposal selection, confirmation and explicit same-operation replay after unknown POST outcome; no payment or booking assertion.
+- `apps/web/src/features/student/components/{ConnectedClassroomLessons.tsx,StudentPaidSlotStatus.tsx}`: mount trusted proposal form in premium Lessons and refresh signed request status after confirmed request ACK.
+- `apps/web/src/features/student/paid-slot-requests-client.test.ts`: trusted offer selection and fail-closed SSR regressions. Remote Dev 0031 and independent privacy review remain mandatory.
+
 ## #317 source candidate — paid offer trust boundary
 - `workers/api/migrations/0031_academy_paid_slot_requests.sql`: staff-only append-only paid open slots and withdrawals; guardian proposals/approvals require matching published, unwithdrawn paid offers.
 - `workers/api/src/academy-paid-slot.ts`: `ownerPaidSlotOffers` signed learner-scoped, active-cycle and assignment/credit/conflict filtered D1 GET; no booking.
