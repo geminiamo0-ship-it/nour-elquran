@@ -2,8 +2,8 @@ import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {ConnectedClassroomLessons} from './components/ConnectedClassroomLessons';
 import {currentLearnerRead} from './components/learner-scope';
-import {StudentPaidSlotProposal,proposalFromPublishedOffer} from
- './components/StudentPaidSlotProposal';
+import {StudentPaidSlotProposal,proposalFromPublishedOffer,
+ canRefreshPaidSlotProposal} from './components/StudentPaidSlotProposal';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {fetchPaidSlotRequests,parsePaidSlotRequests,PaidSlotRequestsError,
  parsePaidSlotProposalAck,submitPaidSlotProposal} from
@@ -193,6 +193,16 @@ describe('#317 published paid-offer read boundary',()=>{
 
 
 describe('#317 trusted published paid-slot form',()=>{
+ it('permits a fresh server read after confirmed submission but never discards an uncertain write',()=>{
+  // After staff rejects/approves a confirmed request, the guardian must be
+  // able to fetch D1 availability again without reloading the entire page.
+  // Unknown network outcomes remain locked to same-operation replay.
+  expect(canRefreshPaidSlotProposal('idle')).toBe(true);
+  expect(canRefreshPaidSlotProposal('accepted')).toBe(true);
+  expect(canRefreshPaidSlotProposal('denied')).toBe(true);
+  expect(canRefreshPaidSlotProposal('sending')).toBe(false);
+  expect(canRefreshPaidSlotProposal('uncertain')).toBe(false);
+ });
  const offer={offerId:A,teacherId:B,cycleId:C,
   startsAtMs:1793600000000,endsAtMs:1793602400000};
  it('builds a proposal only from a matching signed offer, not arbitrary user IDs',()=>{
