@@ -1,10 +1,23 @@
 import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {AdminPaidSlotInbox,canAdjudicatePaidSlot} from './AdminPaidSlotInbox';
+import {AdminPaidSlotInbox,canAdjudicatePaidSlot,
+ createPaidSlotInboxReadEpoch} from './AdminPaidSlotInbox';
 import {AdminPaidSlotDecision,createPaidSlotDecisionGate} from './AdminPaidSlotDecision';
 import {AdminPaidSlotError,isDefinitivePaidSlotWriteDenial} from './admin-paid-slot-client';
 
 describe('#317 admin paid-slot inbox initial privilege gate',()=>{
+ it('invalidates an old staff GET before React cleanup after refresh or decision ACK',()=>{
+  const epoch=createPaidSlotInboxReadEpoch();
+  const first=epoch.current();
+  expect(epoch.isCurrent(first)).toBe(true);
+  const second=epoch.invalidate();
+  expect(epoch.isCurrent(first)).toBe(false);
+  expect(epoch.isCurrent(second)).toBe(true);
+  // A second staff refresh must also discard the previous pending response.
+  const third=epoch.invalidate();
+  expect(epoch.isCurrent(second)).toBe(false);
+  expect(epoch.isCurrent(third)).toBe(true);
+ });
  it('keeps a timed-out or throttled staff decision replayable',()=>{
   for(const status of [408,425,429,500,503,0])
    expect(isDefinitivePaidSlotWriteDenial(
