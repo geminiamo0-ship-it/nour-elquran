@@ -107,9 +107,12 @@ class PaidSlotRequestD1(unittest.TestCase):
 
   paid_start=T+7*DAY
   offer=self.publish(start=paid_start)
-  with self.assertRaisesRegex(sqlite3.IntegrityError,
-                               'ACADEMY_TRIAL_PAID_OFFER_CONFLICT'):
-   publish_trial(paid_start)
+  # Both half-overlap directions must be denied, not just exact matches.
+  for start in (paid_start-SLOT//2,paid_start,paid_start+SLOT//2):
+   with self.subTest(trial_start=start):
+    with self.assertRaisesRegex(sqlite3.IntegrityError,
+                                 'ACADEMY_TRIAL_PAID_OFFER_CONFLICT'):
+     publish_trial(start)
   self.assertEqual(self.db.execute(
    'SELECT COUNT(*) FROM trial_open_slot_events').fetchone(),(0,))
   # Withdrawal is an immutable release, not a cancellation or refund.
@@ -120,9 +123,11 @@ class PaidSlotRequestD1(unittest.TestCase):
   publish_trial(paid_start,at=T+2)
   trial_first=T+8*DAY
   publish_trial(trial_first)
-  with self.assertRaisesRegex(sqlite3.IntegrityError,
-                               'ACADEMY_PAID_OFFER_TRIAL_CONFLICT'):
-   self.publish(start=trial_first)
+  for start in (trial_first-SLOT//2,trial_first,trial_first+SLOT//2):
+   with self.subTest(paid_start=start):
+    with self.assertRaisesRegex(sqlite3.IntegrityError,
+                                 'ACADEMY_PAID_OFFER_TRIAL_CONFLICT'):
+     self.publish(start=start)
   self.assertEqual(self.db.execute(
    'SELECT COUNT(*) FROM academy_paid_open_slot_events').fetchone(),(1,))
   self.assertEqual(self.db.execute(
