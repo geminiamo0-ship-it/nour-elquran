@@ -1,3 +1,9 @@
+## 2026-11-02 — #317 signed staff paid-slot offer management (PR #318; source candidate)
+- Added `AdminPaidOffers.tsx` on authenticated Admin Requests and strict `admin-paid-offers-client.ts`: published/withdrawn D1 offers, trusted active/qualified teacher dropdown, explicit 40-minute Cairo preview, publish/withdraw confirmations and reason, exact operationId replay on unknown outcome. No optimistic booking or debit.
+- Added contract/SSR tests for strict bounded offer rows, exact 201/200 ACKs, 409/unknown network and initial privacy gate. The existing Worker/D1 0031 API is reused; no migration or Production change.
+- **NOT VERIFIED** until exact-head GitHub Verify completes, independent SQL/auth/privacy review, signed Dev 0031 staff/guardian/sibling/concurrency tests and mobile touch QA. Keep PR Draft, no Production/payment/WhatsApp/audio/cumulative-ink rollout.
+- NEXT: inspect exact-head 4/4 CI, repair failures, then source-pinned Cloudflare Dev and independent review before merging.
+
 ## 2026-11-02 — #317 staff paid-slot publication API (source candidate, not Dev-accepted)
 - Draft PR #318 now includes **staff-only** signed `GET/POST /v1/staff/academy/paid-slot-offers` and `POST /v1/staff/academy/paid-slot-withdrawals` behind existing default-OFF Admin flag, verified D1 `roles.manage` and schema 0031. Publication uses immutable teacher/40-minute/server-clock events; withdrawal records immutable reason and never refunds or spends credit.
 - Worker functions validate exact JSON/UUIDs/time/reason, replay only identical staff operations after current role check, handle racing inserts and require confirmed D1 changes. Bounded staff list returns offer/teacher/time/state only, no child contact, guardian or financial data. Native D1 triggers from 0031 enforce qualified Sheikh, overlaps, occupied slots and withdrawal constraints.
