@@ -4,7 +4,8 @@ import {ConnectedClassroomLessons} from './components/ConnectedClassroomLessons'
 import {currentLearnerRead} from './components/learner-scope';
 import {StudentPaidSlotProposal,proposalFromPublishedOffer,
  canRefreshPaidSlotProposal,resetPaidSlotProposalRefresh,
- createPaidSlotProposalGate,isUncertainPaidSlotProposalOutcome} from './components/StudentPaidSlotProposal';
+ createPaidSlotProposalGate,createPaidSlotOfferReadEpoch,
+ isUncertainPaidSlotProposalOutcome} from './components/StudentPaidSlotProposal';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {fetchPaidSlotRequests,parsePaidSlotRequests,PaidSlotRequestsError,
  parsePaidSlotProposalAck,submitPaidSlotProposal} from
@@ -245,6 +246,23 @@ describe('#317 trusted published paid-slot form',()=>{
   expect(canRefreshPaidSlotProposal('denied')).toBe(true);
   expect(canRefreshPaidSlotProposal('sending')).toBe(false);
   expect(canRefreshPaidSlotProposal('uncertain')).toBe(false);
+ });
+ it('rejects a stale signed GET and old confirmed click immediately on refresh',()=>{
+  const epoch=createPaidSlotOfferReadEpoch();
+  const oldRender=epoch.current();
+  const oldGet=epoch.current();
+  expect(epoch.isCurrent(oldRender)).toBe(true);
+  expect(epoch.isCurrent(oldGet)).toBe(true);
+  // Click refresh before React commits its loading state or aborts old GET.
+  expect(epoch.invalidate()).toBe(1);
+  expect(epoch.isCurrent(oldRender)).toBe(false);
+  expect(epoch.isCurrent(oldGet)).toBe(false);
+  // A second stale refresh handler cannot overwrite a newer read.
+  const newRender=epoch.current();
+  expect(epoch.isCurrent(newRender)).toBe(true);
+  expect(epoch.invalidate()).toBe(2);
+  expect(epoch.isCurrent(newRender)).toBe(false);
+  expect(epoch.isCurrent(epoch.current())).toBe(true);
  });
  it('invalidates old offer rows, radio selection and confirmation before re-fetch',()=>{
   // React effects start after a render. The synchronous refresh transition
