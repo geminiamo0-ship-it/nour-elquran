@@ -6,6 +6,7 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import {fetchPaidSlotRequests,parsePaidSlotRequests,PaidSlotRequestsError,
  parsePaidSlotProposalAck,submitPaidSlotProposal} from
  './paid-slot-requests-client';
+import {fetchPaidSlotOffers,parsePaidSlotOffers} from './paid-slot-offers-client';
 const A='11111111-1111-4111-8111-111111111111';
 const B='22222222-2222-4222-8222-222222222222';
 const C='33333333-3333-4333-8333-333333333333';
@@ -147,5 +148,43 @@ describe('#317 sibling-switch render-time privacy boundary',()=>{
   });
   expect(currentLearnerRead({learnerId:A,status:'error' as const,rows:[]},B))
    .toMatchObject({learnerId:B,status:'loading',rows:[]});
+ });
+});
+
+describe('#317 published paid-offer read boundary',()=>{
+ const offer={offerId:A,teacherId:B,cycleId:C,
+  startsAtMs:1793600000000,endsAtMs:1793602400000};
+ const body={code:'ACADEMY_PAID_SLOT_OFFERS',offers:[offer],requestId:'synthetic'};
+ it('accepts only exact bounded D1 offer rows and rejects duplicate/PII/false windows',()=>{
+  expect(parsePaidSlotOffers(body)).toEqual([offer]);
+  for(const bad of [
+   {...body,offers:[{...offer,phone:'private'}]},
+   {...body,offers:[offer,offer]},
+   {...body,offers:[{...offer,cycleId:'invalid'}]},
+   {...body,offers:[{...offer,endsAtMs:offer.endsAtMs+1}]},
+   {...body,offers:Array.from({length:31},()=>offer)},
+   {...body,learnerName:'private'},
+   {...body,requestId:{}},
+  ])expect(()=>parsePaidSlotOffers(bad)).toThrow(PaidSlotRequestsError);
+  expect(parsePaidSlotOffers({...body,offers:[]})).toEqual([]);
+ });
+ it('uses only owner-scoped signed GET, with no invented slots on error',async()=>{
+  const mock=vi.fn().mockResolvedValueOnce(response(200,body))
+   .mockResolvedValueOnce(response(403,{code:'STAFF_ACCESS_DENIED'}))
+   .mockResolvedValueOnce(response(503,{code:'ACADEMY_PAID_SLOT_SCHEMA_NOT_READY'}))
+   .mockRejectedValueOnce(Error('offline'));
+  vi.stubGlobal('fetch',mock);
+  expect(await fetchPaidSlotOffers(A)).toEqual([offer]);
+  expect(mock.mock.calls[0]?.[0]).toBe('/v1/me/learners/'+A+'/paid-slot-offers');
+  expect(mock.mock.calls[0]?.[1]).toMatchObject({
+   method:'GET',credentials:'same-origin',cache:'no-store',redirect:'error'});
+  expect(mock.mock.calls[0]?.[1]).not.toHaveProperty('body');
+  for(const [status,code] of [[403,'STAFF_ACCESS_DENIED'],
+   [503,'ACADEMY_PAID_SLOT_SCHEMA_NOT_READY'],
+   [0,'NETWORK_UNAVAILABLE']] as const)
+   await expect(fetchPaidSlotOffers(A)).rejects.toMatchObject({status,code});
+  await expect(fetchPaidSlotOffers('invalid')).rejects.toMatchObject({
+   status:400,code:'INVALID_LEARNER'});
+  expect(mock).toHaveBeenCalledTimes(4);
  });
 });
