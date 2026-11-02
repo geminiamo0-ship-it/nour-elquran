@@ -1,3 +1,8 @@
+## #317 paid-offer Admin UI source gates (2026-11-02)
+- Validate exact 100-row D1 staff offer response, 40-minute interval, UUIDs, duplicates, rejected extra PII, publish/withdraw 201 vs same-operation 200 replay, denial and unknown POST outcome.
+- SSR must never expose a Sheikh/offer or an enabled mutation before signed staff reads. Admin staff dropdown is from the existing bounded signed directory; no client-proposed teacher role or finance state.
+- **Still required before merge:** exact-head Verify 4/4, independent privacy/auth/SQL review, source-pinned Cloudflare Dev 0031 staff vs parent/teacher/foreign sibling, duplicate/concurrent publish/withdraw and 360/390 touch/keyboard acceptance. No payment or Production activation.
+
 ## #317 paid offer staff publication API — pending exact-head acceptance
 - Source Node: signed staff-only 100-row offer read; no contacts/learner data; strict UUID, timestamp and reason; identical operationId replay; D1 overlap/occupied/withdrawal conflicts; no false success on unconfirmed D1 writes.
 - Native D1: migration 0031 trigger rejects unauthorized/unqualified/overlapping offers and booked withdrawals; staff closure and owner approval are append-only and revalidated.
