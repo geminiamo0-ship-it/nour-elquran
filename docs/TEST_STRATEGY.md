@@ -1,3 +1,8 @@
+## #317 paid-slot guardian proposal UI gates (2026-11-02)
+- Unit/SSR: proposal fields must come exclusively from an exact parsed signed offer; foreign offer ID cannot create an input; no synthetic options during initial loading; premium Lessons retains both request form and signed status.
+- Pending Dev: verify 0031 migration, staff-published offer read, selected guardian create/replay and staff approve/reject, one-credit atomicity and no partial spend; negative foreign sibling/unsigned/revoked teacher/staff and expired/withdrawn offers; mobile 360x667/390x844, keyboard and touch. An unknown network response must allow ONLY identical operation replay, never a fresh operation.
+- GitHub exact-head Verify and independent SQL/auth/privacy review are required before merge. Local/CI evidence alone cannot establish Cloudflare Dev acceptance or permission to activate Production.
+
 ## #317 published paid-offer source verification (2026-11-02)
 - Native SQLite migration 0031: reject invented/unpublished or withdrawn teacher/time at guardian proposal and staff approval; allow audited rejection without spend, enforce verified staff publication, non-overlap and immutable withdrawal events.
 - Node owner GET: current learner authorization before any offers query, D1 published/active cycle/assignment/credit/lesson/trial/pending filters, bounded 30 and no PII.
