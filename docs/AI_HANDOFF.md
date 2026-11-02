@@ -1,3 +1,7 @@
+## 2026-11-02 — #317 strict paid-offer client continuation
+- Added `apps/web/src/features/student/paid-slot-offers-client.ts` and adjacent Vitest cases: only signed same-origin GET, exact 30-row D1 offer schema, no PII/duplicates/fake availability, explicit errors. Source-only on Draft #318; not yet a form or Dev acceptance.
+- NEXT: inspect current exact-head Verify; implement staff audited offer publication/withdrawal endpoints and guardian offer-selection UI with stable operationId replay; review SQL/roles and run signed Cloudflare Dev 0031 guardian/staff/sibling/one-credit/mobile tests. Keep #317 OPEN, no Production/payments/WhatsApp/child audio/ink changes.
+
 ## 2026-11-02 — #317 signed owner paid offers GET (source candidate)
 - In Draft PR #318, `ownerPaidSlotOffers` and `GET /v1/me/learners/:id/paid-slot-offers` now derive a bounded 30-item availability read from D1, requiring current owner, active qualified assigned Sheikh, active cycle credit, unwithdrawn staff-published paid offer, no conflicting booked lesson/trial offer, and no pending guardian request. No booking, debit, personal contacts or browser-trusted availability.
 - Added Node query/role/bounds regression; **current HEAD exact Verify pending**, not a Dev pass. Still required: staff offer publication/withdrawal API, strict browser offer parser and guardian proposal form, independent SQL/security review, real signed Cloudflare Dev 0031 two-role/sibling/credit/mobile tests. Keep #317 OPEN / #318 Draft; no Production, WhatsApp, payment provider, child audio or cumulative ink change.
