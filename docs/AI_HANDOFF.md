@@ -1,3 +1,8 @@
+## 2026-11-02 — #317 paid/trial offer collision, source-only follow-up
+- Latest #318 Draft source adds a `BEFORE INSERT` trigger on `trial_open_slot_events` inside 0031. Before this, staff could publish paid then free-trial offers for the same Sheikh/40m interval because the paid-first check existed but the trial-first reverse check did not. Unwithdrawn paid offers now block overlapping trial publication; withdrawn paid offers release it. Native SQLite regression tests both orders and zero booking/debit.
+- This is a migration change on an **unmerged Draft PR**. An isolated local SQLite trigger repro passed, but exact-head GitHub Verify, independent review, and signed Cloudflare Dev 0031 acceptance remain pending. Do not claim deployed or fully resolved until pinned CI/Dev tests pass.
+- NEXT: check #318 head CI; repair any failures, then independent SQL/privacy review and Dev staff/guardian/two-sibling/credit/concurrent-slot/360–390 E2E. Keep #317 OPEN, #318 Draft, Production and paid/WhatsApp/voice/ink flags unchanged.
+
 ## 2026-11-02 — #317 staff paid-offer UI continuation (PR #318 Draft)
 - Branch `feat/317-paid-slot-request-ledger` now contains `apps/web/src/features/admin/AdminPaidOffers.tsx`, strict `admin-paid-offers-client.ts` and tests, mounted in `AdminShell.tsx` under signed Requests. The existing D1 0031 publish/withdraw API is the authority; the browser uses a trusted staff teacher directory, 40m timestamps and immutable operationId replay after uncertain POST, never a fake booking/debit.
 - Source only until exact-head CI and independent security review. Local clone unavailable in this run (GitHub DNS failure), so do not claim local tests. No Dev or Production deployment.
