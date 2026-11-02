@@ -1,3 +1,7 @@
+## #317 booked paid offer cannot be withdrawn — native regression (2026-11-02)
+- `test_booked_paid_offer_cannot_be_withdrawn_or_republished`: publish a trusted 40-minute offer, submit a guardian request and approve exactly one paid lesson; attempt to withdraw the now-occupied offer and to publish a duplicate interval. Both SQL writes must abort, the original offer must remain published, exactly one cycle spend must remain, and `PRAGMA foreign_key_check` must be empty.
+- This is source/local D1 guard coverage, **not** signed Cloudflare Dev proof. Require exact-head GitHub Verify, independent SQL/security review and source-pinned staff/guardian/two-sibling Dev/viewport acceptance before merge. No Production or financial integrations.
+
 ## #317 staff paid-offer submit latch regression (2026-11-02)
 - Vitest `admin-paid-offers-client.test.tsx`: synchronous gate denies two submit handlers before React rerender, blocks refresh while busy/unknown, permits only same-action replay after unknown outcome, and keeps confirmed writes closed until a signed staff GET/explicit refresh resets the gate.
 - Native D1 booking/credit and isolated signed Cloudflare Dev staff+guardian+sibling E2E remain separate required acceptance; a unit gate test is not remote proof. The source read-epoch guard must also be exercised by signed Dev rapid-refresh/ACK E2E. Verify exact PR HEAD in GitHub Actions before claiming success.
