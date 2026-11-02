@@ -1,3 +1,9 @@
+## 2026-11-02 — #317 stale paid-offer selection on refresh (source candidate)
+- Fresh GitHub inspection: Draft PR #318 previous HEAD `7f190bbe` passed [Verify #41434406954](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41434406954) 4/4 (policy, governance, code-quality, native local D1). This is **not** verification of the new commits.
+- Source audit found the confirmed/denied refresh handler only reset phase/attempt; the old selected radio, confirmation and D1 offer rows remained actionable for a render before the next effect fetched fresh availability. `StudentPaidSlotProposal` now clears all of those synchronously and enters a loading read state on the same render. Added a two-learner reset contract regression. Server remains authoritative; no new booking, debit, or availability is inferred.
+- This is an unmerged source candidate; exact-head CI, independent security review and signed Cloudflare Dev staff/guardian/two-sibling/credit/refresh plus 360/390 mobile acceptance are outstanding. Keep #317 OPEN and PR #318 Draft; no Production, payment provider, WhatsApp, child audio or cumulative-ink change.
+- NEXT: verify exact HEAD 4/4, then independently review and run source-pinned signed Dev 0031 E2E before merge.
+
 ## 2026-11-02 — #317 confirmed paid-slot proposal refresh (source candidate)
 - Found a real signed Student UX dead end: after a paid-slot request received a confirmed D1 ACK, `StudentPaidSlotProposal` locked its refresh action indefinitely. A later staff approval/rejection could not be reflected in selectable availability without remounting the page.
 - Changed `apps/web/src/features/student/components/StudentPaidSlotProposal.tsx` so confirmed (`accepted`) and denied states can explicitly refresh D1 offers, while `sending` and network-`uncertain` remain locked to the original `operationId` replay. The Worker still blocks duplicate pending requests; refreshing never books or spends credit.
