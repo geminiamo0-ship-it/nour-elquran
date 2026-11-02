@@ -136,6 +136,29 @@ class PaidSlotRequestD1(unittest.TestCase):
    'SELECT COUNT(*) FROM subscription_spend_events').fetchone(),(0,))
   self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
 
+ def test_adjacent_paid_and_trial_offers_do_not_block_each_other(self):
+  # D1 intervals are half-open: a 40-minute lesson ending at 10:40
+  # must not block a different channel's offer starting at 10:40.
+  # Exercise both publication orders without making any reservation.
+  start=T+7*DAY
+  self.publish(start=start)
+  def trial(at):
+   self.db.execute("""INSERT INTO trial_open_slot_events
+    (id,operation_id,actor_subject,teacher_id,starts_at_ms,ends_at_ms,published_at_ms)
+    VALUES(?,?,?,?,?,?,?)""",(str(uuid4()),str(uuid4()),'staff',
+     'id-teacher-a',at,at+SLOT,T))
+  trial(start+SLOT)       # paid first, adjacent trial later
+  self.publish(start=start+2*SLOT)  # trial first, adjacent paid later
+  trial(start-SLOT)       # trial ends exactly when paid starts
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM academy_paid_open_slot_events').fetchone(),(2,))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM trial_open_slot_events').fetchone(),(2,))
+  self.assertEqual(self.db.execute('SELECT COUNT(*) FROM lessons').fetchone(),(0,))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM subscription_spend_events').fetchone(),(0,))
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
+
  def test_request_does_not_book_or_spend_until_staff_approval(self):
   req=self.request()
   self.assertEqual(self.db.execute('SELECT count(*) FROM lessons').fetchone(),(0,))
