@@ -3,7 +3,8 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {ConnectedClassroomLessons} from './components/ConnectedClassroomLessons';
 import {currentLearnerRead} from './components/learner-scope';
 import {StudentPaidSlotProposal,proposalFromPublishedOffer,
- canRefreshPaidSlotProposal,resetPaidSlotProposalRefresh} from './components/StudentPaidSlotProposal';
+ canRefreshPaidSlotProposal,resetPaidSlotProposalRefresh,
+ createPaidSlotProposalGate} from './components/StudentPaidSlotProposal';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {fetchPaidSlotRequests,parsePaidSlotRequests,PaidSlotRequestsError,
  parsePaidSlotProposalAck,submitPaidSlotProposal} from
@@ -193,6 +194,35 @@ describe('#317 published paid-offer read boundary',()=>{
 
 
 describe('#317 trusted published paid-slot form',()=>{
+ it('prevents competing guardian operationIds before React rerender and protects unknown outcomes',()=>{
+  const gate=createPaidSlotProposalGate();
+  // The first click synchronously owns the request. A second click cannot
+  // replace its immutable operationId even before React disables the button.
+  expect(gate.begin()).toBe(true);
+  expect(gate.begin()).toBe(false);
+  expect(gate.begin(true)).toBe(false);
+  expect(gate.reset()).toBe(false);
+  // A lost response is NOT permission to refresh or submit a new request.
+  gate.finish(true);
+  expect(gate.reset()).toBe(false);
+  expect(gate.begin()).toBe(false);
+  expect(gate.begin(true)).toBe(true);
+  expect(gate.begin(true)).toBe(false);
+  gate.finish(false);
+  expect(gate.begin()).toBe(false);
+  expect(gate.begin(true)).toBe(false);
+  // Only after a confirmed ACK may the guardian refresh signed D1 offers.
+  expect(gate.reset()).toBe(true);
+  expect(gate.begin()).toBe(true);
+  gate.finish(false);
+  expect(gate.reset()).toBe(true);
+  // A definitive 4xx denial also requires a fresh authoritative read.
+  expect(gate.begin()).toBe(true);
+  gate.finish(false);
+  expect(gate.begin()).toBe(false);
+  expect(gate.reset()).toBe(true);
+  expect(gate.begin()).toBe(true);
+ });
  it('permits a fresh server read after confirmed submission but never discards an uncertain write',()=>{
   // After staff rejects/approves a confirmed request, the guardian must be
   // able to fetch D1 availability again without reloading the entire page.
