@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type {CoreDatabase} from '../src/bindings.ts';
-import {ownerPaidSlotRequest,ownerPaidSlotRequests,
+import {ownerPaidSlotRequest,ownerPaidSlotRequests,ownerPaidSlotOffers,
  staffPaidSlotRequests,staffPaidSlotDecision} from '../src/academy-paid-slot.ts';
 
 const LEARNER='11111111-1111-4111-8111-111111111111';
@@ -43,6 +43,32 @@ function mock(opts:{owner?:boolean;staff?:boolean;prior?:Record<string,unknown>|
 }
 const proposal={operationId:OP,teacherId:TEACHER,cycleId:CYCLE,startsAtMs:START};
 const decision={operationId:OP,requestId:REQUEST,decision:'approved',reason:'Approved by academy staff'};
+
+test('signed paid offers are server-filtered by owner, assignment, cycle, published slot and live conflicts',async()=>{
+ const denied=mock({owner:false});
+ assert.deepEqual(await ownerPaidSlotOffers(denied.db,'foreign',LEARNER,NOW),
+  {status:404,code:'NOT_FOUND'});
+ assert.equal(denied.queries.some(q=>q.sql.includes('academy_paid_open_slot_events')),false);
+ const offer={offerId:REQUEST,teacherId:TEACHER,cycleId:CYCLE,
+  startsAtMs:START,endsAtMs:START+2400000};
+ const ok=mock({rows:[offer]});
+ assert.deepEqual(await ownerPaidSlotOffers(ok.db,'owner',LEARNER,NOW),
+  {status:200,code:'ACADEMY_PAID_SLOT_OFFERS',offers:[offer]});
+ const sql=ok.queries.find(q=>q.sql.includes('FROM academy_paid_open_slot_events'))?.sql??'';
+ assert.match(sql,/JOIN subscription_cycles c ON c.learner_id=\?/);
+ assert.match(sql,/academy_paid_open_slot_closure_events/);
+ assert.match(sql,/teacher_assignments g/);
+ assert.match(sql,/subscription_spend_events/);
+ assert.match(sql,/academy_paid_slot_request_events/);
+ assert.match(sql,/trial_open_slot_events/);
+ assert.match(sql,/LIMIT 30/);
+ assert.doesNotMatch(sql,/phone_number|email|display_name|reason|payload_json/i);
+ assert.deepEqual(ok.queries.find(q=>q.sql.includes('FROM academy_paid_open_slot_events'))?.values,
+  [LEARNER,NOW,NOW+60000,NOW+30*86400000,NOW,NOW,
+   LEARNER,LEARNER,LEARNER,NOW+60000]);
+ assert.deepEqual(await ownerPaidSlotOffers(mock().db,'owner',LEARNER,-1),
+  {status:503,code:'CLOCK_UNAVAILABLE'});
+});
 
 test('guardian request requires exact schema, owner and trusted server clock',async()=>{
  const x=mock();
