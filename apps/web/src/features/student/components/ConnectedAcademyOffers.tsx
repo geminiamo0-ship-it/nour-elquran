@@ -43,7 +43,13 @@ export function createAcademyPackageRequestGate(){
   status:()=>state
  };
 }
+/** Key the entire signed request lifecycle by learner, not just its GET effect.
+ * A sibling switch must never inherit an in-flight write, replay token, or
+ * old request list from the previous learner's mounted component. */
 export function ConnectedAcademyOffers({learnerId}:{learnerId:string}){
+ return <ScopedAcademyOffers key={learnerId} learnerId={learnerId}/>;
+}
+function ScopedAcademyOffers({learnerId}:{learnerId:string}){
  const [view,setView]=useState<View>({phase:'loading',message:''});
  const [retry,setRetry]=useState(0);
  const [writeState,setWriteState]=useState<WriteState>('idle');
