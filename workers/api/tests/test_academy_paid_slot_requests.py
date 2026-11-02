@@ -95,6 +95,41 @@ class PaidSlotRequestD1(unittest.TestCase):
    with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_IMMUTABLE'):
     self.db.execute(sql)
 
+ def test_withdrawn_paid_offer_can_be_republished_without_reviving_old_request(self):
+  # The event ledger retains the withdrawn offer, but its exact 40-minute
+  # interval must be reusable. A previous guardian request cannot silently
+  # bind to a newer offer published after the original request timestamp.
+  old_offer=self.publish()
+  old_request=self.request(publish=False)
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_PAID_OFFER_OVERLAP'):
+   self.db.execute("""INSERT INTO academy_paid_open_slot_events
+    (id,operation_id,teacher_id,actor_subject,starts_at_ms,ends_at_ms,published_at_ms)
+    VALUES(?,?,?,?,?,?,?)""",(str(uuid4()),str(uuid4()),
+     'id-teacher-a','staff',self.start,self.start+SLOT,T+1))
+  self.db.execute("""INSERT INTO academy_paid_open_slot_closure_events
+   (id,operation_id,slot_id,actor_subject,reason,at_ms)
+   VALUES(?,?,?,?,?,?)""",(str(uuid4()),str(uuid4()),old_offer,'staff',
+    'Withdrawn to correct availability',T+1))
+  replacement=str(uuid4())
+  self.db.execute("""INSERT INTO academy_paid_open_slot_events
+   (id,operation_id,teacher_id,actor_subject,starts_at_ms,ends_at_ms,published_at_ms)
+   VALUES(?,?,?,?,?,?,?)""",(replacement,str(uuid4()),
+    'id-teacher-a','staff',self.start,self.start+SLOT,T+2))
+  self.assertNotEqual(old_offer,replacement)
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_PAID_OFFER_MISSING'):
+   self.decide(old_request,at=T+3)
+  self.decide(old_request,decision='rejected',at=T+3)
+  new_request=self.request(publish=False,at=T+4)
+  lesson=self.decide(new_request,at=T+5)
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM academy_paid_open_slot_events').fetchone(),(2,))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM academy_paid_open_slot_closure_events').fetchone(),(1,))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM subscription_spend_events WHERE lesson_id=?',
+   (lesson,)).fetchone(),(1,))
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
+
  def test_paid_and_trial_offer_publication_cannot_overlap_in_either_order(self):
   # #317: a free-trial offer published AFTER a paid offer must not
   # advertise the same teacher/time. The reverse order was already guarded.
