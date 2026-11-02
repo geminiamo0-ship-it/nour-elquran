@@ -1,6 +1,6 @@
 ## 2026-11-02 — #317 Admin paid-offer POST single-flight follow-up
 - On Draft PR #318, audited `AdminPaidOffers.tsx`: previous `inFlight` ref only protected the network-await window. It did not prevent a second operationId between an ACK/unknown completion and React rerender.
-- New `createPaidOfferWriteGate` enforces one initial publish/withdraw; unknown outcome replays the same pending action only; confirmed success waits for authoritative signed staff GET before allowing another write; definitive denial requires explicit refresh. The read is cleared while revalidating. Added pure lifecycle regression in `admin-paid-offers-client.test.tsx`.
+- New `createPaidOfferWriteGate` enforces one initial publish/withdraw; unknown outcome replays the same pending action only; confirmed success waits for authoritative signed staff GET before allowing another write; definitive denial requires explicit refresh. The read is cleared while revalidating; a read-epoch guard also discards pre-ACK GET completions before React effect cleanup. Added pure lifecycle regression in `admin-paid-offers-client.test.tsx`.
 - **Next exact action:** verify PR #318 exact-head 4/4 GitHub Actions; repair any failure. Then independent SQL/auth/privacy review and signed isolated Cloudflare Dev 0031 publish/withdraw→guardian proposal→staff decision→single credit, sibling/foreign-owner denial and 360/390 mobile tests. No merge/Production/WhatsApp/audio/paid provider/cumulative ink rollout without gates.
 
 ## 2026-11-02 — #317 next continuation: guardian single-flight submission
