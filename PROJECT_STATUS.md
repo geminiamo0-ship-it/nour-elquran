@@ -1,3 +1,8 @@
+## 2026-11-02 — #317 paid/trial partial-overlap regression (Draft PR #318; CI pending)
+- Expanded the native SQLite/D1 cross-channel publication regression from exact-aligned timestamps to both 20-minute offset overlap directions for paid-first and trial-first orders. This guards the 40-minute interval invariant and verifies failed publication leaves no ghost offer, booking or spend.
+- Test-only commit `8c0c003ab4c5a927dc0eee2499156ac01ebc04a0`; prior PR HEAD `d8a851d5` completed GitHub Verify [#41391517894](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41391517894) successfully. That run does **not** verify this new test. Exact-head Verify is pending.
+- #317 OPEN and #318 Draft. Independent security/SQL review, source-pinned signed Cloudflare Dev 0031 staff/guardian/sibling/credit/concurrency and mobile acceptance remain outstanding. No Production, payment, WhatsApp, child audio or cumulative ink change.
+
 ## 2026-11-02 — #317 paid/trial published-slot overlap guard (Draft PR #318)
 - Source review found an order-dependent availability gap: migration 0031 rejected a paid offer when an overlapping trial offer already existed, but the older trial publication trigger could still publish a conflicting free-trial slot **after** the paid offer. This could advertise the same Sheikh/40-minute interval twice before either was booked.
 - Added D1 trigger `academy_trial_slot_paid_offer_conflict` in the unmerged 0031 migration; it rejects later trial publication while an overlapping paid offer is unwithdrawn. A withdrawal releases the interval. Native SQLite regression covers both publication orders, release, and no booking/spend on rejection.
