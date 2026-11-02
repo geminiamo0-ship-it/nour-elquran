@@ -12,6 +12,12 @@ type Phase='idle'|'sending'|'uncertain'|'accepted'|'denied';
  * An uncertain POST must only be replayed with its original operationId. */
 export const canRefreshPaidSlotProposal=(phase:Phase)=>
  phase!=='sending'&&phase!=='uncertain';
+/** Refresh is a new authoritative read: clear old selection and confirmation
+ * on the same render, before the next useEffect starts its D1 fetch. */
+export const resetPaidSlotProposalRefresh=(learnerId:string)=>({
+ read:{learnerId,status:'loading' as const,rows:[] as readonly PaidSlotOffer[]},
+ selectedId:'',confirmed:false,attempt:null,phase:'idle' as const
+});
 const date=new Intl.DateTimeFormat('ar-EG',{
  timeZone:'Africa/Cairo',dateStyle:'full',timeStyle:'short'
 });
@@ -87,7 +93,10 @@ export function StudentPaidSlotProposal({learnerId,onSubmitted}:{
  }
  function refresh(){
   if(!canRefreshPaidSlotProposal(phase))return;
-  setAttempt(null);setPhase('idle');setRevision(v=>v+1);
+  const reset=resetPaidSlotProposalRefresh(learnerId);
+  setRead(reset.read);setSelectedId(reset.selectedId);
+  setConfirmed(reset.confirmed);setAttempt(reset.attempt);
+  setPhase(reset.phase);setRevision(v=>v+1);
  }
  return <section className={styles.panel} dir="rtl" aria-label="طلب موعد حصة مدفوعة">
   <div className={styles.panelHead}><div>
