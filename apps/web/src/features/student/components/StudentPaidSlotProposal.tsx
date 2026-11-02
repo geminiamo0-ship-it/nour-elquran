@@ -12,6 +12,26 @@ type Phase='idle'|'sending'|'uncertain'|'accepted'|'denied';
  * An uncertain POST must only be replayed with its original operationId. */
 export const canRefreshPaidSlotProposal=(phase:Phase)=>
  phase!=='sending'&&phase!=='uncertain';
+/** A React state update is not a synchronous lock: two rapid taps can run
+ * before rerender. Only one operationId may be in flight, and an uncertain
+ * outcome may replay that same operation after the first call settles. */
+export function createPaidSlotProposalGate(){
+ let state:'idle'|'busy'|'uncertain'|'closed'='idle';
+ return {
+  begin(retry=false):boolean{
+   if(state!==(retry?'uncertain':'idle'))return false;
+   state='busy';return true;
+  },
+  finish(uncertain:boolean):void{
+   if(state==='busy')state=uncertain?'uncertain':'closed';
+  },
+  reset():boolean{
+   // Neither a pending write nor an unknown outcome can be discarded.
+   if(state==='busy'||state==='uncertain')return false;
+   state='idle';return true;
+  }
+ };
+}
 /** Refresh is a new authoritative read: clear old selection and confirmation
  * on the same render, before the next useEffect starts its D1 fetch. */
 export const resetPaidSlotProposalRefresh=(learnerId:string)=>({
@@ -43,6 +63,7 @@ export function StudentPaidSlotProposal({learnerId,onSubmitted}:{
  const [phase,setPhase]=useState<Phase>('idle');
  const activeLearner=useRef(learnerId);
  const alive=useRef(true);
+ const gate=useRef(createPaidSlotProposalGate());
  activeLearner.current=learnerId;
  useEffect(()=>{
   alive.current=true;
@@ -64,23 +85,30 @@ export function StudentPaidSlotProposal({learnerId,onSubmitted}:{
   visible.rows.find(offer=>offer.offerId===selectedId):undefined;
  const activeAttempt=attempt?.learnerId===learnerId?attempt:null;
  const locked=phase==='sending'||phase==='uncertain'||phase==='accepted';
- async function send(next:Attempt){
-  if(phase==='sending'||activeLearner.current!==next.learnerId)return;
-  setPhase('sending');
+ async function send(next:Attempt,retry=false){
+  // Begin synchronously, before changing the retained attempt or awaiting
+  // fetch. A second rapid tap must never replace the original operationId.
+  if(activeLearner.current!==next.learnerId||!gate.current.begin(retry))return;
+  setAttempt(next);setPhase('sending');
   try{
    await submitPaidSlotProposal(next.learnerId,next.input);
-   if(!alive.current||activeLearner.current!==next.learnerId)return;
-   setPhase('accepted');
-   onSubmitted();
   }catch(error){
-   if(!alive.current||activeLearner.current!==next.learnerId)return;
    // The server may have persisted a request before the response was lost.
    // Keep the exact immutable operationId/payload for explicit replay only.
    const unknown=!(error instanceof PaidSlotRequestsError)||
     error.status>=500||error.code==='NETWORK_OUTCOME_UNKNOWN'||
     error.code==='INVALID_PAID_SLOT_PROPOSAL_ACK';
+   gate.current.finish(unknown);
+   if(!alive.current||activeLearner.current!==next.learnerId)return;
    setPhase(unknown?'uncertain':'denied');
+   return;
   }
+  gate.current.finish(false);
+  if(!alive.current||activeLearner.current!==next.learnerId)return;
+  setPhase('accepted');
+  // A parent refresh callback is not part of the D1 write/ACK. If it fails,
+  // the already confirmed proposal must never become 'uncertain'.
+  onSubmitted();
  }
  function submit(){
   if(locked||!confirmed||!selected||activeAttempt)return;
@@ -88,11 +116,10 @@ export function StudentPaidSlotProposal({learnerId,onSubmitted}:{
    crypto.randomUUID());
   if(!input)return;
   const next={learnerId,offerId:selected.offerId,input};
-  setAttempt(next);
   void send(next);
  }
  function refresh(){
-  if(!canRefreshPaidSlotProposal(phase))return;
+  if(!canRefreshPaidSlotProposal(phase)||!gate.current.reset())return;
   const reset=resetPaidSlotProposalRefresh(learnerId);
   setRead(reset.read);setSelectedId(reset.selectedId);
   setConfirmed(reset.confirmed);setAttempt(reset.attempt);
@@ -140,7 +167,7 @@ export function StudentPaidSlotProposal({learnerId,onSubmitted}:{
    <p>نتيجة إرسال الطلب غير مؤكدة. لا تختَر موعدًا جديدًا؛
     أعد إرسال نفس العملية فقط للتحقق من نتيجتها دون إنشاء طلب مكرر.</p>
    <button type="button" className={styles.outlineButton}
-    onClick={()=>void send(activeAttempt)}>التحقق بإعادة نفس الطلب</button>
+    onClick={()=>void send(activeAttempt,true)}>التحقق بإعادة نفس الطلب</button>
   </div>}
   <small>المواعيد والرصيد يتغيران؛ ظهور الموعد لا يضمن اعتماده.
    لا توجد عملية دفع أو استرداد تلقائي في هذه الصفحة.</small>
