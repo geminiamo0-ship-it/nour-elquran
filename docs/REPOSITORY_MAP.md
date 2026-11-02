@@ -1,3 +1,8 @@
+## #317 staff paid-slot offer management UI (2026-11-02; source candidate)
+- `apps/web/src/features/admin/admin-paid-offers-client.ts`: strict staff-only D1 GET bounded offers and POST publish/withdraw response parser with explicit uncertain outcomes and 200 replay handling.
+- `apps/web/src/features/admin/AdminPaidOffers.tsx`: staff-only Requests panel; trusted active/qualified Sheikh directory, local-time input with Cairo preview, confirmation, immutable operation replay, no booking/debit claim.
+- `apps/web/src/features/admin/admin-paid-offers-client.test.tsx`: contract, network and SSR initial privilege-gate tests. Mounted by `AdminShell.tsx`. Requires exact-head CI and signed Dev acceptance; no Production activation.
+
 ## #317 paid-slot offer staff API (source candidate)
 - `workers/api/src/academy-paid-slot.ts`: signed staff list/publish/withdraw for immutable D1 0031 40-minute paid offers; staff role and exact input gates, safe replay and confirmed write ACK; no booking or credit mutation.
 - `workers/api/src/auth/routes.ts`: Admin-default-OFF `GET/POST /v1/staff/academy/paid-slot-offers`, `POST /v1/staff/academy/paid-slot-withdrawals` with schema 0031 guard.
