@@ -1,3 +1,9 @@
+## 2026-11-02 — #317 published paid-slot guardian proposal form (Draft PR #318)
+- Added `StudentPaidSlotProposal` to signed premium Lessons, sourcing up to 30 offers only from the owner-scoped D1 `paid-slot-offers` endpoint; no free-text teacher/cycle/time, invented slots, client booking, debit or payment.
+- Guardian must select a server-returned offer and explicitly confirm. A POST ACK records **a request only**; a network/5xx/malformed ACK retains the same immutable operationId/payload for deliberate replay, never creates a second proposal automatically. Staff must still approve and revalidate the 40-minute lesson and credit.
+- Learner-scoped render guard and keyed form prevent previous sibling offers on immediate profile switch; successful request triggers fresh signed status read. Added parser/SSR/proposal-from-offer tests in `paid-slot-requests-client.test.ts`.
+- **Source-only, not Dev-accepted.** Check exact PR HEAD GitHub Verify before claiming CI. Still OPEN: staff publish/withdraw controls, independent SQL/auth/privacy review, Cloudflare Dev 0031 signed guardian/staff/foreign sibling/one-credit tests and 360/390 touch QA. PR stays Draft, Production/paid services/WhatsApp/audio/ink unchanged.
+
 ## 2026-11-02 — #317 strict student paid-offers client (Draft source)
 - `apps/web/src/features/student/paid-slot-offers-client.ts` adds signed, no-store owner GET and exact bounded runtime parser for the D1 paid-offer response; rejects duplicate offers, invalid UUIDs/times, extra PII and server failures rather than inventing available slots. `paid-slot-requests-client.test.ts` covers parser and transport.
 - This is a **client contract only**, not yet mounted as a guardian form. Staff publication API, offer selection UI, CI on current head, independent security review and signed Dev acceptance remain open. No Production changes.
