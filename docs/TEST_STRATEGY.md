@@ -1,3 +1,8 @@
+## #317 staff paid-slot inbox refresh read epoch (2026-11-02)
+- Fast Vitest: `createPaidSlotInboxReadEpoch` rejects any previous GET completion after a refresh/decision ACK, even before React effect cleanup; consecutive refreshes invalidate earlier reads. Inbox immediately hides prior staff rows while awaiting signed D1.
+- The unit guard is **not** a substitute for signed Cloudflare Dev test of refresh during in-flight GET and staff decision replay. Verify role revocation, sibling isolation, one-credit spend, and 360/390 mobile interaction against source-pinned D1 0031.
+- Prior PR #318 exact HEAD `f096cdfc` passed [Verify 41503199604](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41503199604) 4/4; the new code requires a fresh exact-head run. Keep Draft and #317 OPEN.
+
 ## #317 ambiguous HTTP write outcomes — mandatory regression (2026-11-02)
 - Guardian paid-slot proposal, staff paid-slot decision, and staff paid-offer publish/withdraw must treat HTTP 408/425/429 as **uncertain**, retaining exact operationId/payload for replay; known 400/401/403/404/409/422 remain definitive. Unit cases cover both classifications and preserve existing double-tap gates.
 - Exact-head CI 4/4, independent security review and source-pinned signed Dev staff/guardian/sibling/credit/concurrency/360×667/390×844 are still required. No Production/payment/WhatsApp/audio change.
