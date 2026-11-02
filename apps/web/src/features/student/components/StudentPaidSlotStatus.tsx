@@ -7,7 +7,9 @@ import {currentLearnerRead,type LearnerScoped} from './learner-scope';
 const date=new Intl.DateTimeFormat('ar-EG',{
  timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short'
 });
-export function StudentPaidSlotStatus({learnerId}:{learnerId:string}){
+export function StudentPaidSlotStatus({learnerId,refreshRevision}:{
+ learnerId:string;refreshRevision:number;
+}){
  const [view,setView]=useState<LearnerScoped<PaidSlotRequest>>({
   learnerId,status:'loading',rows:[]
  });
@@ -21,7 +23,7 @@ export function StudentPaidSlotStatus({learnerId}:{learnerId:string}){
    if(!controller.signal.aborted)setView({learnerId,status:'error',rows:[]});
   });
   return()=>controller.abort();
- },[learnerId,revision]);
+ },[learnerId,revision,refreshRevision]);
  // Never expose another sibling's pending requests between prop change and effect.
  const visible=currentLearnerRead(view,learnerId);
  return <section className={styles.panel} dir="rtl" aria-label="طلبات الحصص المدفوعة">
