@@ -11,7 +11,10 @@ type Phase='idle'|'busy'|'uncertain'|'denied'|'saved';
 export function AdminPaidSlotDecision({request,onCommitted}:{
  request:AdminPaidSlot;onCommitted:()=>void;
 }){
- const [decision,setDecision]=useState<PaidSlotDecision>('approved');
+ const [chosenDecision,setChosenDecision]=useState<PaidSlotDecision>('approved');
+ const expired=request.state==='expired';
+ // An expired proposal is never approvable; rejection remains auditable.
+ const decision:PaidSlotDecision=expired?'rejected':chosenDecision;
  const [reason,setReason]=useState('');
  const [confirmed,setConfirmed]=useState(false);
  const [phase,setPhase]=useState<Phase>('idle');
@@ -47,12 +50,14 @@ export function AdminPaidSlotDecision({request,onCommitted}:{
   void send(input);
  }}>
   <h3>قرار إداري مدقّق</h3>
-  <p>الموافقة تنشئ حصة ٤٠ دقيقة وتخصم حصة واحدة فقط إذا اجتازت قيود D1.
-   الرفض لا يخصم رصيدًا. راجع صلاحية الشيخ وتوفر الموعد والرصيد قبل التأكيد.</p>
+  {expired?<p>انتهت صلاحية هذا الطلب. لا يمكن اعتماده أو خصم حصة؛
+   يمكن تسجيل رفض إداري مدقّق فقط لإغلاق السجل.</p>:
+   <p>الموافقة تنشئ حصة ٤٠ دقيقة وتخصم حصة واحدة فقط إذا اجتازت قيود D1.
+   الرفض لا يخصم رصيدًا. راجع صلاحية الشيخ وتوفر الموعد والرصيد قبل التأكيد.</p>}
   <label>القرار
    <select value={decision} disabled={locked}
-    onChange={e=>{setDecision(e.target.value as PaidSlotDecision);setConfirmed(false);}}>
-    <option value="approved">اعتماد الموعد وخصم حصة</option>
+    onChange={e=>{setChosenDecision(e.target.value as PaidSlotDecision);setConfirmed(false);}}>
+    {!expired&&<option value="approved">اعتماد الموعد وخصم حصة</option>}
     <option value="rejected">رفض الطلب دون خصم</option>
    </select>
   </label>
@@ -62,7 +67,8 @@ export function AdminPaidSlotDecision({request,onCommitted}:{
   </label>
   <label><input type="checkbox" checked={confirmed} disabled={locked}
    onChange={e=>setConfirmed(e.target.checked)}/>
-   راجعت الطلب والشيخ والرصيد وأؤكد تسجيل القرار.</label>
+   {expired?'أؤكد رفض الطلب المنتهي دون خصم رصيد.':
+    'راجعت الطلب والشيخ والرصيد وأؤكد تسجيل القرار.'}</label>
   <button type="submit" disabled={locked||!confirmed||
    reason.trim().length<8||reason.trim().length>500}>
    {phase==='busy'?'جارٍ تسجيل القرار…':

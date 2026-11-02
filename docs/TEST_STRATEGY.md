@@ -1,3 +1,7 @@
+## #317 expired request administrative closure regression (2026-11-02)
+- SSR + pure state: staff inbox exposes a decision only for pending or expired requests; an expired request offers **rejection only**, never an approval option or debit claim. The explicit reason and confirmation remain required; server D1 guard already rejects approval after cutoff and records rejection without spend. Existing pending approval path stays intact.
+- Exact-head GitHub Verify and isolated signed Dev staff/guardian/expired/credit + 360/390 acceptance still required. No Production or payment provider activation.
+
 ## #317 same-time paid-offer republish after withdrawal (2026-11-02)
 - Native SQLite/D1: active paid offers cannot overlap even at identical teacher/start; a withdrawn paid offer's 40-minute interval may be re-published with a NEW immutable event ID. Historical withdrawn offer remains in ledger, and a guardian request made before withdrawal must not be approved against the later publication. Staff explicitly rejects the old request, then a new owner proposal and staff approval create exactly one lesson and one credit spend. Assert FK integrity.
 - Isolated SQLite active-overlap/republication reproduction passed; exact-head GitHub Verify and real signed Dev 0031 acceptance still required. Keep Draft and issue OPEN; no Production/finance/WhatsApp/voice/ink change.
