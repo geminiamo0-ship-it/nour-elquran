@@ -39,6 +39,17 @@ export function createPaidSlotProposalGate(){
   }
  };
 }
+/** An old GET can resolve after refresh was clicked but before React runs
+ * effect cleanup. The epoch also rejects a stale submit handler in the
+ * pre-rerender gap, when its old confirmed offer is still in closure state. */
+export function createPaidSlotOfferReadEpoch(){
+ let epoch=0;
+ return {
+  current:()=>epoch,
+  invalidate:()=>++epoch,
+  isCurrent:(observed:number)=>observed===epoch
+ };
+}
 /** Refresh is a new authoritative read: clear old selection and confirmation
  * on the same render, before the next useEffect starts its D1 fetch. */
 export const resetPaidSlotProposalRefresh=(learnerId:string)=>({
@@ -71,6 +82,8 @@ export function StudentPaidSlotProposal({learnerId,onSubmitted}:{
  const activeLearner=useRef(learnerId);
  const alive=useRef(true);
  const gate=useRef(createPaidSlotProposalGate());
+ const readEpoch=useRef(createPaidSlotOfferReadEpoch());
+ const renderedReadEpoch=readEpoch.current.current();
  activeLearner.current=learnerId;
  useEffect(()=>{
   alive.current=true;
@@ -78,12 +91,15 @@ export function StudentPaidSlotProposal({learnerId,onSubmitted}:{
  },[]);
  useEffect(()=>{
   const abort=new AbortController();
+  const epoch=readEpoch.current.current();
   setRead({learnerId,status:'loading',rows:[]});
   setSelectedId('');setConfirmed(false);
   void fetchPaidSlotOffers(learnerId,abort.signal).then(offers=>{
-   if(!abort.signal.aborted)setRead({learnerId,status:'ready',rows:offers});
+   if(!abort.signal.aborted&&readEpoch.current.isCurrent(epoch))
+    setRead({learnerId,status:'ready',rows:offers});
   }).catch(()=>{
-   if(!abort.signal.aborted)setRead({learnerId,status:'error',rows:[]});
+   if(!abort.signal.aborted&&readEpoch.current.isCurrent(epoch))
+    setRead({learnerId,status:'error',rows:[]});
   });
   return()=>abort.abort();
  },[learnerId,revision]);
@@ -116,7 +132,8 @@ export function StudentPaidSlotProposal({learnerId,onSubmitted}:{
   onSubmitted();
  }
  function submit(){
-  if(locked||!confirmed||!selected||activeAttempt)return;
+  if(!readEpoch.current.isCurrent(renderedReadEpoch)||
+   locked||!confirmed||!selected||activeAttempt)return;
   const input=proposalFromPublishedOffer(visible.rows,selected.offerId,
    crypto.randomUUID());
   if(!input)return;
@@ -124,7 +141,10 @@ export function StudentPaidSlotProposal({learnerId,onSubmitted}:{
   void send(next);
  }
  function refresh(){
-  if(!canRefreshPaidSlotProposal(phase)||!gate.current.reset())return;
+  if(!readEpoch.current.isCurrent(renderedReadEpoch)||
+   !canRefreshPaidSlotProposal(phase)||!gate.current.reset())return;
+  // Invalidate any pre-refresh GET or stale click before React rerenders.
+  readEpoch.current.invalidate();
   const reset=resetPaidSlotProposalRefresh(learnerId);
   setRead(reset.read);setSelectedId(reset.selectedId);
   setConfirmed(reset.confirmed);setAttempt(reset.attempt);
