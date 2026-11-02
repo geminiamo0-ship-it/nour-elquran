@@ -194,6 +194,33 @@ class PaidSlotRequestD1(unittest.TestCase):
    'SELECT COUNT(*) FROM subscription_spend_events').fetchone(),(0,))
   self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
 
+ def test_booked_paid_offer_cannot_be_withdrawn_or_republished(self):
+  # An approved 40-minute lesson owns the interval. A staff withdrawal
+  # cannot silently make the same interval appear available again.
+  slot=self.publish()
+  req=self.request(publish=False)
+  lesson=self.decide(req)
+  with self.assertRaisesRegex(sqlite3.IntegrityError,
+                              'ACADEMY_PAID_OFFER_CLOSE_DENIED'):
+   self.db.execute("""INSERT INTO academy_paid_open_slot_closure_events
+    (id,operation_id,slot_id,actor_subject,reason,at_ms)
+    VALUES(?,?,?,?,?,?)""",(str(uuid4()),str(uuid4()),slot,'staff',
+     'Attempt to release a booked paid interval',T+2))
+  with self.assertRaisesRegex(sqlite3.IntegrityError,
+                              'ACADEMY_PAID_OFFER_OVERLAP'):
+   self.db.execute("""INSERT INTO academy_paid_open_slot_events
+    (id,operation_id,teacher_id,actor_subject,starts_at_ms,ends_at_ms,published_at_ms)
+    VALUES(?,?,?,?,?,?,?)""",(str(uuid4()),str(uuid4()),
+     'id-teacher-a','staff',self.start,self.start+SLOT,T+3))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM academy_paid_open_slot_closure_events').fetchone(),(0,))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM academy_paid_open_slot_events').fetchone(),(1,))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM subscription_spend_events WHERE lesson_id=?',
+   (lesson,)).fetchone(),(1,))
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
+
  def test_request_does_not_book_or_spend_until_staff_approval(self):
   req=self.request()
   self.assertEqual(self.db.execute('SELECT count(*) FROM lessons').fetchone(),(0,))
