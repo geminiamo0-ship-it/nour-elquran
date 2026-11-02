@@ -1,3 +1,8 @@
+## 2026-11-02 #317 — paid-slot refresh stale selection, Draft PR #318
+- Inspected GitHub current PR #318 `7f190bbe` and [Verify 41434406954](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41434406954): all four jobs SUCCESS. Existing source refresh reset phase/attempt but left the old offer selection/confirmation/rows until a later React effect, permitting a stale action in the interim render.
+- Updated `StudentPaidSlotProposal.tsx` with synchronous fail-closed reset and `paid-slot-requests-client.test.ts` with two-learner regression. Code commits `3523cac9`, `dff1fc30`. Documentation follows; inspect latest PR HEAD and **new exact-head CI** before any pass claim.
+- Keep PR Draft / #317 OPEN pending independent security review and source-pinned signed Cloudflare Dev staff/guardian/sibling/credit/concurrency/refresh plus 360×667/390×844 acceptance. No Production, payments, WhatsApp, child voice or cumulative-ink flag change.
+
 ## 2026-11-02 — #317 paid-slot request post-ACK refresh
 - Existing Draft PR #318, branch `feat/317-paid-slot-request-ledger`: a confirmed guardian paid-slot proposal previously disabled its own refresh forever, even after staff approval/rejection. Code commit `529270a1` allows D1 availability refresh after confirmed ACK; `sending` and `uncertain` remain locked so the only safe uncertain-outcome path is replaying the original operationId. Test commit `3acda4ed` covers all five phase decisions.
 - Scope: `StudentPaidSlotProposal.tsx` and `paid-slot-requests-client.test.ts`; no Worker/D1 migration or payment/booking semantics changed. Prior HEAD `fd8c55ea` Verify #41423903767 passed 4/4, **not evidence for this new HEAD**.
