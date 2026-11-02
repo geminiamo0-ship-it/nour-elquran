@@ -244,6 +244,20 @@ class PaidSlotRequestD1(unittest.TestCase):
   lesson=self.decide(fresh,at=now)
   self.assertEqual(self.db.execute('SELECT count(*) FROM subscription_spend_events WHERE lesson_id=?',(lesson,)).fetchone(),(1,))
   self.assertEqual(self.db.execute('SELECT count(*) FROM academy_paid_slot_decision_events').fetchone(),(1,))
+  # Staff may reject the expired original after approving the newer
+  # proposal, but that rejection cannot create a second lesson or debit.
+  self.decide(old,decision='rejected',at=now)
+  self.assertEqual(self.db.execute(
+   'SELECT decision,lesson_id FROM academy_paid_slot_decision_events WHERE request_id=?',
+   (old,)).fetchone(),('rejected',None))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM academy_paid_slot_decision_events').fetchone(),(2,))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM subscription_spend_events').fetchone(),(1,))
+  with self.assertRaises(sqlite3.IntegrityError):
+   self.decide(old,at=now)
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM subscription_spend_events').fetchone(),(1,))
   self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
 
  def test_staff_decision_cannot_predate_guardian_proposal(self):
