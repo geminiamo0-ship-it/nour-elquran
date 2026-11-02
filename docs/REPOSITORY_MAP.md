@@ -1,3 +1,8 @@
+## #317 paid-slot offer staff API (source candidate)
+- `workers/api/src/academy-paid-slot.ts`: signed staff list/publish/withdraw for immutable D1 0031 40-minute paid offers; staff role and exact input gates, safe replay and confirmed write ACK; no booking or credit mutation.
+- `workers/api/src/auth/routes.ts`: Admin-default-OFF `GET/POST /v1/staff/academy/paid-slot-offers`, `POST /v1/staff/academy/paid-slot-withdrawals` with schema 0031 guard.
+- `workers/api/tests/academy-paid-slot.test.ts`: staff role, bounded response, invalid payload, race/replay, conflict and uncertain write coverage. Separate browser staff UI and signed Dev verification pending.
+
 ## #317 signed paid-slot proposal UI (2026-11-02, Draft PR #318)
 - `apps/web/src/features/student/components/StudentPaidSlotProposal.tsx`: learner-scoped, published-offer-only 40-minute proposal selection, confirmation and explicit same-operation replay after unknown POST outcome; no payment or booking assertion.
 - `apps/web/src/features/student/components/{ConnectedClassroomLessons.tsx,StudentPaidSlotStatus.tsx}`: mount trusted proposal form in premium Lessons and refresh signed request status after confirmed request ACK.
