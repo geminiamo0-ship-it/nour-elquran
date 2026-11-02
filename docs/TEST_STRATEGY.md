@@ -1,3 +1,8 @@
+## #317 published paid-offer source verification (2026-11-02)
+- Native SQLite migration 0031: reject invented/unpublished or withdrawn teacher/time at guardian proposal and staff approval; allow audited rejection without spend, enforce verified staff publication, non-overlap and immutable withdrawal events.
+- Node owner GET: current learner authorization before any offers query, D1 published/active cycle/assignment/credit/lesson/trial/pending filters, bounded 30 and no PII.
+- Before merging Draft #318: exact-head Verify 4/4, independent SQL/privacy review, staff offer publish/withdraw API + strict guardian offer/form, source-pinned signed Dev guardian/staff/sibling/concurrency/one-credit and 360/390 mobile E2E. No Production or payment-provider acceptance.
+
 ## #317 expired paid-slot read-state regression (2026-11-01; source-only)
 - Worker tests assert both signed GET selectors use server clock plus 60-second cutoff and keep learner-scope/role authorization before reading. Immutable decision rows override derived expiration; SQL state never writes a rejection or debits a credit.
 - Guardian and staff Vitest strict parsers accept `expired` only with `lessonId:null`, reject extra PII/invalid combinations; staff UI shows no approve/reject form for expired rows.
