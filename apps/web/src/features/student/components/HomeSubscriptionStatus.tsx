@@ -8,6 +8,22 @@ import css from './StudentSubscription.module.css';
 
 type View={phase:'loading'}|{phase:'ready';ledger:SubscriptionLedger|null;academy:OwnerAcademy|null};
 const day=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',day:'numeric',month:'short'});
+/** The academy catalog is not an entitlement source. If the academic ledger
+ * fails, an empty package request list must never be presented as proof
+ * that the learner has no subscription. */
+export function homeSubscriptionSummary(ledger:SubscriptionLedger|null,
+ academy:OwnerAcademy|null,now:number):{status:string;detail:string}{
+ const pending=academy&&latestPendingAcademyRequest(academy);
+ if(pending)return {status:'طلب باقة قيد المراجعة',detail:'بانتظار قرار الإدارة'};
+ const cycle=ledger?.latestCycle;
+ if(cycle)return {
+  status:currentCycleLabel(cycle.state,cycle.endsAtMs,now),
+  detail:cycle.recordedUnspentSessions.toLocaleString('ar-EG')+
+   ' حصص مسجلة غير مستخدمة · حتى '+day.format(new Date(cycle.endsAtMs))
+ };
+ if(ledger)return {status:'لا توجد دورة حصص مسجلة',detail:''};
+ return {status:'تعذّر التحقق من حالة الاشتراك',detail:'افتح التفاصيل للتحقق.'};
+}
 /** Single non-blocking status strip. Never delays or erases the signed learning dashboard. */
 export function HomeSubscriptionStatus({learnerId,preview=false,basePath='/student'}:{
  learnerId?:string;preview?:boolean;basePath?:string
@@ -32,16 +48,7 @@ export function HomeSubscriptionStatus({learnerId,preview=false,basePath='/stude
  if(!preview){
   if(data.phase==='loading'){status='جارٍ التحقق من الاشتراك…';detail='';}
   else{
-   const pending=data.academy&&latestPendingAcademyRequest(data.academy);
-   const cycle=data.ledger?.latestCycle;
-   if(pending){status='طلب باقة قيد المراجعة';detail='بانتظار قرار الإدارة';}
-   else if(cycle){
-    status=currentCycleLabel(cycle.state,cycle.endsAtMs,Date.now());
-    detail=cycle.recordedUnspentSessions.toLocaleString('ar-EG')+
-     ' حصص مسجلة غير مستخدمة · حتى '+day.format(new Date(cycle.endsAtMs));
-   }else if(data.ledger){status='لا توجد دورة حصص مسجلة';detail='';}
-   else if(data.academy){status='لم يُؤكَّد الاشتراك بعد';detail='';}
-   else{status='تعذّر عرض حالة الاشتراك';detail='افتح التفاصيل للتحقق.';}
+   ({status,detail}=homeSubscriptionSummary(data.ledger,data.academy,Date.now()));
   }
  }
  return <section className={css.homeStrip} aria-label="ملخص الاشتراك">
