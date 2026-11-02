@@ -1,6 +1,6 @@
 ## #317 staff paid-offer submit latch regression (2026-11-02)
 - Vitest `admin-paid-offers-client.test.tsx`: synchronous gate denies two submit handlers before React rerender, blocks refresh while busy/unknown, permits only same-action replay after unknown outcome, and keeps confirmed writes closed until a signed staff GET/explicit refresh resets the gate.
-- Native D1 booking/credit and isolated signed Cloudflare Dev staff+guardian+sibling E2E remain separate required acceptance; a unit gate test is not remote proof. Verify exact PR HEAD in GitHub Actions before claiming success.
+- Native D1 booking/credit and isolated signed Cloudflare Dev staff+guardian+sibling E2E remain separate required acceptance; a unit gate test is not remote proof. The source read-epoch guard must also be exercised by signed Dev rapid-refresh/ACK E2E. Verify exact PR HEAD in GitHub Actions before claiming success.
 
 ## #317 guardian paid-slot rapid-tap regression (2026-11-02; source candidate)
 - `paid-slot-requests-client.test.ts` exercises a synchronous per-learner write gate: two submits before React rerender cannot create two accepted operationIds or overwrite the first retry payload; unknown result permits only same-operation replay, no refresh; successful ACK or definitive denial locks until an explicit signed D1 refresh.
