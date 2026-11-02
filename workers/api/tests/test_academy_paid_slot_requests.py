@@ -21,10 +21,25 @@ class PaidSlotRequestD1(unittest.TestCase):
   self.fixture.fixture.action('assign')
   self.start=T+3*SLOT
 
+ def publish(self, teacher='id-teacher-a', start=None, actor='staff', at=T):
+  start=self.start if start is None else start
+  existing=self.db.execute(
+   'SELECT id FROM academy_paid_open_slot_events WHERE teacher_id=? AND starts_at_ms=?',
+   (teacher,start)).fetchone()
+  if existing:
+   return existing[0]
+  slot_id=str(uuid4())
+  self.db.execute("""INSERT INTO academy_paid_open_slot_events
+   (id,operation_id,teacher_id,actor_subject,starts_at_ms,ends_at_ms,published_at_ms)
+   VALUES(?,?,?,?,?,?,?)""",(slot_id,str(uuid4()),teacher,actor,start,start+SLOT,at))
+  return slot_id
+
  def request(self, actor='staff', child='child-a', teacher='id-teacher-a',
-             cycle=None, start=None, op=None, at=T):
+             cycle=None, start=None, op=None, at=T, publish=True):
   request_id=str(uuid4())
   start=self.start if start is None else start
+  if publish:
+   self.publish(teacher=teacher,start=start)
   self.db.execute(REQUEST,(request_id,op or str(uuid4()),child,teacher,
    cycle or self.fixture.cycle,actor,start,start+SLOT,at))
   return request_id
@@ -34,6 +49,51 @@ class PaidSlotRequestD1(unittest.TestCase):
   self.db.execute(DECIDE,(str(uuid4()),str(uuid4()),request_id,actor,
    decision,lesson_id,'Academy reviewed guardian requested slot',at))
   return lesson_id
+
+ def test_unpublished_or_withdrawn_paid_offer_cannot_create_or_approve(self):
+  # A valid owner/assignment/cycle is not permission to invent a time.
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_PAID_OFFER_MISSING'):
+   self.request(publish=False)
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM academy_paid_slot_request_events').fetchone(),(0,))
+  slot=self.publish()
+  req=self.request(publish=False)
+  self.db.execute("""INSERT INTO academy_paid_open_slot_closure_events
+   (id,operation_id,slot_id,actor_subject,reason,at_ms)
+   VALUES(?,?,?,?,?,?)""",(str(uuid4()),str(uuid4()),slot,'staff',
+    'Academy withdrew this paid slot',T+1))
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_PAID_OFFER_MISSING'):
+   self.decide(req,at=T+2)
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_PAID_OFFER_MISSING'):
+   self.request(publish=False,at=T+2)
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM subscription_spend_events').fetchone(),(0,))
+  self.decide(req,decision='rejected',at=T+2)
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM lessons').fetchone(),(0,))
+
+ def test_only_verified_staff_can_publish_and_offers_are_immutable(self):
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_STAFF_DENIED'):
+   self.publish(actor='other')
+  slot=self.publish()
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_PAID_OFFER_OVERLAP'):
+   self.publish(start=self.start+SLOT//2)
+  for sql in (
+   'UPDATE academy_paid_open_slot_events SET starts_at_ms=0',
+   'DELETE FROM academy_paid_open_slot_events',
+  ):
+   with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_IMMUTABLE'):
+    self.db.execute(sql)
+  self.db.execute("""INSERT INTO academy_paid_open_slot_closure_events
+   (id,operation_id,slot_id,actor_subject,reason,at_ms)
+   VALUES(?,?,?,?,?,?)""",(str(uuid4()),str(uuid4()),slot,'staff',
+    'Academy withdrew this paid slot',T+1))
+  for sql in (
+   'UPDATE academy_paid_open_slot_closure_events SET at_ms=0',
+   'DELETE FROM academy_paid_open_slot_closure_events',
+  ):
+   with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_IMMUTABLE'):
+    self.db.execute(sql)
 
  def test_request_does_not_book_or_spend_until_staff_approval(self):
   req=self.request()
