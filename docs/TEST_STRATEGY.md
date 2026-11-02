@@ -1,3 +1,6 @@
+## 2026-11-02 — #317 staff decision rapid-tap regression
+- `AdminPaidSlotInbox.test.tsx` exercises a synchronous per-decision write gate: first approval submit wins, second tap before React rerender is ignored, retry cannot run while busy, uncertain response allows only same-payload retry, and definitive rejection/ACK blocks all new attempts. The UI still requires actual staff D1 approval ACK and independently verified Dev credit atomicity; this unit guard is not a substitute for Dev concurrency testing.
+
 ## #317 refresh stale-selection boundary (2026-11-02)
 - After a confirmed paid-slot request or known denial, refresh must synchronously clear the previously selected offer ID, explicit guardian confirmation, retained attempt and old D1 offer rows, entering a loading state **before** a subsequent effect begins a new signed GET. Otherwise a stale, previously confirmed offer could be submitted from the old render. `paid-slot-requests-client.test.ts` checks the two-learner reset contract. Unknown write outcomes remain locked to exact operationId replay; server D1 remains the final authority.
 - Source-only regression; exact-head CI and signed Dev/browser acceptance still required. No payment or Production changes.
