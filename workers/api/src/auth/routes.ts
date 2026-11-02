@@ -20,8 +20,8 @@ import {ownerAcademy,ownerPackageRequest,staffAcademy,staffPackage,staffActivate
  staffReject,staffContact,staffInvite,claimInvite} from '../academy-admin-mvp.ts';
 import {ownerTrialRequest,ownerTrialRequests,staffTrialRequests,staffTrialDecision,
  staffPaidBooking,staffBookableCycles} from '../academy-booking.ts';
-import {ownerPaidSlotRequests,ownerPaidSlotRequest,staffPaidSlotRequests,
- staffPaidSlotDecision} from '../academy-paid-slot.ts';
+import {ownerPaidSlotRequests,ownerPaidSlotRequest,ownerPaidSlotOffers,
+ staffPaidSlotRequests,staffPaidSlotDecision} from '../academy-paid-slot.ts';
 import {readTeacherInkDrafts,saveTeacherInkDraft,teacherAssignmentPageRange} from '../teacher-assignment-ink-drafts.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
@@ -560,6 +560,18 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
       ?await ownerTrialRequests(env.DB,session.user.id,trialRequestsRoute[1]!)
       :await ownerTrialRequest(env.DB,session.user.id,trialRequestsRoute[1]!,
          await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
+  // #317: server-derived paid availability; GET is not a reservation.
+  const paidOffersOwner=/^\\/v1\\/me\\/learners\\/([a-zA-Z0-9_-]{1,128})\\/paid-slot-offers$/.exec(path);
+  if(paidOffersOwner){
+    if(request.method!=='GET')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='academy_paid_slot_requests'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'ACADEMY_PAID_SLOT_SCHEMA_NOT_READY'},requestId);
+    const result=await ownerPaidSlotOffers(env.DB,session.user.id,paidOffersOwner[1]!);
     const {status,...body}=result;return reply(status,body,requestId);
   }
   // #317: only server-derived timestamps and signed owner identity.
