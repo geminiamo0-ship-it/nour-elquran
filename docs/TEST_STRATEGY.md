@@ -1,3 +1,7 @@
+## #317 expired guardian paid-slot decision regression (2026-11-02)
+- Native SQLite `test_expired_pending_proposal_does_not_lock_learner_out` now checks the expired original can be rejected **after** the newer request was approved, without an extra booking/credit spend; immutable second decision is denied and foreign keys remain valid.
+- Previous `bd0140df` [Verify #41415655657](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41415655657) 4/4 PASS; the new test commit needs exact-head CI. This is not Cloudflare Dev or mobile acceptance.
+
 ## #317 expired request administrative closure regression (2026-11-02)
 - SSR + pure state: staff inbox exposes a decision only for pending or expired requests; an expired request offers **rejection only**, never an approval option or debit claim. The explicit reason and confirmation remain required; server D1 guard already rejects approval after cutoff and records rejection without spend. Existing pending approval path stays intact.
 - Exact-head GitHub Verify and isolated signed Dev staff/guardian/expired/credit + 360/390 acceptance still required. No Production or payment provider activation.
