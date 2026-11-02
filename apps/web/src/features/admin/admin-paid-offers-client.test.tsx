@@ -1,7 +1,7 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminPaidSlotError} from './admin-paid-slot-client';
-import {AdminPaidOffers} from './AdminPaidOffers';
+import {AdminPaidOffers,createPaidOfferWriteGate} from './AdminPaidOffers';
 import {parseAdminPaidOffers,parsePaidOfferAck,submitPaidOfferAction,
  fetchAdminPaidOffers} from './admin-paid-offers-client';
 const A='11111111-1111-4111-8111-111111111111';
@@ -13,6 +13,33 @@ const reply=(status:number,body:unknown)=>new Response(JSON.stringify(body),{sta
 afterEach(()=>vi.unstubAllGlobals());
 
 describe('#317 signed staff paid offer contracts',()=>{
+ it('keeps one staff operation across double taps, unknown ACK and signed refresh',()=>{
+  const gate=createPaidOfferWriteGate();
+  // React has not committed disabled=true between two submit events.
+  expect(gate.begin()).toBe(true);
+  expect(gate.begin()).toBe(false);
+  expect(gate.begin(true)).toBe(false);
+  expect(gate.reset()).toBe(false);
+  // Unknown D1 result must preserve the exact operationId for replay.
+  gate.finish(true);
+  expect(gate.begin()).toBe(false);
+  expect(gate.reset()).toBe(false);
+  expect(gate.begin(true)).toBe(true);
+  expect(gate.begin(true)).toBe(false);
+  expect(gate.reset()).toBe(false);
+  // Even a confirmed ACK must not unlock before fresh staff GET succeeds.
+  gate.finish(false);
+  expect(gate.begin()).toBe(false);
+  expect(gate.begin(true)).toBe(false);
+  expect(gate.reset()).toBe(true);
+  expect(gate.begin()).toBe(true);
+  expect(gate.begin()).toBe(false);
+  // A definitive denial also needs an explicit authoritative refresh.
+  gate.finish(false);
+  expect(gate.begin()).toBe(false);
+  expect(gate.reset()).toBe(true);
+  expect(gate.begin()).toBe(true);
+ });
  it('rejects malformed, duplicate, private and oversized rows',()=>{
   expect(parseAdminPaidOffers({code:'ACADEMY_PAID_SLOT_STAFF_OFFERS',
    offers:[row],requestId:'trace'})).toHaveLength(1);
