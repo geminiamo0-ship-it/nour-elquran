@@ -1,3 +1,9 @@
+## #317 source candidate — paid offer trust boundary
+- `workers/api/migrations/0031_academy_paid_slot_requests.sql`: staff-only append-only paid open slots and withdrawals; guardian proposals/approvals require matching published, unwithdrawn paid offers.
+- `workers/api/src/academy-paid-slot.ts`: `ownerPaidSlotOffers` signed learner-scoped, active-cycle and assignment/credit/conflict filtered D1 GET; no booking.
+- `workers/api/src/auth/routes.ts`: schema-gated `GET /v1/me/learners/:id/paid-slot-offers`.
+- `workers/api/tests/{academy-paid-slot.test.ts,test_academy_paid_slot_requests.py}`: bounded/role query and native publication/withdrawal guards. Source only; staff publish API, browser form and signed Dev acceptance pending.
+
 ## #317 signed staff decision UI (source candidate; 2026-11-01)
 - apps/web/src/features/admin/admin-paid-slot-decision-client.ts: strict staff POST /v1/staff/academy/paid-slot-decisions, 201/200 typed ACK and network-uncertain error; no browser role or client timestamp.
 - apps/web/src/features/admin/AdminPaidSlotDecision.tsx: reason+confirmation only for pending requests, operationId retained on uncertain retry; mounted in AdminPaidSlotInbox.tsx.
