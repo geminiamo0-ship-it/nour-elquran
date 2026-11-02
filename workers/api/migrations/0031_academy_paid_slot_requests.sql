@@ -81,6 +81,20 @@ CREATE TRIGGER academy_paid_open_slot_close_no_delete
  BEFORE DELETE ON academy_paid_open_slot_closure_events
  BEGIN SELECT RAISE(ABORT,'ACADEMY_IMMUTABLE'); END;
 
+-- #317 cross-channel availability: a later free-trial publication must not
+-- advertise the same Sheikh interval as an existing unwithdrawn paid offer.
+-- The paid-offer INSERT guard above covers the opposite publication order.
+-- Withdrawing the paid offer releases the interval for future trial offers.
+CREATE TRIGGER academy_trial_slot_paid_offer_conflict
+BEFORE INSERT ON trial_open_slot_events BEGIN
+ SELECT RAISE(ABORT,'ACADEMY_TRIAL_PAID_OFFER_CONFLICT') WHERE EXISTS(
+  SELECT 1 FROM academy_paid_open_slot_events s
+  WHERE s.teacher_id=NEW.teacher_id
+   AND s.starts_at_ms<NEW.ends_at_ms AND s.ends_at_ms>NEW.starts_at_ms
+   AND NOT EXISTS(SELECT 1 FROM academy_paid_open_slot_closure_events x
+    WHERE x.slot_id=s.id));
+END;
+
 CREATE TABLE academy_paid_slot_request_events (
  id TEXT PRIMARY KEY NOT NULL CHECK(length(id)=36),
  operation_id TEXT NOT NULL UNIQUE CHECK(length(operation_id)=36),
