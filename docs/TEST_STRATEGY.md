@@ -1,3 +1,8 @@
+## #317 paid offer staff publication API — pending exact-head acceptance
+- Source Node: signed staff-only 100-row offer read; no contacts/learner data; strict UUID, timestamp and reason; identical operationId replay; D1 overlap/occupied/withdrawal conflicts; no false success on unconfirmed D1 writes.
+- Native D1: migration 0031 trigger rejects unauthorized/unqualified/overlapping offers and booked withdrawals; staff closure and owner approval are append-only and revalidated.
+- Remaining release gates: exact-head Verify 4/4, independent SQL/auth/privacy review, source-pinned Cloudflare Dev signed staff/guardian/foreign/sibling/replay/one-credit and 360/390 mobile; staff UI for publication/withdrawal. No Production, real payment or child audio.
+
 ## #317 paid-slot guardian proposal UI gates (2026-11-02)
 - Unit/SSR: proposal fields must come exclusively from an exact parsed signed offer; foreign offer ID cannot create an input; no synthetic options during initial loading; premium Lessons retains both request form and signed status.
 - Pending Dev: verify 0031 migration, staff-published offer read, selected guardian create/replay and staff approve/reject, one-credit atomicity and no partial spend; negative foreign sibling/unsigned/revoked teacher/staff and expired/withdrawn offers; mobile 360x667/390x844, keyboard and touch. An unknown network response must allow ONLY identical operation replay, never a fresh operation.
