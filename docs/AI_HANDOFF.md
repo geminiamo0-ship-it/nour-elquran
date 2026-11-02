@@ -1,3 +1,8 @@
+## 2026-11-02 — #317 Admin paid-offer POST single-flight follow-up
+- On Draft PR #318, audited `AdminPaidOffers.tsx`: previous `inFlight` ref only protected the network-await window. It did not prevent a second operationId between an ACK/unknown completion and React rerender.
+- New `createPaidOfferWriteGate` enforces one initial publish/withdraw; unknown outcome replays the same pending action only; confirmed success waits for authoritative signed staff GET before allowing another write; definitive denial requires explicit refresh. The read is cleared while revalidating. Added pure lifecycle regression in `admin-paid-offers-client.test.tsx`.
+- **Next exact action:** verify PR #318 exact-head 4/4 GitHub Actions; repair any failure. Then independent SQL/auth/privacy review and signed isolated Cloudflare Dev 0031 publish/withdraw→guardian proposal→staff decision→single credit, sibling/foreign-owner denial and 360/390 mobile tests. No merge/Production/WhatsApp/audio/paid provider/cumulative ink rollout without gates.
+
 ## 2026-11-02 — #317 next continuation: guardian single-flight submission
 - Existing branch `feat/317-paid-slot-request-ledger` / Draft PR #318. Previous head `7b4924f8` [Verify #41445416749](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41445416749) completed PASS 4/4, **not evidence for this new change**.
 - Source bug: rapid guardian submit clicks could create competing operationIds before React's state commit and overwrite the only retryable payload. Fixed by a synchronous write gate; unknown POST outcome locks the original operation, explicit retry reuses the same ID, refresh only after resolved outcome; success callback no longer reclassifies confirmed D1 ACK as uncertain. Added deterministic gate test.
