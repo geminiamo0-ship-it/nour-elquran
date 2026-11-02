@@ -1,3 +1,9 @@
+## 2026-11-02 — #317 guardian trusted paid-slot proposal continuation
+- Branch `feat/317-paid-slot-request-ledger`, Draft PR #318, Issue #317. Added `apps/web/src/features/student/components/StudentPaidSlotProposal.tsx` and connected it to `ConnectedClassroomLessons` plus `StudentPaidSlotStatus` refresh. All selectable teacher/cycle/start values originate from signed `fetchPaidSlotOffers`; radio/confirmation required; owner POST never books or spends.
+- On network/5xx/malformed ACK, the UI preserves the same operationId/payload and allows only explicit identical replay; on confirmed rejection it requires fresh offers. Selected learner changes cannot show prior sibling offers (render-time learner scope + keyed child).
+- Added unit/SSR coverage in `paid-slot-requests-client.test.ts`. No local full workspace test was run here; inspect exact-head GitHub Verify and repair any failures before independent review or Dev acceptance.
+- NEXT: verify PR #318 latest SHA 4/4, implement staff publish/withdraw UI on audited D1 route, test signed 0031 Dev owner/staff/sibling/replay/credit and mobile 360/390. Keep Draft and #317 OPEN. No Production/payment/WhatsApp/child audio/ink changes.
+
 ## 2026-11-02 — #317 strict paid-offer client continuation
 - Added `apps/web/src/features/student/paid-slot-offers-client.ts` and adjacent Vitest cases: only signed same-origin GET, exact 30-row D1 offer schema, no PII/duplicates/fake availability, explicit errors. Source-only on Draft #318; not yet a form or Dev acceptance.
 - NEXT: inspect current exact-head Verify; implement staff audited offer publication/withdrawal endpoints and guardian offer-selection UI with stable operationId replay; review SQL/roles and run signed Cloudflare Dev 0031 guardian/staff/sibling/one-credit/mobile tests. Keep #317 OPEN, no Production/payments/WhatsApp/child audio/ink changes.
