@@ -1,3 +1,9 @@
+## 2026-11-02 — #317 paid/trial published-slot overlap guard (Draft PR #318)
+- Source review found an order-dependent availability gap: migration 0031 rejected a paid offer when an overlapping trial offer already existed, but the older trial publication trigger could still publish a conflicting free-trial slot **after** the paid offer. This could advertise the same Sheikh/40-minute interval twice before either was booked.
+- Added D1 trigger `academy_trial_slot_paid_offer_conflict` in the unmerged 0031 migration; it rejects later trial publication while an overlapping paid offer is unwithdrawn. A withdrawal releases the interval. Native SQLite regression covers both publication orders, release, and no booking/spend on rejection.
+- Minimal isolated SQLite trigger reproduction passed locally; full repository/native D1 GitHub Verify on this new exact HEAD is **pending**. Independent security review and signed Cloudflare Dev two-role/sibling/credit/mobile acceptance remain required. Keep #317 OPEN / #318 Draft. No Production, payment, WhatsApp, child audio or cumulative ink changes.
+- NEXT: inspect latest exact-head CI, repair failures, then independent SQL/auth review and source-pinned Dev 0031 synthetic staff/guardian/sibling/concurrency + 360/390 QA.
+
 ## 2026-11-02 — #317 signed staff paid-slot offer management (PR #318; source candidate)
 - Added `AdminPaidOffers.tsx` on authenticated Admin Requests and strict `admin-paid-offers-client.ts`: published/withdrawn D1 offers, trusted active/qualified teacher dropdown, explicit 40-minute Cairo preview, publish/withdraw confirmations and reason, exact operationId replay on unknown outcome. No optimistic booking or debit.
 - Added contract/SSR tests for strict bounded offer rows, exact 201/200 ACKs, 409/unknown network and initial privacy gate. The existing Worker/D1 0031 API is reused; no migration or Production change.
