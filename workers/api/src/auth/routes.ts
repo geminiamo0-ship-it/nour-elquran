@@ -563,7 +563,7 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     const {status,...body}=result;return reply(status,body,requestId);
   }
   // #317: server-derived paid availability; GET is not a reservation.
-  const paidOffersOwner=/^\\/v1\\/me\\/learners\\/([a-zA-Z0-9_-]{1,128})\\/paid-slot-offers$/.exec(path);
+  const paidOffersOwner=/^\/v1\/me\/learners\/([a-zA-Z0-9_-]{1,128})\/paid-slot-offers$/.exec(path);
   if(paidOffersOwner){
     if(request.method!=='GET')
       return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
