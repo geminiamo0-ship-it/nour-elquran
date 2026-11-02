@@ -5,6 +5,8 @@ import {StudentConnectedAttendanceCases} from './StudentConnectedAttendanceCases
 import {StudentTrialBooking} from './StudentTrialBooking';
 import {StudentTrialCancellation} from './StudentTrialCancellation';
 import {StudentTrialReschedule} from './StudentTrialReschedule';
+import {StudentPaidSlotStatus} from './StudentPaidSlotStatus';
+import {currentLearnerRead,type LearnerScoped} from './learner-scope';
 import {UpcomingLessonCard,UpcomingLessonList,type DisplayLesson} from './LessonsVisual';
 import css from './LessonsPremium.module.css';
 
@@ -27,22 +29,27 @@ function view(lesson:LessonRow,learnerId:string):DisplayLesson{
 }
 
 export function ConnectedClassroomLessons({learnerId}:{learnerId:string}){
- const [status,setStatus]=useState<'loading'|'ready'|'error'>('loading');
- const [lessons,setLessons]=useState<readonly LessonRow[]>([]);
+ const [read,setRead]=useState<LearnerScoped<LessonRow>>({
+  learnerId,status:'loading',rows:[]
+ });
  const [retry,setRetry]=useState(0);
  const [availabilityRevision,setAvailabilityRevision]=useState(0);
  const [bookingOpen,setBookingOpen]=useState(false);
  const [attendanceOpen,setAttendanceOpen]=useState(false);
  useEffect(()=>{
   const abort=new AbortController();
-  setStatus('loading');setLessons([]);
+  setRead({learnerId,status:'loading',rows:[]});
   void notebookClient.lessons(learnerId,abort.signal).then(rows=>{
    if(abort.signal.aborted)return;
-   setLessons(rows.filter(l=>l.learnerId===learnerId));setStatus('ready');
-  }).catch(()=>{if(!abort.signal.aborted)setStatus('error');});
+   setRead({learnerId,status:'ready',rows:rows.filter(l=>l.learnerId===learnerId)});
+  }).catch(()=>{if(!abort.signal.aborted)setRead({learnerId,status:'error',rows:[]});});
   return()=>abort.abort();
  },[learnerId,retry]);
- const upcoming=lessons.filter(l=>(l.status==='scheduled'||l.status==='live')&&
+ // The selected learner can change before effect cleanup runs. Hide the
+ // previous sibling's lesson titles, times and links on that very render.
+ const visible=currentLearnerRead(read,learnerId);
+ const status=visible.status;
+ const upcoming=visible.rows.filter(l=>(l.status==='scheduled'||l.status==='live')&&
   l.endsAtMs>Date.now()).slice().sort((a,b)=>{
     if(a.status!==b.status)return a.status==='live'?-1:1;
     return a.startsAtMs-b.startsAtMs;
@@ -76,6 +83,7 @@ export function ConnectedClassroomLessons({learnerId}:{learnerId:string}){
       refreshRevision={availabilityRevision} onBooked={()=>setRetry(x=>x+1)}/>
    </div>}
   </details>
+  <StudentPaidSlotStatus key={learnerId} learnerId={learnerId}/>
   <details className={css.expansion} onToggle={e=>setAttendanceOpen(e.currentTarget.open)}>
    <summary>الحضور وطلبات المراجعة</summary>
    {attendanceOpen&&<div className={css.expansionBody}>

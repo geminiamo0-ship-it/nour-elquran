@@ -20,6 +20,8 @@ import {ownerAcademy,ownerPackageRequest,staffAcademy,staffPackage,staffActivate
  staffReject,staffContact,staffInvite,claimInvite} from '../academy-admin-mvp.ts';
 import {ownerTrialRequest,ownerTrialRequests,staffTrialRequests,staffTrialDecision,
  staffPaidBooking,staffBookableCycles} from '../academy-booking.ts';
+import {ownerPaidSlotRequests,ownerPaidSlotRequest,ownerPaidSlotOffers,
+ staffPaidSlotRequests,staffPaidSlotDecision} from '../academy-paid-slot.ts';
 import {readTeacherInkDrafts,saveTeacherInkDraft,teacherAssignmentPageRange} from '../teacher-assignment-ink-drafts.ts';
 import {getStudentAttempts,getTeacherAttempts,submitStudentAttempt,reviewStudentAttempt,parseSubmission,parseReview} from '../assignment-submissions.ts';
 import {PRIVATE_RECITATION_UPLOADS_ENABLED} from '../private-recitation-audio.ts';
@@ -560,6 +562,34 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
          await readObject(request));
     const {status,...body}=result;return reply(status,body,requestId);
   }
+  // #317: server-derived paid availability; GET is not a reservation.
+  const paidOffersOwner=/^\/v1\/me\/learners\/([a-zA-Z0-9_-]{1,128})\/paid-slot-offers$/.exec(path);
+  if(paidOffersOwner){
+    if(request.method!=='GET')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='academy_paid_slot_requests'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'ACADEMY_PAID_SLOT_SCHEMA_NOT_READY'},requestId);
+    const result=await ownerPaidSlotOffers(env.DB,session.user.id,paidOffersOwner[1]!);
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
+  // #317: only server-derived timestamps and signed owner identity.
+  // Schema-gated: no paid-slot endpoint until D1 migration 0031 exists.
+  const paidSlotOwner=/^\/v1\/me\/learners\/([a-zA-Z0-9_-]{1,128})\/paid-slot-requests$/.exec(path);
+  if(paidSlotOwner){
+    if(request.method!=='GET'&&request.method!=='POST')
+      return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+    const schema=await env.DB.prepare(
+      "SELECT version FROM noor_schema_meta WHERE component='academy_paid_slot_requests'"
+    ).first<{version:number}>();
+    if(schema?.version!==1)return reply(503,{code:'ACADEMY_PAID_SLOT_SCHEMA_NOT_READY'},requestId);
+    const result=request.method==='GET'
+      ?await ownerPaidSlotRequests(env.DB,session.user.id,paidSlotOwner[1]!)
+      :await ownerPaidSlotRequest(env.DB,session.user.id,paidSlotOwner[1]!,
+         await readObject(request));
+    const {status,...body}=result;return reply(status,body,requestId);
+  }
   if(path==='/v1/staff/academy'||path.startsWith('/v1/staff/academy/')){
     if(env.NOOR_ADMIN_PORTAL_ENABLED!=='true')
       return reply(404,{code:'NOT_FOUND'},requestId);
@@ -569,6 +599,20 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
       "SELECT version FROM noor_schema_meta WHERE component='academy_admin_mvp'"
     ).first<{version:number}>();
     if(schema?.version!==1)return reply(503,{code:'ACADEMY_SCHEMA_NOT_READY'},requestId);
+    if(path==='/v1/staff/academy/paid-slot-requests'||
+       path==='/v1/staff/academy/paid-slot-decisions'){
+      const list=path.endsWith('/paid-slot-requests');
+      if(request.method!==(list?'GET':'POST'))
+        return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
+      const schema=await env.DB.prepare(
+        "SELECT version FROM noor_schema_meta WHERE component='academy_paid_slot_requests'"
+      ).first<{version:number}>();
+      if(schema?.version!==1)return reply(503,{code:'ACADEMY_PAID_SLOT_SCHEMA_NOT_READY'},requestId);
+      const result=list
+        ?await staffPaidSlotRequests(env.DB,session.user.id)
+        :await staffPaidSlotDecision(env.DB,session.user.id,await readObject(request));
+      const {status,...body}=result;return reply(status,body,requestId);
+    }
     if(path==='/v1/staff/academy/trials'||path==='/v1/staff/academy/cycles'){
       if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
       const schema=await env.DB.prepare(

@@ -9,6 +9,7 @@ import {AdminTeacherDirectory} from './AdminTeacherDirectory';
 import {AdminCollectionPanel} from './AdminCollectionPanel';
 import {AdminAcademyMvp} from './AdminAcademyMvp';
 import {AdminBookingPanel} from './AdminBookingPanel';
+import {AdminPaidSlotInbox} from './AdminPaidSlotInbox';
 import {AdminOverviewError,fetchAdminOverview,type AdminOverview} from './admin-overview-client';
 import css from './AdminPortal.module.css';
 
@@ -163,7 +164,8 @@ export function AdminShell(){
            ?<AdminAcademyMvp key={route} session={account.session} mode="packages"/>
            :route==='/admin/requests'
             ?<><AdminAcademyMvp key={route} session={account.session} mode="requests"/>
-              <AdminBookingPanel session={account.session} mode="trial"/></>
+              <AdminBookingPanel session={account.session} mode="trial"/>
+              <AdminPaidSlotInbox session={account.session}/></>
             :route==='/admin/settings'
              ?<AdminAcademyMvp key={route} session={account.session} mode="contact"/>
              :<AdminPendingSection route={route}/>}

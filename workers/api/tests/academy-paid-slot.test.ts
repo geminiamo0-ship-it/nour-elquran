@@ -1,0 +1,243 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import type {CoreDatabase} from '../src/bindings.ts';
+import {ownerPaidSlotRequest,ownerPaidSlotRequests,ownerPaidSlotOffers,
+ staffPaidSlotRequests,staffPaidSlotDecision} from '../src/academy-paid-slot.ts';
+
+const LEARNER='11111111-1111-4111-8111-111111111111';
+const TEACHER='22222222-2222-4222-8222-222222222222';
+const CYCLE='33333333-3333-4333-8333-333333333333';
+const OP='44444444-4444-4444-8444-444444444444';
+const REQUEST='55555555-5555-4555-8555-555555555555';
+const NOW=100000000,START=NOW+120000;
+type Query={sql:string;values:unknown[]};
+function mock(opts:{owner?:boolean;staff?:boolean;prior?:Record<string,unknown>|null;
+ racePrior?:Record<string,unknown>|null;
+ rows?:Record<string,unknown>[];error?:Error;
+ ack?:{success:boolean;meta:{changes:number}}}={}){
+ const queries:Query[]=[];
+ let operationLookups=0;
+ const db={
+  prepare(sql:string){
+   let values:unknown[]=[];
+   const stmt={
+    bind(...v:unknown[]){values=v;return stmt;},
+    async first(){
+     queries.push({sql,values});
+     if(sql.includes('FROM learners l'))return opts.owner===false?null:{allowed:1};
+     if(sql.includes('FROM staff_grants'))return opts.staff===false?null:{subject:'staff'};
+     if(sql.includes('WHERE operation_id=?')){
+      operationLookups++;
+      return operationLookups>1?(opts.racePrior??opts.prior??null):(opts.prior??null);
+     }
+     return null;
+    },
+    async all(){queries.push({sql,values});return {results:opts.rows??[]};},
+    async run(){queries.push({sql,values});if(opts.error)throw opts.error;
+     return opts.ack??{success:true,meta:{changes:1}};},
+   };
+   return stmt;
+  },
+ } as unknown as CoreDatabase;
+ return {db,queries};
+}
+const proposal={operationId:OP,teacherId:TEACHER,cycleId:CYCLE,startsAtMs:START};
+const decision={operationId:OP,requestId:REQUEST,decision:'approved',reason:'Approved by academy staff'};
+
+test('signed paid offers are server-filtered by owner, assignment, cycle, published slot and live conflicts',async()=>{
+ const denied=mock({owner:false});
+ assert.deepEqual(await ownerPaidSlotOffers(denied.db,'foreign',LEARNER,NOW),
+  {status:404,code:'NOT_FOUND'});
+ assert.equal(denied.queries.some(q=>q.sql.includes('academy_paid_open_slot_events')),false);
+ const offer={offerId:REQUEST,teacherId:TEACHER,cycleId:CYCLE,
+  startsAtMs:START,endsAtMs:START+2400000};
+ const ok=mock({rows:[offer]});
+ assert.deepEqual(await ownerPaidSlotOffers(ok.db,'owner',LEARNER,NOW),
+  {status:200,code:'ACADEMY_PAID_SLOT_OFFERS',offers:[offer]});
+ const sql=ok.queries.find(q=>q.sql.includes('FROM academy_paid_open_slot_events'))?.sql??'';
+ assert.match(sql,/JOIN subscription_cycles c ON c.learner_id=\?/);
+ assert.match(sql,/academy_paid_open_slot_closure_events/);
+ assert.match(sql,/teacher_assignments g/);
+ assert.match(sql,/subscription_spend_events/);
+ assert.match(sql,/academy_paid_slot_request_events/);
+ assert.match(sql,/trial_open_slot_events/);
+ assert.match(sql,/LIMIT 30/);
+ assert.doesNotMatch(sql,/phone_number|email|display_name|reason|payload_json/i);
+ assert.deepEqual(ok.queries.find(q=>q.sql.includes('FROM academy_paid_open_slot_events'))?.values,
+  [LEARNER,NOW,NOW+60000,NOW+30*86400000,NOW,NOW,
+   LEARNER,LEARNER,LEARNER,NOW+60000]);
+ assert.deepEqual(await ownerPaidSlotOffers(mock().db,'owner',LEARNER,-1),
+  {status:503,code:'CLOCK_UNAVAILABLE'});
+});
+
+test('guardian request requires exact schema, owner and trusted server clock',async()=>{
+ const x=mock();
+ assert.equal((await ownerPaidSlotRequest(x.db,'owner',LEARNER,proposal,NOW)).status,201);
+ const insert=x.queries.find(q=>q.sql.includes('INSERT INTO academy_paid_slot_request_events'));
+ assert.ok(insert);
+ assert.deepEqual(insert.values.slice(1),[OP,LEARNER,TEACHER,CYCLE,'owner',START,
+  START+2400000,NOW]);
+ for(const bad of [{...proposal,requestedAtMs:1},{...proposal,actorSubject:'staff'},
+  {...proposal,startsAtMs:'120000000'}]){
+  const m=mock();
+  assert.equal((await ownerPaidSlotRequest(m.db,'owner',LEARNER,bad,NOW)).status,400);
+  assert.equal(m.queries.length,0);
+ }
+ for(const bad of [{...proposal,startsAtMs:NOW-1},
+  {...proposal,startsAtMs:NOW+31*86400000}]){
+  const m=mock();
+  assert.equal((await ownerPaidSlotRequest(m.db,'owner',LEARNER,bad,NOW)).status,400);
+  assert.equal(m.queries.some(q=>q.sql.includes('INSERT INTO')),false);
+ }
+ const denied=mock({owner:false});
+ assert.deepEqual(await ownerPaidSlotRequest(denied.db,'owner',LEARNER,proposal,NOW),
+  {status:404,code:'NOT_FOUND'});
+ assert.equal(denied.queries.some(q=>q.sql.includes('INSERT INTO')),false);
+});
+
+test('guardian idempotency accepts only same owner, learner and immutable proposal',async()=>{
+ const prior={id:REQUEST,actor:'owner',learnerId:LEARNER,teacherId:TEACHER,
+  cycleId:CYCLE,startsAtMs:START};
+ const good=mock({prior});
+ assert.deepEqual(await ownerPaidSlotRequest(good.db,'owner',LEARNER,proposal,NOW),
+  {status:200,code:'ACADEMY_PAID_SLOT_REPLAY',slotRequestId:REQUEST});
+ for(const mismatch of [{...prior,actor:'other'},{...prior,learnerId:'other'},
+  {...prior,startsAtMs:START+1000}]){
+  const bad=mock({prior:mismatch});
+  assert.equal((await ownerPaidSlotRequest(bad.db,'owner',LEARNER,proposal,NOW)).status,409);
+  assert.equal(bad.queries.some(q=>q.sql.includes('INSERT INTO')),false);
+ }
+});
+
+test('concurrent duplicate guardian POST replays winner without a false conflict',async()=>{
+ const prior={id:REQUEST,actor:'owner',learnerId:LEARNER,teacherId:TEACHER,
+  cycleId:CYCLE,startsAtMs:START};
+ const unique=new Error('D1_ERROR: UNIQUE constraint failed: academy_paid_slot_request_events.operation_id');
+ const raced=mock({error:unique,racePrior:prior});
+ assert.deepEqual(await ownerPaidSlotRequest(raced.db,'owner',LEARNER,proposal,NOW),
+  {status:200,code:'ACADEMY_PAID_SLOT_REPLAY',slotRequestId:REQUEST});
+ assert.equal(raced.queries.filter(q=>q.sql.includes('INSERT INTO')).length,1);
+ assert.equal(raced.queries.filter(q=>q.sql.includes('WHERE operation_id=?')).length,2);
+ const foreign=mock({error:unique,racePrior:{...prior,actor:'another-owner'}});
+ assert.deepEqual(await ownerPaidSlotRequest(foreign.db,'owner',LEARNER,proposal,NOW),
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'});
+ const unrelated=mock({error:unique});
+ assert.deepEqual(await ownerPaidSlotRequest(unrelated.db,'owner',LEARNER,proposal,NOW),
+  {status:409,code:'ACADEMY_PAID_SLOT_DENIED'});
+});
+
+test('guardian retry of the same proposal remains idempotent after the slot expires',async()=>{
+ const prior={id:REQUEST,actor:'owner',learnerId:LEARNER,teacherId:TEACHER,
+  cycleId:CYCLE,startsAtMs:START};
+ const later=START+60000;
+ const replay=mock({prior});
+ assert.deepEqual(await ownerPaidSlotRequest(replay.db,'owner',LEARNER,proposal,later),
+  {status:200,code:'ACADEMY_PAID_SLOT_REPLAY',slotRequestId:REQUEST});
+ assert.equal(replay.queries.some(q=>q.sql.includes('INSERT INTO')),false);
+ const newAttempt=mock();
+ assert.equal((await ownerPaidSlotRequest(newAttempt.db,'owner',LEARNER,proposal,later)).status,400);
+ assert.equal(newAttempt.queries.some(q=>q.sql.includes('INSERT INTO')),false);
+ const revoked=mock({owner:false,prior});
+ assert.equal((await ownerPaidSlotRequest(revoked.db,'owner',LEARNER,proposal,later)).status,404);
+ assert.equal(revoked.queries.some(q=>q.sql.includes('FROM academy_paid_slot_request_events')),false);
+});
+
+test('guardian and staff lists are bounded and deny foreign role before query',async()=>{
+ const denied=mock({owner:false,staff:false});
+ assert.equal((await ownerPaidSlotRequests(denied.db,'owner',LEARNER)).status,404);
+ assert.equal((await staffPaidSlotRequests(denied.db,'staff')).status,403);
+ assert.equal(denied.queries.some(q=>q.sql.includes('academy_paid_slot_request_events')),false);
+ const owner=mock({rows:[{requestId:REQUEST,state:'pending'}]});
+ const result=await ownerPaidSlotRequests(owner.db,'owner',LEARNER,NOW);
+ assert.equal(result.status,200);
+ assert.ok(owner.queries.some(q=>q.sql.includes('LIMIT 30')&&
+  q.sql.includes("WHEN r.starts_at_ms<=? THEN 'expired'")&&
+  q.values[0]===NOW+60000&&q.values[1]===LEARNER));
+ const staff=mock();
+ assert.equal((await staffPaidSlotRequests(staff.db,'staff',NOW)).status,200);
+ const sql=staff.queries.find(q=>q.sql.includes('LIMIT 100'))?.sql??'';
+ assert.match(sql,/WHEN r.starts_at_ms<=\? THEN 'expired'/);
+ assert.deepEqual(staff.queries.find(q=>q.sql.includes('LIMIT 100'))?.values,[NOW+60000]);
+ assert.doesNotMatch(sql,/phone_number|email|reason|password|payload_json/i);
+});
+
+test('staff decision uses server time, one D1 insert, fresh role and exact replay',async()=>{
+ const m=mock();
+ const result=await staffPaidSlotDecision(m.db,'staff',decision,NOW);
+ assert.equal(result.status,201);
+ assert.equal(result.code,'ACADEMY_PAID_SLOT_DECIDED');
+ assert.ok('lessonId' in result);
+ if('lessonId' in result)assert.match(String(result.lessonId),/^[0-9a-f-]{36}$/i);
+ const insert=m.queries.find(q=>q.sql.includes('INSERT INTO academy_paid_slot_decision_events'));
+ assert.ok(insert);
+ assert.deepEqual(insert.values.slice(1,5),[OP,REQUEST,'staff','approved']);
+ assert.deepEqual(insert.values.slice(-2),[decision.reason,NOW]);
+ assert.equal(m.queries.filter(q=>q.sql.includes('INSERT INTO')).length,1);
+ const prior={id:'prior',actor:'staff',requestId:REQUEST,
+  decision:'approved',reason:decision.reason,lessonId:LEARNER};
+ const replay=await staffPaidSlotDecision(mock({prior}).db,'staff',decision,NOW);
+ assert.deepEqual(replay,{status:200,code:'ACADEMY_PAID_SLOT_DECISION_REPLAY',lessonId:LEARNER});
+ const wrong=await staffPaidSlotDecision(mock({prior:{...prior,actor:'other'}}).db,
+  'staff',decision,NOW);
+ assert.equal(wrong.status,409);
+});
+
+test('concurrent staff approval replay returns original lesson without a second debit',async()=>{
+ const prior={id:'previous',actor:'staff',requestId:REQUEST,decision:'approved',
+  reason:decision.reason,lessonId:LEARNER};
+ const unique=new Error('D1_ERROR: UNIQUE constraint failed: academy_paid_slot_decision_events.operation_id');
+ const raced=mock({error:unique,racePrior:prior});
+ assert.deepEqual(await staffPaidSlotDecision(raced.db,'staff',decision,NOW),
+  {status:200,code:'ACADEMY_PAID_SLOT_DECISION_REPLAY',lessonId:LEARNER});
+ assert.equal(raced.queries.filter(q=>q.sql.includes('INSERT INTO')).length,1);
+ assert.equal(raced.queries.filter(q=>q.sql.includes('WHERE operation_id=?')).length,2);
+ const changed=mock({error:unique,racePrior:{...prior,requestId:LEARNER}});
+ assert.deepEqual(await staffPaidSlotDecision(changed.db,'staff',decision,NOW),
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'});
+ const denied=mock({staff:false,error:unique,racePrior:prior});
+ assert.equal((await staffPaidSlotDecision(denied.db,'staff',decision,NOW)).status,403);
+ assert.equal(denied.queries.some(q=>q.sql.includes('academy_paid_slot_decision_events')),false);
+});
+
+test('staff denial, invalid input and database conflicts fail closed without false booking',async()=>{
+ const denied=mock({staff:false});
+ assert.deepEqual(await staffPaidSlotDecision(denied.db,'staff',decision,NOW),
+  {status:403,code:'STAFF_ACCESS_DENIED'});
+ assert.equal(denied.queries.some(q=>q.sql.includes('INSERT INTO')),false);
+ for(const invalid of [{...decision,atMs:0},{...decision,lessonId:LEARNER},
+  {...decision,decision:'accepted'},{...decision,reason:'bad'}]){
+  const m=mock();
+  assert.equal((await staffPaidSlotDecision(m.db,'staff',invalid,NOW)).status,400);
+  assert.equal(m.queries.length,0);
+ }
+ const failed=mock({error:new Error('D1_ERROR: ACADEMY_SLOT_CYCLE_DENIED')});
+ assert.deepEqual(await staffPaidSlotDecision(failed.db,'staff',decision,NOW),
+  {status:409,code:'ACADEMY_PAID_SLOT_DECISION_DENIED'});
+ const ownerFailed=mock({error:new Error('D1_ERROR: ACADEMY_SLOT_REQUEST_PENDING')});
+ assert.equal((await ownerPaidSlotRequest(ownerFailed.db,'owner',LEARNER,proposal,NOW)).status,409);
+ await assert.rejects(
+  staffPaidSlotDecision(mock({error:new Error('Unexpected database failure')}).db,
+   'staff',decision,NOW),/Unexpected database failure/);
+});
+
+test('unconfirmed D1 write acknowledgements never claim a guardian proposal or staff debit',async()=>{
+ for(const ack of [{success:false,meta:{changes:0}},
+  {success:true,meta:{changes:0}}]){
+  const guardian=mock({ack});
+  const proposalResult=await ownerPaidSlotRequest(guardian.db,'owner',LEARNER,proposal,NOW);
+  assert.deepEqual(proposalResult,{
+   status:503,code:'ACADEMY_PAID_SLOT_WRITE_UNCONFIRMED'});
+  assert.equal(guardian.queries.filter(q=>q.sql.includes(
+   'INSERT INTO academy_paid_slot_request_events')).length,1);
+
+  const staff=mock({ack});
+  const decisionResult=await staffPaidSlotDecision(staff.db,'staff',decision,NOW);
+  assert.deepEqual(decisionResult,{
+   status:503,code:'ACADEMY_PAID_SLOT_WRITE_UNCONFIRMED'});
+  assert.equal(staff.queries.filter(q=>q.sql.includes(
+   'INSERT INTO academy_paid_slot_decision_events')).length,1);
+ }
+ // A confirmed single-row insert still returns the normal immutable ACK.
+ assert.equal((await ownerPaidSlotRequest(mock().db,'owner',LEARNER,proposal,NOW)).status,201);
+ assert.equal((await staffPaidSlotDecision(mock().db,'staff',decision,NOW)).status,201);
+});

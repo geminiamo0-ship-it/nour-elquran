@@ -1,3 +1,27 @@
+## #317 signed staff decision UI (source candidate; 2026-11-01)
+- apps/web/src/features/admin/admin-paid-slot-decision-client.ts: strict staff POST /v1/staff/academy/paid-slot-decisions, 201/200 typed ACK and network-uncertain error; no browser role or client timestamp.
+- apps/web/src/features/admin/AdminPaidSlotDecision.tsx: reason+confirmation only for pending requests, operationId retained on uncertain retry; mounted in AdminPaidSlotInbox.tsx.
+- apps/web/src/features/admin/{admin-paid-slot-decision-client.test.ts,AdminPaidSlotInbox.test.tsx}: parser, denial, unknown outcome and SSR no-optimistic-spend tests. Requires CI and signed Dev acceptance.
+
+## #317 staff paid-slot inbox (PR #318, source-only)
+- `apps/web/src/features/admin/admin-paid-slot-client.ts`: strict signed staff GET for `/v1/staff/academy/paid-slot-requests`, exact 100-row D1 response and 40-minute/state/PII validation, no client role claims.
+- `apps/web/src/features/admin/AdminPaidSlotInbox.tsx`: session-scoped RTL read-only pending/approved/rejected list, no fabricated records or staff decision actions; mounted on existing `/admin/requests` by `AdminShell.tsx`.
+- `apps/web/src/features/admin/{admin-paid-slot-client.test.ts,AdminPaidSlotInbox.test.tsx}`: parser, signed fetch, authorization/outage and initial privacy-gate regressions. Requires exact-head CI, independent security review and signed Dev QA; staff approve/reject and owner proposal remain pending.
+
+## #317 Student paid-slot request status (Draft PR #318)
+- `apps/web/src/features/student/paid-slot-requests-client.ts`: strict owner-only no-store GET parser, exact response shape, 30-row cap, 40-minute slot and state/lesson invariants, no PII.
+- `apps/web/src/features/student/components/StudentPaidSlotStatus.tsx`: learner-keyed signed read-only request state; explicit loading/empty/error and no fake booking controls. Mounted by `components/ConnectedClassroomLessons.tsx`.
+- `apps/web/src/features/student/paid-slot-requests-client.test.ts`: malformed, PII, duplicate, state and denied/offline regressions. Still requires exact-head CI and signed Dev E2E; Admin inbox/proposal form are not delivered.
+
+## #317 signed guardian paid-slot requests and staff decisions (Draft PR #318)
+- `workers/api/migrations/0031_academy_paid_slot_requests.sql`: immutable proposal/decision events, guarded 40-minute reservation and atomic #315 booking/spend on staff approval only.
+- `workers/api/src/academy-paid-slot.ts`: signed owner proposal/list, staff bounded list/decision, strict UUID and exact request allowlists, server clock and replay. `workers/api/src/auth/routes.ts`: 0031 schema-gated owner routes and staff routes behind existing Admin flag + verified role.
+- `workers/api/tests/academy-paid-slot.test.ts` and `workers/api/tests/test_academy_paid_slot_requests.py`: server use-case and native SQLite D1 constraints. Source candidate; signed Dev, independent review and UI not yet complete.
+
+## #317 paid slot proposal D1 foundation (source-only)
+- `workers/api/migrations/0031_academy_paid_slot_requests.sql`: owner-bound immutable request and staff decision events. A request never books/debits; approved decision atomically inserts the existing #315 booking and one spend, while rejected decision never debits.
+- `workers/api/tests/test_academy_paid_slot_requests.py`: native full migration/fixture SQL invariants. No new public endpoint or UI yet; no production migration.
+
 ## #322 Premium learner portal refresh (PR #323; source candidate)
 - `apps/web/src/features/student/{StudentShell.tsx,StudentPremium.module.css}`: reusable premium RTL sidebar/header/profile/bell and four-item mobile navigation; preserve authenticated session and profile-swap Quran save safeguards.
 - `apps/web/src/features/student/{PremiumHome.tsx,StudentDashboard.tsx,ConnectedStudentDashboard.tsx}`: same screen for demo and signed learner, server-authoritative home lesson/task/report content and fail-closed loading/error states.
