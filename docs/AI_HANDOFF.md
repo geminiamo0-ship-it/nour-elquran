@@ -1,3 +1,8 @@
+## 2026-11-02 — #317 paid-slot request post-ACK refresh
+- Existing Draft PR #318, branch `feat/317-paid-slot-request-ledger`: a confirmed guardian paid-slot proposal previously disabled its own refresh forever, even after staff approval/rejection. Code commit `529270a1` allows D1 availability refresh after confirmed ACK; `sending` and `uncertain` remain locked so the only safe uncertain-outcome path is replaying the original operationId. Test commit `3acda4ed` covers all five phase decisions.
+- Scope: `StudentPaidSlotProposal.tsx` and `paid-slot-requests-client.test.ts`; no Worker/D1 migration or payment/booking semantics changed. Prior HEAD `fd8c55ea` Verify #41423903767 passed 4/4, **not evidence for this new HEAD**.
+- NEXT: inspect exact-head CI, independent review and signed Cloudflare Dev learner A/B plus staff after decision, 360/390 mobile, no duplicate pending request/debit. Keep PR Draft, #317 OPEN; no Production or external services.
+
 ## 2026-11-02 — #317 expired paid-slot rejection follow-up (Draft PR #318)
 - Confirmed GitHub `main@4c15b59f713f41e2be9999bb082118cc48496c10`, PR #318 was Draft at `bd0140df`, and [Verify #41415655657](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41415655657) finished 4/4 PASS on **that previous head**.
 - Added native D1/SQLite regression in `workers/api/tests/test_academy_paid_slot_requests.py`: expired original request may be rejected after a newer paid proposal is approved; rejection is immutable, lesson ID null, and does not add a debit; duplicate decision denied. This covers the rejection-only Admin UI introduced by `bd0140df`.
