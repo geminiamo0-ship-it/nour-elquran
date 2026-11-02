@@ -95,6 +95,42 @@ class PaidSlotRequestD1(unittest.TestCase):
    with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_IMMUTABLE'):
     self.db.execute(sql)
 
+ def test_paid_and_trial_offer_publication_cannot_overlap_in_either_order(self):
+  # #317: a free-trial offer published AFTER a paid offer must not
+  # advertise the same teacher/time. The reverse order was already guarded.
+  # Neither rejected publication may create a booking or spend a credit.
+  def publish_trial(start, at=T):
+   self.db.execute("""INSERT INTO trial_open_slot_events
+    (id,operation_id,actor_subject,teacher_id,starts_at_ms,ends_at_ms,published_at_ms)
+    VALUES(?,?,?,?,?,?,?)""",(str(uuid4()),str(uuid4()),'staff',
+     'id-teacher-a',start,start+SLOT,at))
+
+  paid_start=T+7*DAY
+  offer=self.publish(start=paid_start)
+  with self.assertRaisesRegex(sqlite3.IntegrityError,
+                               'ACADEMY_TRIAL_PAID_OFFER_CONFLICT'):
+   publish_trial(paid_start)
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM trial_open_slot_events').fetchone(),(0,))
+  # Withdrawal is an immutable release, not a cancellation or refund.
+  self.db.execute("""INSERT INTO academy_paid_open_slot_closure_events
+   (id,operation_id,slot_id,actor_subject,reason,at_ms)
+   VALUES(?,?,?,?,?,?)""",(str(uuid4()),str(uuid4()),offer,'staff',
+    'Released for a future trial offer',T+1))
+  publish_trial(paid_start,at=T+2)
+  trial_first=T+8*DAY
+  publish_trial(trial_first)
+  with self.assertRaisesRegex(sqlite3.IntegrityError,
+                               'ACADEMY_PAID_OFFER_TRIAL_CONFLICT'):
+   self.publish(start=trial_first)
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM academy_paid_open_slot_events').fetchone(),(1,))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM lessons').fetchone(),(0,))
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM subscription_spend_events').fetchone(),(0,))
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
+
  def test_request_does_not_book_or_spend_until_staff_approval(self):
   req=self.request()
   self.assertEqual(self.db.execute('SELECT count(*) FROM lessons').fetchone(),(0,))
