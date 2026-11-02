@@ -79,20 +79,20 @@ export function parsePaidOfferAck(raw:unknown,status:number,kind:PaidOfferAction
  return {code:raw.code as string,id:raw[idKey] as string};
 }
 export async function submitPaidOfferAction(action:PaidOfferAction){
- const {input}=action;
- if(!obj(input)||!uuid(input.operationId)||
+ if(!obj(action.input)||!uuid(action.input.operationId)||
   (action.kind==='publish'?
-   Object.keys(input).length!==3||!uuid(input.teacherId)||
-    !ms(input.startsAtMs):
-   Object.keys(input).length!==3||!uuid(input.offerId)||
-    typeof input.reason!=='string'||input.reason.trim()!==input.reason||
-    input.reason.length<8||input.reason.length>500))
+   Object.keys(action.input).length!==3||!uuid(action.input.teacherId)||
+    !ms(action.input.startsAtMs):
+   Object.keys(action.input).length!==3||!uuid(action.input.offerId)||
+    typeof action.input.reason!=='string'||
+    action.input.reason.trim()!==action.input.reason||
+    action.input.reason.length<8||action.input.reason.length>500))
   throw new AdminPaidSlotError('INVALID_PAID_OFFER_INPUT',400);
  const path=action.kind==='publish'?'paid-slot-offers':'paid-slot-withdrawals';
  let response:Response;
  try{response=await fetch('/v1/staff/academy/'+path,{
   method:'POST',credentials:'same-origin',cache:'no-store',redirect:'error',
-  headers:{'Content-Type':'application/json'},body:JSON.stringify(input)
+  headers:{'Content-Type':'application/json'},body:JSON.stringify(action.input)
  });}catch{throw new AdminPaidSlotError('NETWORK_OUTCOME_UNKNOWN');}
  const raw=await readJson(response);
  if(!response.ok)throw new AdminPaidSlotError(errorCode(raw),response.status);
