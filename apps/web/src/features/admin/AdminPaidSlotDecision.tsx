@@ -1,5 +1,5 @@
 'use client';
-import {useState} from 'react';
+import {useRef,useState} from 'react';
 import type {AdminPaidSlot} from './admin-paid-slot-client';
 import {AdminPaidSlotError} from './admin-paid-slot-client';
 import {submitPaidSlotDecision,type PaidSlotDecisionInput,
@@ -7,6 +7,21 @@ import {submitPaidSlotDecision,type PaidSlotDecisionInput,
 import css from './AdminAcademyMvp.module.css';
 
 type Phase='idle'|'busy'|'uncertain'|'denied'|'saved';
+
+/** Synchronous write latch: React state may not rerender between two taps.
+ * A retry is permitted only after an unknown outcome and reuses the same input. */
+export function createPaidSlotDecisionGate(){
+ let phase:'idle'|'busy'|'uncertain'|'closed'='idle';
+ return {
+  begin(retry=false):boolean{
+   if(phase!==(retry?'uncertain':'idle'))return false;
+   phase='busy';return true;
+  },
+  finish(uncertain:boolean):void{
+   if(phase==='busy')phase=uncertain?'uncertain':'closed';
+  }
+ };
+}
 /** Scoped to one pending request and one signed staff session by parent key. */
 export function AdminPaidSlotDecision({request,onCommitted}:{
  request:AdminPaidSlot;onCommitted:()=>void;
@@ -20,23 +35,31 @@ export function AdminPaidSlotDecision({request,onCommitted}:{
  const [phase,setPhase]=useState<Phase>('idle');
  const [pending,setPending]=useState<PaidSlotDecisionInput|null>(null);
  const [message,setMessage]=useState('');
- async function send(input:PaidSlotDecisionInput){
-  setPhase('busy');setMessage('');
+ const gate=useRef(createPaidSlotDecisionGate());
+ async function send(input:PaidSlotDecisionInput,retry=false){
+  // Lock before the first await, not after a React render. Prevent two
+  // different operationIds for one double-tapped approval.
+  if(!gate.current.begin(retry))return;
+  setPending(input);setPhase('busy');setMessage('');
+  let ack;
   try{
-   const ack=await submitPaidSlotDecision(input);
-   setPending(null);setPhase('saved');
-   setMessage(ack.lessonId?'أكد الخادم إنشاء الحصة وخصم وحدة واحدة.':
-    'أكد الخادم رفض الطلب دون خصم رصيد.');
-   onCommitted();
+   ack=await submitPaidSlotDecision(input);
   }catch(error){
    const known=error instanceof AdminPaidSlotError&&
     error.status>=400&&error.status<500;
+   gate.current.finish(!known);
    setPhase(known?'denied':'uncertain');
    setMessage(known?
     'رفض الخادم القرار. حدّث السجل قبل اتخاذ إجراء جديد.':
     'نتيجة العملية غير مؤكدة. لا ترسل قرارًا جديدًا؛ أعد نفس العملية بمعرّفها الأصلي.');
    if(known)setPending(null);
+   return;
   }
+  gate.current.finish(false);
+  setPending(null);setPhase('saved');
+  setMessage(ack.lessonId?'أكد الخادم إنشاء الحصة وخصم وحدة واحدة.':
+   'أكد الخادم رفض الطلب دون خصم رصيد.');
+  onCommitted();
  }
  const locked=phase==='busy'||phase==='saved'||phase==='uncertain'||phase==='denied';
  return <form className={css.root} onSubmit={event=>{
@@ -46,7 +69,6 @@ export function AdminPaidSlotDecision({request,onCommitted}:{
    operationId:crypto.randomUUID(),requestId:request.requestId,
    decision,reason:reason.trim()
   };
-  setPending(input);
   void send(input);
  }}>
   <h3>قرار إداري مدقّق</h3>
@@ -76,6 +98,6 @@ export function AdminPaidSlotDecision({request,onCommitted}:{
   </button>
   {message&&<p role="status">{message}</p>}
   {phase==='uncertain'&&pending&&<button type="button"
-   onClick={()=>void send(pending)}>إعادة نفس العملية فقط</button>}
+   onClick={()=>void send(pending,true)}>إعادة نفس العملية فقط</button>}
  </form>;
 }
