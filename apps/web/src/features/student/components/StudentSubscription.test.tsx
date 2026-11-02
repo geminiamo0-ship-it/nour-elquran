@@ -42,6 +42,17 @@ describe('clean, truthful subscriptions #324',()=>{
    expect(classifyAcademyPackageRequestResponse(status,{code:'ACADEMY_REQUEST_DENIED'}))
     .toBe('denied');
  });
+ it('isolates the complete package write gate and owner-read view on sibling switch',()=>{
+  // The outer wrapper has no hooks: React remounts the keyed inner component,
+  // so an old learner's pending POST/GET cannot update the new learner's view.
+  const first=ConnectedAcademyOffers({learnerId:'synthetic-learner-a'});
+  const sibling=ConnectedAcademyOffers({learnerId:'synthetic-learner-b'});
+  expect(first.key).toBe('synthetic-learner-a');
+  expect(sibling.key).toBe('synthetic-learner-b');
+  expect(first.type).toBe(sibling.type);
+  expect(first.props.learnerId).toBe('synthetic-learner-a');
+  expect(sibling.props.learnerId).toBe('synthetic-learner-b');
+ });
  it('latches one operationId across double taps, ambiguous outcomes and explicit replay',()=>{
   const gate=createAcademyPackageRequestGate();
   expect(gate.begin()).toBe(true);
