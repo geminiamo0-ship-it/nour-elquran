@@ -21,6 +21,7 @@ const cairo=new Intl.DateTimeFormat('ar-EG',{
 /** #317: Staff only, server-validated offers; publication never reserves a lesson. */
 export function AdminPaidOffers({session}:{session:AccountSession}){
  const liveSession=useRef(session);liveSession.current=session;
+ const inFlight=useRef(false);
  const [read,setRead]=useState<Read>({phase:'loading'});
  const [retry,setRetry]=useState(0);
  const [write,setWrite]=useState<Write|null>(null);
@@ -50,7 +51,8 @@ export function AdminPaidOffers({session}:{session:AccountSession}){
  const ready=current?.phase==='ready'?current:null;
  const phase=current?.phase??'loading';
  const result=write?.session===session?write:null;
- const locked=result?.phase==='busy'||result?.phase==='uncertain';
+ const locked=result?.phase==='busy'||result?.phase==='uncertain'||
+  result?.phase==='denied';
  const startMs=localStart?new Date(localStart).getTime():NaN;
  const future=Number.isSafeInteger(startMs)&&
   startMs>Date.now()+60000&&startMs+2400000<=Date.now()+30*86400000;
@@ -59,7 +61,8 @@ export function AdminPaidOffers({session}:{session:AccountSession}){
  const withdrawOffer=ready?.offers.find(o=>o.offerId===withdrawId&&
   o.state==='published'&&o.startsAtMs>Date.now());
  async function send(action:PaidOfferAction){
-  if(liveSession.current!==session)return;
+  if(liveSession.current!==session||inFlight.current)return;
+  inFlight.current=true;
   setWrite({session,phase:'busy',message:'جارٍ انتظار تأكيد D1…',pending:action});
   try{
    await submitPaidOfferAction(action);
@@ -79,7 +82,7 @@ export function AdminPaidOffers({session}:{session:AccountSession}){
     pending:known?null:action,
     message:known?'رفض الخادم العملية؛ حدّث البيانات قبل أي إجراء جديد.':
      'نتيجة الكتابة غير مؤكدة. لا تنشئ عملية أخرى؛ أعد نفس العملية بمعرّفها الأصلي.'});
-  }
+  }finally{inFlight.current=false;}
  }
  return <section className={css.root} dir="rtl" aria-labelledby="paid-offers-heading">
   <h2 id="paid-offers-heading">نشر مواعيد الحصص المدفوعة</h2>
@@ -89,7 +92,8 @@ export function AdminPaidOffers({session}:{session:AccountSession}){
   {phase==='denied'&&<p role="alert">لا توجد صلاحية لقراءة المواعيد؛ لن نعرض بيانات قديمة.</p>}
   {phase==='error'&&<p role="alert">تعذّر قراءة المواعيد. لا توجد بيانات افتراضية.</p>}
   {(phase==='error'||phase==='denied'||ready)&&
-   <button type="button" disabled={locked} onClick={()=>setRetry(n=>n+1)}>
+   <button type="button" disabled={result?.phase==='busy'||
+    result?.phase==='uncertain'} onClick={()=>{setWrite(null);setRetry(n=>n+1);}}>
     تحديث المواعيد والصلاحيات
    </button>}
   {ready&&<>
