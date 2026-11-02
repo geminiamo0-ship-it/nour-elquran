@@ -2,8 +2,18 @@ import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminPaidSlotInbox,canAdjudicatePaidSlot} from './AdminPaidSlotInbox';
 import {AdminPaidSlotDecision,createPaidSlotDecisionGate} from './AdminPaidSlotDecision';
+import {AdminPaidSlotError,isDefinitivePaidSlotWriteDenial} from './admin-paid-slot-client';
 
 describe('#317 admin paid-slot inbox initial privilege gate',()=>{
+ it('keeps a timed-out or throttled staff decision replayable',()=>{
+  for(const status of [408,425,429,500,503,0])
+   expect(isDefinitivePaidSlotWriteDenial(
+    new AdminPaidSlotError('UPSTREAM_UNAVAILABLE',status))).toBe(false);
+  for(const status of [400,401,403,404,409,422])
+   expect(isDefinitivePaidSlotWriteDenial(
+    new AdminPaidSlotError('ACADEMY_PAID_SLOT_DENIED',status))).toBe(true);
+  expect(isDefinitivePaidSlotWriteDenial(new Error('offline'))).toBe(false);
+ });
  it('latches a staff decision synchronously across double taps and retries',()=>{
   const gate=createPaidSlotDecisionGate();
   // Two submit handlers may fire before React commits disabled state.

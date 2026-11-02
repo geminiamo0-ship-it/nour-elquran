@@ -12,6 +12,13 @@ type Phase='idle'|'sending'|'uncertain'|'accepted'|'denied';
  * An uncertain POST must only be replayed with its original operationId. */
 export const canRefreshPaidSlotProposal=(phase:Phase)=>
  phase!=='sending'&&phase!=='uncertain';
+/** A proxy timeout, early retry or rate limit is not proof that D1 did not
+ * commit. Keep the original immutable operationId for explicit replay. */
+export const isUncertainPaidSlotProposalOutcome=(error:unknown):boolean=>
+ !(error instanceof PaidSlotRequestsError)||
+ [408,425,429].includes(error.status)||error.status>=500||
+ error.code==='NETWORK_OUTCOME_UNKNOWN'||
+ error.code==='INVALID_PAID_SLOT_PROPOSAL_ACK';
 /** A React state update is not a synchronous lock: two rapid taps can run
  * before rerender. Only one operationId may be in flight, and an uncertain
  * outcome may replay that same operation after the first call settles. */
@@ -95,9 +102,7 @@ export function StudentPaidSlotProposal({learnerId,onSubmitted}:{
   }catch(error){
    // The server may have persisted a request before the response was lost.
    // Keep the exact immutable operationId/payload for explicit replay only.
-   const unknown=!(error instanceof PaidSlotRequestsError)||
-    error.status>=500||error.code==='NETWORK_OUTCOME_UNKNOWN'||
-    error.code==='INVALID_PAID_SLOT_PROPOSAL_ACK';
+   const unknown=isUncertainPaidSlotProposalOutcome(error);
    gate.current.finish(unknown);
    if(!alive.current||activeLearner.current!==next.learnerId)return;
    setPhase(unknown?'uncertain':'denied');

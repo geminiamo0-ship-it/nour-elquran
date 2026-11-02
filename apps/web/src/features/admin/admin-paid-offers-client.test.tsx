@@ -1,6 +1,6 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {AdminPaidSlotError} from './admin-paid-slot-client';
+import {AdminPaidSlotError,isDefinitivePaidSlotWriteDenial} from './admin-paid-slot-client';
 import {AdminPaidOffers,createPaidOfferWriteGate} from './AdminPaidOffers';
 import {parseAdminPaidOffers,parsePaidOfferAck,submitPaidOfferAction,
  fetchAdminPaidOffers} from './admin-paid-offers-client';
@@ -13,6 +13,13 @@ const reply=(status:number,body:unknown)=>new Response(JSON.stringify(body),{sta
 afterEach(()=>vi.unstubAllGlobals());
 
 describe('#317 signed staff paid offer contracts',()=>{
+ it('preserves the original staff offer operation after 408/425/429',()=>{
+  for(const status of [408,425,429])
+   expect(isDefinitivePaidSlotWriteDenial(
+    new AdminPaidSlotError('EDGE_TIMEOUT',status))).toBe(false);
+  expect(isDefinitivePaidSlotWriteDenial(
+   new AdminPaidSlotError('ACADEMY_PAID_OFFER_DENIED',409))).toBe(true);
+ });
  it('keeps one staff operation across double taps, unknown ACK and signed refresh',()=>{
   const gate=createPaidOfferWriteGate();
   // React has not committed disabled=true between two submit events.

@@ -1,7 +1,7 @@
 'use client';
 import {useRef,useState} from 'react';
 import type {AdminPaidSlot} from './admin-paid-slot-client';
-import {AdminPaidSlotError} from './admin-paid-slot-client';
+import {isDefinitivePaidSlotWriteDenial} from './admin-paid-slot-client';
 import {submitPaidSlotDecision,type PaidSlotDecisionInput,
  type PaidSlotDecision} from './admin-paid-slot-decision-client';
 import css from './AdminAcademyMvp.module.css';
@@ -45,8 +45,7 @@ export function AdminPaidSlotDecision({request,onCommitted}:{
   try{
    ack=await submitPaidSlotDecision(input);
   }catch(error){
-   const known=error instanceof AdminPaidSlotError&&
-    error.status>=400&&error.status<500;
+   const known=isDefinitivePaidSlotWriteDenial(error);
    gate.current.finish(!known);
    setPhase(known?'denied':'uncertain');
    setMessage(known?

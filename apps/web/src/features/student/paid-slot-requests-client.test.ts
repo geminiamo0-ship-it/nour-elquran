@@ -4,7 +4,7 @@ import {ConnectedClassroomLessons} from './components/ConnectedClassroomLessons'
 import {currentLearnerRead} from './components/learner-scope';
 import {StudentPaidSlotProposal,proposalFromPublishedOffer,
  canRefreshPaidSlotProposal,resetPaidSlotProposalRefresh,
- createPaidSlotProposalGate} from './components/StudentPaidSlotProposal';
+ createPaidSlotProposalGate,isUncertainPaidSlotProposalOutcome} from './components/StudentPaidSlotProposal';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {fetchPaidSlotRequests,parsePaidSlotRequests,PaidSlotRequestsError,
  parsePaidSlotProposalAck,submitPaidSlotProposal} from
@@ -194,6 +194,19 @@ describe('#317 published paid-offer read boundary',()=>{
 
 
 describe('#317 trusted published paid-slot form',()=>{
+ it('keeps the same guardian proposal on ambiguous HTTP responses',()=>{
+  for(const status of [408,425,429,500,503])
+   expect(isUncertainPaidSlotProposalOutcome(
+    new PaidSlotRequestsError('UPSTREAM_UNAVAILABLE',status))).toBe(true);
+  for(const status of [400,401,403,404,409,422])
+   expect(isUncertainPaidSlotProposalOutcome(
+    new PaidSlotRequestsError('ACADEMY_PAID_SLOT_DENIED',status))).toBe(false);
+  expect(isUncertainPaidSlotProposalOutcome(
+   new PaidSlotRequestsError('NETWORK_OUTCOME_UNKNOWN'))).toBe(true);
+  expect(isUncertainPaidSlotProposalOutcome(
+   new PaidSlotRequestsError('INVALID_PAID_SLOT_PROPOSAL_ACK',201))).toBe(true);
+  expect(isUncertainPaidSlotProposalOutcome(new Error('offline'))).toBe(true);
+ });
  it('prevents competing guardian operationIds before React rerender and protects unknown outcomes',()=>{
   const gate=createPaidSlotProposalGate();
   // The first click synchronously owns the request. A second click cannot

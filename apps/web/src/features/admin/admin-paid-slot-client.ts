@@ -7,6 +7,11 @@ export type AdminPaidSlot = Readonly<{
 export class AdminPaidSlotError extends Error {
  constructor(readonly code:string,readonly status=0){super(code);}
 }
+/** Edge 408/425/429 may arrive after D1 has committed. Reuse the original
+ * operationId instead of interpreting these as definitive write denials. */
+export const isDefinitivePaidSlotWriteDenial=(error:unknown):boolean=>
+ error instanceof AdminPaidSlotError&&error.status>=400&&error.status<500&&
+ ![408,425,429].includes(error.status);
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const object=(v:unknown):v is Record<string,unknown>=>
  v!==null&&typeof v==='object'&&!Array.isArray(v);

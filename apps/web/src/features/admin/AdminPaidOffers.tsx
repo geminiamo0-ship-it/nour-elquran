@@ -3,7 +3,7 @@ import {useEffect,useRef,useState} from 'react';
 import type {AccountSession} from '@/features/account';
 import {fetchAdminTeachers,AdminTeachersError,type AdminTeacher}
  from './admin-teachers-client';
-import {AdminPaidSlotError} from './admin-paid-slot-client';
+import {isDefinitivePaidSlotWriteDenial} from './admin-paid-slot-client';
 import {fetchAdminPaidOffers,submitPaidOfferAction,
  type AdminPaidOffer,type PaidOfferAction} from './admin-paid-offers-client';
 import css from './AdminAcademyMvp.module.css';
@@ -101,8 +101,7 @@ export function AdminPaidOffers({session}:{session:AccountSession}){
    setWithdrawId('');
    readEpoch.current+=1;setRead({phase:'loading'});setRetry(n=>n+1);
   }catch(error){
-   const known=error instanceof AdminPaidSlotError&&
-    error.status>=400&&error.status<500;
+   const known=isDefinitivePaidSlotWriteDenial(error);
    writeGate.current.finish(!known);
    if(liveSession.current!==session)return;
    if(known&&error instanceof AdminPaidSlotError&&
