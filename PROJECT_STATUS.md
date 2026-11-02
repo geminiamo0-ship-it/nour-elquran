@@ -1,3 +1,9 @@
+## 2026-11-02 — #317 confirmed paid-slot proposal refresh (source candidate)
+- Found a real signed Student UX dead end: after a paid-slot request received a confirmed D1 ACK, `StudentPaidSlotProposal` locked its refresh action indefinitely. A later staff approval/rejection could not be reflected in selectable availability without remounting the page.
+- Changed `apps/web/src/features/student/components/StudentPaidSlotProposal.tsx` so confirmed (`accepted`) and denied states can explicitly refresh D1 offers, while `sending` and network-`uncertain` remain locked to the original `operationId` replay. The Worker still blocks duplicate pending requests; refreshing never books or spends credit.
+- Added `paid-slot-requests-client.test.ts` phase matrix. Commits `529270a1`, `3acda4ed`; **exact-head CI, independent security review and signed Cloudflare Dev/mobile acceptance remain required**. #317 / PR #318 stay OPEN/Draft; no Production, payments, WhatsApp, audio or cumulative-ink change.
+- NEXT: inspect GitHub Verify on exact latest HEAD, then source-pinned signed Dev staff/guardian/2-sibling booking/credit/refresh and 360/390 mobile acceptance. No claim of remote Dev proof.
+
 ## 2026-11-02 — #317 expired-request rejection native regression (PR #318, source-only)
 - Previous exact-head `bd0140df` [GitHub Verify #41415655657](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41415655657) completed **4/4 PASS**. This evidence does not cover subsequent commits.
 - Extended `workers/api/tests/test_academy_paid_slot_requests.py` to verify that, after an expired guardian request is superseded by an approved newer paid booking, staff can reject the expired original with an immutable decision, no lesson ID and **no additional subscription debit**; a second decision remains forbidden. Synthetic SQLite only; new exact-head CI is pending.
