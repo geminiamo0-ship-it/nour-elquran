@@ -9,47 +9,116 @@ type View={phase:'loading'|'error';message:string}|
 const stateLabel:Record<string,string>={
  pending:'بانتظار موافقة الإدارة',activated:'تم التفعيل من الإدارة',rejected:'لم تتم الموافقة'
 };
+/** A network/proxy outcome may be unknown after D1 committed the request.
+ * Do not mint a second operationId until the first is resolved. */
+type PackageAttempt=Readonly<{learnerId:string;packageId:string;operationId:string}>;
+type WriteState='idle'|'busy'|'uncertain'|'confirming'|'denied';
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export function classifyAcademyPackageRequestResponse(status:number,raw:unknown):
+ 'ack'|'denied'|'uncertain'{
+ if(status>=400&&status<500&&![408,425,429].includes(status))return 'denied';
+ if(!raw||typeof raw!=='object'||Array.isArray(raw))return 'uncertain';
+ const data=raw as Record<string,unknown>;
+ const validCode=(status===201&&data.code==='ACADEMY_REQUEST_CREATED')||
+  (status===200&&data.code==='ACADEMY_REQUEST_REPLAY');
+ return validCode&&typeof data.academyRequestId==='string'&&
+  UUID.test(data.academyRequestId)&&
+  Object.keys(data).every(k=>['code','academyRequestId','requestId'].includes(k))?
+  'ack':'uncertain';
+}
+export function createAcademyPackageRequestGate(){
+ let state:'idle'|'busy'|'uncertain'|'closed'='idle';
+ return {
+  begin(retry=false){
+   if(state!==(retry?'uncertain':'idle'))return false;
+   state='busy';return true;
+  },
+  finish(uncertain:boolean){
+   if(state==='busy')state=uncertain?'uncertain':'closed';
+  },
+  releaseAfterRead(){
+   if(state!=='closed')return false;
+   state='idle';return true;
+  },
+  status:()=>state
+ };
+}
 export function ConnectedAcademyOffers({learnerId}:{learnerId:string}){
  const [view,setView]=useState<View>({phase:'loading',message:''});
  const [retry,setRetry]=useState(0);
- const [sending,setSending]=useState(false);
- const [uncertain,setUncertain]=useState(false);
- const busyRef=useRef(false);
+ const [writeState,setWriteState]=useState<WriteState>('idle');
+ const [attempt,setAttempt]=useState<PackageAttempt|null>(null);
+ const gate=useRef(createAcademyPackageRequestGate());
+ const acknowledgedId=useRef<string|null>(null);
  useEffect(()=>{
   const ctrl=new AbortController();
   setView({phase:'loading',message:''});
   void readOwnerAcademy(learnerId,ctrl.signal).then(data=>{
-   if(!ctrl.signal.aborted){setView({phase:'ready',data,message:''});setUncertain(false);}
-  }).catch(()=>{if(!ctrl.signal.aborted)
-   setView({phase:'error',message:'تعذّر تحميل الباقات وطلباتك.'});});
+   if(ctrl.signal.aborted)return;
+   if(gate.current.status()==='closed'){
+    // A successful POST ACK is not enough to unlock a second request:
+    // first observe its immutable ID in the signed owner D1 read.
+    if(acknowledgedId.current&&
+       !data.requests.some(r=>r.id===acknowledgedId.current)){
+     setWriteState('confirming');
+     setView({phase:'ready',data,
+      message:'تم تأكيد الطلب، لكن لم يظهر بعد في السجل. حدّث للتحقق؛ لا ترسل طلبًا جديدًا.'});
+     return;
+    }
+    acknowledgedId.current=null;
+    gate.current.releaseAfterRead();
+    setWriteState('idle');
+   }
+   // A fresh GET must NOT silently discard an uncertain POST. The owner
+   // can resolve it only by replaying the same immutable operationId.
+   setView({phase:'ready',data,message:''});
+  }).catch(()=>{
+   if(!ctrl.signal.aborted)
+    setView({phase:'error',message:'تعذّر تحميل الباقات وطلباتك.'});
+  });
   return()=>ctrl.abort();
  },[learnerId,retry]);
- async function request(pkg:AcademyOffer){
-  if(view.phase!=='ready'||busyRef.current||uncertain||
-   latestPendingAcademyRequest(view.data))return;
-  busyRef.current=true;setSending(true);
-  const operationId=crypto.randomUUID();
+ async function send(next:PackageAttempt,replay=false){
+  if(next.learnerId!==learnerId||!gate.current.begin(replay))return;
+  setAttempt(next);setWriteState('busy');
+  let status=0;
+  let raw:unknown=null;
   try{
-   const response=await fetch('/v1/me/learners/'+encodeURIComponent(learnerId)+'/academy',{
+   const response=await fetch('/v1/me/learners/'+encodeURIComponent(next.learnerId)+'/academy',{
     method:'POST',credentials:'same-origin',redirect:'error',cache:'no-store',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({operationId,packageId:pkg.packageId})});
-   const raw:unknown=await response.json();
-   if(!response.ok||!raw||typeof raw!=='object'||Array.isArray(raw)||
-     !['ACADEMY_REQUEST_CREATED','ACADEMY_REQUEST_REPLAY'].includes(
-      String((raw as {code?:unknown}).code)))throw Error('ACADEMY_UNKNOWN_RESULT');
+    body:JSON.stringify({operationId:next.operationId,packageId:next.packageId})});
+   status=response.status;
+   try{raw=await response.json();}catch{raw=null;}
+  }catch{status=0;}
+  const outcome=classifyAcademyPackageRequestResponse(status,raw);
+  gate.current.finish(outcome==='uncertain');
+  if(outcome==='ack'){
+   acknowledgedId.current=(raw as {academyRequestId:string}).academyRequestId;
+   setAttempt(null);setWriteState('confirming');
+   setView({phase:'loading',message:''});
    setRetry(n=>n+1);
-  }catch{
-   setUncertain(true);
+  }else if(outcome==='denied'){
+   acknowledgedId.current=null;
+   setAttempt(null);setWriteState('denied');
+   setView({phase:'error',
+    message:'رفض الخادم طلب الباقة. حدّث السجل قبل تقديم طلب جديد.'});
+  }else{
+   setWriteState('uncertain');
    setView(prev=>prev.phase==='ready'?{...prev,
-    message:'نتيجة الطلب غير مؤكدة. حدّث الطلبات أولًا؛ لا ترسل طلبًا ثانيًا.'}:prev);
-  }finally{busyRef.current=false;setSending(false);}
+    message:'نتيجة الطلب غير مؤكدة. أعد نفس العملية فقط بمعرّفها الأصلي؛ لا ترسل طلبًا جديدًا.'}:prev);
+  }
+ }
+ function request(pkg:AcademyOffer){
+  if(view.phase!=='ready'||writeState!=='idle'||
+   latestPendingAcademyRequest(view.data))return;
+  void send({learnerId,operationId:crypto.randomUUID(),packageId:pkg.packageId});
  }
  const data=view.phase==='ready'?view.data:null;
  const pending=data?latestPendingAcademyRequest(data):null;
  return <section className={css.catalogSection} aria-label="باقات الأكاديمية">
   <div className={css.catalogHeader}><h2 className={css.sectionTitle}>الباقات المتاحة</h2>
-   {(view.phase==='error'||uncertain)&&<button type="button" className={css.buttonOutline}
+   {(view.phase==='error'||writeState==='confirming')&&<button type="button" className={css.buttonOutline}
     onClick={()=>setRetry(n=>n+1)}>تحديث</button>}</div>
   {view.phase==='loading'?<p className={css.loading} role="status">جارٍ تحميل الباقات…</p>:
    view.phase==='error'?<p className={css.message} role="alert">{view.message}</p>:<>
@@ -67,10 +136,17 @@ export function ConnectedAcademyOffers({learnerId}:{learnerId:string}){
        <small> جنيه / شهر</small></div>
       <div className={css.packageSessions}>{pkg.sessions.toLocaleString('ar-EG')} حصص شهريًا</div>
       <button type="button" className={css.button}
-       disabled={sending||uncertain||!!pending}
+       disabled={writeState!=='idle'||!!pending}
        onClick={()=>void request(pkg)}>
-       {sending?'جارٍ إرسال الطلب…':pending?'لديك طلب قيد المراجعة':'اطلب الباقة'}</button>
+       {writeState==='busy'?'جارٍ إرسال الطلب…':pending?'لديك طلب قيد المراجعة':'اطلب الباقة'}</button>
      </article>)}</div>}
+   {writeState==='confirming'&&<p className={css.message} role="status">
+    جارٍ تأكيد ظهور الطلب في سجل الأكاديمية؛ لا ترسل طلبًا جديدًا.</p>}
+   {writeState==='uncertain'&&attempt&&<div role="alert" className={css.message}>
+    <p>لم نتأكد من نتيجة الطلب. أعد نفس العملية فقط دون إنشاء طلب آخر.</p>
+    <button type="button" className={css.buttonOutline}
+     onClick={()=>void send(attempt,true)}>إعادة نفس طلب الباقة</button>
+   </div>}
    {data!.whatsappNumber&&<div className={css.contact}>
     <p>لإتمام الدفع أو السؤال عن باقة، تواصل مع الأكاديمية.</p>
     <a className={css.buttonOutline} target="_blank" rel="noopener noreferrer"
