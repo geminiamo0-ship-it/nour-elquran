@@ -3,7 +3,7 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {ConnectedClassroomLessons} from './components/ConnectedClassroomLessons';
 import {currentLearnerRead} from './components/learner-scope';
 import {StudentPaidSlotProposal,proposalFromPublishedOffer,
- canRefreshPaidSlotProposal} from './components/StudentPaidSlotProposal';
+ canRefreshPaidSlotProposal,resetPaidSlotProposalRefresh} from './components/StudentPaidSlotProposal';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {fetchPaidSlotRequests,parsePaidSlotRequests,PaidSlotRequestsError,
  parsePaidSlotProposalAck,submitPaidSlotProposal} from
@@ -202,6 +202,16 @@ describe('#317 trusted published paid-slot form',()=>{
   expect(canRefreshPaidSlotProposal('denied')).toBe(true);
   expect(canRefreshPaidSlotProposal('sending')).toBe(false);
   expect(canRefreshPaidSlotProposal('uncertain')).toBe(false);
+ });
+ it('invalidates old offer rows, radio selection and confirmation before re-fetch',()=>{
+  // React effects start after a render. The synchronous refresh transition
+  // must not leave an already-confirmed stale offer actionable in that gap.
+  for(const learnerId of [A,B]){
+   expect(resetPaidSlotProposalRefresh(learnerId)).toEqual({
+    read:{learnerId,status:'loading',rows:[]},selectedId:'',
+    confirmed:false,attempt:null,phase:'idle'
+   });
+  }
  });
  const offer={offerId:A,teacherId:B,cycleId:C,
   startsAtMs:1793600000000,endsAtMs:1793602400000};
