@@ -207,3 +207,108 @@ export async function staffPaidSlotDecision(db:CoreDatabase,subject:string,
  }
  return {status:201,code:'ACADEMY_PAID_SLOT_DECIDED',lessonId} as const;
 }
+
+
+/** #317: staff-only paid availability publication, never a booking.
+ * Immutable events and D1 triggers are the final concurrency authority.
+ */
+export async function staffPaidSlotOffers(db:CoreDatabase,subject:string,now=Date.now()){
+ if(!await canManageTeachers(db,subject))
+  return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
+ if(!safeClock(now))return {status:503,code:'CLOCK_UNAVAILABLE'} as const;
+ const rows=await db.prepare(`SELECT s.id AS offerId,s.teacher_id AS teacherId,
+ u.name AS teacherName,s.starts_at_ms AS startsAtMs,
+ s.ends_at_ms AS endsAtMs,
+ CASE WHEN x.id IS NULL THEN 'published' ELSE 'withdrawn' END AS state
+ FROM academy_paid_open_slot_events s
+ JOIN teachers t ON t.id=s.teacher_id
+ JOIN auth_users u ON u.id=t.auth_subject
+ LEFT JOIN academy_paid_open_slot_closure_events x ON x.slot_id=s.id
+ WHERE s.starts_at_ms>? AND s.starts_at_ms<=?
+ ORDER BY s.starts_at_ms ASC,s.id ASC LIMIT 100`)
+  .bind(now-86400000,now+WINDOW_MS).all<Record<string,unknown>>();
+ return {status:200,code:'ACADEMY_PAID_SLOT_STAFF_OFFERS',offers:rows.results} as const;
+}
+
+export async function staffPaidSlotPublish(db:CoreDatabase,subject:string,
+ raw:unknown,now=Date.now()){
+ if(!obj(raw)||!exact(raw,['operationId','teacherId','startsAtMs'])||
+ !uuid(raw.operationId)||!uuid(raw.teacherId)||
+ !Number.isSafeInteger(raw.startsAtMs)||!safeClock(now))
+  return {status:400,code:'ACADEMY_PAID_OFFER_INVALID'} as const;
+ if(!await canManageTeachers(db,subject))
+  return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
+ const findPrior=()=>db.prepare(`SELECT id,actor_subject AS actor,
+ teacher_id AS teacherId,starts_at_ms AS startsAtMs
+ FROM academy_paid_open_slot_events WHERE operation_id=?`)
+  .bind(raw.operationId).first<{
+   id:string;actor:string;teacherId:string;startsAtMs:number
+  }>();
+ const replay=(prior:NonNullable<Awaited<ReturnType<typeof findPrior>>>)=>
+  prior.actor===subject&&prior.teacherId===raw.teacherId&&
+  prior.startsAtMs===raw.startsAtMs?
+   {status:200,code:'ACADEMY_PAID_OFFER_REPLAY',offerId:prior.id} as const:
+   {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const prior=await findPrior();
+ if(prior)return replay(prior);
+ const start=Number(raw.startsAtMs);
+ if(start<=now+60000||start+SLOT_MS>now+WINDOW_MS)
+  return {status:400,code:'ACADEMY_PAID_OFFER_INVALID'} as const;
+ const offerId=crypto.randomUUID();
+ try{
+  const write=await db.prepare(`INSERT INTO academy_paid_open_slot_events
+  (id,operation_id,teacher_id,actor_subject,starts_at_ms,ends_at_ms,published_at_ms)
+  VALUES(?,?,?,?,?,?,?)`).bind(offerId,raw.operationId,raw.teacherId,subject,
+   start,start+SLOT_MS,now).run();
+  if(write.success!==true||!Number.isSafeInteger(write.meta?.changes)||
+   write.meta.changes<1)
+   return {status:503,code:'ACADEMY_PAID_OFFER_WRITE_UNCONFIRMED'} as const;
+ }catch(e){
+  if(expected(e)){
+   const raced=await findPrior();
+   if(raced)return replay(raced);
+   return {status:409,code:'ACADEMY_PAID_OFFER_DENIED'} as const;
+  }
+  throw e;
+ }
+ return {status:201,code:'ACADEMY_PAID_OFFER_PUBLISHED',offerId} as const;
+}
+
+export async function staffPaidSlotWithdraw(db:CoreDatabase,subject:string,
+ raw:unknown,now=Date.now()){
+ if(!obj(raw)||!exact(raw,['operationId','offerId','reason'])||
+ !uuid(raw.operationId)||!uuid(raw.offerId)||!reason(raw.reason)||!safeClock(now))
+  return {status:400,code:'ACADEMY_PAID_WITHDRAWAL_INVALID'} as const;
+ if(!await canManageTeachers(db,subject))
+  return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
+ const findPrior=()=>db.prepare(`SELECT id,actor_subject AS actor,
+ slot_id AS offerId,reason FROM academy_paid_open_slot_closure_events
+ WHERE operation_id=?`).bind(raw.operationId).first<{
+  id:string;actor:string;offerId:string;reason:string
+ }>();
+ const replay=(prior:NonNullable<Awaited<ReturnType<typeof findPrior>>>)=>
+  prior.actor===subject&&prior.offerId===raw.offerId&&
+  prior.reason===raw.reason?
+   {status:200,code:'ACADEMY_PAID_WITHDRAWAL_REPLAY',withdrawalId:prior.id} as const:
+   {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const prior=await findPrior();
+ if(prior)return replay(prior);
+ const withdrawalId=crypto.randomUUID();
+ try{
+  const write=await db.prepare(`INSERT INTO academy_paid_open_slot_closure_events
+  (id,operation_id,slot_id,actor_subject,reason,at_ms)
+  VALUES(?,?,?,?,?,?)`).bind(withdrawalId,raw.operationId,raw.offerId,
+   subject,raw.reason,now).run();
+  if(write.success!==true||!Number.isSafeInteger(write.meta?.changes)||
+   write.meta.changes<1)
+   return {status:503,code:'ACADEMY_PAID_WITHDRAWAL_WRITE_UNCONFIRMED'} as const;
+ }catch(e){
+  if(expected(e)){
+   const raced=await findPrior();
+   if(raced)return replay(raced);
+   return {status:409,code:'ACADEMY_PAID_WITHDRAWAL_DENIED'} as const;
+  }
+  throw e;
+ }
+ return {status:201,code:'ACADEMY_PAID_OFFER_WITHDRAWN',withdrawalId} as const;
+}
