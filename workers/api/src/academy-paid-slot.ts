@@ -25,6 +25,53 @@ async function owner(db:CoreDatabase,subject:string,learnerId:string){
  return r?.allowed===1;
 }
 
+/** Only server-published paid offers for this signed learner and an active
+ * cycle are selectable. An offer is not a reservation or guaranteed credit.
+ * Approval rechecks every invariant inside the D1 transaction.
+ */
+export async function ownerPaidSlotOffers(db:CoreDatabase,subject:string,
+ learnerId:string,now=Date.now()){
+ if(!safeClock(now))return {status:503,code:'CLOCK_UNAVAILABLE'} as const;
+ if(!await owner(db,subject,learnerId))
+  return {status:404,code:'NOT_FOUND'} as const;
+ const rows=await db.prepare(`SELECT s.id AS offerId,s.teacher_id AS teacherId,
+ c.id AS cycleId,s.starts_at_ms AS startsAtMs,s.ends_at_ms AS endsAtMs
+ FROM academy_paid_open_slot_events s
+ JOIN teachers t ON t.id=s.teacher_id
+ JOIN subscription_cycles c ON c.learner_id=?
+ WHERE t.status='active' AND t.qualified=1
+  AND s.published_at_ms<=? AND s.starts_at_ms>? AND s.ends_at_ms<=?
+  AND c.starts_at_ms<=? AND c.ends_at_ms>?
+  AND s.starts_at_ms>=c.starts_at_ms AND s.ends_at_ms<=c.ends_at_ms
+  AND NOT EXISTS(SELECT 1 FROM academy_paid_open_slot_closure_events x
+   WHERE x.slot_id=s.id)
+  AND EXISTS(SELECT 1 FROM teacher_assignments g
+   WHERE g.learner_id=? AND g.teacher_id=s.teacher_id
+    AND g.revoked_at_ms IS NULL AND g.starts_at_ms<=s.starts_at_ms
+    AND g.ends_at_ms>=s.ends_at_ms)
+  AND (SELECT COUNT(*) FROM subscription_spend_events e
+   WHERE e.source_kind='cycle' AND e.source_id=c.id)
+    <c.base_sessions+c.rollover_sessions
+  AND NOT EXISTS(SELECT 1 FROM lessons l
+   WHERE (l.learner_id=? OR l.actual_teacher_id=s.teacher_id)
+    AND l.status IN ('scheduled','live')
+    AND l.starts_at_ms<s.ends_at_ms AND l.ends_at_ms>s.starts_at_ms)
+  AND NOT EXISTS(SELECT 1 FROM trial_open_slot_events v
+   WHERE v.teacher_id=s.teacher_id
+    AND NOT EXISTS(SELECT 1 FROM trial_slot_closure_events x
+     WHERE x.slot_id=v.id)
+    AND v.starts_at_ms<s.ends_at_ms AND v.ends_at_ms>s.starts_at_ms)
+  AND NOT EXISTS(SELECT 1 FROM academy_paid_slot_request_events r
+   WHERE r.learner_id=? AND r.starts_at_ms>? AND NOT EXISTS(
+    SELECT 1 FROM academy_paid_slot_decision_events d
+    WHERE d.request_id=r.id))
+ ORDER BY s.starts_at_ms ASC,s.id ASC LIMIT 30`)
+  .bind(learnerId,now,now+60000,now+WINDOW_MS,now,now,
+   learnerId,learnerId,learnerId,now+60000)
+  .all<Record<string,unknown>>();
+ return {status:200,code:'ACADEMY_PAID_SLOT_OFFERS',offers:rows.results} as const;
+}
+
 export async function ownerPaidSlotRequests(db:CoreDatabase,subject:string,learnerId:string,now=Date.now()){
  if(!await owner(db,subject,learnerId))return {status:404,code:'NOT_FOUND'} as const;
  const rows=await db.prepare(`SELECT r.id AS requestId,r.teacher_id AS teacherId,
