@@ -13,15 +13,33 @@ type Read=
  |{phase:'ready';session:AccountSession;offers:readonly AdminPaidOffer[];
    teachers:readonly AdminTeacher[];truncated:boolean}
  |{phase:'denied'|'error';session:AccountSession};
-type Write={session:AccountSession;phase:'busy'|'uncertain'|'denied'|'saved';
+type Write={session:AccountSession;phase:'busy'|'uncertain'|'denied'|'saved'|'settled';
  message:string;pending:PaidOfferAction|null};
 const cairo=new Intl.DateTimeFormat('ar-EG',{
  timeZone:'Africa/Cairo',dateStyle:'medium',timeStyle:'short'
 });
+/** React's disabled state cannot prevent two submit handlers before rerender.
+ * An unknown D1 outcome may only replay the original immutable operation. */
+export function createPaidOfferWriteGate(){
+ let phase:'idle'|'busy'|'uncertain'|'closed'='idle';
+ return {
+  begin(retry=false):boolean{
+   if(phase!==(retry?'uncertain':'idle'))return false;
+   phase='busy';return true;
+  },
+  finish(uncertain:boolean):void{
+   if(phase==='busy')phase=uncertain?'uncertain':'closed';
+  },
+  reset():boolean{
+   if(phase==='busy'||phase==='uncertain')return false;
+   phase='idle';return true;
+  }
+ };
+}
 /** #317: Staff only, server-validated offers; publication never reserves a lesson. */
 export function AdminPaidOffers({session}:{session:AccountSession}){
  const liveSession=useRef(session);liveSession.current=session;
- const inFlight=useRef(false);
+ const writeGate=useRef(createPaidOfferWriteGate());
  const [read,setRead]=useState<Read>({phase:'loading'});
  const [retry,setRetry]=useState(0);
  const [write,setWrite]=useState<Write|null>(null);
@@ -37,8 +55,14 @@ export function AdminPaidOffers({session}:{session:AccountSession}){
   void Promise.all([
    fetchAdminPaidOffers(ctrl.signal),fetchAdminTeachers(ctrl.signal)
   ]).then(([offers,directory])=>{
-   if(!ctrl.signal.aborted)setRead({phase:'ready',session,offers,
+   if(ctrl.signal.aborted)return;
+   setRead({phase:'ready',session,offers,
     teachers:directory.teachers,truncated:directory.truncated});
+   // A confirmed write remains locked until this authoritative staff read.
+   // An unknown write can never be cleared by a coincidental GET completion.
+   if(writeGate.current.reset())setWrite(previous=>
+    previous?.session===session&&previous.phase==='saved'?
+     {...previous,phase:'settled'}:previous);
   }).catch(error=>{
    if(ctrl.signal.aborted)return;
    const denied=(error instanceof AdminPaidSlotError||
@@ -52,7 +76,7 @@ export function AdminPaidOffers({session}:{session:AccountSession}){
  const phase=current?.phase??'loading';
  const result=write?.session===session?write:null;
  const locked=result?.phase==='busy'||result?.phase==='uncertain'||
-  result?.phase==='denied';
+  result?.phase==='denied'||result?.phase==='saved';
  const startMs=localStart?new Date(localStart).getTime():NaN;
  const future=Number.isSafeInteger(startMs)&&
   startMs>Date.now()+60000&&startMs+2400000<=Date.now()+30*86400000;
@@ -60,29 +84,30 @@ export function AdminPaidOffers({session}:{session:AccountSession}){
   t.status==='active'&&t.qualified);
  const withdrawOffer=ready?.offers.find(o=>o.offerId===withdrawId&&
   o.state==='published'&&o.startsAtMs>Date.now());
- async function send(action:PaidOfferAction){
-  if(liveSession.current!==session||inFlight.current)return;
-  inFlight.current=true;
+ async function send(action:PaidOfferAction,retry=false){
+  if(liveSession.current!==session||!writeGate.current.begin(retry))return;
   setWrite({session,phase:'busy',message:'جارٍ انتظار تأكيد D1…',pending:action});
   try{
    await submitPaidOfferAction(action);
+   writeGate.current.finish(false);
    if(liveSession.current!==session)return;
    setWrite({session,phase:'saved',pending:null,message:action.kind==='publish'?
     'أكد الخادم نشر الموعد. لم تُحجز حصة ولم يُخصم رصيد.':
     'أكد الخادم سحب العرض. لم يُلغَ أي حجز قائم.'});
    setPublishConfirm(false);setWithdrawConfirm(false);setReason('');
-   setWithdrawId('');setRetry(n=>n+1);
+   setWithdrawId('');setRead({phase:'loading'});setRetry(n=>n+1);
   }catch(error){
-   if(liveSession.current!==session)return;
    const known=error instanceof AdminPaidSlotError&&
     error.status>=400&&error.status<500;
+   writeGate.current.finish(!known);
+   if(liveSession.current!==session)return;
    if(known&&error instanceof AdminPaidSlotError&&
     [401,403,404].includes(error.status))setRead({phase:'denied',session});
    setWrite({session,phase:known?'denied':'uncertain',
     pending:known?null:action,
     message:known?'رفض الخادم العملية؛ حدّث البيانات قبل أي إجراء جديد.':
      'نتيجة الكتابة غير مؤكدة. لا تنشئ عملية أخرى؛ أعد نفس العملية بمعرّفها الأصلي.'});
-  }finally{inFlight.current=false;}
+  }
  }
  return <section className={css.root} dir="rtl" aria-labelledby="paid-offers-heading">
   <h2 id="paid-offers-heading">نشر مواعيد الحصص المدفوعة</h2>
@@ -93,7 +118,14 @@ export function AdminPaidOffers({session}:{session:AccountSession}){
   {phase==='error'&&<p role="alert">تعذّر قراءة المواعيد. لا توجد بيانات افتراضية.</p>}
   {(phase==='error'||phase==='denied'||ready)&&
    <button type="button" disabled={result?.phase==='busy'||
-    result?.phase==='uncertain'} onClick={()=>{setWrite(null);setRetry(n=>n+1);}}>
+    result?.phase==='uncertain'} onClick={()=>{
+     if(result?.phase==='denied'||result?.phase==='settled'){
+      if(!writeGate.current.reset())return;
+      setWrite(null);
+     }
+     // A confirmed write is still locked until a successful signed GET.
+     setRead({phase:'loading'});setRetry(n=>n+1);
+    }}>
     تحديث المواعيد والصلاحيات
    </button>}
   {ready&&<>
@@ -170,7 +202,7 @@ export function AdminPaidOffers({session}:{session:AccountSession}){
   </>}
   {result&&<p role={result.phase==='denied'?'alert':'status'}>{result.message}</p>}
   {result?.phase==='uncertain'&&result.pending&&
-   <button type="button" onClick={()=>void send(result.pending!)}>
+   <button type="button" onClick={()=>void send(result.pending!,true)}>
     إعادة نفس العملية فقط
    </button>}
  </section>;
