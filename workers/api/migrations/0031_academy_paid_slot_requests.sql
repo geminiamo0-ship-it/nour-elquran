@@ -10,9 +10,11 @@ CREATE TABLE academy_paid_open_slot_events (
  actor_subject TEXT NOT NULL REFERENCES auth_users(id),
  starts_at_ms INTEGER NOT NULL,
  ends_at_ms INTEGER NOT NULL CHECK(ends_at_ms=starts_at_ms+2400000),
- published_at_ms INTEGER NOT NULL CHECK(published_at_ms>=0),
- UNIQUE(teacher_id,starts_at_ms)
+ published_at_ms INTEGER NOT NULL CHECK(published_at_ms>=0)
 ) STRICT;
+-- The overlap trigger, not a lifetime UNIQUE(teacher_id,starts_at_ms),
+-- governs active offers: withdrawal must permit an audited re-publication
+-- of the same interval while historical offer IDs remain immutable.
 CREATE INDEX academy_paid_open_slots_time
  ON academy_paid_open_slot_events(starts_at_ms,teacher_id,id);
 CREATE TRIGGER academy_paid_open_slot_guard
