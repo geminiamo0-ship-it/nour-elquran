@@ -1,3 +1,9 @@
+## 2026-11-03 — #326 race-safe guardian package request continuation
+- Baseline `main@4c15b59f713f41e2be9999bb082118cc48496c10`; Draft PR #325 head previously `3442190c33dfce9375407791ed679dba560e875e` had GitHub Verify #41629393736 4/4, but **new changes require new exact-head CI**.
+- Review found that the pre-INSERT operationId lookup does not make concurrent same-ID requests idempotent: a losing SQLite UNIQUE INSERT could return generic 409. `workers/api/src/academy-admin-mvp.ts` now re-reads the winner after recognized D1 constraint errors and compares exact owner/learner/package/version before returning immutable 200 replay; mismatched actor/version stays 409 without leaking the ID.
+- `workers/api/tests/academy-quoted-package-request.test.ts` covers concurrent same-payload replay, changed version/foreign actor and unrelated pending constraint. Do not merge or claim remote acceptance from local/unit/CI alone.
+- NEXT exact action: check PR #325 latest HEAD Verify and fix any failure; require independent security review, signed Cloudflare Dev two-owner/sibling concurrency + price-edit test, then 360/390 visual and touch acceptance. Production/finance/WhatsApp/audio/ink flags unchanged.
+
 ## 2026-11-03 — #326 price quote TOCTOU candidate on Draft PR #325
 - Fresh review found a source-level race: signed GET showed package version A, while POST sent only packageId and Worker selected current version B after a staff edit. Created Issue #326; implementation candidate on existing #325 branch requires explicit packageVersionId and guards freshness **inside the same D1 INSERT**, while exact-operation replay still resolves the original version.
 - Modified Worker academy request, student package command, native SQLite regression, signed local auth smoke, Worker Node tests and Vitest payload test. No financial settings, payment gateway, credits, external sends, child media, cumulative ink or Production were changed.
