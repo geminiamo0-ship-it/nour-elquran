@@ -43,6 +43,16 @@ export function createAcademyPackageRequestGate(){
   status:()=>state
  };
 }
+/** A GET can finish between a refresh click and React effect cleanup.
+ * Invalidate it synchronously before displaying new learner/catalog state. */
+export function createAcademyReadEpoch(){
+ let epoch=0;
+ return {
+  start:()=>++epoch,
+  invalidate:()=>{epoch++;},
+  isCurrent:(token:number)=>token===epoch
+ };
+}
 /** Key the entire signed request lifecycle by learner, not just its GET effect.
  * A sibling switch must never inherit an in-flight write, replay token, or
  * old request list from the previous learner's mounted component. */
@@ -55,12 +65,14 @@ function ScopedAcademyOffers({learnerId}:{learnerId:string}){
  const [writeState,setWriteState]=useState<WriteState>('idle');
  const [attempt,setAttempt]=useState<PackageAttempt|null>(null);
  const gate=useRef(createAcademyPackageRequestGate());
+ const readEpoch=useRef(createAcademyReadEpoch());
  const acknowledgedId=useRef<string|null>(null);
  useEffect(()=>{
   const ctrl=new AbortController();
+  const token=readEpoch.current.start();
   setView({phase:'loading',message:''});
   void readOwnerAcademy(learnerId,ctrl.signal).then(data=>{
-   if(ctrl.signal.aborted)return;
+   if(ctrl.signal.aborted||!readEpoch.current.isCurrent(token))return;
    if(gate.current.status()==='closed'){
     // A successful POST ACK is not enough to unlock a second request:
     // first observe its immutable ID in the signed owner D1 read.
@@ -79,13 +91,19 @@ function ScopedAcademyOffers({learnerId}:{learnerId:string}){
    // can resolve it only by replaying the same immutable operationId.
    setView({phase:'ready',data,message:''});
   }).catch(()=>{
-   if(!ctrl.signal.aborted)
+   if(!ctrl.signal.aborted&&readEpoch.current.isCurrent(token))
     setView({phase:'error',message:'تعذّر تحميل الباقات وطلباتك.'});
   });
-  return()=>ctrl.abort();
+  return()=>{ctrl.abort();readEpoch.current.invalidate();};
  },[learnerId,retry]);
+ function refresh(){
+  readEpoch.current.invalidate();
+  setView({phase:'loading',message:''});
+  setRetry(n=>n+1);
+ }
  async function send(next:PackageAttempt,replay=false){
   if(next.learnerId!==learnerId||!gate.current.begin(replay))return;
+  readEpoch.current.invalidate();
   setAttempt(next);setWriteState('busy');
   let status=0;
   let raw:unknown=null;
@@ -103,7 +121,7 @@ function ScopedAcademyOffers({learnerId}:{learnerId:string}){
    acknowledgedId.current=(raw as {academyRequestId:string}).academyRequestId;
    setAttempt(null);setWriteState('confirming');
    setView({phase:'loading',message:''});
-   setRetry(n=>n+1);
+   refresh();
   }else if(outcome==='denied'){
    acknowledgedId.current=null;
    setAttempt(null);setWriteState('denied');
@@ -125,7 +143,7 @@ function ScopedAcademyOffers({learnerId}:{learnerId:string}){
  return <section className={css.catalogSection} aria-label="باقات الأكاديمية">
   <div className={css.catalogHeader}><h2 className={css.sectionTitle}>الباقات المتاحة</h2>
    {(view.phase==='error'||writeState==='confirming')&&<button type="button" className={css.buttonOutline}
-    onClick={()=>setRetry(n=>n+1)}>تحديث</button>}</div>
+    onClick={refresh}>تحديث</button>}</div>
   {view.phase==='loading'?<p className={css.loading} role="status">جارٍ تحميل الباقات…</p>:
    view.phase==='error'?<p className={css.message} role="alert">{view.message}</p>:<>
    {pending&&<div className={css.pending} role="status">
