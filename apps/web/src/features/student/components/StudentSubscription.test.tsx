@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {parseOwnerAcademy,latestPendingAcademyRequest,currentCycleLabel,
- type SubscriptionLedger} from '../../shared';
+ parseSubscriptionLedger,type SubscriptionLedger} from '../../shared';
 import {StudentProvider} from '../StudentContext';
 import {DEMO_PROFILES} from '../mock-adapter';
 import {SubscriptionWorkspace} from './SubscriptionWorkspace';
@@ -44,6 +44,23 @@ describe('clean, truthful subscriptions #324',()=>{
   expect(status.status).not.toContain('طلب باقة قيد المراجعة');
   const unknown=homeSubscriptionSummary(null,parseOwnerAcademy(sample),1760000000000);
   expect(unknown.detail).toContain('تعذّر التحقق من رصيد الحصص');
+ });
+ it('shows separate D1 compensation units even without a subscription cycle',()=>{
+  const ledger=parseSubscriptionLedger({code:'SUBSCRIPTION_LEDGER',bookingEnabled:false,
+   latestCycle:null,compensationUnspentSessions:2,compensationGrantCount:1});
+  const noRequest=homeSubscriptionSummary(ledger,
+   parseOwnerAcademy({...sample,requests:[]}),1760000000000);
+  expect(noRequest.status).toContain('تعويض');
+  expect(noRequest.detail).toContain('حصص تعويض غير مستخدمة');
+  expect(noRequest.status).not.toContain('لا توجد دورة');
+  const pending=homeSubscriptionSummary(ledger,parseOwnerAcademy(sample),1760000000000);
+  expect(pending.status).toContain('تعويض');
+  expect(pending.detail).toContain('طلب باقة قيد المراجعة');
+  const active={...ledger,latestCycle:{state:'within_period',startsAtMs:1750000000000,
+   endsAtMs:1800000000000,baseSessions:8,rolloverSessions:0,spentSessions:3,
+   recordedUnspentSessions:5}} as SubscriptionLedger;
+  const summary=homeSubscriptionSummary(active,null,1760000000000);
+  expect(summary.detail).toContain('حصص تعويض مسجلة');
  });
  it('requires the exact D1 create/replay ACK before calling a package request confirmed',()=>{
   const id='11111111-1111-4111-8111-111111111111';
