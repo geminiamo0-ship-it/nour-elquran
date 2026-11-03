@@ -59,28 +59,39 @@ export async function ownerAcademy(db:CoreDatabase,subject:string,learnerId:stri
    ({versionId:id,packageId,title,priceEgp,sessions})),
   requests:r.results,whatsappNumber:w} as const;
 }
+/** Bind the guardian's displayed immutable quote to the D1 write. A staff
+ * package edit between GET and POST must not silently change price/sessions.
+ * Version freshness and INSERT are one SQLite statement (not a racy GET).
+ * A lost-ACK replay is resolved first, even if the quote was later retired. */
 export async function ownerPackageRequest(db:CoreDatabase,subject:string,
  learnerId:string,raw:unknown,now=Date.now()){
- if(!object(raw)||!exact(raw,['operationId','packageId'])||
-  !uuid(raw.operationId)||!uuid(raw.packageId))
+ if(!object(raw)||!exact(raw,['operationId','packageId','packageVersionId'])||
+  !uuid(raw.operationId)||!uuid(raw.packageId)||!uuid(raw.packageVersionId))
   return {status:400,code:'ACADEMY_INVALID_REQUEST'} as const;
  if(!await verifiedOwner(db,subject,learnerId))
   return {status:404,code:'NOT_FOUND'} as const;
  const prior=await db.prepare(`SELECT id,learner_id AS learnerId,actor_subject AS actor,
- package_id AS packageId FROM academy_request_events WHERE operation_id=?`)
- .bind(raw.operationId).first<{id:string;learnerId:string;actor:string;packageId:string}>();
+ package_id AS packageId,package_version_id AS packageVersionId
+ FROM academy_request_events WHERE operation_id=?`)
+ .bind(raw.operationId).first<{id:string;learnerId:string;actor:string;
+ packageId:string;packageVersionId:string}>();
  if(prior)return prior.actor===subject&&prior.learnerId===learnerId&&
-  prior.packageId===raw.packageId?
+  prior.packageId===raw.packageId&&prior.packageVersionId===raw.packageVersionId?
   {status:200,code:'ACADEMY_REQUEST_REPLAY',academyRequestId:prior.id} as const:
   {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
- const pkg=await currentPackage(db,raw.packageId);
- if(!pkg||pkg.active!==1)return {status:409,code:'ACADEMY_PACKAGE_UNAVAILABLE'} as const;
  const id=crypto.randomUUID();
  try{
-  await db.prepare(`INSERT INTO academy_request_events
+  const written=await db.prepare(`INSERT INTO academy_request_events
    (id,operation_id,learner_id,actor_subject,package_id,package_version_id,kind,at_ms)
-   VALUES(?,?,?,?,?,?,'subscription',?)`)
-  .bind(id,raw.operationId,learnerId,subject,pkg.packageId,pkg.id,now).run();
+   SELECT ?,?,?,?,p.package_id,p.id,'subscription',?
+   FROM academy_package_events p
+   WHERE p.id=? AND p.package_id=? AND p.active=1
+   AND NOT EXISTS(SELECT 1 FROM academy_package_events newer
+    WHERE newer.package_id=p.package_id AND
+    (newer.at_ms>p.at_ms OR (newer.at_ms=p.at_ms AND newer.id>p.id)))`)
+  .bind(id,raw.operationId,learnerId,subject,now,raw.packageVersionId,raw.packageId).run();
+  if(!written.success||written.meta.changes!==1)
+   return {status:409,code:'ACADEMY_PACKAGE_CHANGED'} as const;
  }catch(e){
   if(allowed(e))return {status:409,code:'ACADEMY_REQUEST_DENIED'} as const;
   throw e;
