@@ -1,3 +1,6 @@
+## #324 malformed academy duplicate IDs — 2026-11-03
+- The signed owner catalog parser must reject duplicate package version IDs and duplicate request IDs rather than rendering ambiguous React keys or request history. Unit regression uses synthetic duplicate payloads; source CI does not replace Dev owner/sibling checks.
+
 ## #324 signed subscription sibling-switch render isolation — 2026-11-03
 - Home and full subscription ledger must remount signed fetch state synchronously on learner ID change; aborting the old request in `useEffect` alone is insufficient to prevent one frame of sibling A's academic balance appearing under sibling B.
 - Fast Vitest verifies keyed scoped Home/ledger identities and preview-to-signed isolation; exact-head GitHub Verify must pass. Real Dev acceptance still requires rapid guardian sibling switching while a prior ledger request is pending/fulfilled, refresh/relogin, and 360×667/390×844 browser screenshots. No private child fixtures or paid-state assumptions.
