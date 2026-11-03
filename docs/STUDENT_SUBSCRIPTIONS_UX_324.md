@@ -22,3 +22,6 @@ Keep package selection, academic session balance, requests and homepage status *
 
 ## Acceptance / follow-on
 Exact-head CI and Cloudflare preview must pass. Then inspect 360, 390, 1280 pixels and signed owner cases: a learner with no cycle, pending request, activated cycle, expired period, no published packages, WhatsApp absent, network-unknown POST and sibling swap. Do not merge or publish Production before visual acceptance. Follow-on backend subscription write/paid booking remains separately governed; this is a UI-only change.
+
+## Compensation-only truthfulness (2026-11-03)
+`compensationUnspentSessions` belongs to the signed D1 academic ledger and may be nonzero with `latestCycle=null`. Both Home and Subscription show this count without fabricating a paid/active cycle or a booking right; pending renewal remains a secondary message. The academic-cycle remaining units and compensation units are displayed separately, never summed as available-to-book credits. Test with synthetic compensation-only and sibling records on Dev before acceptance.
