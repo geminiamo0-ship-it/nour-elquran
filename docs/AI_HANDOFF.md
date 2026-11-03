@@ -1,3 +1,8 @@
+## 2026-11-03 — #326 price quote TOCTOU candidate on Draft PR #325
+- Fresh review found a source-level race: signed GET showed package version A, while POST sent only packageId and Worker selected current version B after a staff edit. Created Issue #326; implementation candidate on existing #325 branch requires explicit packageVersionId and guards freshness **inside the same D1 INSERT**, while exact-operation replay still resolves the original version.
+- Modified Worker academy request, student package command, native SQLite regression, signed local auth smoke, Worker Node tests and Vitest payload test. No financial settings, payment gateway, credits, external sends, child media, cumulative ink or Production were changed.
+- **Next exact action:** inspect exact-head GitHub Verify after these commits; fix any strict TS/native D1/signed local smoke failures. Then independent security review and source-pinned Cloudflare Dev staff repricing between owner GET/POST, original replay, two siblings, 360/390 browser. Keep #325 Draft and #326 OPEN until all gates pass. Older QA harness POSTs must include packageVersionId.
+
 ## 2026-11-03 — #324 signed learner-ID compatibility on Draft PR #325 (source only)
 - Cross-checked Worker `academy-admin-mvp.ts` / `subscription-ledger.ts` learner IDs (`[A-Za-z0-9_-]`) against the two browser clients. Both clients rejected valid underscore IDs before any signed fetch, displaying an incorrect unavailable state.
 - Align ONLY learner ID validation in the owner academy and subscription ledger readers; retain strict package/version identifiers and reject slash/path input. Add a mocked-fetch Vitest regression for both signed routes. No auth bypass: the Worker still verifies account/profile ownership.
