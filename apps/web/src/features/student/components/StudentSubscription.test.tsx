@@ -9,7 +9,8 @@ import {SubscriptionWorkspace} from './SubscriptionWorkspace';
 import {HomeSubscriptionStatus,homeSubscriptionSummary} from './HomeSubscriptionStatus';
 import {ConnectedSubscriptionLedger} from './ConnectedSubscriptionLedger';
 import {ConnectedAcademyOffers,createAcademyPackageRequestGate,
- createAcademyReadEpoch,classifyAcademyPackageRequestResponse} from './ConnectedAcademyOffers';
+ createAcademyReadEpoch,classifyAcademyPackageRequestResponse,
+ academyPackageRequestBody} from './ConnectedAcademyOffers';
 
 describe('clean, truthful subscriptions #324',()=>{
  const sample={code:'ACADEMY_OWNER',
@@ -91,6 +92,17 @@ describe('clean, truthful subscriptions #324',()=>{
    recordedUnspentSessions:5}} as SubscriptionLedger;
   const summary=homeSubscriptionSummary(active,null,1760000000000);
   expect(summary.detail).toContain('حصص تعويض مسجلة');
+ });
+ it('submits the immutable displayed quote version, never only the mutable package ID',()=>{
+  const command=academyPackageRequestBody({
+   learnerId:'synthetic_learner',
+   operationId:'33333333-3333-4333-8333-333333333333',
+   packageId:'11111111-1111-4111-8111-111111111111',
+   packageVersionId:'22222222-2222-4222-8222-222222222222'
+  });
+  expect(Object.keys(command).sort()).toEqual(['operationId','packageId','packageVersionId']);
+  expect(command.packageVersionId).not.toBe(command.packageId);
+  expect(JSON.stringify(command)).not.toContain('synthetic_learner');
  });
  it('requires the exact D1 create/replay ACK before calling a package request confirmed',()=>{
   const id='11111111-1111-4111-8111-111111111111';
