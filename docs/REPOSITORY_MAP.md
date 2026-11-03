@@ -1,3 +1,8 @@
+## #326 guardian immutable quote binding (Draft PR #325; source-only)
+- `workers/api/src/academy-admin-mvp.ts`: owner package request requires the selected packageVersionId; same-operation replay validates version; one atomic INSERT..SELECT rejects stale/disabled quotes with 409.
+- `apps/web/src/features/student/components/ConnectedAcademyOffers.tsx`: sends the displayed immutable version alongside packageId/operationId; `StudentSubscription.test.tsx` validates exact payload.
+- `workers/api/tests/academy-quoted-package-request.test.ts`, `workers/api/tests/test_academy_admin_mvp.py`, `scripts/cloudflare-auth-smoke.mjs`: Worker contract, native SQLite, and signed local auth/D1 repricing regressions. Exact-head CI/remote Dev still pending.
+
 ## #322 Premium learner portal refresh (PR #323; source candidate)
 - `apps/web/src/features/student/{StudentShell.tsx,StudentPremium.module.css}`: reusable premium RTL sidebar/header/profile/bell and four-item mobile navigation; preserve authenticated session and profile-swap Quran save safeguards.
 - `apps/web/src/features/student/{PremiumHome.tsx,StudentDashboard.tsx,ConnectedStudentDashboard.tsx}`: same screen for demo and signed learner, server-authoritative home lesson/task/report content and fail-closed loading/error states.
