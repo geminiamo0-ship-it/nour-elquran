@@ -15,7 +15,8 @@ const isObject=(value:unknown):value is Record<string,unknown>=>
  value!==null&&typeof value==='object'&&!Array.isArray(value);
 const nonnegative=(value:unknown):value is number=>
  Number.isSafeInteger(value)&&typeof value==='number'&&value>=0;
-const learnerIdPattern=/^[A-Za-z0-9-]{1,128}$/;
+// Worker verifiedOwner accepts legacy/synthetic learner IDs with underscores.
+const learnerIdPattern=/^[A-Za-z0-9_-]{1,128}$/;
 
 export function parseSubscriptionLedger(raw:unknown):SubscriptionLedger{
  if(!isObject(raw)||raw.code!=='SUBSCRIPTION_LEDGER'||

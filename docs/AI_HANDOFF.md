@@ -1,3 +1,8 @@
+## 2026-11-03 — #324 signed learner-ID compatibility on Draft PR #325 (source only)
+- Cross-checked Worker `academy-admin-mvp.ts` / `subscription-ledger.ts` learner IDs (`[A-Za-z0-9_-]`) against the two browser clients. Both clients rejected valid underscore IDs before any signed fetch, displaying an incorrect unavailable state.
+- Align ONLY learner ID validation in the owner academy and subscription ledger readers; retain strict package/version identifiers and reject slash/path input. Add a mocked-fetch Vitest regression for both signed routes. No auth bypass: the Worker still verifies account/profile ownership.
+- Previous PR head `36a6bbd` Verify [41616867081](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41616867081) succeeded 4/4; that CI does not cover this new commit. NEXT: exact-head Verify, independent security review, source-pinned synthetic Dev two-sibling/unknown POST replay, browser 360/390. #324 OPEN, PR #325 Draft; no Production, payments, WhatsApp or audio.
+
 ## 2026-11-03 — #324 contradictory signed academy catalog guard (PR #325 candidate)
 - Previous exact-head `9e26fb07` GitHub Verify #41608959997 succeeded 4/4. New source revision requires its own exact-head CI.
 - `parseOwnerAcademy` now denies two active versions of the same packageId and multiple pending requests even when each row has a distinct ID; these conflict with D1 uniqueness/active-request invariants. `StudentSubscription.test.tsx` covers both. UI fails closed; no backend/finance or remote changes.

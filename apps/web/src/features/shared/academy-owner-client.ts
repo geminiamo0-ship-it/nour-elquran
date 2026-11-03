@@ -5,6 +5,8 @@ export type OwnerAcademy=Readonly<{packages:readonly AcademyOffer[];requests:rea
 const isObject=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 const int=(v:unknown)=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=0;
 const uid=(v:unknown)=>typeof v==='string'&&/^[A-Za-z0-9-]{1,128}$/.test(v);
+// Match the Worker learner ID contract; package/version IDs remain stricter.
+const learnerIdPattern=/^[A-Za-z0-9_-]{1,128}$/;
 const title=(v:unknown)=>typeof v==='string'&&v.length>=2&&v.length<=80;
 const price=(v:unknown)=>int(v)&&Number(v)>=1&&Number(v)<=100000;
 const sessions=(v:unknown)=>int(v)&&Number(v)>=1&&Number(v)<=60;
@@ -38,7 +40,7 @@ export function parseOwnerAcademy(raw:unknown):OwnerAcademy{
  return {packages,requests,whatsappNumber:raw.whatsappNumber as string|null};
 }
 export async function readOwnerAcademy(learnerId:string,signal?:AbortSignal):Promise<OwnerAcademy>{
- if(!uid(learnerId))throw Error('INVALID_LEARNER');
+ if(!learnerIdPattern.test(learnerId))throw Error('INVALID_LEARNER');
  let response:Response;
  try{
   response=await fetch('/v1/me/learners/'+encodeURIComponent(learnerId)+'/academy',{

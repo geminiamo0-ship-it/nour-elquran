@@ -1,7 +1,8 @@
-import {describe,expect,it} from 'vitest';
+import {describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {parseOwnerAcademy,latestPendingAcademyRequest,currentCycleLabel,
- parseSubscriptionLedger,type SubscriptionLedger} from '../../shared';
+ parseSubscriptionLedger,readOwnerAcademy,subscriptionLedgerClient,
+ type SubscriptionLedger} from '../../shared';
 import {StudentProvider} from '../StudentContext';
 import {DEMO_PROFILES} from '../mock-adapter';
 import {SubscriptionWorkspace} from './SubscriptionWorkspace';
@@ -30,6 +31,27 @@ describe('clean, truthful subscriptions #324',()=>{
    {...sample.packages[0],versionId:'ver-2'}]})).toThrow('ACADEMY_INVALID_RESPONSE');
   expect(()=>parseOwnerAcademy({...sample,requests:[sample.requests[0],
    {...sample.requests[0],id:'req-2'}]})).toThrow('ACADEMY_INVALID_RESPONSE');
+ });
+ it('uses the Worker learner-ID allowlist for both signed reads without widening package IDs',async()=>{
+  const ledger={code:'SUBSCRIPTION_LEDGER',bookingEnabled:false,latestCycle:null,
+   compensationUnspentSessions:0,compensationGrantCount:0};
+  const fetchMock=vi.fn(async (url:string)=>({
+   ok:true,json:async()=>url.endsWith('/academy')?sample:ledger
+  }));
+  vi.stubGlobal('fetch',fetchMock);
+  try{
+   const owner=await readOwnerAcademy('synthetic_learner');
+   const credits=await subscriptionLedgerClient.owner('synthetic_learner');
+   expect(owner.packages).toHaveLength(1);
+   expect(credits.bookingEnabled).toBe(false);
+   expect(fetchMock.mock.calls.map(([url])=>url)).toEqual([
+    '/v1/me/learners/synthetic_learner/academy',
+    '/v1/me/learners/synthetic_learner/subscription-ledger'
+   ]);
+   await expect(readOwnerAcademy('bad/learner')).rejects.toThrow('INVALID_LEARNER');
+   await expect(subscriptionLedgerClient.owner('bad/learner')).rejects.toThrow('INVALID_LEARNER');
+   expect(fetchMock).toHaveBeenCalledTimes(2);
+  }finally{vi.unstubAllGlobals();}
  });
  it('does not claim a missing subscription when only the catalog succeeded',()=>{
   const academy=parseOwnerAcademy({...sample,requests:[]});

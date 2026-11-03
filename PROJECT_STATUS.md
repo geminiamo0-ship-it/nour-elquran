@@ -1,3 +1,8 @@
+## 2026-11-03 — #324 signed learner-ID compatibility on Draft PR #325 (source only)
+- Cross-checked Worker `academy-admin-mvp.ts` / `subscription-ledger.ts` learner IDs (`[A-Za-z0-9_-]`) against the two browser clients. Both clients rejected valid underscore IDs before any signed fetch, displaying an incorrect unavailable state.
+- Align ONLY learner ID validation in the owner academy and subscription ledger readers; retain strict package/version identifiers and reject slash/path input. Add a mocked-fetch Vitest regression for both signed routes. No auth bypass: the Worker still verifies account/profile ownership.
+- Previous PR head `36a6bbd` Verify [41616867081](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41616867081) succeeded 4/4; that CI does not cover this new commit. NEXT: exact-head Verify, independent security review, source-pinned synthetic Dev two-sibling/unknown POST replay, browser 360/390. #324 OPEN, PR #325 Draft; no Production, payments, WhatsApp or audio.
+
 ## 2026-11-03 — #324 duplicate package identity / pending-request response hardening (Draft PR #325)
 - Latest previous PR HEAD `9e26fb0784842dc9eb9ba3cee4c814b1a96d0627` passed [Verify #41608959997](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41608959997) 4/4. That check predates this change.
 - Source audit found the owner catalog parser rejected duplicate version/request IDs but still accepted two *different versions of the same packageId* or two *distinct pending requests* in one signed response. Both violate the D1 server's one-current-version / one-pending-request invariants and can mislead package selection or request state. Reject both as `ACADEMY_INVALID_RESPONSE`; add synthetic Vitest regressions. No API/D1/payment/flag changes.
