@@ -1,3 +1,7 @@
+## #324 expired academic cycle truthfulness (2026-11-03)
+- Unit: Home status for `latestCycle.state='expired'` with recorded unused units must label them as **historical**, not current usable lessons; independent compensation grant count remains visible. `within_period` is also expired in the browser when the end timestamp is in the past.
+- UI: Subscription hero uses expired-cycle labels for both remaining units and end date. Verify source exact-head GitHub CI; then signed isolated Dev synthetic owner/second sibling, cycle expiry, independent compensation and pending renewal with 360/390 mobile visual QA. Do not equate D1 academic units with payment or booking rights.
+
 ## #324 signed academy catalog GET race regression — 2026-11-03
 - A GET started before a manual refresh, a package POST or unmount must not repopulate offer/request state if it settles before React effect cleanup. The per-learner synchronous read epoch is invalidated on these events, with a focused Vitest regression.
 - Source tests are insufficient for full acceptance: require exact-head Verify 4/4, independent review, signed Cloudflare Dev owner/two-sibling role isolation, immutable unknown-result replay/owner-read, compensation-only D1 state and 360/390 browser QA. No Production or payment enablement.
