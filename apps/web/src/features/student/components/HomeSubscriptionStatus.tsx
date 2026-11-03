@@ -15,14 +15,21 @@ export function homeSubscriptionSummary(ledger:SubscriptionLedger|null,
  academy:OwnerAcademy|null,now:number):{status:string;detail:string}{
  const pending=academy&&latestPendingAcademyRequest(academy);
  const cycle=ledger?.latestCycle;
+ const compensation=ledger?.compensationUnspentSessions??0;
  // A pending renewal/package request does not replace an already recorded
  // learner cycle. Keep the D1 balance visible and mention the request beside it.
  if(cycle)return {
   status:currentCycleLabel(cycle.state,cycle.endsAtMs,now),
   detail:cycle.recordedUnspentSessions.toLocaleString('ar-EG')+
    ' حصص مسجلة غير مستخدمة · حتى '+day.format(new Date(cycle.endsAtMs))+
+   (compensation>0?' · '+compensation.toLocaleString('ar-EG')+' حصص تعويض مسجلة':'')+
    (pending?' · طلب باقة قيد المراجعة':'')
  };
+ // Compensation is a separate durable entitlement, even without a current
+ // subscription cycle. Do not hide it behind an empty-cycle or renewal label.
+ if(ledger&&compensation>0)return {status:'حصص تعويض مسجلة',
+  detail:compensation.toLocaleString('ar-EG')+' حصص تعويض غير مستخدمة'+
+   (pending?' · طلب باقة قيد المراجعة':'')};
  if(pending)return {status:'طلب باقة قيد المراجعة',
   detail:ledger?'بانتظار قرار الإدارة':'بانتظار قرار الإدارة · تعذّر التحقق من رصيد الحصص'};
  if(ledger)return {status:'لا توجد دورة حصص مسجلة',detail:''};
