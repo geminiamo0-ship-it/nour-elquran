@@ -5,8 +5,13 @@ import {currentCycleLabel} from '../../shared';
 import css from './StudentSubscription.module.css';
 type State={phase:'loading'}|{phase:'error'}|{phase:'ready';ledger:SubscriptionLedger};
 const format=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',dateStyle:'medium'});
-/** Academic units are factual D1 ledger entries, NOT proof of payment/bookable credits. */
+/** Remount before paint when the selected sibling changes. Clearing state in
+ * useEffect alone would briefly expose the previous learner's D1 balance. */
 export function ConnectedSubscriptionLedger({learnerId}:{learnerId:string}){
+ return <ScopedSubscriptionLedger key={learnerId} learnerId={learnerId}/>;
+}
+/** Academic units are factual D1 ledger entries, NOT proof of payment/bookable credits. */
+function ScopedSubscriptionLedger({learnerId}:{learnerId:string}){
  const [view,setView]=useState<State>({phase:'loading'});
  const [retry,setRetry]=useState(0);
  useEffect(()=>{
