@@ -129,6 +129,16 @@ describe('clean, truthful subscriptions #324',()=>{
   gate.finish(false);
   expect(gate.releaseAfterRead()).toBe(true);
  });
+ it('labels unused units from an expired cycle as historical, not available credit',()=>{
+  const expired={latestCycle:{state:'expired',endsAtMs:1750000000000,
+   recordedUnspentSessions:3},compensationUnspentSessions:2} as SubscriptionLedger;
+  const summary=homeSubscriptionSummary(expired,null,1760000000000);
+  expect(summary.status).toContain('انتهت');
+  expect(summary.detail).toContain('حصص غير مستخدمة من دورة منتهية');
+  expect(summary.detail).toContain('انتهت في');
+  expect(summary.detail).toContain('حصص تعويض مسجلة');
+  expect(summary.detail).not.toContain('حصص مسجلة غير مستخدمة · حتى');
+ });
  it('never calls expired academic units an active subscription',()=>{
   expect(currentCycleLabel('expired',1800000000000,1760000000000)).toContain('انتهت');
   expect(currentCycleLabel('within_period',1750000000000,1760000000000)).toContain('انتهت');
