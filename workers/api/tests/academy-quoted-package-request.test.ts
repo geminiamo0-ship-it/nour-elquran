@@ -72,7 +72,7 @@ test('one atomic SQL statement binds quoted version and rejects stale catalog',a
  assert.equal(values[6],PACKAGE);
  const success=fixture();
  const accepted=await ownerPackageRequest(success.db,OWNER,LEARNER,request);
- assert.equal(accepted.status,201);
+ if(accepted.status!==201)throw Error('Expected a created request');
  assert.equal(accepted.code,'ACADEMY_REQUEST_CREATED');
  assert.match(accepted.academyRequestId,/^[0-9a-f-]{36}$/);
 });
