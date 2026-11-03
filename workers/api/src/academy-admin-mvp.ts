@@ -70,15 +70,19 @@ export async function ownerPackageRequest(db:CoreDatabase,subject:string,
   return {status:400,code:'ACADEMY_INVALID_REQUEST'} as const;
  if(!await verifiedOwner(db,subject,learnerId))
   return {status:404,code:'NOT_FOUND'} as const;
- const prior=await db.prepare(`SELECT id,learner_id AS learnerId,actor_subject AS actor,
+ type ExistingRequest={id:string;learnerId:string;actor:string;
+  packageId:string;packageVersionId:string};
+ const readExisting=()=>db.prepare(`SELECT id,learner_id AS learnerId,actor_subject AS actor,
  package_id AS packageId,package_version_id AS packageVersionId
  FROM academy_request_events WHERE operation_id=?`)
- .bind(raw.operationId).first<{id:string;learnerId:string;actor:string;
- packageId:string;packageVersionId:string}>();
- if(prior)return prior.actor===subject&&prior.learnerId===learnerId&&
-  prior.packageId===raw.packageId&&prior.packageVersionId===raw.packageVersionId?
+ .bind(raw.operationId).first<ExistingRequest>();
+ const replayResult=(prior:ExistingRequest)=>prior.actor===subject&&
+  prior.learnerId===learnerId&&prior.packageId===raw.packageId&&
+  prior.packageVersionId===raw.packageVersionId?
   {status:200,code:'ACADEMY_REQUEST_REPLAY',academyRequestId:prior.id} as const:
   {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const prior=await readExisting();
+ if(prior)return replayResult(prior);
  const id=crypto.randomUUID();
  try{
   const written=await db.prepare(`INSERT INTO academy_request_events
@@ -93,7 +97,14 @@ export async function ownerPackageRequest(db:CoreDatabase,subject:string,
   if(!written.success||written.meta.changes!==1)
    return {status:409,code:'ACADEMY_PACKAGE_CHANGED'} as const;
  }catch(e){
-  if(allowed(e))return {status:409,code:'ACADEMY_REQUEST_DENIED'} as const;
+  if(allowed(e)){
+   // Two signed requests can both miss the pre-INSERT lookup. If the same
+   // operation won the unique D1 race, return its immutable ACK instead of
+   // falsely denying a legitimate retry. Never disclose another actor's ID.
+   const raced=await readExisting();
+   if(raced)return replayResult(raced);
+   return {status:409,code:'ACADEMY_REQUEST_DENIED'} as const;
+  }
   throw e;
  }
  return {status:201,code:'ACADEMY_REQUEST_CREATED',academyRequestId:id} as const;
