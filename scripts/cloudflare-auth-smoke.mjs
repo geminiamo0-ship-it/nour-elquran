@@ -644,8 +644,10 @@ const firstOffer=ownerCatalog.data.packages.find(p=>p.packageId===academyPackage
 assert(firstOffer,'Saved EGP package missing from owner signed catalog');
 assert.equal(firstOffer.priceEgp,1600);
 assert.equal((await call(academyOwner,{method:'POST',cookie:cookieB,
- body:{operationId:randomUUID(),packageId:academyPackageId}})).response.status,404);
-const packageRequestCommand={operationId:randomUUID(),packageId:academyPackageId};
+ body:{operationId:randomUUID(),packageId:academyPackageId,
+  packageVersionId:firstOffer.versionId}})).response.status,404);
+const packageRequestCommand={operationId:randomUUID(),packageId:academyPackageId,
+ packageVersionId:firstOffer.versionId};
 const packageRequest=await call(academyOwner,{
  method:'POST',cookie:cookieA,body:packageRequestCommand});
 assert.equal(packageRequest.response.status,201,JSON.stringify(packageRequest.data));
@@ -654,6 +656,17 @@ assert.equal((await call(academyOwner,{
 const repriced=await staffAcademy('packages',{...priceCommand,
  operationId:randomUUID(),priceEgp:1900});
 assert.equal(repriced.response.status,201,JSON.stringify(repriced.data));
+// #326: stale displayed EGP quote cannot silently become the new price.
+const staleQuote=await call(academyOwner,{method:'POST',cookie:cookieA,
+ body:{operationId:randomUUID(),packageId:academyPackageId,
+  packageVersionId:firstOffer.versionId}});
+assert.equal(staleQuote.response.status,409,JSON.stringify(staleQuote.data));
+assert.equal(staleQuote.data.code,'ACADEMY_PACKAGE_CHANGED');
+// The original operation is still replayable after the package was repriced.
+const replayAfterReprice=await call(academyOwner,{
+ method:'POST',cookie:cookieA,body:packageRequestCommand});
+assert.equal(replayAfterReprice.response.status,200,JSON.stringify(replayAfterReprice.data));
+assert.equal(replayAfterReprice.data.academyRequestId,packageRequest.data.academyRequestId);
 const ownerRequestsAfterPrice=await call(academyOwner,{cookie:cookieA});
 assert.equal(ownerRequestsAfterPrice.response.status,200,
  JSON.stringify(ownerRequestsAfterPrice.data));
