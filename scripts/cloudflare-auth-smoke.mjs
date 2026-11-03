@@ -707,6 +707,38 @@ const staleQuote=await call(academyOwner,{method:'POST',cookie:cookieA,
   packageVersionId:firstOffer.versionId}});
 assert.equal(staleQuote.response.status,409,JSON.stringify(staleQuote.data));
 assert.equal(staleQuote.data.code,'ACADEMY_PACKAGE_CHANGED');
+// #326: signed sibling has no pending request, so it independently proves
+// a stale quote is rejected without creating a request, while the newly
+// displayed immutable version can be accepted at the new EGP price.
+const siblingCatalogAfterReprice=await call(siblingAcademyPath,{cookie:cookieA});
+assert.equal(siblingCatalogAfterReprice.response.status,200);
+const siblingFreshOffer=siblingCatalogAfterReprice.data.packages.find(
+ p=>p.packageId===academyPackageId);
+assert(siblingFreshOffer,'Repriced offer missing for sibling');
+assert.equal(siblingFreshOffer.priceEgp,1900);
+assert.notEqual(siblingFreshOffer.versionId,firstOffer.versionId);
+const siblingRequestsBefore=siblingCatalogAfterReprice.data.requests.length;
+const siblingStaleQuote=await call(siblingAcademyPath,{
+ method:'POST',cookie:cookieA,body:{operationId:randomUUID(),
+  packageId:academyPackageId,packageVersionId:firstOffer.versionId}});
+assert.equal(siblingStaleQuote.response.status,409,JSON.stringify(siblingStaleQuote.data));
+assert.equal(siblingStaleQuote.data.code,'ACADEMY_PACKAGE_CHANGED');
+const siblingAfterStale=await call(siblingAcademyPath,{cookie:cookieA});
+assert.equal(siblingAfterStale.data.requests.length,siblingRequestsBefore,
+ 'Rejected sibling stale quote must not persist a request');
+const siblingFreshCommand={operationId:randomUUID(),
+ packageId:academyPackageId,packageVersionId:siblingFreshOffer.versionId};
+const siblingAccepted=await call(siblingAcademyPath,{
+ method:'POST',cookie:cookieA,body:siblingFreshCommand});
+assert.equal(siblingAccepted.response.status,201,JSON.stringify(siblingAccepted.data));
+const siblingAfterAccepted=await call(siblingAcademyPath,{cookie:cookieA});
+const siblingSaved=siblingAfterAccepted.data.requests.find(
+ r=>r.id===siblingAccepted.data.academyRequestId);
+assert(siblingSaved,'Sibling fresh quote must be readable only in its owner scope');
+assert.equal(siblingSaved.priceEgp,1900);
+assert(!siblingAfterAccepted.data.requests.some(
+ r=>r.id===packageRequest.data.academyRequestId),
+ 'Sibling request list must not include the other learner immutable quote');
 // The original operation is still replayable after the package was repriced.
 const replayAfterReprice=await call(academyOwner,{
  method:'POST',cookie:cookieA,body:packageRequestCommand});
