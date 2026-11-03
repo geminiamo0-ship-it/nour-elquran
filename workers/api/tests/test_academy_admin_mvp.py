@@ -56,6 +56,32 @@ class AcademyAdminD1(unittest.TestCase):
   self.activate(p,request)
   with self.assertRaises(sqlite3.IntegrityError):
    self.activate(p,None)
+ def test_unknown_post_replay_and_pending_request_are_guarded_by_d1(self):
+  # A lost HTTP response after commit must not create another pending request.
+  # The Worker resolves an exact operation-id replay before attempting INSERT.
+  version=self.version()
+  first=self.request(version)
+  original_op=self.db.execute(
+   'SELECT operation_id FROM academy_request_events WHERE id=?',(first,)).fetchone()[0]
+  with self.assertRaises(sqlite3.IntegrityError):
+   self.db.execute(REQUEST,(str(uuid4()),original_op,'child-a','staff',
+                            self.package,version,T))
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_REQUEST_PENDING'):
+   self.request(version)
+  self.assertEqual(self.db.execute(
+   "SELECT COUNT(*) FROM academy_request_events WHERE learner_id='child-a'"
+  ).fetchone(),(1,))
+  self.assertEqual(self.db.execute(
+   'SELECT id FROM academy_request_events WHERE operation_id=?',(original_op,)
+  ).fetchone(),(first,))
+  # Only a recorded staff settlement unlocks a subsequent distinct request.
+  self.activate(version,first)
+  second=self.request(version)
+  self.assertNotEqual(second,first)
+  self.assertEqual(self.db.execute(
+   "SELECT COUNT(*) FROM academy_request_events WHERE learner_id='child-a'"
+  ).fetchone(),(2,))
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
  def test_foreign_owner_staff_revocation_and_legacy_credit_constraints(self):
   p=self.version()
   with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_OWNER_DENIED'):
