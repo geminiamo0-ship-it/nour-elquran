@@ -1,3 +1,8 @@
+## #326 immutable guardian quote concurrent replay regression (2026-11-03)
+- Node Worker contract simulates two requests that both miss the pre-INSERT operationId lookup: after a SQLite UNIQUE conflict, the loser must re-read the committed row and return the exact immutable request ID only when actor, learner, package and version match.
+- Negative cases: same operationId with changed package version or foreign actor returns 409 without exposing a request ID; unrelated pending-request constraint without a matching operation remains denied.
+- This is source-level test coverage, not a live concurrent D1 proof. Required next: exact-head Verify, isolated signed Cloudflare Dev two-concurrent-POST owner replay, different-owner/learner denial, staff quote change between GET/POST, network loss/retry, and 360/390 browser QA. No Production or provider activation.
+
 ## #326 immutable package quote and replay gate (2026-11-03; candidate)
 - Frontend: POST includes exactly operationId, packageId and the versionId displayed with the guardian's price/session count. Never send learner name/ID in the JSON body or WhatsApp. No optimistic activation or payment claim.
 - Worker: require all three UUIDs; reject extra fields; authorize owner before any operation replay. Exact same actor/learner/package/version/operation returns original immutable request ID even after staff reprices; mismatched replay returns 409. New write uses one atomic D1 INSERT..SELECT with current active version check; zero changes => 409 ACADEMY_PACKAGE_CHANGED, never a different price.
