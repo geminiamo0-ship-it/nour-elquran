@@ -648,9 +648,22 @@ assert.equal((await call(academyOwner,{method:'POST',cookie:cookieB,
   packageVersionId:firstOffer.versionId}})).response.status,404);
 const packageRequestCommand={operationId:randomUUID(),packageId:academyPackageId,
  packageVersionId:firstOffer.versionId};
-const packageRequest=await call(academyOwner,{
- method:'POST',cookie:cookieA,body:packageRequestCommand});
-assert.equal(packageRequest.response.status,201,JSON.stringify(packageRequest.data));
+// #326: exercise two overlapping signed HTTP commands against disposable
+// Better Auth + native D1, not only a mocked UNIQUE exception. Exactly one
+// request is created; the losing request replays the same immutable ACK.
+const [firstConcurrentRequest,secondConcurrentRequest]=await Promise.all([
+ call(academyOwner,{method:'POST',cookie:cookieA,body:packageRequestCommand}),
+ call(academyOwner,{method:'POST',cookie:cookieA,body:packageRequestCommand}),
+]);
+const concurrentStatuses=[firstConcurrentRequest.response.status,
+ secondConcurrentRequest.response.status].sort((a,b)=>a-b);
+assert.deepEqual(concurrentStatuses,[200,201],
+ JSON.stringify([firstConcurrentRequest.data,secondConcurrentRequest.data]));
+assert.equal(firstConcurrentRequest.data.academyRequestId,
+ secondConcurrentRequest.data.academyRequestId,
+ 'Concurrent signed replay must return the same immutable request ID');
+const packageRequest=firstConcurrentRequest.response.status===201?
+ firstConcurrentRequest:secondConcurrentRequest;
 assert.equal((await call(academyOwner,{
  method:'POST',cookie:cookieA,body:packageRequestCommand})).response.status,200);
 const repriced=await staffAcademy('packages',{...priceCommand,
