@@ -8,7 +8,7 @@ import {SubscriptionWorkspace} from './SubscriptionWorkspace';
 import {HomeSubscriptionStatus,homeSubscriptionSummary} from './HomeSubscriptionStatus';
 import {ConnectedSubscriptionLedger} from './ConnectedSubscriptionLedger';
 import {ConnectedAcademyOffers,createAcademyPackageRequestGate,
- classifyAcademyPackageRequestResponse} from './ConnectedAcademyOffers';
+ createAcademyReadEpoch,classifyAcademyPackageRequestResponse} from './ConnectedAcademyOffers';
 
 describe('clean, truthful subscriptions #324',()=>{
  const sample={code:'ACADEMY_OWNER',
@@ -92,6 +92,21 @@ describe('clean, truthful subscriptions #324',()=>{
   expect(first.type).toBe(sibling.type);
   expect(first.props.learnerId).toBe('synthetic-learner-a');
   expect(sibling.props.learnerId).toBe('synthetic-learner-b');
+ });
+ it('rejects old catalog GET results before React effect cleanup on refresh or POST',()=>{
+  const epoch=createAcademyReadEpoch();
+  const initial=epoch.start();
+  expect(epoch.isCurrent(initial)).toBe(true);
+  epoch.invalidate(); // synchronous refresh click, before cleanup
+  expect(epoch.isCurrent(initial)).toBe(false);
+  const refreshed=epoch.start();
+  expect(epoch.isCurrent(refreshed)).toBe(true);
+  epoch.invalidate(); // write starts before that GET settles
+  expect(epoch.isCurrent(refreshed)).toBe(false);
+  const afterAck=epoch.start();
+  expect(epoch.isCurrent(afterAck)).toBe(true);
+  epoch.invalidate(); // unmount / sibling switch
+  expect(epoch.isCurrent(afterAck)).toBe(false);
  });
  it('latches one operationId across double taps, ambiguous outcomes and explicit replay',()=>{
   const gate=createAcademyPackageRequestGate();
