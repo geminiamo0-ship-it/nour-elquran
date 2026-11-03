@@ -17,11 +17,13 @@ export function ConnectedSubscriptionLedger({learnerId}:{learnerId:string}){
   return()=>ctrl.abort();
  },[learnerId,retry]);
  const cycle=view.phase==='ready'?view.ledger.latestCycle:null;
+ const compensation=view.phase==='ready'?view.ledger.compensationUnspentSessions:0;
  return <section className={css.hero} aria-label="حالة اشتراك الطالب">
   <div className={css.heroTop}>
    <h2>اشتراكي</h2>
    {view.phase==='ready'&&<span className={css.heroBadge}>
-    {cycle?currentCycleLabel(cycle.state,cycle.endsAtMs,Date.now()):'بانتظار التفعيل'}</span>}
+    {cycle?currentCycleLabel(cycle.state,cycle.endsAtMs,Date.now()):
+     compensation>0?'رصيد تعويض مسجل':'بانتظار التفعيل'}</span>}
   </div>
   {view.phase==='loading'?<p className={css.heroPlaceholder} role="status">
    جارٍ التحقق من سجل هذا الطالب…</p>:
@@ -37,6 +39,9 @@ export function ConnectedSubscriptionLedger({learnerId}:{learnerId:string}){
     {view.ledger.compensationUnspentSessions>0&&
      <div className={css.heroFact}><small>حصص تعويض مسجلة</small>
       <strong>{view.ledger.compensationUnspentSessions.toLocaleString('ar-EG')}</strong></div>}
+   </div>:compensation>0?<div className={css.heroFacts}>
+    <div className={css.heroFact}><small>حصص تعويض غير مستخدمة</small>
+     <strong>{compensation.toLocaleString('ar-EG')}</strong></div>
    </div>:<p className={css.heroPlaceholder}>لم تُسجّل دورة حصص لهذا الطالب حتى الآن.</p>}
   <p className={css.heroNote}>رصيد حصص أكاديمي مسجّل، وليس تأكيد دفع أو تصريح حجز؛
    التفعيل والحجز عبر إدارة الأكاديمية.</p>
