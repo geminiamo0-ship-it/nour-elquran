@@ -1,3 +1,7 @@
+## #324 signed academy catalog GET race regression — 2026-11-03
+- A GET started before a manual refresh, a package POST or unmount must not repopulate offer/request state if it settles before React effect cleanup. The per-learner synchronous read epoch is invalidated on these events, with a focused Vitest regression.
+- Source tests are insufficient for full acceptance: require exact-head Verify 4/4, independent review, signed Cloudflare Dev owner/two-sibling role isolation, immutable unknown-result replay/owner-read, compensation-only D1 state and 360/390 browser QA. No Production or payment enablement.
+
 ## #309 Admin operation release gates (2026-11-01)
 - Unit: strict teacher roster transition parser, authorized staff pre-query, active class guard, exact client payload/action allowlist, 401/403, network-uncertain write (no false success/retry), SSR forms locked unless explicit consent.
 - Native SQL: all migrations through 0027; active scheduled/live Sheikh cannot be suspended or de-qualified, no immutable event on denial, cancellation then transition, unrelated teacher permitted, and legacy B2 endpoint inherits same trigger.
