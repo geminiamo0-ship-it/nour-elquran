@@ -38,10 +38,15 @@ export function homeSubscriptionSummary(ledger:SubscriptionLedger|null,
  if(ledger)return {status:'لا توجد دورة حصص مسجلة',detail:''};
  return {status:'تعذّر التحقق من حالة الاشتراك',detail:'افتح التفاصيل للتحقق.'};
 }
+/** A sibling switch must discard the previous learner's signed balance *during render*,
+ * not after the next useEffect. Otherwise the old balance can flash for one frame. */
+type HomeSubscriptionProps={learnerId?:string;preview?:boolean;basePath?:string};
+export function HomeSubscriptionStatus(props:HomeSubscriptionProps){
+ return <ScopedHomeSubscriptionStatus
+  key={props.preview?'preview':props.learnerId??'no-learner'} {...props}/>;
+}
 /** Single non-blocking status strip. Never delays or erases the signed learning dashboard. */
-export function HomeSubscriptionStatus({learnerId,preview=false,basePath='/student'}:{
- learnerId?:string;preview?:boolean;basePath?:string
-}){
+function ScopedHomeSubscriptionStatus({learnerId,preview=false,basePath='/student'}:HomeSubscriptionProps){
  const [data,setData]=useState<View>({phase:'loading'});
  useEffect(()=>{
   if(!learnerId||preview)return;
