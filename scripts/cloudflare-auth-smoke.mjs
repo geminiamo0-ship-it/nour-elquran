@@ -666,6 +666,30 @@ const packageRequest=firstConcurrentRequest.response.status===201?
  firstConcurrentRequest:secondConcurrentRequest;
 assert.equal((await call(academyOwner,{
  method:'POST',cookie:cookieA,body:packageRequestCommand})).response.status,200);
+// #326: a guardian may own several learner profiles. An operation ID that
+// belongs to one sibling must never replay its request ID on another sibling.
+const academySibling=(await call('/v1/me/learners',{cookie:cookieA}))
+ .data.learners.find(row=>row.id!==learner);
+assert(academySibling,'Signed sibling profile needed for package isolation');
+const siblingAcademyPath='/v1/me/learners/'+academySibling.id+'/academy';
+const siblingReplay=await call(siblingAcademyPath,{
+ method:'POST',cookie:cookieA,body:packageRequestCommand});
+assert.equal(siblingReplay.response.status,409,JSON.stringify(siblingReplay.data));
+assert.equal(siblingReplay.data.code,'ACADEMY_OPERATION_CONFLICT');
+assert.equal(siblingReplay.data.academyRequestId,undefined,
+ 'Sibling replay conflict must not reveal the first learner request ID');
+const siblingRead=await call(siblingAcademyPath,{cookie:cookieA});
+assert.equal(siblingRead.response.status,200,JSON.stringify(siblingRead.data));
+assert(!siblingRead.data.requests.some(r=>r.id===packageRequest.data.academyRequestId),
+ 'Signed sibling academy GET must not include another learner request');
+// A caller cannot reuse the original operation ID with a different quote.
+const quoteReplayConflict=await call(academyOwner,{
+ method:'POST',cookie:cookieA,
+ body:{...packageRequestCommand,packageVersionId:randomUUID()}});
+assert.equal(quoteReplayConflict.response.status,409,
+ JSON.stringify(quoteReplayConflict.data));
+assert.equal(quoteReplayConflict.data.code,'ACADEMY_OPERATION_CONFLICT');
+assert.equal(quoteReplayConflict.data.academyRequestId,undefined);
 const repriced=await staffAcademy('packages',{...priceCommand,
  operationId:randomUUID(),priceEgp:1900});
 assert.equal(repriced.response.status,201,JSON.stringify(repriced.data));
