@@ -1,3 +1,9 @@
+## #326 immutable package quote and replay gate (2026-11-03; candidate)
+- Frontend: POST includes exactly operationId, packageId and the versionId displayed with the guardian's price/session count. Never send learner name/ID in the JSON body or WhatsApp. No optimistic activation or payment claim.
+- Worker: require all three UUIDs; reject extra fields; authorize owner before any operation replay. Exact same actor/learner/package/version/operation returns original immutable request ID even after staff reprices; mismatched replay returns 409. New write uses one atomic D1 INSERT..SELECT with current active version check; zero changes => 409 ACADEMY_PACKAGE_CHANGED, never a different price.
+- Native SQLite: stale quote after staff edit => zero writes; current quote => exactly one immutable request; disabled latest => zero writes; D1 uniqueness/foreign keys intact. Signed local Better Auth smoke includes owner/foreign-owner denial, staff edit, stale quote, original replay, and recorded historic price.
+- **Release gate:** exact-head GitHub Verify, independent security review, source-pinned signed Cloudflare Dev same GET→staff-edit→POST flow and two-sibling isolation; 360/390 RTL. Dev test harness must be updated for required packageVersionId. No Production or payment changes.
+
 ## #324 owner academy contradictory catalog/read invariants (2026-11-03 candidate)
 - Vitest: a signed `ACADEMY_OWNER` payload with distinct `versionId`s but duplicate `packageId`s must fail closed; likewise two different pending request IDs for the same learner must fail closed. D1 serves only the current version per package and allows one pending request per learner. The parser must not pick a misleading subset or expose duplicate actions.
 - Previous HEAD `9e26fb07` passed Verify #41608959997 4/4; this change needs fresh exact-head CI. No signed remote Dev browser/role proof, independent review or 360/390 evidence yet.
