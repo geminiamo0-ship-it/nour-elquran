@@ -12,6 +12,11 @@ const stateLabel:Record<string,string>={
 /** A network/proxy outcome may be unknown after D1 committed the request.
  * Do not mint a second operationId until the first is resolved. */
 type PackageAttempt=Readonly<{learnerId:string;packageId:string;packageVersionId:string;operationId:string}>;
+/** The version shown with the EGP price is part of the guardian's command. */
+export function academyPackageRequestBody(next:PackageAttempt){
+ return {operationId:next.operationId,packageId:next.packageId,
+  packageVersionId:next.packageVersionId};
+}
 type WriteState='idle'|'busy'|'uncertain'|'confirming'|'denied';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function classifyAcademyPackageRequestResponse(status:number,raw:unknown):
@@ -111,8 +116,7 @@ function ScopedAcademyOffers({learnerId}:{learnerId:string}){
    const response=await fetch('/v1/me/learners/'+encodeURIComponent(next.learnerId)+'/academy',{
     method:'POST',credentials:'same-origin',redirect:'error',cache:'no-store',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({operationId:next.operationId,packageId:next.packageId,
-     packageVersionId:next.packageVersionId})});
+    body:JSON.stringify(academyPackageRequestBody(next))});
    status=response.status;
    try{raw=await response.json();}catch{raw=null;}
   }catch{status=0;}
