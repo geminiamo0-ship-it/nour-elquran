@@ -1,3 +1,8 @@
+## 2026-11-03 — #324 signed balance sibling-switch follow-up (Draft PR #325)
+- At prior PR head `dc6c4706`, Verify [41575130229](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41575130229) completed SUCCESS 4/4. Source inspection found both Home subscription summary and full ledger card reused their last signed learner data for one render until `useEffect` reset after a sibling change.
+- Fixed by keyed scoped components in `apps/web/src/features/student/components/{HomeSubscriptionStatus.tsx,ConnectedSubscriptionLedger.tsx}`. Added keyed remount regression in `StudentSubscription.test.tsx`; no server/flag changes. This is source-only until **new** exact-head CI.
+- NEXT: inspect exact-head CI, independent security/privacy review, source-pinned signed Dev guardian with two siblings (fast profile switch and late responses), unknown network POST/reload/replay and ACK readback, compensation/expired-cycle truthfulness and mobile 360×667/390×844. Keep PR Draft/Issue OPEN; no Production, payment, WhatsApp or private audio.
+
 ## 2026-11-03 — #324 truthful expired-cycle status in Draft PR #325
 - Prior PR head `a70e2c7f` passed Verify 4/4 at [41565400417](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41565400417); that result **does not** validate today's subsequent source changes.
 - Home and Subscription previously rendered expired-cycle unused historical units with active-looking wording. New branch commits clarify `دورة منتهية` and ended date; non-expiring compensation and pending package requests remain distinct. Unit regression covers historical wording with compensation.
