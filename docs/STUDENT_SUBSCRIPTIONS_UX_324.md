@@ -1,3 +1,6 @@
+## 2026-11-03 — #326 safety extension (Draft PR #325)
+The original UI-only scope exposed a source-proven quote race: an admin could reprice a package between the signed catalog GET and guardian POST. The POST previously carried only packageId, so the Worker could record a different immutable price than the one displayed. Linked Issue #326 extends this Draft candidate to require the displayed packageVersionId and enforce it in the **same atomic D1 INSERT**; stale/disabled versions return 409 without recording a request. An exact-operation replay remains bound to its original version. No pricing, credit or payment policy changed. Source CI and signed Dev acceptance are pending; keep both Issues open and do not merge based on this note.
+
 # #324 — Minimal, truthful student subscriptions and homepage reflection
 
 **Status:** Source candidate in PR #325, owner visual review and exact-head CI required before merge.
