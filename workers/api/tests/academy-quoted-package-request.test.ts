@@ -9,8 +9,10 @@ const VERSION='22222222-2222-4222-8222-222222222222';
 const OP='33333333-3333-4333-8333-333333333333';
 const request={operationId:OP,packageId:PACKAGE,packageVersionId:VERSION};
 
-function fixture(options:{owned?:boolean;prior?:Record<string,unknown>|null;changes?:number}={}){
+function fixture(options:{owned?:boolean;prior?:Record<string,unknown>|null;
+ priorAfterWrite?:Record<string,unknown>|null;writeError?:string;changes?:number}={}){
  const writes:Array<{sql:string;values:unknown[]}>=[],queries:string[]=[];
+ let wrote=false;
  const db={
   prepare(sql:string){
    queries.push(sql);
@@ -21,11 +23,14 @@ function fixture(options:{owned?:boolean;prior?:Record<string,unknown>|null;chan
      if(sql.includes('FROM learners l JOIN accounts a'))
       return options.owned===false?null:{ok:1};
      if(sql.includes('FROM academy_request_events WHERE operation_id=?'))
-      return options.prior??null;
+      return wrote&&options.priorAfterWrite!==undefined?
+       options.priorAfterWrite:options.prior??null;
      throw Error('Unexpected first SQL in quote test');
     },
     async run(){
      writes.push({sql,values});
+     wrote=true;
+     if(options.writeError)throw Error(options.writeError);
      return {success:true,meta:{changes:options.changes??1}};
     },
    };
@@ -83,4 +88,36 @@ test('foreign learner fails before replay or write, including a valid operationI
   {status:404,code:'NOT_FOUND'});
  assert.equal(f.queries.length,1);
  assert.equal(f.writes.length,0);
+});
+
+test('simultaneous same-operation INSERT loser recovers exact committed ACK',async()=>{
+ const committed={id:'44444444-4444-4444-8444-444444444444',
+  learnerId:LEARNER,actor:OWNER,packageId:PACKAGE,packageVersionId:VERSION};
+ const f=fixture({writeError:'UNIQUE constraint failed: academy_request_events.operation_id',
+  priorAfterWrite:committed});
+ assert.deepEqual(await ownerPackageRequest(f.db,OWNER,LEARNER,request),
+  {status:200,code:'ACADEMY_REQUEST_REPLAY',academyRequestId:committed.id});
+ assert.equal(f.writes.length,1);
+ assert.equal(f.queries.filter(sql=>sql.includes('FROM academy_request_events WHERE operation_id=?')).length,2);
+});
+
+test('concurrent conflicting operation never leaks the winner request ID',async()=>{
+ const committed={id:'44444444-4444-4444-8444-444444444444',
+  learnerId:LEARNER,actor:OWNER,packageId:PACKAGE,
+  packageVersionId:'55555555-5555-4555-8555-555555555555'};
+ const f=fixture({writeError:'UNIQUE constraint failed: academy_request_events.operation_id',
+  priorAfterWrite:committed});
+ assert.deepEqual(await ownerPackageRequest(f.db,OWNER,LEARNER,request),
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'});
+ const foreign=fixture({writeError:'UNIQUE constraint failed: academy_request_events.operation_id',
+  priorAfterWrite:{...committed,actor:'another-owner',packageVersionId:VERSION}});
+ assert.deepEqual(await ownerPackageRequest(foreign.db,OWNER,LEARNER,request),
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'});
+});
+
+test('unrelated pending-request constraint still denies without claiming a replay',async()=>{
+ const f=fixture({writeError:'ACADEMY_REQUEST_PENDING',priorAfterWrite:null});
+ assert.deepEqual(await ownerPackageRequest(f.db,OWNER,LEARNER,request),
+  {status:409,code:'ACADEMY_REQUEST_DENIED'});
+ assert.equal(f.writes.length,1);
 });
