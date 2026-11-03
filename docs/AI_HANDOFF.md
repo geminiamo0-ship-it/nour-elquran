@@ -1,3 +1,8 @@
+## 2026-11-03 — #324 contradictory signed academy catalog guard (PR #325 candidate)
+- Previous exact-head `9e26fb07` GitHub Verify #41608959997 succeeded 4/4. New source revision requires its own exact-head CI.
+- `parseOwnerAcademy` now denies two active versions of the same packageId and multiple pending requests even when each row has a distinct ID; these conflict with D1 uniqueness/active-request invariants. `StudentSubscription.test.tsx` covers both. UI fails closed; no backend/finance or remote changes.
+- NEXT: inspect new exact-head Verify, independent privacy review, then signed isolated Dev owner/two-sibling + network-unknown POST replay/reload + 360/390 acceptance. Keep #324 OPEN, #325 Draft and Production unchanged.
+
 ## 2026-11-03 — #324 native D1 uncertain request/replay regression
 - Previous PR #325 head `2c496b02` completed [GitHub Verify #41601150196](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41601150196) 4/4. It does not cover subsequent commits.
 - Added a focused disposable SQLite regression to `workers/api/tests/test_academy_admin_mvp.py` for duplicate operation IDs, second pending request rejection, stable first request identity and post-staff-activation next request. No application, D1 migration, auth, financial or runtime flags changed. Exact new-head CI pending; Dev/browser behavior still unproven.

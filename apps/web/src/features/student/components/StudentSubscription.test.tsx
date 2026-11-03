@@ -25,6 +25,11 @@ describe('clean, truthful subscriptions #324',()=>{
   // Duplicate server IDs must not silently render ambiguous React keys/history.
   expect(()=>parseOwnerAcademy({...sample,packages:[sample.packages[0],sample.packages[0]]})).toThrow('ACADEMY_INVALID_RESPONSE');
   expect(()=>parseOwnerAcademy({...sample,requests:[sample.requests[0],sample.requests[0]]})).toThrow('ACADEMY_INVALID_RESPONSE');
+  // Distinct version/request IDs are insufficient if D1 invariants disagree.
+  expect(()=>parseOwnerAcademy({...sample,packages:[sample.packages[0],
+   {...sample.packages[0],versionId:'ver-2'}]})).toThrow('ACADEMY_INVALID_RESPONSE');
+  expect(()=>parseOwnerAcademy({...sample,requests:[sample.requests[0],
+   {...sample.requests[0],id:'req-2'}]})).toThrow('ACADEMY_INVALID_RESPONSE');
  });
  it('does not claim a missing subscription when only the catalog succeeded',()=>{
   const academy=parseOwnerAcademy({...sample,requests:[]});

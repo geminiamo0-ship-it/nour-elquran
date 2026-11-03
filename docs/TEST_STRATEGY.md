@@ -1,3 +1,7 @@
+## #324 owner academy contradictory catalog/read invariants (2026-11-03 candidate)
+- Vitest: a signed `ACADEMY_OWNER` payload with distinct `versionId`s but duplicate `packageId`s must fail closed; likewise two different pending request IDs for the same learner must fail closed. D1 serves only the current version per package and allows one pending request per learner. The parser must not pick a misleading subset or expose duplicate actions.
+- Previous HEAD `9e26fb07` passed Verify #41608959997 4/4; this change needs fresh exact-head CI. No signed remote Dev browser/role proof, independent review or 360/390 evidence yet.
+
 ## #324 native D1 ambiguous package POST fence — 2026-11-03
 - Disposable SQLite test in `workers/api/tests/test_academy_admin_mvp.py` asserts that the same operation ID cannot insert twice, a different operation ID cannot create a second unresolved request for one learner, and only recorded staff settlement permits a later request. This is a database contract regression, **not** signed Worker replay or a browser lost-ACK simulation. Verify exact PR head in CI; test remote Dev with synthetic guardian/siblings and unknown POST→same-id replay→owner-read after refresh before acceptance.
 

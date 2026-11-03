@@ -1,3 +1,8 @@
+## 2026-11-03 — #324 duplicate package identity / pending-request response hardening (Draft PR #325)
+- Latest previous PR HEAD `9e26fb0784842dc9eb9ba3cee4c814b1a96d0627` passed [Verify #41608959997](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41608959997) 4/4. That check predates this change.
+- Source audit found the owner catalog parser rejected duplicate version/request IDs but still accepted two *different versions of the same packageId* or two *distinct pending requests* in one signed response. Both violate the D1 server's one-current-version / one-pending-request invariants and can mislead package selection or request state. Reject both as `ACADEMY_INVALID_RESPONSE`; add synthetic Vitest regressions. No API/D1/payment/flag changes.
+- NEXT: verify exact-head CI, independent security review and signed isolated Cloudflare Dev guardian/two-sibling network replay, package list and 360/390 UX. #324 stays OPEN / #325 Draft; no Production.
+
 ## 2026-11-03 — #324 native D1 unknown-POST replay guard regression (Draft PR #325)
 - Exact previous PR head `2c496b02` passed [Verify #41601150196](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41601150196) 4/4. This is **not** evidence for the new test commit.
 - Added `test_unknown_post_replay_and_pending_request_are_guarded_by_d1` in `workers/api/tests/test_academy_admin_mvp.py`: a lost HTTP ACK must not permit a duplicate operation ID or a second pending package request in disposable native SQLite; an audited staff activation settles the original and permits a later distinct request. This verifies D1 constraints only, not a browser network-loss/reload or signed Cloudflare Dev E2E.
