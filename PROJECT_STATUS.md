@@ -1,3 +1,8 @@
+## 2026-11-03 — #324 pending renewal must not mask existing D1 cycle (Draft PR #325)
+- Source audit of `HomeSubscriptionStatus.tsx` found that a pending academy package request took precedence over an existing signed academic ledger cycle. An already subscribed learner therefore saw only “package request pending”, hiding the recorded remaining lessons and cycle end date.
+- The compact Home strip now prioritizes an existing D1 cycle and shows the pending package request as secondary detail. If the ledger fails but a pending request is independently confirmed, the UI explicitly states the lesson balance is unverified. Focused Vitest regression added in `StudentSubscription.test.tsx`.
+- Source-only commits `b0613816` and `a9252478`; exact new HEAD CI, independent privacy review, signed owner/two-sibling Dev E2E and 360/390 browser acceptance are still required. Keep #324 OPEN / PR #325 Draft; no Production, payment provider, WhatsApp, audio or cumulative ink changes.
+
 ## 2026-11-03 — #324 academic ledger partial-failure truthfulness (Draft PR #325)
 - Source review found that Home subscription status treated a successful academy package-catalog GET plus a failed signed academic ledger GET as "subscription not confirmed". Package requests do not prove whether a cycle exists; this was a false negative during partial outage.
 - Added a pure status resolver that reports "unable to verify" when the ledger is unavailable, preserves independently confirmed pending package requests, and added Vitest regression. Changed HomeSubscriptionStatus.tsx and StudentSubscription.test.tsx only for behavior.
