@@ -1,3 +1,7 @@
+## 2026-11-03 — #326 overlapping signed POST native smoke, PR #325 Draft
+- Last confirmed prior PR head `73148737` passed GitHub Verify 4/4 (#41634989289). New source commit `281f91c7` changes `scripts/cloudflare-auth-smoke.mjs`: Promise.all two signed guardian package POSTs against disposable Better Auth+D1; expect exactly 201+200 and one shared immutable request ID, then original sequential replay and staff-repricing checks.
+- New exact-head CI is **pending verification**. Do not merge, close #324/#326, change Production, or claim remote Dev acceptance. NEXT: inspect exact-head GitHub Verify and fix any actual failing native test; then independent review and isolated Cloudflare Dev guardian/2-sibling/repricing and mobile 360/390 QA.
+
 ## 2026-11-03 — #326 race-safe guardian package request continuation
 - Baseline `main@4c15b59f713f41e2be9999bb082118cc48496c10`; Draft PR #325 head previously `3442190c33dfce9375407791ed679dba560e875e` had GitHub Verify #41629393736 4/4, but **new changes require new exact-head CI**.
 - Review found that the pre-INSERT operationId lookup does not make concurrent same-ID requests idempotent: a losing SQLite UNIQUE INSERT could return generic 409. `workers/api/src/academy-admin-mvp.ts` now re-reads the winner after recognized D1 constraint errors and compares exact owner/learner/package/version before returning immutable 200 replay; mismatched actor/version stays 409 without leaking the ID.
