@@ -17,6 +17,7 @@ export function ConnectedSubscriptionLedger({learnerId}:{learnerId:string}){
   return()=>ctrl.abort();
  },[learnerId,retry]);
  const cycle=view.phase==='ready'?view.ledger.latestCycle:null;
+ const activeCycle=cycle?.state==='within_period'&&cycle.endsAtMs>Date.now();
  const compensation=view.phase==='ready'?view.ledger.compensationUnspentSessions:0;
  return <section className={css.hero} aria-label="حالة اشتراك الطالب">
   <div className={css.heroTop}>
@@ -32,9 +33,11 @@ export function ConnectedSubscriptionLedger({learnerId}:{learnerId:string}){
     <button type="button" className={css.buttonOutline} onClick={()=>setRetry(n=>n+1)}>
      إعادة المحاولة</button>
    </div>:cycle?<div className={css.heroFacts}>
-    <div className={css.heroFact}><small>حصص الدورة غير المستخدمة</small>
+    <div className={css.heroFact}><small>{activeCycle?'حصص الدورة غير المستخدمة':
+     'حصص غير مستخدمة من الدورة المنتهية'}</small>
      <strong>{cycle.recordedUnspentSessions.toLocaleString('ar-EG')}</strong></div>
-    <div className={css.heroFact}><small>نهاية الدورة المسجلة</small>
+    <div className={css.heroFact}><small>{activeCycle?'نهاية الدورة المسجلة':
+     'انتهت الدورة في'}</small>
      <strong>{format.format(new Date(cycle.endsAtMs))}</strong></div>
     {view.ledger.compensationUnspentSessions>0&&
      <div className={css.heroFact}><small>حصص تعويض مسجلة</small>
