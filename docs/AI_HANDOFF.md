@@ -1,3 +1,8 @@
+## 2026-11-03 — #326 signed foreign-household replay guard (PR #325, Draft)
+- Fresh GitHub check: main remains `4c15b59f713f41e2be9999bb082118cc48496c10`, PR #325 was Draft at `06b44c47a74d8f44548c70eb388bc0d18d75e297`, and [Verify #41653623673](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41653623673) finished 4/4 success on that exact head. No approved independent review.
+- Extended `scripts/cloudflare-auth-smoke.mjs` with a native signed negative path: foreign household cannot replay an existing owner's operationId to discover its immutable request ID (404, no academyRequestId). Test commit `addf927eba7d5e08a133ffeab86b98eb571ccf95`. Documentation commits follow; **do not attribute the prior green run to this new head**.
+- NEXT: inspect latest exact-head GitHub Verify and repair failures; obtain independent security review and source-pinned signed Cloudflare Dev staff repricing/owner-two-sibling/concurrent request E2E plus 360/390 browser checks. Keep PR Draft and #326 OPEN. No Production, paid integrations, WhatsApp, child recordings or cumulative ink activation.
+
 ## 2026-11-03 — #326 signed native sibling isolation extension (PR #325 Draft)
 - Fresh main remained `4c15b59f713f41e2be9999bb082118cc48496c10`; PR #325 previous head `f6dd88441ef1670595b6cd2e5faeea50d917abc2` passed [Verify #41647331156](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41647331156) 4/4. No approved PR reviews; branch protection main still false.
 - New source commit `5f7580ee` adds signed local native D1 guardian/two-sibling operation replay and same-operation changed quote denial checks. Exact-head Verify after these changes **must be checked**; do not infer success from the prior run.
