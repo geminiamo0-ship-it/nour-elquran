@@ -1,3 +1,6 @@
+## #324 native D1 ambiguous package POST fence — 2026-11-03
+- Disposable SQLite test in `workers/api/tests/test_academy_admin_mvp.py` asserts that the same operation ID cannot insert twice, a different operation ID cannot create a second unresolved request for one learner, and only recorded staff settlement permits a later request. This is a database contract regression, **not** signed Worker replay or a browser lost-ACK simulation. Verify exact PR head in CI; test remote Dev with synthetic guardian/siblings and unknown POST→same-id replay→owner-read after refresh before acceptance.
+
 ## #324 malformed academy duplicate IDs — 2026-11-03
 - The signed owner catalog parser must reject duplicate package version IDs and duplicate request IDs rather than rendering ambiguous React keys or request history. Unit regression uses synthetic duplicate payloads; source CI does not replace Dev owner/sibling checks.
 
