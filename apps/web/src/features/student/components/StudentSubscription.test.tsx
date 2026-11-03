@@ -1,6 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {parseOwnerAcademy,latestPendingAcademyRequest,currentCycleLabel} from '../../shared';
+import {parseOwnerAcademy,latestPendingAcademyRequest,currentCycleLabel,
+ type SubscriptionLedger} from '../../shared';
 import {StudentProvider} from '../StudentContext';
 import {DEMO_PROFILES} from '../mock-adapter';
 import {SubscriptionWorkspace} from './SubscriptionWorkspace';
@@ -31,6 +32,18 @@ describe('clean, truthful subscriptions #324',()=>{
   expect(pending.status).toContain('قيد المراجعة');
   expect(homeSubscriptionSummary(null,null,1760000000000).status)
    .toContain('تعذّر التحقق');
+ });
+ it('does not hide an existing learner cycle behind a pending package renewal',()=>{
+  const ledger={latestCycle:{
+   state:'within_period',endsAtMs:1800000000000,recordedUnspentSessions:3
+  }} as unknown as SubscriptionLedger;
+  const status=homeSubscriptionSummary(ledger,parseOwnerAcademy(sample),1760000000000);
+  expect(status.status).toContain('مسجلة');
+  expect(status.detail).toContain('حصص مسجلة غير مستخدمة');
+  expect(status.detail).toContain('طلب باقة قيد المراجعة');
+  expect(status.status).not.toContain('طلب باقة قيد المراجعة');
+  const unknown=homeSubscriptionSummary(null,parseOwnerAcademy(sample),1760000000000);
+  expect(unknown.detail).toContain('تعذّر التحقق من رصيد الحصص');
  });
  it('requires the exact D1 create/replay ACK before calling a package request confirmed',()=>{
   const id='11111111-1111-4111-8111-111111111111';
