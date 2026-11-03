@@ -1,3 +1,8 @@
+## 2026-11-03 — #324 compensation-only ledger visibility follow-up (Draft PR #325)
+- Inspected current open issues/PRs and `main` baseline; previous PR #325 head `6c3cc135` completed [Verify #41551447306](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41551447306) 4/4. This is prior-head evidence, not proof for new source.
+- Discovered an independent recorded compensation balance was hidden when `latestCycle=null`. Changed `HomeSubscriptionStatus.tsx` and `ConnectedSubscriptionLedger.tsx` to display actual D1 compensation units without asserting a paid or bookable subscription. `StudentSubscription.test.tsx` adds regression for compensation-only, pending renewal and active-cycle cases.
+- **Next exact action:** verify latest PR #325 HEAD GitHub Verify; if green, obtain independent privacy review and signed isolated Cloudflare Dev with compensation-only ledger and sibling switching plus 360/390 viewport. Keep #324 OPEN/PR Draft until those gates. No Production, WhatsApp send, payment or child audio.
+
 ## 2026-11-03 — #324 active subscription + pending renewal Home strip (PR #325 Draft)
 - Issue: Home's `homeSubscriptionSummary` checked pending package requests before D1 `latestCycle`, hiding genuine recorded unspent lessons/expiry whenever an owner had a pending package renewal. Source fix: display D1 cycle status/units/period first; append pending request detail; if ledger unavailable but request known, explicitly flag unknown balance.
 - Changed only `apps/web/src/features/student/components/HomeSubscriptionStatus.tsx` and `StudentSubscription.test.tsx` for this behavior. Commits `b0613816`, `a9252478`. This is a source/test candidate, not signed Dev or browser proof.
