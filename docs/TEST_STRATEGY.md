@@ -1,3 +1,7 @@
+## #326 overlapping signed native D1 HTTP test — 2026-11-03
+- `scripts/cloudflare-auth-smoke.mjs` now starts two concurrent signed HTTP package POSTs with identical immutable operationId/packageId/packageVersionId against disposable local Better Auth+D1; requires one 201 created and one 200 replay, both referencing exactly the same request ID. Sequential replay, stale quote 409, and original price snapshot remain covered.
+- This detects an actual local Worker/D1 race beyond mocked SQL exceptions, but is **not** evidence of remote Cloudflare Dev concurrency or browser behavior. Inspect exact-head GitHub Verify and run source-pinned remote synthetic role tests before merge.
+
 ## #326 immutable guardian quote concurrent replay regression (2026-11-03)
 - Node Worker contract simulates two requests that both miss the pre-INSERT operationId lookup: after a SQLite UNIQUE conflict, the loser must re-read the committed row and return the exact immutable request ID only when actor, learner, package and version match.
 - Negative cases: same operationId with changed package version or foreign actor returns 409 without exposing a request ID; unrelated pending-request constraint without a matching operation remains denied.
