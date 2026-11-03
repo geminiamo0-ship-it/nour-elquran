@@ -11,7 +11,7 @@ const stateLabel:Record<string,string>={
 };
 /** A network/proxy outcome may be unknown after D1 committed the request.
  * Do not mint a second operationId until the first is resolved. */
-type PackageAttempt=Readonly<{learnerId:string;packageId:string;operationId:string}>;
+type PackageAttempt=Readonly<{learnerId:string;packageId:string;packageVersionId:string;operationId:string}>;
 type WriteState='idle'|'busy'|'uncertain'|'confirming'|'denied';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function classifyAcademyPackageRequestResponse(status:number,raw:unknown):
@@ -111,7 +111,8 @@ function ScopedAcademyOffers({learnerId}:{learnerId:string}){
    const response=await fetch('/v1/me/learners/'+encodeURIComponent(next.learnerId)+'/academy',{
     method:'POST',credentials:'same-origin',redirect:'error',cache:'no-store',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({operationId:next.operationId,packageId:next.packageId})});
+    body:JSON.stringify({operationId:next.operationId,packageId:next.packageId,
+     packageVersionId:next.packageVersionId})});
    status=response.status;
    try{raw=await response.json();}catch{raw=null;}
   }catch{status=0;}
@@ -136,7 +137,8 @@ function ScopedAcademyOffers({learnerId}:{learnerId:string}){
  function request(pkg:AcademyOffer){
   if(view.phase!=='ready'||writeState!=='idle'||
    latestPendingAcademyRequest(view.data))return;
-  void send({learnerId,operationId:crypto.randomUUID(),packageId:pkg.packageId});
+  void send({learnerId,operationId:crypto.randomUUID(),packageId:pkg.packageId,
+   packageVersionId:pkg.versionId});
  }
  const data=view.phase==='ready'?view.data:null;
  const pending=data?latestPendingAcademyRequest(data):null;
