@@ -1,3 +1,8 @@
+## 2026-11-03 — #326 signed native sibling isolation extension (PR #325 Draft)
+- Fresh main remained `4c15b59f713f41e2be9999bb082118cc48496c10`; PR #325 previous head `f6dd88441ef1670595b6cd2e5faeea50d917abc2` passed [Verify #41647331156](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41647331156) 4/4. No approved PR reviews; branch protection main still false.
+- New source commit `5f7580ee` adds signed local native D1 guardian/two-sibling operation replay and same-operation changed quote denial checks. Exact-head Verify after these changes **must be checked**; do not infer success from the prior run.
+- NEXT: inspect exact HEAD and CI; if green record evidence in #326. Keep PR Draft pending independent privacy review and isolated signed Cloudflare Dev two-sibling/concurrency/reprice plus 360/390 browser QA. No Production, finance, WhatsApp, child audio or cumulative ink flag changes.
+
 ## 2026-11-03 — #326 overlapping signed POST native smoke, PR #325 Draft
 - Last confirmed prior PR head `73148737` passed GitHub Verify 4/4 (#41634989289). New source commit `281f91c7` changes `scripts/cloudflare-auth-smoke.mjs`: Promise.all two signed guardian package POSTs against disposable Better Auth+D1; expect exactly 201+200 and one shared immutable request ID, then original sequential replay and staff-repricing checks.
 - New exact-head CI is **pending verification**. Do not merge, close #324/#326, change Production, or claim remote Dev acceptance. NEXT: inspect exact-head GitHub Verify and fix any actual failing native test; then independent review and isolated Cloudflare Dev guardian/2-sibling/repricing and mobile 360/390 QA.
