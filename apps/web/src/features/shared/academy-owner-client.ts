@@ -27,6 +27,11 @@ export function parseOwnerAcademy(raw:unknown):OwnerAcademy{
    sessions:r.sessions as number,atMs:r.atMs as number,
    state:r.state as AcademyRequest['state']};
  });
+ // Duplicate IDs would create ambiguous package buttons or request history rows.
+ // Treat a malformed signed response as unavailable rather than rendering it.
+ if(new Set(packages.map(p=>p.versionId)).size!==packages.length||
+  new Set(requests.map(r=>r.id)).size!==requests.length)
+  throw Error('ACADEMY_INVALID_RESPONSE');
  return {packages,requests,whatsappNumber:raw.whatsappNumber as string|null};
 }
 export async function readOwnerAcademy(learnerId:string,signal?:AbortSignal):Promise<OwnerAcademy>{
