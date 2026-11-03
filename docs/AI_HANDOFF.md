@@ -1,3 +1,8 @@
+## 2026-11-03 — #324 native D1 uncertain request/replay regression
+- Previous PR #325 head `2c496b02` completed [GitHub Verify #41601150196](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41601150196) 4/4. It does not cover subsequent commits.
+- Added a focused disposable SQLite regression to `workers/api/tests/test_academy_admin_mvp.py` for duplicate operation IDs, second pending request rejection, stable first request identity and post-staff-activation next request. No application, D1 migration, auth, financial or runtime flags changed. Exact new-head CI pending; Dev/browser behavior still unproven.
+- NEXT: confirm exact-head CI, obtain independent security/privacy review, then signed Dev guardian/two-sibling slow network POST/replay/reload/ACK owner readback, admin catalog and 360/390 RTL screenshots. Do not merge PR #325 or close #324 before those gates.
+
 ## 2026-11-03 — #324 fail-closed duplicate academy IDs (Draft PR #325)
 - Fresh source review found `parseOwnerAcademy` accepted duplicate package-version and request IDs. That could produce ambiguous React keys and repeated pending/history rows from malformed signed responses. The parser now rejects duplicate `versionId` and request `id` values with `ACADEMY_INVALID_RESPONSE`; synthetic Vitest regressions cover both. No backend, D1, payments, flags, Production, WhatsApp or child audio changed.
 - GitHub source commits: `28832042` parser, `3319895e` regression, `e74456cc` test strategy. **Exact-head CI is not yet established**; prior `222a302f` Verify 4/4 does not validate this change. Independent security review and signed Cloudflare Dev guardian/two-sibling + mobile 360/390 remain mandatory. Keep #324 OPEN / #325 Draft.
