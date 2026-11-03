@@ -1,3 +1,7 @@
+## #326 native signed sibling/quote replay isolation — 2026-11-03
+- Added to `scripts/cloudflare-auth-smoke.mjs`: after concurrent signed guardian package requests produce one immutable D1 ACK, reuse the same operationId against a different owned sibling and a different packageVersionId. Both must return 409 `ACADEMY_OPERATION_CONFLICT` without an `academyRequestId`; sibling's signed GET must exclude the first learner's request. The fixture reuses an existing synthetic sibling and does not create paid entitlements or affect free-trial acceptance.
+- Test commit `5f7580ee`; CI at new exact HEAD must be verified. These local signed tests are not substitutes for isolated Cloudflare Dev and mobile acceptance.
+
 ## #326 overlapping signed native D1 HTTP test — 2026-11-03
 - `scripts/cloudflare-auth-smoke.mjs` now starts two concurrent signed HTTP package POSTs with identical immutable operationId/packageId/packageVersionId against disposable local Better Auth+D1; requires one 201 created and one 200 replay, both referencing exactly the same request ID. Sequential replay, stale quote 409, and original price snapshot remain covered.
 - This detects an actual local Worker/D1 race beyond mocked SQL exceptions, but is **not** evidence of remote Cloudflare Dev concurrency or browser behavior. Inspect exact-head GitHub Verify and run source-pinned remote synthetic role tests before merge.
