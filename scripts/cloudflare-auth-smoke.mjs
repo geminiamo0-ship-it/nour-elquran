@@ -662,6 +662,14 @@ assert.deepEqual(concurrentStatuses,[200,201],
 assert.equal(firstConcurrentRequest.data.academyRequestId,
  secondConcurrentRequest.data.academyRequestId,
  'Concurrent signed replay must return the same immutable request ID');
+// #326: a different signed household must not discover the committed
+// request by replaying the original operationId against the owner's learner.
+const foreignOperationReplay=await call(academyOwner,{
+ method:'POST',cookie:cookieB,body:packageRequestCommand});
+assert.equal(foreignOperationReplay.response.status,404,
+ JSON.stringify(foreignOperationReplay.data));
+assert.equal(foreignOperationReplay.data.academyRequestId,undefined,
+ 'Foreign household replay must not reveal the original request ID');
 const packageRequest=firstConcurrentRequest.response.status===201?
  firstConcurrentRequest:secondConcurrentRequest;
 assert.equal((await call(academyOwner,{
