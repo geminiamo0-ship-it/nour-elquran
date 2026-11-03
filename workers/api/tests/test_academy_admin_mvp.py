@@ -110,15 +110,16 @@ class AcademyAdminD1(unittest.TestCase):
    'SELECT p.price_egp,p.sessions FROM academy_request_events r '
    'JOIN academy_package_events p ON p.id=r.package_version_id '
    'WHERE r.id=?',(accepted,)).fetchone(),(2400,8))
+  # A second INSERT with the same operation is rejected by the D1 key.
+  with self.assertRaises(sqlite3.IntegrityError):
+   self.db.execute(REQUEST_QUOTED,(str(uuid4()),operation,'child-a',
+    'staff',T+2,latest,self.package))
   # Another staff update cannot change the immutable recorded request.
   self.version(price=3000,at=T+3)
   self.assertEqual(self.db.execute(
    'SELECT p.price_egp FROM academy_request_events r '
    'JOIN academy_package_events p ON p.id=r.package_version_id '
    'WHERE r.id=?',(accepted,)).fetchone(),(2400,))
-  with self.assertRaises(sqlite3.IntegrityError):
-   self.db.execute(REQUEST_QUOTED,(str(uuid4()),operation,'child-a',
-    'staff',T+2,latest,self.package))
   self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
  def test_quoted_request_rejects_disabled_latest_version(self):
   original=self.version(price=2000)
