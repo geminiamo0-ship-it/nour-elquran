@@ -82,6 +82,21 @@ describe('clean, truthful subscriptions #324',()=>{
    expect(classifyAcademyPackageRequestResponse(status,{code:'ACADEMY_REQUEST_DENIED'}))
     .toBe('denied');
  });
+ it('remounts both signed subscription balances before a sibling switch can paint old D1 data',()=>{
+  const homeA=HomeSubscriptionStatus({learnerId:'synthetic-learner-a'});
+  const homeB=HomeSubscriptionStatus({learnerId:'synthetic-learner-b'});
+  expect(homeA.key).toBe('synthetic-learner-a');
+  expect(homeB.key).toBe('synthetic-learner-b');
+  expect(homeA.type).toBe(homeB.type);
+  const ledgerA=ConnectedSubscriptionLedger({learnerId:'synthetic-learner-a'});
+  const ledgerB=ConnectedSubscriptionLedger({learnerId:'synthetic-learner-b'});
+  expect(ledgerA.key).toBe('synthetic-learner-a');
+  expect(ledgerB.key).toBe('synthetic-learner-b');
+  expect(ledgerA.type).toBe(ledgerB.type);
+  // Switching from the visual preview to signed data must also remount.
+  expect(HomeSubscriptionStatus({preview:true,learnerId:'synthetic-learner-a'}).key)
+   .toBe('preview');
+ });
  it('isolates the complete package write gate and owner-read view on sibling switch',()=>{
   // The outer wrapper has no hooks: React remounts the keyed inner component,
   // so an old learner's pending POST/GET cannot update the new learner's view.
