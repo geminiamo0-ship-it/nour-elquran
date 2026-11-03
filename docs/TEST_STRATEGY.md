@@ -1,3 +1,7 @@
+## #324 signed subscription sibling-switch render isolation — 2026-11-03
+- Home and full subscription ledger must remount signed fetch state synchronously on learner ID change; aborting the old request in `useEffect` alone is insufficient to prevent one frame of sibling A's academic balance appearing under sibling B.
+- Fast Vitest verifies keyed scoped Home/ledger identities and preview-to-signed isolation; exact-head GitHub Verify must pass. Real Dev acceptance still requires rapid guardian sibling switching while a prior ledger request is pending/fulfilled, refresh/relogin, and 360×667/390×844 browser screenshots. No private child fixtures or paid-state assumptions.
+
 ## #324 expired academic cycle truthfulness (2026-11-03)
 - Unit: Home status for `latestCycle.state='expired'` with recorded unused units must label them as **historical**, not current usable lessons; independent compensation grant count remains visible. `within_period` is also expired in the browser when the end timestamp is in the past.
 - UI: Subscription hero uses expired-cycle labels for both remaining units and end date. Verify source exact-head GitHub CI; then signed isolated Dev synthetic owner/second sibling, cycle expiry, independent compensation and pending renewal with 360/390 mobile visual QA. Do not equate D1 academic units with payment or booking rights.
