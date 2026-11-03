@@ -1,3 +1,8 @@
+## 2026-11-03 — #324 fail-closed duplicate academy IDs (Draft PR #325)
+- Fresh source review found `parseOwnerAcademy` accepted duplicate package-version and request IDs. That could produce ambiguous React keys and repeated pending/history rows from malformed signed responses. The parser now rejects duplicate `versionId` and request `id` values with `ACADEMY_INVALID_RESPONSE`; synthetic Vitest regressions cover both. No backend, D1, payments, flags, Production, WhatsApp or child audio changed.
+- GitHub source commits: `28832042` parser, `3319895e` regression, `e74456cc` test strategy. **Exact-head CI is not yet established**; prior `222a302f` Verify 4/4 does not validate this change. Independent security review and signed Cloudflare Dev guardian/two-sibling + mobile 360/390 remain mandatory. Keep #324 OPEN / #325 Draft.
+- NEXT: inspect Verify for the final branch head, repair any failures, then test signed Dev with malformed catalog rejection, delayed sibling reads and ambiguous POST/replay; no Production deploy.
+
 ## 2026-11-03 — #324 signed balance sibling-switch follow-up (Draft PR #325)
 - At prior PR head `dc6c4706`, Verify [41575130229](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41575130229) completed SUCCESS 4/4. Source inspection found both Home subscription summary and full ledger card reused their last signed learner data for one render until `useEffect` reset after a sibling change.
 - Fixed by keyed scoped components in `apps/web/src/features/student/components/{HomeSubscriptionStatus.tsx,ConnectedSubscriptionLedger.tsx}`. Added keyed remount regression in `StudentSubscription.test.tsx`; no server/flag changes. This is source-only until **new** exact-head CI.
