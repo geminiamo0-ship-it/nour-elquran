@@ -22,6 +22,9 @@ describe('clean, truthful subscriptions #324',()=>{
   expect(()=>parseOwnerAcademy({...sample,whatsappNumber:'https://example.com'})).toThrow();
   expect(()=>parseOwnerAcademy({...sample,packages:[{...sample.packages[0],priceEgp:-2}]})).toThrow();
   expect(()=>parseOwnerAcademy({...sample,requests:[{...sample.requests[0],state:'paid'}]})).toThrow();
+  // Duplicate server IDs must not silently render ambiguous React keys/history.
+  expect(()=>parseOwnerAcademy({...sample,packages:[sample.packages[0],sample.packages[0]]})).toThrow('ACADEMY_INVALID_RESPONSE');
+  expect(()=>parseOwnerAcademy({...sample,requests:[sample.requests[0],sample.requests[0]]})).toThrow('ACADEMY_INVALID_RESPONSE');
  });
  it('does not claim a missing subscription when only the catalog succeeded',()=>{
   const academy=parseOwnerAcademy({...sample,requests:[]});
