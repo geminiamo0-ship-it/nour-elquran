@@ -1,3 +1,8 @@
+## 2026-11-04 — #315 PR #327 lint parse regression corrected (CI recheck pending)
+- Exact PR head `2e16791e` failed [Verify #41841728621](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41841728621): `code-quality` failed ESLint parsing at `workers/api/tests/academy-activation-receipt.test.ts:20:49`; the other three jobs succeeded. Root cause was a missing `>` closing `Array<{sql:string;values:unknown[]}>` in the synthetic D1 test fixture.
+- Fixed on PR branch by commit [`70e7555b`](https://github.com/geminiamo0-ship-it/nour-elquran/commit/70e7555b919b64c090b1a51cb3ab3cc07e013ce2); no production or financial mutation. **This is source-only until new exact-head CI is verified.**
+- NEXT: inspect new 4/4 Verify for final branch head, review immutable activation replay/receipt SQL and security, then signed Cloudflare Dev staff/guardian/sibling price-concurrency and mobile acceptance. Keep PR Draft, #315 OPEN, reconcile overlapping PR #325; no merge/deploy.
+
 ## 2026-11-04 — #315 admin activation retry UI (Draft #327)
 - Source audit found the Admin form cleared its pending operationId on an HTTP 503, although the Worker now correctly reports an unknown D1 commit outcome. A second submit could mint a new activation operation. Fixed `AdminAcademyMvp.tsx` to retain exact pending payload for 408/425/429/5xx, block other commands until reconciliation, and clear pending state on staff-session switch. Added focused Vitest status classification checks. Commits 0bcb6ba2 and 633dc53a.
 - Exact-head CI and signed Dev ACK-lost→same-op replay, real D1 cycle readback, staff revocation, sibling isolation and mobile QA remain pending. No Production/payment changes.
