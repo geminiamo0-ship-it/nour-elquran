@@ -1,6 +1,6 @@
 ## 2026-11-04 — #315 academy activation ACK and immutable audit replay (Draft PR #327)
 - Source review found that staffActivate acknowledged HTTP 201 without inspecting D1 .run() success/changes, and same operationId replay ignored the original operator note. A failed or ambiguous D1 write could appear activated, or a changed audit attestation could be silently treated as the original.
-- Draft #327 now requires an affirmative one-row D1 receipt, returns safe 503 for unknown outcome, recovers exact committed operations after an abort, and binds replay to actor, learner, version, request and note. New Node regression tests cover zero/failed receipt, replay note collision, abort and role denial.
+- Draft #327 now requires an affirmative positive D1 receipt (including trigger side effects), returns safe 503 for unknown outcome, recovers exact committed operations after an abort, and binds replay to actor, learner, version, request and note. New Node regression tests cover zero/failed receipt, replay note collision, abort and role denial.
 - Source commits: ac6eaeca (Worker), 925de0cb (tests). **Exact-head GitHub Verify, independent security review and signed Cloudflare Dev acceptance remain pending.** Do not claim paid settlement, merge, or Production rollout; reconcile with Draft #325 before integration.
 
 ## 2026-11-04 — #315 D1 package write-abort outcome classification (PR #327, Draft)
