@@ -1,3 +1,8 @@
+## 2026-11-04 — #315 PR #327 exact-head lint repair
+- Prior head `2e16791e` had Verify [41841728621](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41841728621) **FAIL 1/4**: ESLint parser error in `workers/api/tests/academy-activation-receipt.test.ts` at line 20 (`Array<{...}` missing closing `>`); native D1, policy and governance passed.
+- Corrected fixture type syntax in [`70e7555b`](https://github.com/geminiamo0-ship-it/nour-elquran/commit/70e7555b919b64c090b1a51cb3ab3cc07e013ce2). Await **new exact-head** CI; prior green tests do not validate the new branch head.
+- NEXT: check latest PR #327 head/Verify 4/4, independent SQL/role/receipt review, Dev signed two-staff quote-race and guardian two-sibling isolation; reconcile PR #325 overlap before merge. Keep flags OFF, Production untouched.
+
 ## 2026-11-04 — #315 UI continuation after activation 503 (Draft #327)
 - Staff activation now returns 503 for unproven D1 receipt; review of `AdminAcademyMvp.tsx` found its old catch treated any HTTP error as final and erased `pendingOp`. New commit 0bcb6ba2 preserves exact operationId/payload on retryable HTTP 408/425/429/5xx, blocks new staff commands while uncertain, and permits only explicit same-op replay. Test commit 633dc53a covers status classification. This is source-only; no signed Dev acceptance.
 - NEXT: inspect latest exact-head Verify, repair failures, then signed Dev operator activation→D1 cycle→lost ACK replay with same operationId, staff revocation and 2 siblings. Verify quote-binding from #325 and package monotonic version from #327 together before merge. Keep Draft, no Production.
