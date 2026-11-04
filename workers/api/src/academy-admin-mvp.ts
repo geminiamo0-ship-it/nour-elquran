@@ -274,10 +274,11 @@ export async function staffActivate(db:CoreDatabase,subject:string,raw:unknown,n
  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,1,?)`).bind(crypto.randomUUID(),raw.operationId,subject,
  raw.learnerId,raw.requestId,raw.packageVersionId,crypto.randomUUID(),
  last?.id??null,carry,start,ends,raw.note,start).run();
-  // A D1 result without an affirmative one-row receipt cannot prove the
-  // activation and its trigger-created academic cycle were committed.
+  // The activation INSERT creates a cycle through a SQLite trigger.
+  // D1 may count trigger effects as additional changes, so require a
+  // positive receipt rather than assuming exactly one total changed row.
   if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
-     receipt.meta.changes!==1){
+     receipt.meta.changes<1){
    const raced=await readPrevious();
    if(raced)return replay(raced);
    return {status:503,code:'ACADEMY_ACTIVATION_STORAGE_UNAVAILABLE'} as const;
