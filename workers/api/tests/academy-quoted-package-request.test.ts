@@ -82,6 +82,30 @@ test('one atomic SQL statement binds quoted version and rejects stale catalog',a
  assert.match(accepted.academyRequestId,/^[0-9a-f-]{36}$/);
 });
 
+test('zero-row quote race replays committed same-operation ACK after staff repricing',async()=>{
+ // Both POSTs passed the initial read. A commits, staff updates the quote,
+ // then B's atomic INSERT..SELECT sees an obsolete version and writes zero.
+ const committed={id:'44444444-4444-4444-8444-444444444444',
+  learnerId:LEARNER,actor:OWNER,packageId:PACKAGE,packageVersionId:VERSION};
+ const f=fixture({changes:0,priorAfterWrite:committed});
+ assert.deepEqual(await ownerPackageRequest(f.db,OWNER,LEARNER,request),
+  {status:200,code:'ACADEMY_REQUEST_REPLAY',academyRequestId:committed.id});
+ assert.equal(f.writes.length,1);
+ assert.equal(f.queries.filter(sql=>sql.includes('FROM academy_request_events WHERE operation_id=?')).length,2);
+});
+
+test('zero-row quote race never leaks another actor or version request',async()=>{
+ const committed={id:'44444444-4444-4444-8444-444444444444',
+  learnerId:LEARNER,actor:'foreign-owner',packageId:PACKAGE,packageVersionId:VERSION};
+ for(const prior of [committed,{...committed,actor:OWNER,
+  packageVersionId:'55555555-5555-4555-8555-555555555555'}]){
+  const f=fixture({changes:0,priorAfterWrite:prior});
+  assert.deepEqual(await ownerPackageRequest(f.db,OWNER,LEARNER,request),
+   {status:409,code:'ACADEMY_OPERATION_CONFLICT'});
+  assert.equal(f.writes.length,1);
+ }
+});
+
 test('foreign learner fails before replay or write, including a valid operationId',async()=>{
  const f=fixture({owned:false,prior:{id:'should-not-be-read'}});
  assert.deepEqual(await ownerPackageRequest(f.db,OWNER,LEARNER,request),

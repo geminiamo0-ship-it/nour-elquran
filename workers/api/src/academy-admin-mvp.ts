@@ -94,8 +94,13 @@ export async function ownerPackageRequest(db:CoreDatabase,subject:string,
     WHERE newer.package_id=p.package_id AND
     (newer.at_ms>p.at_ms OR (newer.at_ms=p.at_ms AND newer.id>p.id)))`)
   .bind(id,raw.operationId,learnerId,subject,now,raw.packageVersionId,raw.packageId).run();
-  if(!written.success||written.meta.changes!==1)
+  if(!written.success||written.meta.changes!==1){
+   // A competing same-operation request may have committed before staff
+   // repriced this quote. Zero-row INSERT..SELECT is not always a new request.
+   const raced=await readExisting();
+   if(raced)return replayResult(raced);
    return {status:409,code:'ACADEMY_PACKAGE_CHANGED'} as const;
+  }
  }catch(e){
   if(allowed(e)){
    // Two signed requests can both miss the pre-INSERT lookup. If the same

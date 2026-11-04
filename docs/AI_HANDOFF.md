@@ -1,3 +1,8 @@
+## 2026-11-04 — #326 zero-row quote race handoff
+- Verified previous Draft PR #325 exact HEAD `557e6c57bd829260b00e5bd740ffa6cfa5d2e5e3` had [Verify #41672164541](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41672164541) SUCCESS 4/4; main remained `4c15b59f`.
+- Fixed source-level idempotency race: a same-operation request can commit, staff reprice, and another in-flight POST receive zero-row `INSERT..SELECT` instead of UNIQUE. Re-read on zero-row, exact-match replay 200, mismatch 409 without ID. Added Node regressions. No local test execution or new CI result is claimed.
+- NEXT: inspect latest PR #325 head and GitHub Verify; then independent security review, signed synthetic Dev guardian/two-sibling/staff reprice race and 360/390 browser QA. Keep Draft/Issues OPEN; no Production, paid integration, WhatsApp, child audio or ink changes.
+
 ## 2026-11-03 — #326 continuation: signed sibling stale/fresh quote native test
 - Latest review of GitHub: main `4c15b59f713f41e2be9999bb082118cc48496c10`; PR #325 remains Draft. Previous exact-head `1e17c4c908837b528fcc9dd67f20dbb0e7e36047` Verify [#41662166101](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41662166101) succeeded 4/4 (code-quality, repository-policy, governance-tests, cloudflare-local-d1).
 - Added `scripts/cloudflare-auth-smoke.mjs` regression in `80cee0dd27625201207d2ef96ebdb6074a360c78`: real local signed sibling has no pending request, rejects outdated version after staff repricing without a write, then accepts only freshly displayed new version at new recorded price; GET excludes the other sibling's request.
