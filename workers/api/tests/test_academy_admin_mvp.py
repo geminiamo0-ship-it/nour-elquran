@@ -79,6 +79,29 @@ class AcademyAdminD1(unittest.TestCase):
   self.assertEqual(versions[1],(first,1800,T+1))
   self.assertEqual(versions[2][2],T)
   self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
+ def test_package_clock_keeps_disabled_version_current_under_clock_skew(self):
+  # An earlier wall clock must never resurrect a previous active offer.
+  initial=self.version(price=1600,at=T+1000)
+  disabled=str(uuid4())
+  reenabled=str(uuid4())
+  for version,price,active in ((disabled,1800,0),(reenabled,2000,1)):
+   self.db.execute(PKG_ATOMIC,(version,str(uuid4()),self.package,'staff',
+    'Eight Quran lessons',price,8,active,T-500,self.package,T-500))
+  current=self.db.execute("""SELECT id,active,price_egp,at_ms
+   FROM academy_package_events WHERE package_id=?
+   ORDER BY at_ms DESC,id DESC LIMIT 1""",(self.package,)).fetchone()
+  self.assertEqual(current,(reenabled,1,2000,T+1002))
+  self.assertEqual(self.db.execute("""SELECT id,active,at_ms
+   FROM academy_package_events WHERE id=?""",(disabled,)).fetchone(),
+   (disabled,0,T+1001))
+  # An unrelated package starts its own clock, not this package's future clock.
+  other=str(uuid4())
+  other_version=str(uuid4())
+  self.db.execute(PKG_ATOMIC,(other_version,str(uuid4()),other,'staff',
+   'Other Quran lessons',1200,4,1,T-500,other,T-500))
+  self.assertEqual(self.db.execute("""SELECT at_ms FROM academy_package_events
+   WHERE id=?""",(other_version,)).fetchone(),(T-500,))
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
  def test_foreign_owner_staff_revocation_and_legacy_credit_constraints(self):
   p=self.version()
   with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_OWNER_DENIED'):
