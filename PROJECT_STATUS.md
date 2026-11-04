@@ -1,3 +1,7 @@
+## 2026-11-04 — #315 admin activation retry UI (Draft #327)
+- Source audit found the Admin form cleared its pending operationId on an HTTP 503, although the Worker now correctly reports an unknown D1 commit outcome. A second submit could mint a new activation operation. Fixed `AdminAcademyMvp.tsx` to retain exact pending payload for 408/425/429/5xx, block other commands until reconciliation, and clear pending state on staff-session switch. Added focused Vitest status classification checks. Commits 0bcb6ba2 and 633dc53a.
+- Exact-head CI and signed Dev ACK-lost→same-op replay, real D1 cycle readback, staff revocation, sibling isolation and mobile QA remain pending. No Production/payment changes.
+
 ## 2026-11-04 — #315 academy activation ACK and immutable audit replay (Draft PR #327)
 - Source review found that staffActivate acknowledged HTTP 201 without inspecting D1 .run() success/changes, and same operationId replay ignored the original operator note. A failed or ambiguous D1 write could appear activated, or a changed audit attestation could be silently treated as the original.
 - Draft #327 now requires an affirmative positive D1 receipt (including trigger side effects), returns safe 503 for unknown outcome, recovers exact committed operations after an abort, and binds replay to actor, learner, version, request and note. New Node regression tests cover zero/failed receipt, replay note collision, abort and role denial.
