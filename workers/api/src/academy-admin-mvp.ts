@@ -155,6 +155,12 @@ export async function staffPackage(db:CoreDatabase,subject:string,raw:unknown,no
    // Return its existing immutable ACK, not an invented new version.
    const raced=await readPrior();
    if(raced)return replay(raced);
+   // A transport/transaction abort has an unknown commit outcome, not a
+   // proven business conflict. The client must retain its operationId and
+   // reconcile through the same idempotent request rather than inventing
+   // a new edit after a misleading 409.
+   if(e instanceof Error&&!/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_PACKAGE_STORAGE_UNAVAILABLE'} as const;
    return {status:409,code:'ACADEMY_PACKAGE_DENIED'} as const;
   }
   throw e;
