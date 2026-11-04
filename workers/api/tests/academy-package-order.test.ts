@@ -10,7 +10,8 @@ const command={operationId:OP,packageId:PACKAGE,title:'Eight Quran classes',
  priceEgp:1600,sessions:8,active:true};
 
 function fixture(options:{authorized?:boolean;existing?:Record<string,unknown>|null;
- raced?:Record<string,unknown>|null;writeError?:string}={}){
+ raced?:Record<string,unknown>|null;writeError?:string;
+ writeResult?:{success:boolean;meta:{changes:number}}}={}){
  const writes:Array<{sql:string;values:unknown[]}>=[],queries:string[]=[];
  let inserted=false;
  const db={
@@ -27,7 +28,7 @@ function fixture(options:{authorized?:boolean;existing?:Record<string,unknown>|n
     async run(){
      inserted=true;writes.push({sql,values});
      if(options.writeError)throw Error(options.writeError);
-     return {success:true,meta:{changes:1}};
+     return options.writeResult??{success:true,meta:{changes:1}};
     },
    };
   },
@@ -104,4 +105,16 @@ test('unexpected D1 outage propagates rather than inventing a saved package',asy
  const f=fixture({writeError:'D1_ERROR: database unavailable'});
  await assert.rejects(staffPackage(f.db,STAFF,command),/D1_ERROR: database unavailable/);
  assert.equal(f.writes.length,1);
+});
+
+test('resolved D1 failure or zero affected rows cannot acknowledge a package price',async()=>{
+ for(const receipt of [
+  {success:false,meta:{changes:0}},
+  {success:true,meta:{changes:0}},
+ ]) {
+  const f=fixture({writeResult:receipt});
+  assert.deepEqual(await staffPackage(f.db,STAFF,command),
+   {status:503,code:'ACADEMY_PACKAGE_STORAGE_UNAVAILABLE'});
+  assert.equal(f.writes.length,1);
+ }
 });
