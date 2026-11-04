@@ -1,3 +1,7 @@
+## 2026-11-04 — #315 D1 package ACK fail-closed handoff
+- PR #327 source review found a false-positive write acknowledgment: `staffPackage` did not check D1 `run().success` or `meta.changes`. It now returns a sanitized 503 on resolved failed/no-op writes, with Node tests for both paths. Source commit e61428b0; test commit 924df038. No secrets, payment provider, Production or flag changes.
+- Prior `6e85d31a` CI [41789273070](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41789273070) succeeded 4/4; **new exact-head CI still required**. Keep Draft and #315 OPEN until independent SQL/privacy review, signed Cloudflare Dev staff concurrency + guardian quote/sibling E2E and mobile QA; check overlap with #325 before merge.
+
 ## 2026-11-04 — #315 replay collision and outage tests on Draft PR #327
 - Confirmed prior PR #327 head `d5078b43` GitHub Verify 41772506357 SUCCESS 4/4; then added `workers/api/tests/academy-package-order.test.ts` regressions at [dafcaa40](https://github.com/geminiamo0-ship-it/nour-elquran/commit/dafcaa407beaffa07925a76515ffffe838367423): cross-staff/package operationId collision both before INSERT and after UNIQUE race must return 409 without other actor's ACK; unrelated D1 outage propagates.
 - NEW HEAD CI must be checked before claiming success. Do not merge #327 or overlapping #325 without independent review, signed Dev quote/price concurrency/sibling test and mobile visual acceptance. #315 stays OPEN; no Production, financial provider, WhatsApp, child media or cumulative-ink changes.
