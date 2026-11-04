@@ -127,6 +127,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   // A remounted academy panel shares the same unresolved in-tab command.
   if(!academyPendingStore.hold(operation))return;
   const attempt={};
+  // Do not race a still-running old-panel POST after a remount.
+  if(!academyPendingStore.beginAttempt(operation,attempt))return;
   sending.current={session,attempt};
   const startedSession=session;
   const stillCurrent=()=>academyAdminSameSession(startedSession,currentSession.current);
@@ -162,6 +164,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     setResult({phase:'uncertain',message:uncertainMessage});
    }
   }finally{
+   academyPendingStore.finishAttempt(attempt);
    // A late old-session request must not unlock a newer session's command.
    if(sending.current?.attempt===attempt)sending.current=null;
   }
