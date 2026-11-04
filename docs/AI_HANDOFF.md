@@ -1,3 +1,8 @@
+### 2026-11-04 — #315 staff request rejection retry receipt (Draft PR #327)
+- Source candidate: `workers/api/src/academy-admin-mvp.ts` now treats staff rejection as an idempotent audit event, reconciling the exact actor/request/reason by operationId before/after ambiguous D1 writes. A failed receipt is 503 unless a committed exact event is found; a collision is 409. Verified staff authorization is checked before receipt lookup.
+- Added `workers/api/tests/academy-rejection-receipt.test.ts` for replay, zero-change, lost ACK, collision and revoked-role cases. No local test or exact-head CI pass claimed yet.
+- NEXT: verify PR #327 latest SHA in GitHub Actions; request independent review and isolated signed Cloudflare Dev role + retry testing. This does NOT fix full page reload recovery of an unknown activation, and does not authorize Production or payments.
+
 ### 2026-11-04 — #315 remount fence handoff (Draft PR #327)
 - Prior PR #327 head `dc246494` passed [Verify #41901929480](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41901929480) 4/4. **Recheck exact new HEAD CI** after source/test/docs commits.
 - `apps/web/src/features/admin/admin-academy-pending.ts` is a per-JS-runtime, memory-only store. `AdminAcademyMvp.tsx` recovers the same pending command across component unmount/remount for the same authenticated staff actor, denies unrelated new operations, and clears on confirmed ACK/definitive error. Different staff actors cannot inherit payload; late old ACK cannot clear another operation. The store's attempt token rejects concurrent retries while the original POST is still running, including across a remount. New `admin-academy-pending.test.ts` uses synthetic IDs.
