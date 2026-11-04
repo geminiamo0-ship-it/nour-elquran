@@ -10,7 +10,8 @@ const OP='33333333-3333-4333-8333-333333333333';
 const request={operationId:OP,packageId:PACKAGE,packageVersionId:VERSION};
 
 function fixture(options:{owned?:boolean;prior?:Record<string,unknown>|null;
- priorAfterWrite?:Record<string,unknown>|null;writeError?:string;changes?:number}={}){
+ priorAfterWrite?:Record<string,unknown>|null;writeError?:string;changes?:number;
+ success?:boolean}={}){
  const writes:Array<{sql:string;values:unknown[]}>=[],queries:string[]=[];
  let wrote=false;
  const db={
@@ -31,7 +32,7 @@ function fixture(options:{owned?:boolean;prior?:Record<string,unknown>|null;
      writes.push({sql,values});
      wrote=true;
      if(options.writeError)throw Error(options.writeError);
-     return {success:true,meta:{changes:options.changes??1}};
+     return {success:options.success??true,meta:{changes:options.changes??1}};
     },
    };
   },
@@ -144,4 +145,39 @@ test('unrelated pending-request constraint still denies without claiming a repla
  assert.deepEqual(await ownerPackageRequest(f.db,OWNER,LEARNER,request),
   {status:409,code:'ACADEMY_REQUEST_DENIED'});
  assert.equal(f.writes.length,1);
+});
+
+
+test('D1 failed write receipt never masquerades as a stale guardian quote',async()=>{
+ for(const changes of [0,1]){
+  const f=fixture({success:false,changes});
+  assert.deepEqual(await ownerPackageRequest(f.db,OWNER,LEARNER,request),
+   {status:503,code:'ACADEMY_REQUEST_STORAGE_UNAVAILABLE'});
+  assert.equal(f.writes.length,1);
+ }
+});
+
+test('failed D1 receipt after commit recovers only the exact immutable operation',async()=>{
+ const committed={id:'44444444-4444-4444-8444-444444444444',
+  learnerId:LEARNER,actor:OWNER,packageId:PACKAGE,packageVersionId:VERSION};
+ const f=fixture({success:false,changes:0,priorAfterWrite:committed});
+ assert.deepEqual(await ownerPackageRequest(f.db,OWNER,LEARNER,request),
+  {status:200,code:'ACADEMY_REQUEST_REPLAY',academyRequestId:committed.id});
+ const foreign=fixture({success:false,changes:0,
+  priorAfterWrite:{...committed,actor:'another-owner'}});
+ assert.deepEqual(await ownerPackageRequest(foreign.db,OWNER,LEARNER,request),
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'});
+});
+
+test('ambiguous D1 request abort is 503 unless a matching operation committed',async()=>{
+ for(const message of ['Transaction aborted','D1_ERROR: request aborted']){
+  const unknown=fixture({writeError:message,priorAfterWrite:null});
+  assert.deepEqual(await ownerPackageRequest(unknown.db,OWNER,LEARNER,request),
+   {status:503,code:'ACADEMY_REQUEST_STORAGE_UNAVAILABLE'});
+  const committed={id:'44444444-4444-4444-8444-444444444444',
+   learnerId:LEARNER,actor:OWNER,packageId:PACKAGE,packageVersionId:VERSION};
+  const replay=fixture({writeError:message,priorAfterWrite:committed});
+  assert.deepEqual(await ownerPackageRequest(replay.db,OWNER,LEARNER,request),
+   {status:200,code:'ACADEMY_REQUEST_REPLAY',academyRequestId:committed.id});
+ }
 });
