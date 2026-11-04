@@ -1,3 +1,9 @@
+## 2026-11-04 — #315 contact-setting ambiguous D1 write receipt (PR #327; source candidate)
+- The signed staff WhatsApp contact-setting command previously acknowledged D1 writes without inspecting `success/meta.changes` and treated same-`operationId` retries after lost ACK as 409, leaving the Admin panel unable to reconcile the original write.
+- `staffContact` now requires a positive D1 receipt, performs staff-authorized exact actor+number operation lookup before writes and after ambiguous outcomes, returns 200 only for an identical committed replay, 409 for collisions, and 503 when commit is unproven. No WhatsApp message is sent and no payment or provider is enabled.
+- Synthetic Node regression `workers/api/tests/academy-contact-receipt.test.ts` covers receipt failure, exact replay, other staff/number collision, abort/lost ACK, and revoked staff. Commits `0e620ac4` and `b4b15c39`; exact-head GitHub CI is **not yet verified**. Local test attempt was blocked by unavailable GitHub DNS, not a test pass.
+- NEXT: inspect PR #327 exact-head CI, independently review staff authorization and D1 semantics, test signed isolated Cloudflare Dev same-operation replay and 360/390 Admin UI. PR stays Draft; Production, pricing, payments, child data, audio, and feature flags unchanged.
+
 ## 2026-11-04 — #315 staff rejection uncertain-write reconciliation (Draft PR #327)
 - Added exact-operation D1 receipt read for staff request rejection, requiring a verified current staff grant before reading or writing. Replaying the identical actor/request/reason returns 200; a changed actor/request/reason returns non-disclosing 409.
 - Rejection INSERT now requires affirmative D1 write success and positive changes; a missing receipt or ambiguous abort returns 503 unless the exact committed event is found. This prevents a lost ACK from being misrepresented as a new rejection or definitive business denial.
