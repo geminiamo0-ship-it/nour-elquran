@@ -118,3 +118,23 @@ test('resolved D1 failure or zero affected rows cannot acknowledge a package pri
   assert.equal(f.writes.length,1);
  }
 });
+
+
+test('ambiguous D1 transaction abort is unavailable, never a proven 409 conflict',async()=>{
+ for(const message of ['D1_ERROR: request aborted','Transaction aborted']){
+  const f=fixture({writeError:message});
+  assert.deepEqual(await staffPackage(f.db,STAFF,command),
+   {status:503,code:'ACADEMY_PACKAGE_STORAGE_UNAVAILABLE'});
+  assert.equal(f.writes.length,1);
+ }
+});
+
+test('an abort after commit still replays the same immutable staff operation',async()=>{
+ const committed={id:'33333333-3333-4333-8333-333333333333',
+  actor:STAFF,packageId:PACKAGE,title:command.title,priceEgp:1600,
+  sessions:8,active:1};
+ const f=fixture({writeError:'Transaction aborted',raced:committed});
+ assert.deepEqual(await staffPackage(f.db,STAFF,command),
+  {status:200,code:'ACADEMY_PACKAGE_REPLAY',packageId:PACKAGE});
+ assert.equal(f.writes.length,1);
+});
