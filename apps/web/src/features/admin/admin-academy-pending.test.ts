@@ -19,15 +19,39 @@ describe('academy pending settlement fence across component remount #315',()=>{
   store.clearIfSame(pending);
   expect(store.forActor('synthetic-staff-a')).toBeNull();
  });
+ it('prevents a remounted panel from racing the original in-flight POST',()=>{
+  const store=createAcademyPendingStore();
+  const pending=first();
+  const originalAttempt={};
+  const retryAttempt={};
+  expect(store.hold(pending)).toBe(true);
+  expect(store.beginAttempt(pending,originalAttempt)).toBe(true);
+  expect(store.forActor('synthetic-staff-a')).toBe(pending);
+  expect(store.beginAttempt(pending,retryAttempt)).toBe(false);
+  store.finishAttempt({}); // unrelated request cannot unlock the original
+  expect(store.beginAttempt(pending,retryAttempt)).toBe(false);
+  store.finishAttempt(originalAttempt);
+  expect(store.beginAttempt(pending,retryAttempt)).toBe(true);
+  store.clearIfSame(pending);
+  expect(store.forActor('synthetic-staff-a')).toBeNull();
+  store.finishAttempt(retryAttempt);
+ });
  it('discards the old actor payload on account switch and protects newer attempts',()=>{
   const store=createAcademyPendingStore();
   const old=first();
   const next={actorId:'synthetic-staff-b',path:'activate',payload:{operationId:'new'}};
   store.hold(old);
+  const oldAttempt={};
+  expect(store.beginAttempt(old,oldAttempt)).toBe(true);
   expect(store.forActor('synthetic-staff-b')).toBeNull();
   expect(store.hold(next)).toBe(true);
-  store.clearIfSame(old); // late response from old session
+  const nextAttempt={};
+  expect(store.beginAttempt(next,nextAttempt)).toBe(true);
+  store.finishAttempt(oldAttempt); // old finally cannot unlock new POST
+  expect(store.beginAttempt(next,{})).toBe(false);
+  store.clearIfSame(old); // late old ACK cannot erase new actor
   expect(store.forActor('synthetic-staff-b')).toBe(next);
+  store.finishAttempt(nextAttempt);
  });
  it('does not claim survival of a full reload or a separate tab',()=>{
   const current=createAcademyPendingStore();
