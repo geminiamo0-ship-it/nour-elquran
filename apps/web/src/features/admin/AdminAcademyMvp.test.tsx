@@ -1,6 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {academyAdminOutcomeIsUncertain,academyAdminSameSession,
- academyAdminSessionLockIsBusy,academyAdminPendingForActor} from './AdminAcademyMvp';
+ academyAdminSessionLockIsBusy,academyAdminPendingForActor,
+ academyAdminCommandAllowed} from './AdminAcademyMvp';
 
 describe('admin academy manual settlement retry semantics #315',()=>{
  it('preserves the original operation for ambiguous D1/proxy HTTP outcomes',()=>{
@@ -37,11 +38,17 @@ describe('admin academy same-actor uncertain operation recovery #315',()=>{
   expect(restored).toBe(pending);
   expect(restored?.payload).toBe(payload);
   expect((restored?.payload as typeof payload).operationId).toBe(payload.operationId);
+  expect(academyAdminCommandAllowed(pending,'synthetic-staff-a','activate',payload)).toBe(true);
+  expect(academyAdminCommandAllowed(pending,'synthetic-staff-a','activate',
+   {...payload})).toBe(false);
+  expect(academyAdminCommandAllowed(pending,'synthetic-staff-a','packages',payload)).toBe(false);
  });
  it('does not transfer an unresolved payment operation to a different staff account',()=>{
   const pending={actorId:'synthetic-staff-a',path:'activate',
    payload:{operationId:'44444444-4444-4444-8444-444444444444'}};
   expect(academyAdminPendingForActor(pending,'synthetic-staff-b')).toBeNull();
+  expect(academyAdminCommandAllowed(pending,'synthetic-staff-b','activate',
+   pending.payload)).toBe(true);
   expect(academyAdminPendingForActor(null,'synthetic-staff-a')).toBeNull();
  });
 });
