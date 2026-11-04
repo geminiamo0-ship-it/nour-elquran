@@ -1,3 +1,8 @@
+## 2026-11-04 — #315 fail-closed D1 package write receipt (Draft PR #327)
+- Independent source review found that `staffPackage` previously returned HTTP 201 whenever D1 `.run()` resolved, even if its typed `success` was false or `meta.changes` was zero. This could falsely confirm a price/version update that was not persisted.
+- Added an explicit successful-write/positive-changes guard returning sanitized 503 `ACADEMY_PACKAGE_STORAGE_UNAVAILABLE`; added Node regression for both resolved failure and zero affected rows. Commits [e61428b0](https://github.com/geminiamo0-ship-it/nour-elquran/commit/e61428b06adf0d01242b202ece7a86d73407cb3a), [924df038](https://github.com/geminiamo0-ship-it/nour-elquran/commit/924df038b2310da72bb50acc9704782fed69949c).
+- Earlier HEAD `6e85d31a` passed Verify [41789273070](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41789273070) 4/4, **not evidence for this change**. Next: inspect new exact-head CI, independent security review, signed isolated Dev two-staff pricing/guardian quote/sibling and 360/390 touch QA. Coordinate with Draft PR #325; do not merge or deploy Production.
+
 ## 2026-11-04 — #315 package replay isolation and D1 outage regression (PR #327 Draft)
 - Added Node regression on existing Draft PR #327: a reused package operationId belonging to another staff actor or package must return a non-disclosing 409 both before write and after a competing UNIQUE insert. An unrelated D1 outage must propagate rather than fabricate an ACK or classify as a replay.
 - Code commit [dafcaa40](https://github.com/geminiamo0-ship-it/nour-elquran/commit/dafcaa407beaffa07925a76515ffffe838367423), path `workers/api/tests/academy-package-order.test.ts`; no runtime behavior or production configuration changed.
