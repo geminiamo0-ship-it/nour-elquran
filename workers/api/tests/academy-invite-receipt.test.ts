@@ -48,9 +48,10 @@ test('one-use invitation token is disclosed only after verified D1 hash readback
  assert.equal(result.code,'ACADEMY_INVITE_ISSUED');
  assert.equal(f.writes.length,1);
  assert.match(f.writes[0]!.sql,/INSERT INTO academy_teacher_invites/);
- assert.equal(typeof result.token,'string');
- assert.match(result.token!,/^[0-9a-f]{64}$/);
- const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(result.token));
+ const token='token' in result?result.token:'';
+ assert.equal(typeof token,'string');
+ assert.match(token,/^[0-9a-f]{64}$/);
+ const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token));
  const hex=[...new Uint8Array(digest)].map(n=>n.toString(16).padStart(2,'0')).join('');
  assert.equal(f.getRow()?.tokenHash,hex);
  assert.equal(f.getRow()?.expiresAtMs,NOW+7*86400000);
@@ -70,14 +71,14 @@ test('unproven invite INSERT never returns the one-time token',async()=>{
  const noReceipt=fixture({receipt:{success:false,meta:{changes:0}}});
  const recovered=await staffInvite(noReceipt.db,STAFF,{operationId:OP},NOW);
  assert.equal(recovered.status,201);
- assert.equal(typeof recovered.token,'string');
+ assert.equal('token' in recovered?typeof recovered.token:'missing','string');
 });
 
 test('lost D1 acknowledgement recovers only the same newly generated token',async()=>{
  const committed=fixture({writeError:'Transaction aborted'});
  const ok=await staffInvite(committed.db,STAFF,{operationId:OP},NOW);
  assert.equal(ok.status,201);
- assert.equal(typeof ok.token,'string');
+ assert.equal('token' in ok?typeof ok.token:'missing','string');
  const absent=fixture({writeError:'Transaction aborted',persist:false});
  assert.deepEqual(await staffInvite(absent.db,STAFF,{operationId:OP},NOW),
   {status:503,code:'ACADEMY_INVITE_STORAGE_UNAVAILABLE'});
