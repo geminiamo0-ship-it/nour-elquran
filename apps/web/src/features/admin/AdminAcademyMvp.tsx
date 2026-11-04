@@ -52,6 +52,10 @@ export function academyAdminOutcomeIsUncertain(status:number){
 export function academyAdminSameSession<T>(started:T,current:T){
  return started===current;
 }
+/** An unfinished request from an old staff session must not lock the new one. */
+export function academyAdminSessionLockIsBusy<T>(inFlightSession:T|null,session:T){
+ return inFlightSession!==null&&academyAdminSameSession(inFlightSession,session);
+}
 async function submit(path:string,command:unknown){
  const res=await fetch('/v1/staff/academy/'+path,{method:'POST',
   credentials:'same-origin',cache:'no-store',redirect:'error',
@@ -79,7 +83,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const [whatsapp,setWhatsapp]=useState('');
  const [inviteUrl,setInviteUrl]=useState('');
  const [pendingOp,setPendingOp]=useState<{path:string;payload:unknown}|null>(null);
- const sending=useRef(false);
+ const sending=useRef<{session:AccountSession;attempt:object}|null>(null);
  const currentSession=useRef(session);
  currentSession.current=session;
  useEffect(()=>{
@@ -94,10 +98,11 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  },[session,refresh]);
  const busy=result.phase==='busy'||result.phase==='uncertain';
  async function send(path:string,payload:unknown){
-  if(sending.current)return;
+  if(academyAdminSessionLockIsBusy(sending.current?.session??null,session))return;
+  const attempt={};
+  sending.current={session,attempt};
   const startedSession=session;
   const stillCurrent=()=>academyAdminSameSession(startedSession,currentSession.current);
-  sending.current=true;
   setResult({phase:'busy',message:'جارٍ تسجيل العملية لدى الخادم…'});
   setPendingOp({path,payload});
   try{
@@ -126,7 +131,10 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     setResult({phase:'uncertain',message:
       'تعذّر معرفة نتيجة الاتصال. لا تنشئ طلب تفعيل جديدًا؛ أعد نفس العملية بمعرّفها.'});
    }
-  }finally{sending.current=false;}
+  }finally{
+   // A late old-session request must not unlock a newer session's command.
+   if(sending.current?.attempt===attempt)sending.current=null;
+  }
  }
  function guard(event:FormEvent,action:()=>void){
   event.preventDefault();if(!confirmed||busy||!data)return;action();
