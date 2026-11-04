@@ -2,6 +2,7 @@
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import type {AccountSession} from '@/features/account';
 import styles from './AdminAcademyMvp.module.css';
+import {academyPendingStore,type AcademyPendingCommand} from './admin-academy-pending';
 
 type Package={id:string;packageId:string;title:string;priceEgp:number;sessions:number;active:number};
 type Request={id:string;learnerId:string;learnerName:string;title:string;priceEgp:number;
@@ -12,7 +13,7 @@ type Academy={code:string;packages:Package[];requests:Request[];invites:Invite[]
  whatsappNumber:string|null};
 type Result={phase:'idle'|'busy'|'done'|'error'|'uncertain';message:string};
 type Mode='packages'|'requests'|'invites'|'contact';
-type PendingOp={actorId:string;path:string;payload:unknown};
+type PendingOp=AcademyPendingCommand;
 const uncertainMessage='تعذّر تأكيد العملية السابقة. لا تبدأ تفعيلًا جديدًا؛ أعد نفس العملية بمعرّفها الأصلي.';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const iso=()=>crypto.randomUUID();
@@ -105,7 +106,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   setData(null);setInviteUrl('');
   // Session objects change on re-authentication. Do not lose an uncertain
   // activation's original operationId when the authenticated actor is unchanged.
-  const held=academyAdminPendingForActor(pendingOpRef.current,session.user.id);
+  const held=academyPendingStore.forActor(session.user.id);
   pendingOpRef.current=held;
   setPendingOp(held);
   setResult(held?{phase:'uncertain',message:uncertainMessage}:
@@ -119,10 +120,12 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const busy=result.phase==='busy'||result.phase==='uncertain';
  async function send(path:string,payload:unknown){
   if(academyAdminSessionLockIsBusy(sending.current?.session??null,session))return;
-  const held=academyAdminPendingForActor(pendingOpRef.current,session.user.id);
+  const held=academyPendingStore.forActor(session.user.id);
   // A new financial operation cannot replace an unresolved original payload.
   if(!academyAdminCommandAllowed(held,session.user.id,path,payload))return;
   const operation:PendingOp=held??{actorId:session.user.id,path,payload};
+  // A remounted academy panel shares the same unresolved in-tab command.
+  if(!academyPendingStore.hold(operation))return;
   const attempt={};
   sending.current={session,attempt};
   const startedSession=session;
@@ -135,6 +138,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    if(!stillCurrent())return;
    setResult({phase:'done',message:'سجّل الخادم العملية: '+ack.code});
    setConfirmed(false);setReason('');
+   academyPendingStore.clearIfSame(operation);
    if(pendingOpRef.current===operation){pendingOpRef.current=null;setPendingOp(null);}
    if(path==='invites'&&typeof (ack as {token?:unknown}).token==='string'){
     const token=(ack as {code:string;token?:string}).token!;
@@ -149,7 +153,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   }catch(e){
    if(!stillCurrent())return;
    if(e instanceof AcademyCommandError&&!academyAdminOutcomeIsUncertain(e.status)){
-    if(pendingOpRef.current===operation){pendingOpRef.current=null;setPendingOp(null);}
+    academyPendingStore.clearIfSame(operation);
+   if(pendingOpRef.current===operation){pendingOpRef.current=null;setPendingOp(null);}
     setResult({phase:'error',message:operationErrors[e.code]??'تعذّر تنفيذ العملية: '+e.code});
    }else{
     // Keep the immutable payload for an explicit same-operation retry.
