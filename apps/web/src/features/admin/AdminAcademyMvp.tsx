@@ -43,6 +43,11 @@ const operationErrors:Record<string,string>={
 class AcademyCommandError extends Error{
  constructor(readonly code:string,readonly status:number){super(code);}
 }
+/** A 5xx or retryable HTTP response cannot prove whether D1 committed.
+ * Preserve the original operationId and prohibit a second financial command. */
+export function academyAdminOutcomeIsUncertain(status:number){
+ return status===408||status===425||status===429||status>=500;
+}
 async function submit(path:string,command:unknown){
  const res=await fetch('/v1/staff/academy/'+path,{method:'POST',
   credentials:'same-origin',cache:'no-store',redirect:'error',
@@ -74,13 +79,14 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  useEffect(()=>{
   const ctrl=new AbortController();
   setData(null);setResult({phase:'idle',message:''});setInviteUrl('');
+  setPendingOp(null);
   void readAcademy(ctrl.signal).then(v=>{
    if(!ctrl.signal.aborted){setData(v);setWhatsapp(v.whatsappNumber??'');}
   }).catch(e=>{if(!ctrl.signal.aborted)setResult({phase:'error',
    message:e instanceof Error?e.message:'تعذّر تحميل البيانات'});});
   return()=>ctrl.abort();
  },[session,refresh]);
- const busy=result.phase==='busy';
+ const busy=result.phase==='busy'||result.phase==='uncertain';
  async function send(path:string,payload:unknown){
   if(sending.current)return;
   sending.current=true;
@@ -99,10 +105,12 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     void readAcademy(ctrl.signal).then(v=>setData(v)).catch(()=>{});
    }
   }catch(e){
-   if(e instanceof AcademyCommandError){
+   if(e instanceof AcademyCommandError&&!academyAdminOutcomeIsUncertain(e.status)){
     setPendingOp(null);
     setResult({phase:'error',message:operationErrors[e.code]??'تعذّر تنفيذ العملية: '+e.code});
    }else{
+    // Keep the immutable payload for an explicit same-operation retry.
+    // A 503 can mean the D1 write committed but its ACK was lost.
     setResult({phase:'uncertain',message:
       'تعذّر معرفة نتيجة الاتصال. لا تنشئ طلب تفعيل جديدًا؛ أعد نفس العملية بمعرّفها.'});
    }
