@@ -75,3 +75,33 @@ test('staff role denial and unrelated write constraint fail closed',async()=>{
   {status:409,code:'ACADEMY_PACKAGE_DENIED'});
  assert.equal(blocked.writes.length,1);
 });
+
+test('operation replay never acknowledges another staff actor or package',async()=>{
+ const saved={id:'33333333-3333-4333-8333-333333333333',
+  actor:STAFF,packageId:PACKAGE,title:command.title,priceEgp:1600,
+  sessions:8,active:1};
+ for(const collision of [
+  {...saved,actor:'different-synthetic-staff'},
+  {...saved,packageId:'44444444-4444-4444-8444-444444444444'},
+ ]){
+  // An existing operation collision must be rejected before any new write.
+  const preexisting=fixture({existing:collision});
+  assert.deepEqual(await staffPackage(preexisting.db,STAFF,command),
+   {status:409,code:'ACADEMY_OPERATION_CONFLICT'});
+  assert.equal(preexisting.writes.length,0);
+
+  // The same collision can arrive only after another request wins the
+  // UNIQUE constraint. It must never return the other actor's package ID.
+  const raced=fixture({writeError:'UNIQUE constraint failed: academy_package_events.operation_id',
+   raced:collision});
+  assert.deepEqual(await staffPackage(raced.db,STAFF,command),
+   {status:409,code:'ACADEMY_OPERATION_CONFLICT'});
+  assert.equal(raced.writes.length,1);
+ }
+});
+
+test('unexpected D1 outage propagates rather than inventing a saved package',async()=>{
+ const f=fixture({writeError:'D1_ERROR: database unavailable'});
+ await assert.rejects(staffPackage(f.db,STAFF,command),/D1_ERROR: database unavailable/);
+ assert.equal(f.writes.length,1);
+});
