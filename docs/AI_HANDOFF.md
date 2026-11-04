@@ -1,3 +1,8 @@
+### 2026-11-04 — #315 contact receipt recovery in Draft PR #327
+- Read current main/PR/Issues/Verify and mandatory AGENTS, status, master plan, engineering, test and security documents before changes. Existing Verify #41912256612 on older `f5327594` was 4/4, NOT evidence for this candidate.
+- Staff WhatsApp contact settings had an ambiguous-write/idempotency gap. Source commit `0e620ac4` now rechecks immutable `operationId` receipt scoped to the current authorized staff actor and exact number, requires D1 positive write result, and fails closed 503 on unproven commit; `b4b15c39` adds synthetic regression for D1 abort/lost ACK, collisions and revoked staff. No message is sent.
+- PROJECT_STATUS updated in `94319d68`. NEXT inspect exact-head CI and fix failures; independent privacy review and signed Cloudflare Dev staff replay/actor isolation/360–390px still required. No local test success: runtime could not resolve github.com for clone. Keep Draft #327 and #315 OPEN, no Production, money or child media changes.
+
 ### 2026-11-04 — #315 staff request rejection retry receipt (Draft PR #327)
 - Source candidate: `workers/api/src/academy-admin-mvp.ts` now treats staff rejection as an idempotent audit event, reconciling the exact actor/request/reason by operationId before/after ambiguous D1 writes. A failed receipt is 503 unless a committed exact event is found; a collision is 409. Verified staff authorization is checked before receipt lookup.
 - Added `workers/api/tests/academy-rejection-receipt.test.ts` for replay, zero-change, lost ACK, collision and revoked-role cases. No local test or exact-head CI pass claimed yet.
