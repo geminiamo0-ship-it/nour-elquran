@@ -1,3 +1,8 @@
+## 2026-11-05 — #315 Draft PR #327: exact-head CI lint repair (source only)
+- GitHub Verify [#41920624614](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41920624614) completed **failure** at `f0f3876c`: `code-quality` ESLint reported two unused `_values` rest parameters in synthetic D1 fixtures; other three jobs (`repository-policy`, `governance-tests`, `cloudflare-local-d1`) passed. This is NOT a successful 4/4 run.
+- Fixed both fixture bindings without changing Worker logic: `workers/api/tests/academy-contact-receipt.test.ts` (`c801a600`) and `workers/api/tests/academy-rejection-receipt.test.ts` (`8b4483ab`); each now explicitly consumes the rest argument via `void values`. No local test success claimed; fresh exact-head CI remains to be checked.
+- NEXT: inspect GitHub Verify for final docs HEAD, fix any remaining failure; independent security review and signed Cloudflare Dev staff receipt/replay, actor isolation and 360/390 UI gates. Keep #315 OPEN and PR #327 Draft; no merge, Production, payments, WhatsApp send, child data/audio or cumulative-ink activation.
+
 ## 2026-11-04 — #315 contact-setting ambiguous D1 write receipt (PR #327; source candidate)
 - The signed staff WhatsApp contact-setting command previously acknowledged D1 writes without inspecting `success/meta.changes` and treated same-`operationId` retries after lost ACK as 409, leaving the Admin panel unable to reconcile the original write.
 - `staffContact` now requires a positive D1 receipt, performs staff-authorized exact actor+number operation lookup before writes and after ambiguous outcomes, returns 200 only for an identical committed replay, 409 for collisions, and 503 when commit is unproven. No WhatsApp message is sent and no payment or provider is enabled.
