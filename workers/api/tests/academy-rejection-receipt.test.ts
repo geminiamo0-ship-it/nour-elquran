@@ -17,7 +17,7 @@ function fixture(options:{authorized?:boolean;prior?:Record<string,unknown>|null
  const db={
   prepare(sql:string){
    return {
-    bind(..._values:unknown[]){return this;},
+    bind(...values:unknown[]){void values;return this;},
     async first(){
      if(sql.includes('FROM staff_grants'))
       return options.authorized===false?null:{subject:STAFF};
