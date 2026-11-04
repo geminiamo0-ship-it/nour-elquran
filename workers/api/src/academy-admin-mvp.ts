@@ -94,7 +94,14 @@ export async function ownerPackageRequest(db:CoreDatabase,subject:string,
     WHERE newer.package_id=p.package_id AND
     (newer.at_ms>p.at_ms OR (newer.at_ms=p.at_ms AND newer.id>p.id)))`)
   .bind(id,raw.operationId,learnerId,subject,now,raw.packageVersionId,raw.packageId).run();
-  if(!written.success||written.meta.changes!==1){
+  // D1 can resolve with a failed or incomplete write receipt. A stale
+  // quote is a proven zero-row success, not an uncertain storage outcome.
+  if(written.success!==true||!Number.isSafeInteger(written.meta?.changes)){
+   const raced=await readExisting();
+   if(raced)return replayResult(raced);
+   return {status:503,code:'ACADEMY_REQUEST_STORAGE_UNAVAILABLE'} as const;
+  }
+  if(written.meta.changes!==1){
    // A competing same-operation request may have committed before staff
    // repriced this quote. Zero-row INSERT..SELECT is not always a new request.
    const raced=await readExisting();
@@ -108,6 +115,10 @@ export async function ownerPackageRequest(db:CoreDatabase,subject:string,
    // falsely denying a legitimate retry. Never disclose another actor's ID.
    const raced=await readExisting();
    if(raced)return replayResult(raced);
+   // A D1 abort may have committed despite a lost ACK. Do not describe an
+   // unknown transport outcome as a confirmed quote/business conflict.
+   if(e instanceof Error&&!/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_REQUEST_STORAGE_UNAVAILABLE'} as const;
    return {status:409,code:'ACADEMY_REQUEST_DENIED'} as const;
   }
   throw e;
