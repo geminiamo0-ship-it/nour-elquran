@@ -17,7 +17,7 @@ const saved={actor:STAFF,learnerId:LEARNER,packageVersionId:VERSION,
 function fixture(options:{authorized?:boolean;prior?:Record<string,unknown>|null;
  afterWrite?:Record<string,unknown>|null;writeError?:string;
  receipt?:{success:boolean;meta:{changes:number}}}={}){
- const writes:Array<{sql:string;values:unknown[]}=[];
+ const writes:Array<{sql:string;values:unknown[]}>=[];
  let attempted=false;
  const db={
   prepare(sql:string){
