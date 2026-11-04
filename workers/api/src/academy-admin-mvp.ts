@@ -137,13 +137,18 @@ export async function staffPackage(db:CoreDatabase,subject:string,raw:unknown,no
   // The version clock must be calculated inside the same SQLite write as
   // INSERT. Two staff requests can otherwise read the same prior timestamp,
   // tie on at_ms, and expose the older edit as the current catalog version.
-  await db.prepare(`INSERT INTO academy_package_events
+  const receipt=await db.prepare(`INSERT INTO academy_package_events
    (id,operation_id,package_id,actor_subject,title,price_egp,sessions,active,at_ms)
    SELECT ?,?,?,?,?,?,?,?,
     MAX(?,COALESCE((SELECT MAX(at_ms)+1 FROM academy_package_events
      WHERE package_id=?),?))`)
   .bind(id,raw.operationId,raw.packageId,subject,raw.title,raw.priceEgp,
    raw.sessions,raw.active?1:0,now,raw.packageId,now).run();
+  // A resolved D1 response is not proof of a committed version. Do not
+  // acknowledge a package/price change when the write reports no success.
+  if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
+     receipt.meta.changes<1)
+   return {status:503,code:'ACADEMY_PACKAGE_STORAGE_UNAVAILABLE'} as const;
  }catch(e){
   if(allowed(e)){
    // A concurrent identical operation can win the UNIQUE constraint.
