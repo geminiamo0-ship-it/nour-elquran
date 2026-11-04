@@ -304,10 +304,37 @@ export async function staffReject(db:CoreDatabase,subject:string,raw:unknown,now
  !uuid(raw.operationId)||!uuid(raw.requestId)||!validNote(raw.reason))
  return {status:400,code:'ACADEMY_INVALID_REJECTION'} as const;
  if(!await canManageTeachers(db,subject))return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
- try{await db.prepare(`INSERT INTO academy_request_rejections
-  (id,operation_id,request_id,actor_subject,reason,at_ms) VALUES(?,?,?,?,?,?)`)
- .bind(crypto.randomUUID(),raw.operationId,raw.requestId,subject,raw.reason,now).run();}
- catch(e){if(allowed(e))return {status:409,code:'ACADEMY_REQUEST_REJECTION_DENIED'} as const;throw e;}
+ type RejectionReceipt={actor:string;requestId:string;reason:string};
+ const readPrior=()=>db.prepare(`SELECT actor_subject AS actor,request_id AS requestId,reason
+ FROM academy_request_rejections WHERE operation_id=?`)
+ .bind(raw.operationId).first<RejectionReceipt>();
+ const replay=(saved:RejectionReceipt)=>saved.actor===subject&&
+  saved.requestId===raw.requestId&&saved.reason===raw.reason?
+  {status:200,code:'ACADEMY_REQUEST_REJECTION_REPLAY'} as const:
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const prior=await readPrior();
+ if(prior)return replay(prior);
+ try{
+  const receipt=await db.prepare(`INSERT INTO academy_request_rejections
+   (id,operation_id,request_id,actor_subject,reason,at_ms) VALUES(?,?,?,?,?,?)`)
+  .bind(crypto.randomUUID(),raw.operationId,raw.requestId,subject,raw.reason,now).run();
+  if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
+     receipt.meta.changes<1){
+   const raced=await readPrior();
+   return raced?replay(raced):
+    {status:503,code:'ACADEMY_REJECTION_STORAGE_UNAVAILABLE'} as const;
+  }
+ }catch(e){
+  if(allowed(e)){
+   const raced=await readPrior();
+   if(raced)return replay(raced);
+   if(e instanceof Error&&/abort/i.test(e.message)&&
+      !/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_REJECTION_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:'ACADEMY_REQUEST_REJECTION_DENIED'} as const;
+  }
+  throw e;
+ }
  return {status:201,code:'ACADEMY_REQUEST_REJECTED'} as const;
 }
 export async function staffContact(db:CoreDatabase,subject:string,raw:unknown,now=Date.now()){
