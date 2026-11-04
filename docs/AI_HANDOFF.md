@@ -1,3 +1,7 @@
+### 2026-11-05 — #315 next action after CI lint failure (Draft PR #327)
+- Verified GitHub Verify [#41920624614](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41920624614) on old `f0f3876c`: `code-quality` FAILED due to two `@typescript-eslint/no-unused-vars` errors in `academy-contact-receipt.test.ts:19` and `academy-rejection-receipt.test.ts:20`; the other three jobs passed. Read full failing job log, not inferred from prior CI.
+- Applied smallest test-only lint fixes to existing PR branch: `c801a600`, `8b4483ab` (`void values` in synthetic D1 bind mocks). Worker code untouched. NEXT: verify exact HEAD after this handoff commit and all 4 CI jobs; if green, still require independent security review and signed isolated Cloudflare Dev staff replay/actor isolation, 360/390 UI, #325 integration. No merge or Production. Keep Issue #315 OPEN, PR #327 Draft.
+
 ### 2026-11-04 — #315 contact receipt recovery in Draft PR #327
 - Read current main/PR/Issues/Verify and mandatory AGENTS, status, master plan, engineering, test and security documents before changes. Existing Verify #41912256612 on older `f5327594` was 4/4, NOT evidence for this candidate.
 - Staff WhatsApp contact settings had an ambiguous-write/idempotency gap. Source commit `0e620ac4` now rechecks immutable `operationId` receipt scoped to the current authorized staff actor and exact number, requires D1 positive write result, and fails closed 503 on unproven commit; `b4b15c39` adds synthetic regression for D1 abort/lost ACK, collisions and revoked staff. No message is sent.
