@@ -11,10 +11,11 @@ export type AcademyPendingCommand={
 
 export function createAcademyPendingStore(){
  let held:AcademyPendingCommand|null=null;
+ let inFlight:{command:AcademyPendingCommand;attempt:object}|null=null;
  return {
   /** Discard sensitive old-actor data on a signed account switch. */
   forActor(actorId:string):AcademyPendingCommand|null{
-   if(held&&held.actorId!==actorId)held=null;
+   if(held&&held.actorId!==actorId){held=null;inFlight=null;}
    return held;
   },
   /** Never overwrite an unresolved operation with a different command. */
@@ -23,9 +24,18 @@ export function createAcademyPendingStore(){
    held=command;
    return true;
   },
+  /** A remounted panel cannot retry while the original HTTP call is active. */
+  beginAttempt(command:AcademyPendingCommand,attempt:object):boolean{
+   if(held!==command||inFlight!==null)return false;
+   inFlight={command,attempt};
+   return true;
+  },
+  finishAttempt(attempt:object):void{
+   if(inFlight?.attempt===attempt)inFlight=null;
+  },
   /** A late old request must not clear a newer actor's operation. */
   clearIfSame(command:AcademyPendingCommand):void{
-   if(held===command)held=null;
+   if(held===command){held=null;if(inFlight?.command===command)inFlight=null;}
   },
  };
 }
