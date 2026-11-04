@@ -48,6 +48,10 @@ class AcademyCommandError extends Error{
 export function academyAdminOutcomeIsUncertain(status:number){
  return status===408||status===425||status===429||status>=500;
 }
+/** An in-flight staff response must never be applied after account/session swap. */
+export function academyAdminSameSession<T>(started:T,current:T){
+ return started===current;
+}
 async function submit(path:string,command:unknown){
  const res=await fetch('/v1/staff/academy/'+path,{method:'POST',
   credentials:'same-origin',cache:'no-store',redirect:'error',
@@ -76,6 +80,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const [inviteUrl,setInviteUrl]=useState('');
  const [pendingOp,setPendingOp]=useState<{path:string;payload:unknown}|null>(null);
  const sending=useRef(false);
+ const currentSession=useRef(session);
+ currentSession.current=session;
  useEffect(()=>{
   const ctrl=new AbortController();
   setData(null);setResult({phase:'idle',message:''});setInviteUrl('');
@@ -89,11 +95,14 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const busy=result.phase==='busy'||result.phase==='uncertain';
  async function send(path:string,payload:unknown){
   if(sending.current)return;
+  const startedSession=session;
+  const stillCurrent=()=>academyAdminSameSession(startedSession,currentSession.current);
   sending.current=true;
   setResult({phase:'busy',message:'جارٍ تسجيل العملية لدى الخادم…'});
   setPendingOp({path,payload});
   try{
    const ack=await submit(path,payload);
+   if(!stillCurrent())return;
    setResult({phase:'done',message:'سجّل الخادم العملية: '+ack.code});
    setConfirmed(false);setReason('');setPendingOp(null);
    if(path==='invites'&&typeof (ack as {token?:unknown}).token==='string'){
@@ -102,9 +111,12 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    }else{
     // Refresh the authoritative list without erasing the confirmed receipt.
     const ctrl=new AbortController();
-    void readAcademy(ctrl.signal).then(v=>setData(v)).catch(()=>{});
+    void readAcademy(ctrl.signal).then(v=>{
+     if(stillCurrent()&&!ctrl.signal.aborted)setData(v);
+    }).catch(()=>{});
    }
   }catch(e){
+   if(!stillCurrent())return;
    if(e instanceof AcademyCommandError&&!academyAdminOutcomeIsUncertain(e.status)){
     setPendingOp(null);
     setResult({phase:'error',message:operationErrors[e.code]??'تعذّر تنفيذ العملية: '+e.code});
