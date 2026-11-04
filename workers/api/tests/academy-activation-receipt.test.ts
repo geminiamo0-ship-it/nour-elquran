@@ -55,10 +55,13 @@ test('staff activation requires affirmative one-row D1 receipt',async()=>{
  assert.equal(ok.code,'ACADEMY_SUBSCRIPTION_ACTIVATED');
  assert.equal(success.writes.length,1);
  assert.match(success.writes[0]!.sql,/INSERT INTO academy_subscription_activation_events/);
+ // D1 may include the activation's AFTER INSERT subscription-cycle trigger
+ // in meta.changes; a positive trigger-inclusive receipt is valid.
+ const trigger=fixture({receipt:{success:true,meta:{changes:2}}});
+ assert.equal((await staffActivate(trigger.db,STAFF,command,NOW)).status,201);
  for(const receipt of [
   {success:false,meta:{changes:0}},
   {success:true,meta:{changes:0}},
-  {success:true,meta:{changes:2}},
  ]){
   const f=fixture({receipt});
   assert.deepEqual(await staffActivate(f.db,STAFF,command,NOW),
