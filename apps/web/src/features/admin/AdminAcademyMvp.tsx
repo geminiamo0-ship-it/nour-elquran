@@ -63,6 +63,12 @@ export function academyAdminPendingForActor<T extends {actorId:string}>(
  pending:T|null,actorId:string):T|null{
  return pending?.actorId===actorId?pending:null;
 }
+/** Only the exact held payload may be resent while its outcome is uncertain. */
+export function academyAdminCommandAllowed(
+ pending:PendingOp|null,actorId:string,path:string,payload:unknown){
+ const held=academyAdminPendingForActor(pending,actorId);
+ return held===null||(held.path===path&&held.payload===payload);
+}
 async function submit(path:string,command:unknown){
  const res=await fetch('/v1/staff/academy/'+path,{method:'POST',
   credentials:'same-origin',cache:'no-store',redirect:'error',
@@ -115,7 +121,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   if(academyAdminSessionLockIsBusy(sending.current?.session??null,session))return;
   const held=academyAdminPendingForActor(pendingOpRef.current,session.user.id);
   // A new financial operation cannot replace an unresolved original payload.
-  if(held&&(held.path!==path||held.payload!==payload))return;
+  if(!academyAdminCommandAllowed(held,session.user.id,path,payload))return;
   const operation:PendingOp=held??{actorId:session.user.id,path,payload};
   const attempt={};
   sending.current={session,attempt};
