@@ -1,3 +1,7 @@
+## 2026-11-04 — #326 D1 guardian request receipt hardening
+- Draft PR #325 received code `b6430ab3` and Node tests `dc8ca6a8` after source review. A failed/incomplete D1 `.run()` receipt or ambiguous aborted request without a matching committed operation now returns safe 503 rather than a misleading 409 stale-quote claim. Confirmed successful zero-row stale quote remains 409; exact immutable replay after a lost ACK returns 200; cross-actor/version collision returns 409 without request ID.
+- NEXT: inspect exact PR HEAD Verify 4/4 and fix failures. Obtain independent security/privacy review, signed isolated Dev guardian/2 siblings/foreign account and two-staff repricing E2E, 360/390 RTL mobile QA, and coordinate adjacent `academy-admin-mvp.ts` changes with Draft PR #327. No main merge, remote Dev/Production, payment, WhatsApp, child audio or ink rollout claimed.
+
 ## 2026-11-04 — #326 zero-row quote race handoff
 - Verified previous Draft PR #325 exact HEAD `557e6c57bd829260b00e5bd740ffa6cfa5d2e5e3` had [Verify #41672164541](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41672164541) SUCCESS 4/4; main remained `4c15b59f`.
 - Fixed source-level idempotency race: a same-operation request can commit, staff reprice, and another in-flight POST receive zero-row `INSERT..SELECT` instead of UNIQUE. Re-read on zero-row, exact-match replay 200, mismatch 409 without ID. Added Node regressions. No local test execution or new CI result is claimed.
