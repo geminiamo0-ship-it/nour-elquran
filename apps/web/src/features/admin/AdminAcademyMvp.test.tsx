@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {academyAdminOutcomeIsUncertain} from './AdminAcademyMvp';
+import {academyAdminOutcomeIsUncertain,academyAdminSameSession} from './AdminAcademyMvp';
 
 describe('admin academy manual settlement retry semantics #315',()=>{
  it('preserves the original operation for ambiguous D1/proxy HTTP outcomes',()=>{
@@ -9,5 +9,16 @@ describe('admin academy manual settlement retry semantics #315',()=>{
  it('does not turn a proven validation/permission conflict into a retry',()=>{
   for(const status of [400,401,403,404,409,422])
    expect(academyAdminOutcomeIsUncertain(status)).toBe(false);
+ });
+});
+
+describe('admin academy async session isolation #315',()=>{
+ it('rejects an old in-flight staff response after a session swap',()=>{
+  const oldSession={subject:'synthetic-staff',token:'first'};
+  const newSession={subject:'synthetic-staff',token:'second'};
+  expect(academyAdminSameSession(oldSession,oldSession)).toBe(true);
+  expect(academyAdminSameSession(oldSession,newSession)).toBe(false);
+  // Even a new session for the same subject cannot inherit a stale receipt.
+  expect(academyAdminSameSession(oldSession,{...oldSession})).toBe(false);
  });
 });
