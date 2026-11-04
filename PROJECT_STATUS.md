@@ -1,3 +1,8 @@
+## 2026-11-04 — #315 D1 package write-abort outcome classification (PR #327, Draft)
+- Source follow-up on `fix/315-atomic-package-version-order-20261104`: staff package writes now treat an unconfirmed D1 transaction/transport abort as `503 ACADEMY_PACKAGE_STORAGE_UNAVAILABLE`, **not** a proven `409` business conflict. Existing matching immutable operationId after a concurrent commit still returns a replay ACK; SQL/trigger constraints remain 409. This preserves safe same-operation reconciliation for uncertain writes.
+- Focused Node regressions cover aborted writes without a committed row and an abort after the same operation committed. **New exact-head GitHub Verify and signed Dev acceptance are pending**; previous green #41797619769 covers the prior head only.
+- No Production/price/credit/payment/WhatsApp/child-media change. Keep PR #327 Draft and #315 OPEN pending exact-head CI, independent review, Dev signed two-staff/owner-sibling tests and #325 source reconciliation.
+
 ## 2026-11-04 — #315 fail-closed D1 package write receipt (Draft PR #327)
 - Independent source review found that `staffPackage` previously returned HTTP 201 whenever D1 `.run()` resolved, even if its typed `success` was false or `meta.changes` was zero. This could falsely confirm a price/version update that was not persisted.
 - Added an explicit successful-write/positive-changes guard returning sanitized 503 `ACADEMY_PACKAGE_STORAGE_UNAVAILABLE`; added Node regression for both resolved failure and zero affected rows. Commits [e61428b0](https://github.com/geminiamo0-ship-it/nour-elquran/commit/e61428b06adf0d01242b202ece7a86d73407cb3a), [924df038](https://github.com/geminiamo0-ship-it/nour-elquran/commit/924df038b2310da72bb50acc9704782fed69949c).
