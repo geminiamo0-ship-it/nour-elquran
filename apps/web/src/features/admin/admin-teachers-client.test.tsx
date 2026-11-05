@@ -29,6 +29,24 @@ describe('Admin teacher directory #305',()=>{
    {...good,teachers:null},{...good,asOfMs:NaN},
   ])expect(()=>parseAdminTeachers(bad)).toThrow(AdminTeachersError);
  });
+
+ it('accepts exactly 50 bounded rows and rejects 51 or 101 rows from a malformed receipt',()=>{
+  for(const count of [0,1,50]){
+   const rows=Array.from({length:count},(_,i)=>({
+    ...teacher,id:`teacher-${i}`,
+   }));
+   const value=parseAdminTeachers({...good,teachers:rows,truncated:count===50});
+   expect(value.teachers).toHaveLength(count);
+   expect(value.truncated).toBe(count===50);
+  }
+  for(const count of [51,101]){
+   const rows=Array.from({length:count},(_,i)=>({
+    ...teacher,id:`teacher-${i}`,
+   }));
+   expect(()=>parseAdminTeachers({...good,teachers:rows,truncated:true}))
+    .toThrow(AdminTeachersError);
+  }
+ });
  it('only sends same-origin signed GET without role claims or identifiers',async()=>{
   const mock=vi.fn().mockResolvedValue(respond(200,good));vi.stubGlobal('fetch',mock);
   expect((await fetchAdminTeachers()).teachers).toHaveLength(1);
