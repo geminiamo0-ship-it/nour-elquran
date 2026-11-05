@@ -1,3 +1,7 @@
+## #314 exact-ID staff Sheikh lookup response-target regression (2026-11-05)
+- Browser client must reject otherwise-valid 200 directory receipts for an exact ID when a different teacher ID or multiple teachers are returned; never add an unrequested Sheikh to the staff action selector. A valid empty list is a not-found result, and a single exact match is accepted. Test `admin-teachers-client.test.tsx` exercises all four cases.
+- This is a source-only defense-in-depth addition to Draft PR #329. New exact-head CI, independent auth/privacy review, and signed Dev/multi-viewport acceptance remain pending; prior Verify #41988466551 belongs to older HEAD.
+
 ## 2026-11-05 — #314 out-of-page Sheikh directory source gates
 - Verify exact-head Node D1-adapter contract: 50+1 original list, single-ID `LIMIT 1`, current staff grant, malformed/duplicate row denial, missing ID as truthful empty, invalid ID 400, nonstaff 403, no PII columns.
 - Verify frontend Vitest: same-origin no-store GET with exact ID, no role header, invalid ID denied before network, SSR has no synthetic or prior actor record; keyboard/focus and mobile 360×667/390×844 Browser QA still required.
