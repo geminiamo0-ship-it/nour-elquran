@@ -8,7 +8,7 @@ type LookupPhase='idle'|'loading'|'found'|'missing'|'invalid'|'denied'|'error';
 const validId=/^[a-zA-Z0-9-]{1,128}$/;
 
 /** #314: bounded, signed exact-ID fallback for a Sheikh omitted by the first 50 rows. */
-export function AdminTeacherIdLookup({session,onFound}:{
+export function AdminTeacherIdLookup({session,onFound,onAccessRevoked}:{
  session:AccountSession;onFound:(teacher:AdminTeacher)=>void;
  onAccessRevoked:()=>void;
 }){
