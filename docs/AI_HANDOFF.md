@@ -1,3 +1,8 @@
+## 2026-11-05 — #314 follow-up: Sheikh invite panel fail-closed during roster refresh (PR #329)
+- Verified prior exact-head `2908eb7f` GitHub Verify [#42044601697](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42044601697) completed 4/4 SUCCESS. A new code change supersedes that CI evidence.
+- Found `AdminTeacherDirectory` mounted `AdminAcademyMvp` invite controls whenever the directory was not explicitly `denied`, including `loading` and `error`. Changed to render only on a `ready` receipt matching the current `AccountSession`; added initial SSR no-invite regression. Commits `7f1551cf`, `602e9910`. Server-side role checks remain authoritative.
+- NEXT: check Verify on latest PR #329 head (including code-quality, D1, governance), then independent security review and signed Cloudflare Dev tests for role revoke while refresh/lookup pending, ordinary 503, session change, and 360/390 mobile keyboard/touch. No merge or Production until acceptance.
+
 ## 2026-11-05 — #314 / PR #329 strict directory envelope continuation
 - GitHub main `4c15b59f713f41e2be9999bb082118cc48496c10` at baseline; existing Draft PR #329 branch `feat/314-admin-teacher-id-lookup` was 54 commits ahead, no main merge. [Verify #42039761817](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42039761817) completed 4/4 success on prior head `911df941`.
 - Newly committed strict client envelope validation (`59a7b613`) and Vitest regressions (`7b62f796`) prevent accepting extra top-level keys such as `guardianPhone` or `authSubject` from a staff directory response. No API/SQL/migration changes. **No exact-head CI yet for these commits**; do not report passing based on old run.
