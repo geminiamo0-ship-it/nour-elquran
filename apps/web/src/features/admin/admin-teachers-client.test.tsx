@@ -65,7 +65,7 @@ describe('Admin teacher directory #305',()=>{
  it('renders an accessible exact-ID lookup without personal or fake records',()=>{
   const html=renderToStaticMarkup(<AdminTeacherIdLookup
    session={{user:{id:'staff-1',name:'Synthetic'},phoneVerified:true}}
-   onFound={()=>{}}/>);
+   onFound={()=>{}} onClear={()=>{}}/>);
   expect(html).toContain('admin-exact-teacher-id');
   expect(html).toContain('إظهار الشيخ');
   expect(html).not.toContain('شيخ تجريبي');
