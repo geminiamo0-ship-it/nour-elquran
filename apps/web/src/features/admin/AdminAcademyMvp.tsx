@@ -22,6 +22,8 @@ function label(v:number){return v.toLocaleString('ar-EG');}
 async function readAcademy(signal:AbortSignal):Promise<Academy>{
  const res=await fetch('/v1/staff/academy',{credentials:'same-origin',cache:'no-store',
   redirect:'error',signal});
+ if(res.status===401||res.status===403)
+  throw new AcademyCommandError('STAFF_ACCESS_DENIED',res.status);
  const v:unknown=await res.json();
  if(!res.ok||!v||typeof v!=='object'||Array.isArray(v)||
   (v as Academy).code!=='ACADEMY_STAFF'||!Array.isArray((v as Academy).packages)||
@@ -45,6 +47,16 @@ const operationErrors:Record<string,string>={
 };
 class AcademyCommandError extends Error{
  constructor(readonly code:string,readonly status:number){super(code);}
+}
+/** A fresh staff authorization denial hides previously signed academy data.
+ * Domain-rule 403 responses do not imply revoked staff privileges. */
+export function academyAdminStaffAccessRevoked(status:number,code:string){
+ return status===401||(status===403&&
+  (code==='STAFF_ACCESS_DENIED'||code==='ACADEMY_STAFF_ACCESS_CHANGED'));
+}
+/** A late roster response cannot resurrect data after a newer staff denial. */
+export function academyAdminReadMayApply(aborted:boolean,revoked:boolean){
+ return !aborted&&!revoked;
 }
 /** A 5xx or retryable HTTP response cannot prove whether D1 committed.
  * Preserve the original operationId and prohibit a second financial command. */
@@ -135,7 +147,12 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const pendingOpRef=useRef<PendingOp|null>(null);
  const sending=useRef<{session:AccountSession;attempt:object}|null>(null);
  const currentSession=useRef(session);
+ const revokedStaff=useRef(false);
  currentSession.current=session;
+ function invalidateStaffData(){
+  revokedStaff.current=true;
+  setData(null);setInviteUrl('');setWhatsapp('');setConfirmed(false);
+ }
  // A new session must not paint the previous staff actor's data, selected
  // learner, settlement note or one-use Sheikh invitation before effects run.
  useEffect(()=>{
@@ -148,6 +165,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  },[visibleSession,session]);
  useEffect(()=>{
   const ctrl=new AbortController();
+  revokedStaff.current=false;
   setData(null);setInviteUrl('');
   // Session objects change on re-authentication. Do not lose an uncertain
   // activation's original operationId when the authenticated actor is unchanged.
@@ -157,9 +175,16 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   setResult(held?{phase:'uncertain',message:uncertainMessage}:
    {phase:'idle',message:''});
   void readAcademy(ctrl.signal).then(v=>{
-   if(!ctrl.signal.aborted){setData(v);setWhatsapp(v.whatsappNumber??'');}
-  }).catch(e=>{if(!ctrl.signal.aborted&&!pendingOpRef.current)setResult({phase:'error',
-   message:e instanceof Error?e.message:'تعذّر تحميل البيانات'});});
+   if(academyAdminReadMayApply(ctrl.signal.aborted,revokedStaff.current)){
+    setData(v);setWhatsapp(v.whatsappNumber??'');
+   }
+  }).catch(e=>{
+   if(ctrl.signal.aborted)return;
+   if(e instanceof AcademyCommandError&&academyAdminStaffAccessRevoked(e.status,e.code))
+    invalidateStaffData();
+   if(!pendingOpRef.current)setResult({phase:'error',
+    message:e instanceof Error?e.message:'تعذّر تحميل البيانات'});
+  });
   return()=>ctrl.abort();
  },[session,refresh]);
  const busy=result.phase==='busy'||result.phase==='uncertain';
@@ -194,11 +219,20 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     // Refresh the authoritative list without erasing the confirmed receipt.
     const ctrl=new AbortController();
     void readAcademy(ctrl.signal).then(v=>{
-     if(stillCurrent()&&!ctrl.signal.aborted)setData(v);
-    }).catch(()=>{});
+     if(stillCurrent()&&academyAdminReadMayApply(ctrl.signal.aborted,revokedStaff.current))
+      setData(v);
+    }).catch(e=>{
+     if(!stillCurrent()||ctrl.signal.aborted)return;
+     if(e instanceof AcademyCommandError&&academyAdminStaffAccessRevoked(e.status,e.code)){
+      invalidateStaffData();
+      setResult({phase:'error',message:operationErrors.ACADEMY_STAFF_ACCESS_CHANGED});
+     }
+    });
    }
   }catch(e){
    if(!stillCurrent())return;
+   if(e instanceof AcademyCommandError&&academyAdminStaffAccessRevoked(e.status,e.code))
+    invalidateStaffData();
    if(e instanceof AcademyCommandError&&!academyAdminOutcomeIsUncertain(e.status)){
     academyPendingStore.clearIfSame(operation);
    if(pendingOpRef.current===operation){pendingOpRef.current=null;setPendingOp(null);}
