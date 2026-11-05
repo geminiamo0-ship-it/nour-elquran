@@ -63,5 +63,12 @@ export async function fetchAdminTeachers(signal?:AbortSignal,teacherId?:string):
   throw new AdminTeachersError(record(payload)&&typeof payload.code==='string'
    ?payload.code:'STAFF_TEACHERS_UNAVAILABLE',response.status);
  }
- return parseAdminTeachers(payload);
+ const directory=parseAdminTeachers(payload);
+ // #314: a successful exact-ID response must prove the requested target.
+ // Never let an intermediary's stale/mismatched 200 add another Sheikh
+ // to the staff action selector, even if its general DTO is well formed.
+ if(teacherId!==undefined&&(directory.truncated||directory.teachers.length>1||
+    directory.teachers.some(teacher=>teacher.id!==teacherId)))
+  throw new AdminTeachersError('INVALID_TEACHER_LOOKUP_RESPONSE',response.status);
+ return directory;
 }
