@@ -17,6 +17,9 @@ describe('Admin teacher directory #305',()=>{
   });
   for(const bad of [
    {...good,readOnly:false},{...good,code:'DEMO'},
+   {...good,guardianPhone:'private'},
+   {...good,authSubject:'private-staff-subject'},
+   {...good,unexpected:null},
    {...good,teachers:[{...teacher,phone:'private'}]},
    {...good,teachers:[{...teacher,qualified:1}]},
    {...good,teachers:[{...teacher,currentLearners:-1}]},
