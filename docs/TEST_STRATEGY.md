@@ -1,3 +1,7 @@
+## #314 signed staff receipt invalidation regression (2026-11-05)
+- SSR/Vitest: confirmed staff D1 action ACK remains visible during normal roster refresh, but disappears after fresh 401/403/404 or an account switch; no receipt if absent. The roster's denial handler also clears previous lookup and ACK. No unverified data is treated as a successful refresh.
+- Release gate: exact-head Verify after this source change, then source-pinned Dev staff revocation after successful read and action ACK, mobile 360x667/390x844 and independent authorization/privacy review. Do not merge Draft #329 on local/CI alone.
+
 ## #314 Sheikh lookup post-read role revocation (2026-11-05)
 - Client regression: `isAdminTeacherAccessRevoked` recognizes fresh 401/403/404, not 400/409/500/503/network. The exact-ID child must signal denial; parent must clear previously rendered roster, out-of-page choices and previous success ACK before any further staff action is displayed; the Sheikh invitation panel must also disappear after a fresh denial. A transient 503 must not be misrepresented as revoked role.
 - Required signed Dev/browser E2E: staff successfully reads 50+ records; revoke `roles.manage` in D1; next exact-ID GET returns 403; verify no stale teacher cards/action controls, and a later reauthorized reload is required. Check 360/390 keyboard and screen reader status. Source/unit CI alone is not Dev evidence.
