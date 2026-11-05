@@ -129,3 +129,27 @@ test('Worker fails closed on a mismatched exact-ID adapter receipt and duplicate
  if(distinct.status!==200)throw Error('Unexpected denial');
  assert.deepEqual(distinct.teachers.map(t=>t.id),['teacher-1','teacher-2']);
 });
+
+test('directory boundaries 0/1/50/51/101 remain bounded without hiding the extra-page indicator',async()=>{
+ for(const total of [0,1,50,51,101]){
+  // The D1 LIMIT 51 adapter can return at most 51 rows, even for 101 teachers.
+  const rows=Array.from({length:Math.min(total,51)},(_,i)=>({
+   ...first,id:`teacher-${String(i+1).padStart(3,'0')}`,
+  }));
+  const {db,queries}=fake(true,rows);
+  const result=await readAdminTeachers(db,'staff-subject',NOW);
+  assert.equal(result.status,200,`total=${total}`);
+  if(result.status!==200)throw Error('Unexpected denial');
+  assert.equal(result.teachers.length,Math.min(total,50),`total=${total}`);
+  assert.equal(result.truncated,total>50,`total=${total}`);
+  assert.equal(new Set(result.teachers.map(t=>t.id)).size,result.teachers.length);
+  assert.equal(queries[1]?.sql,ADMIN_TEACHERS_SQL);
+  assert.deepEqual(queries[1]?.args,[NOW,NOW,NOW]);
+ }
+ // An adapter returning more than the SQL bound must fail closed, not truncate.
+ const oversized=Array.from({length:52},(_,i)=>({
+  ...first,id:`teacher-${i}`,
+ }));
+ assert.deepEqual(await readAdminTeachers(fake(true,oversized).db,'staff-subject',NOW),
+  {status:503,code:'STAFF_TEACHERS_UNAVAILABLE'});
+});
