@@ -1,3 +1,7 @@
+## 2026-11-05 — #314 staff roster 0/1/50/51/101 boundary regression (Draft PR #329)
+- Added bounded Worker adapter and browser DTO regression coverage for empty, single, exactly 50, 51 and 101 total Sheikh records. Backend simulates D1 `LIMIT 51`, checks `truncated` and unique IDs, and rejects an impossible 52-row receipt; browser rejects >50-row receipts. No functional permissions, SQL, production or data changes.
+- Commits: `7a32bf3b` (Worker tests), `df884299` (Vitest). **New exact-head GitHub CI must be verified** after documentation commits. Previous Verify [42007910617](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42007910617) passed 4/4 on older `dd1ea990`, not this change. Independent security review and signed Dev/mobile acceptance still OPEN; do not merge.
+
 ## 2026-11-05 — #314 Worker receipt integrity follow-up (Draft PR #329)
 - Worker now fails closed if the exact-ID D1 adapter returns a different Sheikh than requested, or if the bounded directory contains duplicate Sheikh IDs. This complements the existing browser exact-target guard; the fixed SQL and fresh staff grant remain unchanged.
 - Source commits: `bc7a02524dd3417f950f95b718018a72bb2f5191` (Worker) and `10ccf7c7c050c7a904e2205771770e97cab04307` (Node regression). No schema/Production/payment/child-data changes. Exact-head CI, independent security review and signed Dev/browser QA are still required before merge.
