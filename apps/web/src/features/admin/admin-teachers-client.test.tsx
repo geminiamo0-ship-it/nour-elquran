@@ -4,7 +4,7 @@ import {AdminTeacherDirectory,AdminTeacherReceipt} from './AdminTeacherDirectory
 import {AdminTeacherIdLookup} from './AdminTeacherIdLookup';
 import {AdminTeachersError,fetchAdminTeachers,parseAdminTeachers,isAdminTeacherAccessRevoked,
  reconcileVerifiedTeacherRows} from './admin-teachers-client';
-const teacher={id:'teacher-1',name:'شيخ تجريبي',qualified:true,status:'active',
+const teacher={id:'teacher-1',name:'شيخ تجريبي',qualified:true,status:'active' as const,
  currentLearners:2,upcomingLessons:3};
 const good={code:'STAFF_TEACHER_DIRECTORY',asOfMs:1793600000000,
  readOnly:true,teachers:[teacher],truncated:false};
