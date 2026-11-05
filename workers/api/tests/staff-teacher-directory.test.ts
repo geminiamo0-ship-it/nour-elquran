@@ -115,3 +115,17 @@ test('exact ID lookup rejects malformed input, revoked grant and duplicate D1 ro
   'staff-subject',NOW,'teacher-1');
  assert.deepEqual(duplicate,{status:503,code:'STAFF_TEACHERS_UNAVAILABLE'});
 });
+
+test('Worker fails closed on a mismatched exact-ID adapter receipt and duplicate directory IDs',async()=>{
+ const wrong=await readAdminTeachers(fake(true,[{...first,id:'teacher-74'}]).db,
+  'staff-subject',NOW,'teacher-75');
+ assert.deepEqual(wrong,{status:503,code:'STAFF_TEACHERS_UNAVAILABLE'});
+ const duplicates=await readAdminTeachers(fake(true,[first,first]).db,
+  'staff-subject',NOW);
+ assert.deepEqual(duplicates,{status:503,code:'STAFF_TEACHERS_UNAVAILABLE'});
+ const distinct=await readAdminTeachers(fake(true,[first,{...first,id:'teacher-2'}]).db,
+  'staff-subject',NOW);
+ assert.equal(distinct.status,200);
+ if(distinct.status!==200)throw Error('Unexpected denial');
+ assert.deepEqual(distinct.teachers.map(t=>t.id),['teacher-1','teacher-2']);
+});
