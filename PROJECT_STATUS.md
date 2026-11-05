@@ -1,3 +1,8 @@
+## 2026-11-05 — #314 follow-up: staff receipt revoked-access UI gate (PR #329, source candidate)
+- Fixed an independent denial path: when a refreshed signed Sheikh directory returns 401/403/404, previous D1 operation receipts and out-of-page lookup choices are cleared. A server-confirmed receipt remains visible during ordinary in-flight refresh, but is not displayed after access denial or an account switch. No mutation/API/schema changes.
+- Added SSR regression for receipt visibility across normal refresh, revoked access, account switch and absent receipt. Source commits `5922b8f3` and `399bfdbe`; exact-head CI and Dev/browser verification are pending. Prior Verify #42032997085 completed 4/4 on an older head; it does not verify these commits.
+- Next: verify CI on the new branch HEAD, independent staff auth/privacy review, signed Dev role-revocation and 360/390 touch/keyboard acceptance; leave #314 OPEN and PR #329 Draft, no Production.
+
 ## 2026-11-05 — #314 exact-head CI repair, Draft PR #329 (source only)
 - Verify [#42022196044](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42022196044) finished **3/4 PASS, code-quality FAIL** on prior head `fbf5af407f6294c214569cfc00c1c04a8cb401f6`: TypeScript TS2304 `onAccessRevoked` not in scope at `apps/web/src/features/admin/AdminTeacherIdLookup.tsx:43`. Governance, Cloudflare-local-D1 and repository-policy passed; no exact-head success may be claimed.
 - Fixed the actual source defect by destructuring the already-required `onAccessRevoked` prop in `AdminTeacherIdLookup` (commit [`40b18f75`](https://github.com/geminiamo0-ship-it/nour-elquran/commit/40b18f75d0b6e1b50591e2f919560743a5e4bcec)). No auth policy, data, API or D1 changes; existing Vitest SSR callback contract is retained.
