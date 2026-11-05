@@ -1,3 +1,7 @@
+## #314 repeated exact-ID Sheikh lookup freshness regression — 2026-11-05
+- A signed exact-ID recheck must replace prior facts for that *same* Sheikh, including when present in the original first 50; other verified actors and stable IDs/order must remain unchanged. The client must not mutate the old server receipt. See `admin-teachers-client.test.tsx` and `reconcileVerifiedTeacherRows`.
+- Exact-head GitHub Verify, independent role/privacy review, real signed Cloudflare Dev revocation/0-1-50-51-100+ and 360/390 keyboard/touch acceptance remain mandatory before merge. No Production or financial changes.
+
 ## 2026-11-05 — #314 staff mutation authorization-denial UI invalidation (Draft PR #329)
 - Source audit found a distinct revoked-grant path: a signed `POST /v1/staff/teachers/transition` returning 401 or `403 STAFF_ACCESS_DENIED` previously left the successful roster, out-of-page Sheikh selections, prior action ACK and invite panel visible until a separate GET failed. The Worker already rejects unauthorized writes, but the browser should also fail closed immediately.
 - The generic `AdminOperations` now signals only a confirmed staff auth denial to its parent; `AdminTeacherDirectory` reuses its existing session-scoped roster/ACK/lookup invalidation. A domain-rule 403, missing-target 404, uncertain network result and 503 remain distinct and do not imply revocation. Added focused Vitest classification regressions. No SQL, auth grant, migration or Production changes.
