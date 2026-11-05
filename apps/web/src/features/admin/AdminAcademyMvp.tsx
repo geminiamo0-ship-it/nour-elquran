@@ -92,7 +92,7 @@ export function academyAdminAckIsVerified(path:string,status:number,raw:unknown)
   (status===200&&v.code===expected[1]&&expected[1]!==undefined)))return false;
  if(path==='invites')return status===201&&typeof v.token==='string'&&
   /^[0-9a-f]{64}$/.test(v.token)&&typeof v.expiresAtMs==='number'&&
-  Number.isSafeInteger(v.expiresAtMs)&&v.expiresAtMs>0;
+  Number.isSafeInteger(v.expiresAtMs)&&v.expiresAtMs>Date.now();
  return true;
 }
 async function submit(path:string,command:unknown){
