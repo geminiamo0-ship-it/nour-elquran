@@ -1,3 +1,7 @@
+## 2026-11-05 — #314 / PR #329 continuation: signed staff denial after roster refresh
+- Added a receipt visibility guard and clears `latestAck`/out-of-page `lookup` when a fresh signed staff directory read is denied (401/403/404). Prior server-confirmed ACK is still visible during non-denied refresh; stale staff receipt is not shown on denial/account switch. Changes: `AdminTeacherDirectory.tsx`, `admin-teachers-client.test.tsx`; source commits `5922b8f3`, `399bfdbe`.
+- Prior Verify #42032997085 4/4 PASS only on the earlier PR head. Recheck exact latest HEAD and run independent security + Cloudflare Dev signed role-revocation/0/1/50/51/101 and mobile 360/390. No merge, no Production; PR Draft, Issue #314 OPEN.
+
 ## 2026-11-05 — #314 exact-head CI repair, Draft PR #329 (source only)
 - Verify [#42022196044](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42022196044) finished **3/4 PASS, code-quality FAIL** on prior head `fbf5af407f6294c214569cfc00c1c04a8cb401f6`: TypeScript TS2304 `onAccessRevoked` not in scope at `apps/web/src/features/admin/AdminTeacherIdLookup.tsx:43`. Governance, Cloudflare-local-D1 and repository-policy passed; no exact-head success may be claimed.
 - Fixed the actual source defect by destructuring the already-required `onAccessRevoked` prop in `AdminTeacherIdLookup` (commit [`40b18f75`](https://github.com/geminiamo0-ship-it/nour-elquran/commit/40b18f75d0b6e1b50591e2f919560743a5e4bcec)). No auth policy, data, API or D1 changes; existing Vitest SSR callback contract is retained.
