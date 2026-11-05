@@ -1,3 +1,8 @@
+### 2026-11-05 — #315 invitation expiry validation and prior CI confirmation
+- Checked live Draft #327 and [Verify #41959701759](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41959701759): all four jobs succeeded on prior `9d45e26f`. Mandatory governance/privacy/testing docs read before edit.
+- New commits `024383b7` and `c9cc694d` reject already expired one-use invite receipts at the staff UI and cover future-valid versus expired expiry in Vitest. This is a source/test change only, **not yet exact-head CI validated**. A malformed/expired ACK remains uncertain, retaining the original operation fence; never claim the invite was issued or show a link.
+- NEXT exact action: inspect Verify on latest #327 head, repair any failure; then independent security review and signed Cloudflare Dev staff/guardian replay, two-sibling isolation, one-use invite, mobile 360/390, #325 integration and durable full-reload receipt recovery. Keep Draft and Issue #315 OPEN. Do not touch Production, payments, WhatsApp, private audio or cumulative ink flag.
+
 ### 2026-11-05 — #315 strict staff ACK gate (Draft PR #327)
 - Read mandatory repository governance/engineering/privacy docs and checked live #315/#326, Draft #325/#327, and [Verify #41944587802](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41944587802) 4/4 success on **older** `5d950d8e`.
 - Source issue: `AdminAcademyMvp.submit` accepted any 2xx + string `code`, so a wrong success body or 202 could unlock a new manual financial operation. Changed only the UI to accept exact path/status/code pairs and require a valid one-use invitation token/expiry. Added negative Vitest cases. Commits `d26a44cb` / `b93eb6b7`; new exact-head Verify pending/not asserted.
