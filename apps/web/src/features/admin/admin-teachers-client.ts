@@ -11,6 +11,9 @@ export type AdminTeacherDirectoryValue=Readonly<{
 export class AdminTeachersError extends Error{
  constructor(readonly code:string,readonly status=0){super(code);}
 }
+// A later signed denial supersedes a previously successful staff roster read.
+export const isAdminTeacherAccessRevoked=(error:unknown):error is AdminTeachersError=>
+ error instanceof AdminTeachersError&&[401,403,404].includes(error.status);
 const record=(v:unknown):v is Record<string,unknown> =>
  v!==null&&typeof v==='object'&&!Array.isArray(v);
 const keys=['id','name','qualified','status','currentLearners','upcomingLessons'] as const;
