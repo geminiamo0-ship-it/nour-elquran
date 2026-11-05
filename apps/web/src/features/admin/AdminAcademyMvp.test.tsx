@@ -1,7 +1,9 @@
 import {describe,expect,it} from 'vitest';
+import {renderToStaticMarkup} from 'react-dom/server';
 import {academyAdminOutcomeIsUncertain,academyAdminSameSession,
  academyAdminSessionLockIsBusy,academyAdminPendingForActor,
- academyAdminCommandAllowed} from './AdminAcademyMvp';
+ academyAdminCommandAllowed,academyAdminSessionViewIsReady,
+ AdminAcademyMvp} from './AdminAcademyMvp';
 
 describe('admin academy manual settlement retry semantics #315',()=>{
  it('preserves the original operation for ambiguous D1/proxy HTTP outcomes',()=>{
@@ -26,6 +28,26 @@ describe('admin academy async session isolation #315',()=>{
   expect(academyAdminSessionLockIsBusy(oldSession,oldSession)).toBe(true);
   expect(academyAdminSessionLockIsBusy(oldSession,newSession)).toBe(false);
   expect(academyAdminSessionLockIsBusy(oldSession,{...oldSession})).toBe(false);
+ });
+});
+
+describe('admin academy pre-effect privacy gate #315',()=>{
+ it('never treats a new staff session as safe to paint old invite/learner fields',()=>{
+  const oldSession={user:{id:'staff-a',name:'Synthetic A'},phoneVerified:true};
+  const sameActorNewSession={...oldSession};
+  const anotherActor={user:{id:'staff-b',name:'Synthetic B'},phoneVerified:true};
+  expect(academyAdminSessionViewIsReady(oldSession,oldSession)).toBe(true);
+  expect(academyAdminSessionViewIsReady(oldSession,sameActorNewSession)).toBe(false);
+  expect(academyAdminSessionViewIsReady(oldSession,anotherActor)).toBe(false);
+ });
+ it('renders no staff records or one-use invitation on initial server render',()=>{
+  const session={user:{id:'synthetic-staff',name:'Synthetic Staff'},phoneVerified:true};
+  for(const mode of ['requests','invites','contact','packages'] as const){
+   const html=renderToStaticMarkup(<AdminAcademyMvp session={session} mode={mode}/>);
+   expect(html).toContain('جارٍ تحميل البيانات');
+   expect(html).not.toContain('teacher/join?token=');
+   expect(html).not.toContain('تم الاستلام يدويًا');
+  }
  });
 });
 
