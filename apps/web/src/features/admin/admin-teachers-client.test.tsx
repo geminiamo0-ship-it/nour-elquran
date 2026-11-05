@@ -2,7 +2,7 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminTeacherDirectory} from './AdminTeacherDirectory';
 import {AdminTeacherIdLookup} from './AdminTeacherIdLookup';
-import {AdminTeachersError,fetchAdminTeachers,parseAdminTeachers} from './admin-teachers-client';
+import {AdminTeachersError,fetchAdminTeachers,parseAdminTeachers,isAdminTeacherAccessRevoked} from './admin-teachers-client';
 const teacher={id:'teacher-1',name:'شيخ تجريبي',qualified:true,status:'active',
  currentLearners:2,upcomingLessons:3};
 const good={code:'STAFF_TEACHER_DIRECTORY',asOfMs:1793600000000,
@@ -97,10 +97,20 @@ describe('Admin teacher directory #305',()=>{
   expect((await fetchAdminTeachers(undefined,'teacher-75')).teachers[0]?.id).toBe('teacher-75');
   expect(mock).toHaveBeenCalledTimes(4);
  });
+ it('fresh signed denial invalidates an earlier roster, but storage failures do not',()=>{
+  for(const status of [401,403,404])
+   expect(isAdminTeacherAccessRevoked(new AdminTeachersError('STAFF_ACCESS_DENIED',status)))
+    .toBe(true);
+  for(const status of [0,400,409,500,503])
+   expect(isAdminTeacherAccessRevoked(new AdminTeachersError('RETRYABLE',status)))
+    .toBe(false);
+  expect(isAdminTeacherAccessRevoked(Error('offline'))).toBe(false);
+  expect(isAdminTeacherAccessRevoked(null)).toBe(false);
+ });
  it('renders an accessible exact-ID lookup without personal or fake records',()=>{
   const html=renderToStaticMarkup(<AdminTeacherIdLookup
    session={{user:{id:'staff-1',name:'Synthetic'},phoneVerified:true}}
-   onFound={()=>{}}/>);
+   onFound={()=>{}} onAccessRevoked={()=>{}}/>);
   expect(html).toContain('admin-exact-teacher-id');
   expect(html).toContain('إظهار الشيخ');
   expect(html).not.toContain('شيخ تجريبي');
