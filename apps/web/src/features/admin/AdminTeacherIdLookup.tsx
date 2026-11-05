@@ -8,8 +8,8 @@ type LookupPhase='idle'|'loading'|'found'|'missing'|'invalid'|'denied'|'error';
 const validId=/^[a-zA-Z0-9-]{1,128}$/;
 
 /** #314: bounded, signed exact-ID fallback for a Sheikh omitted by the first 50 rows. */
-export function AdminTeacherIdLookup({session,onFound,onClear}:{
- session:AccountSession;onFound:(teacher:AdminTeacher)=>void;onClear:()=>void;
+export function AdminTeacherIdLookup({session,onFound}:{
+ session:AccountSession;onFound:(teacher:AdminTeacher)=>void;
 }){
  const [boundSession,setBoundSession]=useState(session);
  const [id,setId]=useState('');
@@ -24,7 +24,6 @@ export function AdminTeacherIdLookup({session,onFound,onClear}:{
  function submit(event:FormEvent<HTMLFormElement>){
   event.preventDefault();
   if(!active||phase==='loading')return;
-  onClear();
   const teacherId=id.trim();
   if(!validId.test(teacherId)){setPhase('invalid');return;}
   current.current?.abort();
@@ -48,7 +47,7 @@ export function AdminTeacherIdLookup({session,onFound,onClear}:{
     <input id="admin-exact-teacher-id" type="text" autoComplete="off"
      maxLength={128} required pattern="[a-zA-Z0-9-]{1,128}"
      dir="ltr" value={active?id:''} disabled={!active||phase==='loading'}
-     onChange={e=>{onClear();setId(e.target.value);setPhase('idle');}}
+     onChange={e=>{setId(e.target.value);setPhase('idle');}}
      placeholder="Teacher ID" aria-describedby="admin-exact-teacher-help"/>
     <button type="submit" className={css.staffRefresh}
      disabled={!active||phase==='loading'}>
