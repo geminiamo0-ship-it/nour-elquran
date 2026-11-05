@@ -45,10 +45,14 @@ export function parseAdminTeachers(value:unknown):AdminTeacherDirectoryValue{
   throw new AdminTeachersError('INVALID_TEACHER_DIRECTORY');
  return {asOfMs:value.asOfMs as number,teachers,truncated:value.truncated};
 }
-export async function fetchAdminTeachers(signal?:AbortSignal):Promise<AdminTeacherDirectoryValue>{
+export async function fetchAdminTeachers(signal?:AbortSignal,teacherId?:string):Promise<AdminTeacherDirectoryValue>{
+ if(teacherId!==undefined&&!id.test(teacherId))
+  throw new AdminTeachersError('INVALID_TEACHER_LOOKUP',400);
+ const url=teacherId===undefined?'/v1/staff/teachers':
+  `/v1/staff/teachers?id=${encodeURIComponent(teacherId)}`;
  let response:Response;
  try{
-  response=await fetch('/v1/staff/teachers',{method:'GET',credentials:'same-origin',
+  response=await fetch(url,{method:'GET',credentials:'same-origin',
    cache:'no-store',redirect:'error',...(signal?{signal}:{})});
  }catch{throw new AdminTeachersError('NETWORK_UNAVAILABLE');}
  let payload:unknown;
