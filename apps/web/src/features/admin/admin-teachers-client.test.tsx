@@ -2,7 +2,8 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminTeacherDirectory,AdminTeacherReceipt} from './AdminTeacherDirectory';
 import {AdminTeacherIdLookup} from './AdminTeacherIdLookup';
-import {AdminTeachersError,fetchAdminTeachers,parseAdminTeachers,isAdminTeacherAccessRevoked} from './admin-teachers-client';
+import {AdminTeachersError,fetchAdminTeachers,parseAdminTeachers,isAdminTeacherAccessRevoked,
+ reconcileVerifiedTeacherRows} from './admin-teachers-client';
 const teacher={id:'teacher-1',name:'شيخ تجريبي',qualified:true,status:'active',
  currentLearners:2,upcomingLessons:3};
 const good={code:'STAFF_TEACHER_DIRECTORY',asOfMs:1793600000000,
@@ -109,6 +110,23 @@ describe('Admin teacher directory #305',()=>{
     .toBe(false);
   expect(isAdminTeacherAccessRevoked(Error('offline'))).toBe(false);
   expect(isAdminTeacherAccessRevoked(null)).toBe(false);
+ });
+ it('newer signed exact-ID receipts refresh stale Sheikh facts while preserving other actor IDs',()=>{
+  const other={...teacher,id:'teacher-2',name:'شيخ آخر'};
+  const outOfPage={...teacher,id:'teacher-75',name:'شيخ خارج الصفحة'};
+  const roster=[teacher,other];
+  const first=reconcileVerifiedTeacherRows(roster,[outOfPage]);
+  expect(first.map(t=>t.id)).toEqual(['teacher-1','teacher-2','teacher-75']);
+  const updated={...outOfPage,status:'disabled' as const,qualified:false,
+   currentLearners:0,upcomingLessons:0};
+  const second=reconcileVerifiedTeacherRows(first,[updated]);
+  expect(second).toEqual([teacher,other,updated]);
+  // The exact-ID fallback may also refresh a record in the original first 50.
+  const changedFirst={...teacher,status:'disabled' as const,qualified:false};
+  expect(reconcileVerifiedTeacherRows(roster,[changedFirst]))
+   .toEqual([changedFirst,other]);
+  expect(roster[0]).toEqual(teacher); // No mutation of the earlier receipt.
+  expect(reconcileVerifiedTeacherRows(second,[updated])).toEqual(second);
  });
  it('renders an accessible exact-ID lookup without personal or fake records',()=>{
   const html=renderToStaticMarkup(<AdminTeacherIdLookup
