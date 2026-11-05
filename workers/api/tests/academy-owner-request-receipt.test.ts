@@ -45,8 +45,9 @@ test('confirmed D1 owner request returns the new immutable request ID',async()=>
  const f=fixture();
  const response=await ownerPackageRequest(f.db,OWNER,LEARNER,command);
  assert.equal(response.status,201);
- assert.equal(response.code,'ACADEMY_REQUEST_CREATED');
- assert.match(response.academyRequestId??'',/^[0-9a-f-]{36}$/i);
+ if(response.code!=='ACADEMY_REQUEST_CREATED')
+  assert.fail('Confirmed D1 request must return the created receipt');
+ assert.match(response.academyRequestId,/^[0-9a-f-]{36}$/i);
  assert.equal(f.writes,1);
 });
 
