@@ -3,7 +3,27 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {academyAdminAckIsVerified,academyAdminOutcomeIsUncertain,academyAdminSameSession,
  academyAdminSessionLockIsBusy,academyAdminPendingForActor,
  academyAdminCommandAllowed,academyAdminSessionViewIsReady,
+ academyAdminStaffAccessRevoked,academyAdminReadMayApply,
  AdminAcademyMvp} from './AdminAcademyMvp';
+
+describe('admin academy staff revocation and late-read privacy #315',()=>{
+ it('hides old staff state only for genuine authorization denial',()=>{
+  expect(academyAdminStaffAccessRevoked(401,'UNAUTHENTICATED')).toBe(true);
+  expect(academyAdminStaffAccessRevoked(403,'STAFF_ACCESS_DENIED')).toBe(true);
+  expect(academyAdminStaffAccessRevoked(403,'ACADEMY_STAFF_ACCESS_CHANGED')).toBe(true);
+  for(const [status,code] of [
+   [403,'ACADEMY_ACTIVATION_DENIED'],[403,'ACADEMY_REQUEST_MISMATCH'],
+   [404,'STAFF_ACCESS_DENIED'],[409,'ACADEMY_REQUEST_MISMATCH'],
+   [503,'STAFF_ACCESS_DENIED'],[0,'NETWORK_OUTCOME_UNKNOWN'],
+  ] as const)expect(academyAdminStaffAccessRevoked(status,code)).toBe(false);
+ });
+ it('never applies an older signed D1 list after a newer staff denial',()=>{
+  expect(academyAdminReadMayApply(false,false)).toBe(true);
+  expect(academyAdminReadMayApply(true,false)).toBe(false);
+  expect(academyAdminReadMayApply(false,true)).toBe(false);
+  expect(academyAdminReadMayApply(true,true)).toBe(false);
+ });
+});
 
 describe('admin academy manual settlement retry semantics #315',()=>{
  it('preserves the original operation for ambiguous D1/proxy HTTP outcomes',()=>{
