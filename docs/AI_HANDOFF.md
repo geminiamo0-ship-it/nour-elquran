@@ -1,3 +1,7 @@
+## 2026-11-05 — #314 Sheikh directory access-revocation handoff
+- On `feat/314-admin-teacher-id-lookup` / Draft PR #329, exact-ID lookup 401/403/404 now notifies the parent roster to clear previously visible staff-only teacher records, selected extra Sheikh options and old operation ACK. This avoids displaying a privileged stale directory after a fresh authorization denial. Do not treat 503/network as revocation. Source commits `f050381a`, `d9edd439`, `0048dbf1`, `ba932ae9`; test `934c41be`.
+- Previous Verify #42009630913 4/4 PASS at old head `18f62b86` only. NEXT: inspect exact new HEAD GitHub Verify, independent auth/privacy review, signed isolated Dev staff grant revoke after successful directory read then exact-ID 403, 360x667 and 390x844 keyboard/touch. Keep PR Draft/#314 OPEN; no Production or feature-flag changes.
+
 ## 2026-11-05 — #314 next action after boundary regressions
 - Draft PR [#329](https://github.com/geminiamo0-ship-it/nour-elquran/pull/329), branch `feat/314-admin-teacher-id-lookup`: Worker and Vitest 0/1/50/51/101 boundary coverage added (`7a32bf3b`, `df884299`), including >51 malformed adapter denial and >50 malformed browser DTO rejection. No runtime/API behavior changed.
 - Verify the **new final HEAD** via GitHub Actions, then independent auth/privacy review, source-pinned signed Cloudflare Dev 0/1/50/51/100+, staff role revocation and 360x667/390x844 keyboard/touch. Cloudflare PR preview build is not signed D1 Dev E2E. Keep Draft and #314 OPEN, no Production.
