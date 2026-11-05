@@ -106,7 +106,8 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
   {latestAck?.session===session&&<p role="status" className={css.staffInfo}>
    تم تأكيد الإجراء وحفظه: {latestAck.value.code}. جارٍ تحديث السجل من الخادم.
   </p>}
-  <AdminAcademyMvp key={session.user.id} session={session} mode="invites"/>
+  {state.phase!=='denied'&&<AdminAcademyMvp key={session.user.id}
+   session={session} mode="invites"/>}
   {ready&&<AdminOperations kind="teacher" session={session} teachers={teachers}
    onApplied={value=>{setLatestAck({session,value});setLookup(null);setRetry(n=>n+1);}}/>}
  </div>;
