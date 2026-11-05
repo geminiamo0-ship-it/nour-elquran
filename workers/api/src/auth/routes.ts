@@ -30,7 +30,7 @@ import {readOwnerLessonQuranHistory} from '../lesson-quran-history.ts';
 import {verifiedOwner} from '../published-assignments.ts';
 import { canManageTeachers, issueTeacherRoleAction, parseTeacherAction } from '../staff-teachers.ts';
 import {readStaffOverview} from '../staff-overview.ts';
-import {readAdminTeachers} from '../staff-teacher-directory.ts';
+import {readAdminTeachers,validAdminTeacherId} from '../staff-teacher-directory.ts';
 import {transitionListedTeacher} from '../staff-teacher-transition.ts';
 import {isAdminCollectionView,readStaffCollection} from '../staff-collections.ts';
 import {executeStaffSchedule,parseScheduleCommand} from '../staff-scheduling.ts';
@@ -625,7 +625,12 @@ export async function handleAuthenticated(request: Request, env: Env, requestId:
     if(request.method!=='GET')return reply(405,{code:'METHOD_NOT_ALLOWED'},requestId);
     if(env.NOOR_ADMIN_PORTAL_ENABLED!=='true')
       return reply(404,{code:'NOT_FOUND'},requestId);
-    const result=await readAdminTeachers(env.DB,session.user.id);
+    const params=new URL(request.url).searchParams;
+    if(params.size>1||(params.size===1&&(!params.has('id')||
+      !validAdminTeacherId(params.get('id')))))
+      return reply(400,{code:'INVALID_TEACHER_LOOKUP'},requestId);
+    const result=await readAdminTeachers(env.DB,session.user.id,Date.now(),
+      params.has('id')?params.get('id')!:undefined);
     const {status,...body}=result;return reply(status,body,requestId);
   }
   // #309: roster transition resolves auth subject on D1, never in the browser.
