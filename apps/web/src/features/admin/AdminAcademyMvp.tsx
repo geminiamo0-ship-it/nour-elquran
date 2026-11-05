@@ -118,7 +118,14 @@ async function submit(path:string,command:unknown){
  const res=await fetch('/v1/staff/academy/'+path,{method:'POST',
   credentials:'same-origin',cache:'no-store',redirect:'error',
   headers:{'Content-Type':'application/json'},body:JSON.stringify(command)});
- const v:unknown=await res.json();
+ // An unsigned response must never leave an old one-use invite or staff
+ // learner list on screen, even when a proxy returns no JSON body.
+ if(res.status===401)throw new AcademyCommandError('STAFF_ACCESS_DENIED',401);
+ let v:unknown;
+ try{v=await res.json();}catch{
+  if(res.status===403)throw new AcademyCommandError('STAFF_ACCESS_DENIED',403);
+  throw new Error('استجابة غير صالحة');
+ }
  if(!v||typeof v!=='object'||Array.isArray(v)||typeof (v as {code?:unknown}).code!=='string')
   throw new Error('استجابة غير صالحة');
  const code=(v as {code:string}).code;
