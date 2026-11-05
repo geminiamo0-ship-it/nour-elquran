@@ -11,6 +11,7 @@ describe('admin academy staff revocation and late-read privacy #315',()=>{
   expect(academyAdminStaffAccessRevoked(401,'UNAUTHENTICATED')).toBe(true);
   expect(academyAdminStaffAccessRevoked(403,'STAFF_ACCESS_DENIED')).toBe(true);
   expect(academyAdminStaffAccessRevoked(403,'ACADEMY_STAFF_ACCESS_CHANGED')).toBe(true);
+  expect(academyAdminStaffAccessRevoked(409,'ACADEMY_STAFF_ACCESS_CHANGED')).toBe(true);
   for(const [status,code] of [
    [403,'ACADEMY_ACTIVATION_DENIED'],[403,'ACADEMY_REQUEST_MISMATCH'],
    [404,'STAFF_ACCESS_DENIED'],[409,'ACADEMY_REQUEST_MISMATCH'],
