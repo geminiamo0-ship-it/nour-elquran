@@ -55,6 +55,10 @@ export function academyAdminOutcomeIsUncertain(status:number){
 export function academyAdminSameSession<T>(started:T,current:T){
  return started===current;
 }
+/** Block even a single render of stale staff data, form values or invite secrets. */
+export function academyAdminSessionViewIsReady<T>(rendered:T,current:T){
+ return academyAdminSameSession(rendered,current);
+}
 /** An unfinished request from an old staff session must not lock the new one. */
 export function academyAdminSessionLockIsBusy<T>(inFlightSession:T|null,session:T){
  return inFlightSession!==null&&academyAdminSameSession(inFlightSession,session);
@@ -97,10 +101,21 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const [whatsapp,setWhatsapp]=useState('');
  const [inviteUrl,setInviteUrl]=useState('');
  const [pendingOp,setPendingOp]=useState<PendingOp|null>(null);
+ const [visibleSession,setVisibleSession]=useState(session);
  const pendingOpRef=useRef<PendingOp|null>(null);
  const sending=useRef<{session:AccountSession;attempt:object}|null>(null);
  const currentSession=useRef(session);
  currentSession.current=session;
+ // A new session must not paint the previous staff actor's data, selected
+ // learner, settlement note or one-use Sheikh invitation before effects run.
+ useEffect(()=>{
+  if(academyAdminSessionViewIsReady(visibleSession,session))return;
+  setData(null);setInviteUrl('');setTitle('');setPrice('');setSessions('8');
+  setSelectedPackage('');setSelectedRequest('');setLearnerId('');
+  setReason('');setConfirmed(false);setWhatsapp('');setPendingOp(null);
+  setResult({phase:'idle',message:''});
+  setVisibleSession(session);
+ },[visibleSession,session]);
  useEffect(()=>{
   const ctrl=new AbortController();
   setData(null);setInviteUrl('');
@@ -174,6 +189,10 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  }
  const modeTitle={packages:'الباقات والأسعار',requests:'طلبات الاشتراك وتفعيل الطلاب',
   invites:'إضافة شيخ بدعوة',contact:'واتساب الأكاديمية'}[mode];
+ if(!academyAdminSessionViewIsReady(visibleSession,session))
+  return <section dir="rtl" className={styles.root} aria-label="التحقق من جلسة الإدارة">
+   <p role="status">جارٍ التحقق من جلسة الإدارة…</p>
+  </section>;
  return <section dir="rtl" className={styles.root} aria-label={modeTitle}>
   <h2>{modeTitle}</h2>
   <p>كل تعديل يتطلب صلاحية الإدارة الحالية وتأكيدًا صريحًا. الدفع لا يُثبت تلقائيًا من واتساب.</p>
