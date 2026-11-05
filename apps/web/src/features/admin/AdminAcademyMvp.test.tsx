@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {academyAdminOutcomeIsUncertain,academyAdminSameSession,
+import {academyAdminAckIsVerified,academyAdminOutcomeIsUncertain,academyAdminSameSession,
  academyAdminSessionLockIsBusy,academyAdminPendingForActor,
  academyAdminCommandAllowed,academyAdminSessionViewIsReady,
  AdminAcademyMvp} from './AdminAcademyMvp';
@@ -72,5 +72,43 @@ describe('admin academy same-actor uncertain operation recovery #315',()=>{
   expect(academyAdminCommandAllowed(pending,'synthetic-staff-b','activate',
    pending.payload)).toBe(true);
   expect(academyAdminPendingForActor(null,'synthetic-staff-a')).toBeNull();
+ });
+});
+
+describe('admin academy strict durable acknowledgement #315',()=>{
+ const cases=[
+  ['packages','ACADEMY_PACKAGE_SAVED','ACADEMY_PACKAGE_REPLAY'],
+  ['activate','ACADEMY_SUBSCRIPTION_ACTIVATED','ACADEMY_ACTIVATION_REPLAY'],
+  ['reject','ACADEMY_REQUEST_REJECTED','ACADEMY_REQUEST_REJECTION_REPLAY'],
+  ['contact','ACADEMY_WHATSAPP_SAVED','ACADEMY_CONTACT_REPLAY'],
+ ] as const;
+ it('accepts only the correct 201 create or 200 immutable replay per command',()=>{
+  for(const [path,created,replayed] of cases){
+   expect(academyAdminAckIsVerified(path,201,{code:created})).toBe(true);
+   expect(academyAdminAckIsVerified(path,200,{code:replayed})).toBe(true);
+   expect(academyAdminAckIsVerified(path,200,{code:created})).toBe(false);
+   expect(academyAdminAckIsVerified(path,201,{code:replayed})).toBe(false);
+   expect(academyAdminAckIsVerified(path,202,{code:created})).toBe(false);
+   expect(academyAdminAckIsVerified(path,204,{code:created})).toBe(false);
+   expect(academyAdminAckIsVerified(path,503,{code:created})).toBe(false);
+   expect(academyAdminAckIsVerified(path,201,{code:'ACADEMY_OPERATION_CONFLICT'})).toBe(false);
+  }
+ });
+ it('requires a newly issued one-use invite token and a valid expiry',()=>{
+  const valid={code:'ACADEMY_INVITE_ISSUED',token:'a'.repeat(64),expiresAtMs:1700000000000};
+  expect(academyAdminAckIsVerified('invites',201,valid)).toBe(true);
+  for(const invalid of [
+   {...valid,token:undefined},{...valid,token:'not-a-token'},
+   {...valid,expiresAtMs:0},{...valid,expiresAtMs:'1700000000000'},
+   {...valid,code:'ACADEMY_INVITE_ALREADY_ISSUED'},
+  ])expect(academyAdminAckIsVerified('invites',201,invalid)).toBe(false);
+  expect(academyAdminAckIsVerified('invites',200,valid)).toBe(false);
+ });
+ it('fails closed for malformed payloads, unknown routes and cross-command ACKs',()=>{
+  for(const raw of [null,[],{},'ok',{code:'ACADEMY_PACKAGE_SAVED'}]){
+   expect(academyAdminAckIsVerified('invites',201,raw)).toBe(false);
+  }
+  expect(academyAdminAckIsVerified('activate',201,{code:'ACADEMY_PACKAGE_SAVED'})).toBe(false);
+  expect(academyAdminAckIsVerified('other',201,{code:'ACADEMY_PACKAGE_SAVED'})).toBe(false);
  });
 });
