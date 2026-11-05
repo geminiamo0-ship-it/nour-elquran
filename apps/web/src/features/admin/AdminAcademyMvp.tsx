@@ -232,7 +232,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
      if(!stillCurrent()||ctrl.signal.aborted)return;
      if(e instanceof AcademyCommandError&&academyAdminStaffAccessRevoked(e.status,e.code)){
       invalidateStaffData();
-      setResult({phase:'error',message:operationErrors.ACADEMY_STAFF_ACCESS_CHANGED});
+      setResult({phase:'error',message:operationErrors.ACADEMY_STAFF_ACCESS_CHANGED??'صلاحية الإدارة اتغيرت.'});
      }
     });
    }
