@@ -1,3 +1,7 @@
+## #314 Sheikh directory boundary regression — 2026-11-05
+- Worker Node test covers 0, 1, 50, 51 and 101 simulated total rows under the fixed `LIMIT 51` query, exact 50-row output, extra-page indicator, no duplicate IDs and malformed 52-row D1 adapter denial.
+- Browser Vitest tests accept 0/1/50 DTO rows and fail closed for 51/101 returned rows; this is source regression, **not** live D1 pagination evidence. Require source-pinned signed Dev tests, revoked staff and mobile keyboard/touch acceptance before merge.
+
 ## #314 Worker receipt integrity regression (2026-11-05)
 - `workers/api/tests/staff-teacher-directory.test.ts`: D1 adapter returning the wrong ID for an exact Sheikh query must fail closed with sanitized 503; duplicate IDs in the bounded list must fail closed; distinct IDs remain readable. Check exact-head CI and signed Dev role/row-count/mobile acceptance before merge.
 
