@@ -1,3 +1,8 @@
+## 2026-11-05 — #314 out-of-page Sheikh directory source gates
+- Verify exact-head Node D1-adapter contract: 50+1 original list, single-ID `LIMIT 1`, current staff grant, malformed/duplicate row denial, missing ID as truthful empty, invalid ID 400, nonstaff 403, no PII columns.
+- Verify frontend Vitest: same-origin no-store GET with exact ID, no role header, invalid ID denied before network, SSR has no synthetic or prior actor record; keyboard/focus and mobile 360×667/390×844 Browser QA still required.
+- Required signed isolated Cloudflare Dev: 0/1/50/51/100+ Sheikh rows; staff can operate on ID outside first 50 only after authoritative lookup; nonstaff/revoked staff cannot read it; no duplicates or cross-actor stale display. Not yet performed. Keep #314 OPEN.
+
 ## #309 Admin operation release gates (2026-11-01)
 - Unit: strict teacher roster transition parser, authorized staff pre-query, active class guard, exact client payload/action allowlist, 401/403, network-uncertain write (no false success/retry), SSR forms locked unless explicit consent.
 - Native SQL: all migrations through 0027; active scheduled/live Sheikh cannot be suspended or de-qualified, no immutable event on denial, cancellation then transition, unrelated teacher permitted, and legacy B2 endpoint inherits same trigger.
