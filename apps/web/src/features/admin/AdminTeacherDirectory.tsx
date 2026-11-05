@@ -21,7 +21,7 @@ const cairo=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',
 export function AdminTeacherDirectory({session}:{session:AccountSession}){
  const [state,setState]=useState<State>({phase:'loading'});
  const [retry,setRetry]=useState(0);
- const [lookup,setLookup]=useState<{session:AccountSession;teacher:AdminTeacher}|null>(null);
+ const [lookup,setLookup]=useState<{session:AccountSession;teachers:readonly AdminTeacher[]}|null>(null);
  const [latestAck,setLatestAck]=useState<{session:AccountSession;value:AdminActionResult}|null>(null);
  useEffect(()=>{
   const controller=new AbortController();
@@ -36,9 +36,9 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
   return ()=>controller.abort();
  },[session,retry]);
  const ready=state.phase==='ready'&&state.session===session?state.value:null;
- const lookedUp=lookup?.session===session?lookup.teacher:null;
- const teachers=ready?[...ready.teachers,...(lookedUp&&
-  !ready.teachers.some(t=>t.id===lookedUp.id)?[lookedUp]:[])]:[];
+ const lookedUp=lookup?.session===session?lookup.teachers:[];
+ const teachers=ready?[...ready.teachers,...lookedUp.filter(t=>
+  !ready.teachers.some(existing=>existing.id===t.id))]:[];
  return <div className={css.staffDirectory}>
   <section className={css.staffIntro} aria-labelledby="admin-teachers-heading">
    <p className={css.kicker}>إدارة الشيوخ · قراءة فقط</p>
@@ -71,7 +71,10 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
      ` ${ready.teachers.length.toLocaleString('ar-EG')} سجل في الدليل.`}
    </div>
    {ready.truncated&&<AdminTeacherIdLookup session={session}
-    onClear={()=>setLookup(null)} onFound={teacher=>setLookup({session,teacher})}/>}
+    onFound={teacher=>setLookup(current=>{
+     const previous=current?.session===session?current.teachers:[];
+     return {session,teachers:previous.some(t=>t.id===teacher.id)?previous:[...previous,teacher]};
+    })}/>}
    {teachers.length===0?<div className={css.staffEmpty}>
     لا يوجد شيوخ مسجلون في قاعدة البيانات حاليًا.
    </div>:<div className={css.staffRows} aria-label="دليل الشيوخ الموثق">
