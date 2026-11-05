@@ -1,16 +1,17 @@
 'use client';
 import {useEffect,useState} from 'react';
 import type {AccountSession} from '@/features/account';
-import {AdminTeachersError,fetchAdminTeachers,type AdminTeacherDirectoryValue}
+import {AdminTeachersError,fetchAdminTeachers,type AdminTeacher,type AdminTeacherDirectoryValue}
  from './admin-teachers-client';
 import css from './AdminPortal.module.css';
 import {AdminOperations} from './AdminOperations';
+import {AdminTeacherIdLookup} from './AdminTeacherIdLookup';
 import {AdminAcademyMvp} from './AdminAcademyMvp';
 import type {AdminActionResult} from './admin-operations-client';
 
 type State=
  |{phase:'loading'}
- |{phase:'ready';value:AdminTeacherDirectoryValue}
+ |{phase:'ready';session:AccountSession;value:AdminTeacherDirectoryValue}
  |{phase:'denied'|'error'};
 const cairo=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',
  dateStyle:'medium',timeStyle:'short'});
@@ -20,12 +21,13 @@ const cairo=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',
 export function AdminTeacherDirectory({session}:{session:AccountSession}){
  const [state,setState]=useState<State>({phase:'loading'});
  const [retry,setRetry]=useState(0);
+ const [lookup,setLookup]=useState<{session:AccountSession;teacher:AdminTeacher}|null>(null);
  const [latestAck,setLatestAck]=useState<{session:AccountSession;value:AdminActionResult}|null>(null);
  useEffect(()=>{
   const controller=new AbortController();
-  setState({phase:'loading'});
+  setState({phase:'loading'});setLookup(null);
   void fetchAdminTeachers(controller.signal).then(value=>{
-   if(!controller.signal.aborted)setState({phase:'ready',value});
+   if(!controller.signal.aborted)setState({phase:'ready',session,value});
   }).catch(error=>{
    if(controller.signal.aborted)return;
    setState({phase:error instanceof AdminTeachersError&&
@@ -33,7 +35,10 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
   });
   return ()=>controller.abort();
  },[session,retry]);
- const ready=state.phase==='ready'?state.value:null;
+ const ready=state.phase==='ready'&&state.session===session?state.value:null;
+ const lookedUp=lookup?.session===session?lookup.teacher:null;
+ const teachers=ready?[...ready.teachers,...(lookedUp&&
+  !ready.teachers.some(t=>t.id===lookedUp.id)?[lookedUp]:[])]:[];
  return <div className={css.staffDirectory}>
   <section className={css.staffIntro} aria-labelledby="admin-teachers-heading">
    <p className={css.kicker}>إدارة الشيوخ · قراءة فقط</p>
@@ -65,10 +70,12 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
     {ready.truncated?' عرض أول ٥٠ شيخًا فقط، توجد سجلات إضافية.':
      ` ${ready.teachers.length.toLocaleString('ar-EG')} سجل في الدليل.`}
    </div>
-   {ready.teachers.length===0?<div className={css.staffEmpty}>
+   {ready.truncated&&<AdminTeacherIdLookup session={session}
+    onFound={teacher=>setLookup({session,teacher})}/>}
+   {teachers.length===0?<div className={css.staffEmpty}>
     لا يوجد شيوخ مسجلون في قاعدة البيانات حاليًا.
    </div>:<div className={css.staffRows} aria-label="دليل الشيوخ الموثق">
-    {ready.teachers.map(teacher=><article className={css.staffCard} key={teacher.id}>
+    {teachers.map(teacher=><article className={css.staffCard} key={teacher.id}>
      <div className={css.staffIdentity}>
       <strong>{teacher.name}</strong>
       <small>معرّف الشيخ للجدولة: <code dir="ltr">{teacher.id}</code></small>
@@ -89,7 +96,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
    تم تأكيد الإجراء وحفظه: {latestAck.value.code}. جارٍ تحديث السجل من الخادم.
   </p>}
   <AdminAcademyMvp key={session.user.id} session={session} mode="invites"/>
-  {ready&&<AdminOperations kind="teacher" session={session} teachers={ready.teachers}
-   onApplied={value=>{setLatestAck({session,value});setRetry(n=>n+1);}}/>}
+  {ready&&<AdminOperations kind="teacher" session={session} teachers={teachers}
+   onApplied={value=>{setLatestAck({session,value});setLookup(null);setRetry(n=>n+1);}}/>}
  </div>;
 }
