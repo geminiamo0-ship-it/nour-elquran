@@ -1,3 +1,7 @@
+## 2026-11-05 — #314 next action after boundary regressions
+- Draft PR [#329](https://github.com/geminiamo0-ship-it/nour-elquran/pull/329), branch `feat/314-admin-teacher-id-lookup`: Worker and Vitest 0/1/50/51/101 boundary coverage added (`7a32bf3b`, `df884299`), including >51 malformed adapter denial and >50 malformed browser DTO rejection. No runtime/API behavior changed.
+- Verify the **new final HEAD** via GitHub Actions, then independent auth/privacy review, source-pinned signed Cloudflare Dev 0/1/50/51/100+, staff role revocation and 360x667/390x844 keyboard/touch. Cloudflare PR preview build is not signed D1 Dev E2E. Keep Draft and #314 OPEN, no Production.
+
 ## 2026-11-05 — #314 Worker exact-ID and duplicate receipt guards (PR #329)
 - Branch `feat/314-admin-teacher-id-lookup` received Worker commit `bc7a0252` and regression commit `10ccf7c7`. Server `readAdminTeachers` now rejects a D1 exact-ID receipt that does not match the requested Sheikh and rejects duplicate IDs in a 50+1 directory, returning sanitized 503 instead of a misleading 200. Browser target pin from earlier commits remains intact.
 - New exact-head GitHub Verify is required; do not reuse the earlier successful #42000148225 for this updated head. Independent privacy/security review and source-pinned signed Cloudflare Dev + 360/390 browser checks remain open. No merge/Production/finance/WhatsApp/voice/cumulative-ink changes.
