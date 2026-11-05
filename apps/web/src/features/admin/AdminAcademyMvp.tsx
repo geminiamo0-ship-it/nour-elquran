@@ -51,8 +51,8 @@ class AcademyCommandError extends Error{
 /** A fresh staff authorization denial hides previously signed academy data.
  * Domain-rule 403 responses do not imply revoked staff privileges. */
 export function academyAdminStaffAccessRevoked(status:number,code:string){
- return status===401||(status===403&&
-  (code==='STAFF_ACCESS_DENIED'||code==='ACADEMY_STAFF_ACCESS_CHANGED'));
+ return status===401||(status===403&&code==='STAFF_ACCESS_DENIED')||
+  ((status===403||status===409)&&code==='ACADEMY_STAFF_ACCESS_CHANGED');
 }
 /** A late roster response cannot resurrect data after a newer staff denial. */
 export function academyAdminReadMayApply(aborted:boolean,revoked:boolean){
