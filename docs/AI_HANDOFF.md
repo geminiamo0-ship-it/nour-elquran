@@ -1,3 +1,7 @@
+## 2026-11-05 — #314 staff exact-ID receipt target pin (PR #329)
+- On branch `feat/314-admin-teacher-id-lookup`, code commit `b932d2ea` and regression commit `646ffaad` fail closed if an HTTP 200 exact-ID response contains another Sheikh or multiple entries. General DTO validation alone had not enforced equality with the requested ID; stale intermediary receipts could contaminate staff action target selection. Empty valid response stays not-found.
+- Prior exact-head Verify #41988466551 passed 4/4 on `880f302c` **before** these changes. Verify new HEAD, check independent security review and signed Cloudflare Dev actor/sibling/role-revocation and 360/390 UX. No deployment/merge/payment/Production or ink flag authorized.
+
 ## 2026-11-05 — #314 staff roster out-of-page exact ID (draft source)
 - Branch: `feat/314-admin-teacher-id-lookup`; scoped issue [#314](https://github.com/geminiamo0-ship-it/nour-elquran/issues/314). This is a small authorized UI/Worker slice, not completed admin or paginated directory.
 - Worker `staff-teacher-directory.ts`: existing 50+1 listing unchanged; exact ID selects one D1 row with the same fresh staff grant and private-field exclusions. `auth/routes.ts`: only no query or one validated `id` query accepted. Browser `admin-teachers-client.ts` validates ID before a same-origin no-store GET; `AdminTeacherIdLookup.tsx` and `AdminTeacherDirectory.tsx` show a responsive accessible fallback when truncated, de-duplicate and clear stale actor/lookup results. CSS and Node/Vitest tests included.
