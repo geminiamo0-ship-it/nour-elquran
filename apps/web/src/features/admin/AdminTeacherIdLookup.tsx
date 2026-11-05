@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import type {AccountSession} from '@/features/account';
-import {AdminTeachersError,fetchAdminTeachers,type AdminTeacher} from './admin-teachers-client';
+import {fetchAdminTeachers,isAdminTeacherAccessRevoked,type AdminTeacher} from './admin-teachers-client';
 import css from './AdminPortal.module.css';
 
 type LookupPhase='idle'|'loading'|'found'|'missing'|'invalid'|'denied'|'error';
@@ -37,7 +37,7 @@ export function AdminTeacherIdLookup({session,onFound}:{
    onFound(teacher);setPhase('found');
   }).catch(error=>{
    if(ctrl.signal.aborted)return;
-   if(error instanceof AdminTeachersError&&[401,403,404].includes(error.status)){
+   if(isAdminTeacherAccessRevoked(error)){
     // A fresh signed 401/403/404 invalidates the parent roster and actions.
     // Keeping an earlier successful list visible after revocation is unsafe.
     onAccessRevoked();setPhase('denied');return;
