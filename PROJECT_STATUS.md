@@ -1,3 +1,8 @@
+## 2026-11-05 — #314 Worker receipt integrity follow-up (Draft PR #329)
+- Worker now fails closed if the exact-ID D1 adapter returns a different Sheikh than requested, or if the bounded directory contains duplicate Sheikh IDs. This complements the existing browser exact-target guard; the fixed SQL and fresh staff grant remain unchanged.
+- Source commits: `bc7a02524dd3417f950f95b718018a72bb2f5191` (Worker) and `10ccf7c7c050c7a904e2205771770e97cab04307` (Node regression). No schema/Production/payment/child-data changes. Exact-head CI, independent security review and signed Dev/browser QA are still required before merge.
+- NEXT: inspect Verify for the latest PR head; test authorized staff/revoked staff, 0/1/50/51/100+ rows, exact-ID fallback and 360/390 keyboard/touch on isolated Dev. Keep Issue #314 open.
+
 ## 2026-11-05 — #314 exact Sheikh lookup response-target hardening (PR #329; source candidate)
 - A successful signed GET exact-ID response could be syntactically valid but contain another teacher ID (or multiple rows); the browser previously accepted the first row into the staff action selector. The Worker already uses `WHERE teacher.id=? LIMIT 1`, but the browser must fail closed on a stale/mismatched intermediary response.
 - `admin-teachers-client.ts` now rejects any exact-ID success receipt containing an ID other than the requested one, more than one row, or truncation. Empty exact lookup remains a valid not-found state. Added focused Vitest negative/positive regressions.
