@@ -74,7 +74,15 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
     onFound={teacher=>setLookup(current=>{
      const previous=current?.session===session?current.teachers:[];
      return {session,teachers:previous.some(t=>t.id===teacher.id)?previous:[...previous,teacher]};
-    })}/>}
+    })}
+    onAccessRevoked={()=>{
+     // A fresh denied lookup supersedes the earlier signed list. Remove
+     // all stale privileged records and actions for precisely this session.
+     setState(current=>current.phase==='ready'&&current.session===session
+      ?{phase:'denied'}:current);
+     setLookup(current=>current?.session===session?null:current);
+     setLatestAck(current=>current?.session===session?null:current);
+    }}/>}
    {teachers.length===0?<div className={css.staffEmpty}>
     لا يوجد شيوخ مسجلون في قاعدة البيانات حاليًا.
    </div>:<div className={css.staffRows} aria-label="دليل الشيوخ الموثق">
