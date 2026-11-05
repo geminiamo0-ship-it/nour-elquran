@@ -10,6 +10,7 @@ const validId=/^[a-zA-Z0-9-]{1,128}$/;
 /** #314: bounded, signed exact-ID fallback for a Sheikh omitted by the first 50 rows. */
 export function AdminTeacherIdLookup({session,onFound}:{
  session:AccountSession;onFound:(teacher:AdminTeacher)=>void;
+ onAccessRevoked:()=>void;
 }){
  const [boundSession,setBoundSession]=useState(session);
  const [id,setId]=useState('');
@@ -36,8 +37,12 @@ export function AdminTeacherIdLookup({session,onFound}:{
    onFound(teacher);setPhase('found');
   }).catch(error=>{
    if(ctrl.signal.aborted)return;
-   setPhase(error instanceof AdminTeachersError&&[401,403,404].includes(error.status)
-    ?'denied':'error');
+   if(error instanceof AdminTeachersError&&[401,403,404].includes(error.status)){
+    // A fresh signed 401/403/404 invalidates the parent roster and actions.
+    // Keeping an earlier successful list visible after revocation is unsafe.
+    onAccessRevoked();setPhase('denied');return;
+   }
+   setPhase('error');
   });
  }
  return <section className={css.staffLookup} aria-label="إظهار شيخ خارج أول خمسين سجلًا">
