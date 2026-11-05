@@ -91,7 +91,7 @@ test('exact teacher ID lookup reaches a record beyond the first 50 without unbou
  assert.equal(queries.length,2);
  assert.equal(queries[1]?.sql,ADMIN_TEACHER_BY_ID_SQL);
  assert.deepEqual(queries[1]?.args,[NOW,NOW,NOW,'teacher-75']);
- assert.match(ADMIN_TEACHER_BY_ID_SQL,/WHERE teacher.id=\\?/);
+ assert.match(ADMIN_TEACHER_BY_ID_SQL,/WHERE teacher.id=\?/);
  assert.match(ADMIN_TEACHER_BY_ID_SQL,/LIMIT 1/);
  assert.doesNotMatch(ADMIN_TEACHER_BY_ID_SQL,/phone_number|email|auth_subject AS|learner.display_name|payload_json/);
  const missing=await readAdminTeachers(fake(true,[]).db,'staff-subject',NOW,'teacher-75');
