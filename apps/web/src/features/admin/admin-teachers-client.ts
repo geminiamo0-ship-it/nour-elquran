@@ -53,6 +53,17 @@ export function parseAdminTeachers(value:unknown):AdminTeacherDirectoryValue{
   throw new AdminTeachersError('INVALID_TEACHER_DIRECTORY');
  return {asOfMs:value.asOfMs as number,teachers,truncated:value.truncated};
 }
+/** #314: later signed exact-ID reads supersede stale roster/lookup facts for
+ * the same Sheikh, without changing the selected actor ID or other choices.
+ * The caller supplies only already-validated, current-session API rows.
+ */
+export function reconcileVerifiedTeacherRows(
+ existing:readonly AdminTeacher[],fresh:readonly AdminTeacher[],
+):AdminTeacher[]{
+ const byId=new Map(existing.map(teacher=>[teacher.id,teacher]));
+ for(const teacher of fresh)byId.set(teacher.id,teacher);
+ return [...byId.values()];
+}
 export async function fetchAdminTeachers(signal?:AbortSignal,teacherId?:string):Promise<AdminTeacherDirectoryValue>{
  if(teacherId!==undefined&&!id.test(teacherId))
   throw new AdminTeachersError('INVALID_TEACHER_LOOKUP',400);
