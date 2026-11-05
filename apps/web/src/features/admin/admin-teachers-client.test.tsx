@@ -135,6 +135,11 @@ describe('Admin teacher directory #305',()=>{
   const html=renderToStaticMarkup(<AdminTeacherDirectory
    session={{user:{id:'staff-1',name:'Synthetic'},phoneVerified:true}}/>);
   expect(html).toContain('جارٍ قراءة سجل الشيوخ');
+  // Until a fresh signed roster succeeds, the staff invitation mutation UI
+  // must not mount during initial loading (or subsequent refresh/error).
+  expect(html).not.toContain('إضافة شيخ بدعوة');
+  expect(html).not.toContain('إنشاء رابط إضافة شيخ');
+  expect(html).not.toContain('تحديث البيانات');
   expect(html).not.toContain('شيخ تجريبي');
   expect(html).not.toContain('موقوف');
  });
