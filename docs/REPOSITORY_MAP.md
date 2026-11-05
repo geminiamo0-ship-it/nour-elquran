@@ -1,3 +1,7 @@
+## #315 owner package request receipt verification (PR #327 candidate)
+- `workers/api/src/academy-admin-mvp.ts` / `ownerPackageRequest`: exact signed owner/learner/package idempotent replay, positive D1 write receipt required, unknown abort -> 503 (no invented successful student package request).
+- `workers/api/tests/academy-owner-request-receipt.test.ts`: synthetic owner, actor, learner and catalog scope plus resolved-failure, duplicate/lost ACK and outage tests. Exact-head CI and signed Dev still pending.
+
 ## #322 Premium learner portal refresh (PR #323; source candidate)
 - `apps/web/src/features/student/{StudentShell.tsx,StudentPremium.module.css}`: reusable premium RTL sidebar/header/profile/bell and four-item mobile navigation; preserve authenticated session and profile-swap Quran save safeguards.
 - `apps/web/src/features/student/{PremiumHome.tsx,StudentDashboard.tsx,ConnectedStudentDashboard.tsx}`: same screen for demo and signed learner, server-authoritative home lesson/task/report content and fail-closed loading/error states.
