@@ -119,7 +119,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
   </>}
   <AdminTeacherReceipt session={session} receipt={latestAck}
    denied={state.phase==='denied'}/>
-  {state.phase!=='denied'&&<AdminAcademyMvp key={session.user.id}
+  {ready&&<AdminAcademyMvp key={session.user.id}
    session={session} mode="invites"/>}
   {ready&&<AdminOperations kind="teacher" session={session} teachers={teachers}
    onApplied={value=>{setLatestAck({session,value});setLookup(null);setRetry(n=>n+1);}}/>}
