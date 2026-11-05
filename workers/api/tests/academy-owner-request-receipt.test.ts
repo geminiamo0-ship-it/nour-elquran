@@ -20,7 +20,7 @@ function fixture(options:{owner?:boolean;active?:boolean;existing?:Saved|null;
  const db={
   prepare(sql:string){
    return {
-    bind(..._values:unknown[]){return this;},
+    bind(){return this;},
     async first(){
      if(sql.includes('FROM learners l JOIN accounts a'))
       return options.owner===false?null:{ok:1};
