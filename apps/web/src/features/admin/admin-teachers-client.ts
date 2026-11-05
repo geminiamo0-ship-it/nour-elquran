@@ -17,11 +17,16 @@ export const isAdminTeacherAccessRevoked=(error:unknown):error is AdminTeachersE
 const record=(v:unknown):v is Record<string,unknown> =>
  v!==null&&typeof v==='object'&&!Array.isArray(v);
 const keys=['id','name','qualified','status','currentLearners','upcomingLessons'] as const;
+// Fail closed if an API regression adds staff/guardian PII or unreviewed metadata
+// to the top-level directory envelope, not just to individual Sheikh rows.
+const envelopeKeys=['code','readOnly','asOfMs','teachers','truncated'] as const;
 const id=/^[a-zA-Z0-9-]{1,128}$/;
 const integer=(v:unknown):v is number=>Number.isSafeInteger(v)&&Number(v)>=0;
 
 export function parseAdminTeachers(value:unknown):AdminTeacherDirectoryValue{
- if(!record(value)||value.code!=='STAFF_TEACHER_DIRECTORY'||value.readOnly!==true||
+ if(!record(value)||Object.keys(value).length!==envelopeKeys.length||
+  !envelopeKeys.every(k=>Object.hasOwn(value,k))||
+  value.code!=='STAFF_TEACHER_DIRECTORY'||value.readOnly!==true||
   !integer(value.asOfMs)||typeof value.truncated!=='boolean'||
   !Array.isArray(value.teachers)||value.teachers.length>50)
   throw new AdminTeachersError('INVALID_TEACHER_DIRECTORY');
