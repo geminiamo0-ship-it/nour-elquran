@@ -95,11 +95,13 @@ describe('admin academy strict durable acknowledgement #315',()=>{
   }
  });
  it('requires a newly issued one-use invite token and a valid expiry',()=>{
-  const valid={code:'ACADEMY_INVITE_ISSUED',token:'a'.repeat(64),expiresAtMs:1700000000000};
+  const valid={code:'ACADEMY_INVITE_ISSUED',token:'a'.repeat(64),
+   expiresAtMs:Date.now()+7*86400000};
   expect(academyAdminAckIsVerified('invites',201,valid)).toBe(true);
   for(const invalid of [
    {...valid,token:undefined},{...valid,token:'not-a-token'},
-   {...valid,expiresAtMs:0},{...valid,expiresAtMs:'1700000000000'},
+   {...valid,expiresAtMs:0},{...valid,expiresAtMs:Date.now()-60000},
+   {...valid,expiresAtMs:'1700000000000'},
    {...valid,code:'ACADEMY_INVITE_ALREADY_ISSUED'},
   ])expect(academyAdminAckIsVerified('invites',201,invalid)).toBe(false);
   expect(academyAdminAckIsVerified('invites',200,valid)).toBe(false);
