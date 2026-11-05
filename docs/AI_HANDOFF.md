@@ -1,3 +1,8 @@
+## 2026-11-05 — #314 / PR #329 strict directory envelope continuation
+- GitHub main `4c15b59f713f41e2be9999bb082118cc48496c10` at baseline; existing Draft PR #329 branch `feat/314-admin-teacher-id-lookup` was 54 commits ahead, no main merge. [Verify #42039761817](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42039761817) completed 4/4 success on prior head `911df941`.
+- Newly committed strict client envelope validation (`59a7b613`) and Vitest regressions (`7b62f796`) prevent accepting extra top-level keys such as `guardianPhone` or `authSubject` from a staff directory response. No API/SQL/migration changes. **No exact-head CI yet for these commits**; do not report passing based on old run.
+- NEXT: inspect latest branch exact SHA and associated Verify 4/4; fix failures. Still require independent auth/privacy review, signed isolated Dev staff role-revocation and 0/1/50/51/100+ acceptance, mobile 360×667 and 390×844 keyboard/touch. No merge/Production; keep issue OPEN.
+
 ## 2026-11-05 — #314 / PR #329 continuation: signed staff denial after roster refresh
 - Added a receipt visibility guard and clears `latestAck`/out-of-page `lookup` when a fresh signed staff directory read is denied (401/403/404). Prior server-confirmed ACK is still visible during non-denied refresh; stale staff receipt is not shown on denial/account switch. Changes: `AdminTeacherDirectory.tsx`, `admin-teachers-client.test.tsx`; source commits `5922b8f3`, `399bfdbe`.
 - Prior Verify #42032997085 4/4 PASS only on the earlier PR head. Recheck exact latest HEAD and run independent security + Cloudflare Dev signed role-revocation/0/1/50/51/101 and mobile 360/390. No merge, no Production; PR Draft, Issue #314 OPEN.
