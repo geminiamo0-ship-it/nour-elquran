@@ -77,7 +77,7 @@ export function academyAdminCommandAllowed(
 /** A 2xx response alone is not a durable staff command acknowledgement.
  * Reject unexpected codes/statuses (including proxy 202/204 and malformed
  * one-use invite receipts) without clearing the original operationId. */
-export function academyAdminAckIsVerified(path:string,status:number,raw:unknown){
+export function academyAdminAckIsVerified(path:string,status:number,raw:unknown,command:unknown){
  if(!raw||typeof raw!=='object'||Array.isArray(raw))return false;
  const v=raw as Record<string,unknown>;
  const codes:Record<string,readonly [string,string?]>={
@@ -90,6 +90,13 @@ export function academyAdminAckIsVerified(path:string,status:number,raw:unknown)
  const expected=codes[path];
  if(!expected||!((status===201&&v.code===expected[0])||
   (status===200&&v.code===expected[1]&&expected[1]!==undefined)))return false;
+ // Package writes echo the affected package ID. Never clear an uncertain
+ // operation if a valid-looking ACK belongs to a different package.
+ if(path==='packages'){
+  if(!command||typeof command!=='object'||Array.isArray(command))return false;
+  const expectedPackageId=(command as Record<string,unknown>).packageId;
+  if(typeof expectedPackageId!=='string'||v.packageId!==expectedPackageId)return false;
+ }
  if(path==='invites')return status===201&&typeof v.token==='string'&&
   /^[0-9a-f]{64}$/.test(v.token)&&typeof v.expiresAtMs==='number'&&
   Number.isSafeInteger(v.expiresAtMs)&&v.expiresAtMs>Date.now();
@@ -104,7 +111,7 @@ async function submit(path:string,command:unknown){
   throw new Error('استجابة غير صالحة');
  const code=(v as {code:string}).code;
  if(!res.ok)throw new AcademyCommandError(code,res.status);
- if(!academyAdminAckIsVerified(path,res.status,v))
+ if(!academyAdminAckIsVerified(path,res.status,v,command))
   throw new Error('استجابة تأكيد غير موثوقة');
  return {code,...(v as object)};
 }
