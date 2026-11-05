@@ -13,6 +13,16 @@ type State=
  |{phase:'loading'}
  |{phase:'ready';session:AccountSession;value:AdminTeacherDirectoryValue}
  |{phase:'denied'|'error'};
+type StaffReceipt={session:AccountSession;value:AdminActionResult};
+/** Keep a confirmed D1 receipt through a retry, never after a fresh staff denial. */
+export function AdminTeacherReceipt({session,receipt,denied}:{
+ session:AccountSession;receipt:StaffReceipt|null;denied:boolean;
+}){
+ if(denied||receipt?.session!==session)return null;
+ return <p role="status" className={css.staffInfo}>
+  تم تأكيد الإجراء وحفظه: {receipt.value.code}. جارٍ تحديث السجل من الخادم.
+ </p>;
+}
 const cairo=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',
  dateStyle:'medium',timeStyle:'short'});
 /** Mounted only after AdminShell has verified a fresh signed staff overview.
@@ -22,7 +32,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
  const [state,setState]=useState<State>({phase:'loading'});
  const [retry,setRetry]=useState(0);
  const [lookup,setLookup]=useState<{session:AccountSession;teachers:readonly AdminTeacher[]}|null>(null);
- const [latestAck,setLatestAck]=useState<{session:AccountSession;value:AdminActionResult}|null>(null);
+ const [latestAck,setLatestAck]=useState<StaffReceipt|null>(null);
  useEffect(()=>{
   const controller=new AbortController();
   setState({phase:'loading'});setLookup(null);
@@ -30,8 +40,12 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
    if(!controller.signal.aborted)setState({phase:'ready',session,value});
   }).catch(error=>{
    if(controller.signal.aborted)return;
-   setState({phase:error instanceof AdminTeachersError&&
-    [401,403,404].includes(error.status)?'denied':'error'});
+   const denied=error instanceof AdminTeachersError&&[401,403,404].includes(error.status);
+   if(denied){
+    // A later signed denial overrides even a previously confirmed staff receipt.
+    setLookup(null);setLatestAck(null);
+   }
+   setState({phase:denied?'denied':'error'});
   });
   return ()=>controller.abort();
  },[session,retry]);
@@ -103,9 +117,8 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
     </article>)}
    </div>}
   </>}
-  {latestAck?.session===session&&<p role="status" className={css.staffInfo}>
-   تم تأكيد الإجراء وحفظه: {latestAck.value.code}. جارٍ تحديث السجل من الخادم.
-  </p>}
+  <AdminTeacherReceipt session={session} receipt={latestAck}
+   denied={state.phase==='denied'}/>
   {state.phase!=='denied'&&<AdminAcademyMvp key={session.user.id}
    session={session} mode="invites"/>}
   {ready&&<AdminOperations kind="teacher" session={session} teachers={teachers}
