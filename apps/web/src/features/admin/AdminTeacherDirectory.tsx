@@ -71,7 +71,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
      ` ${ready.teachers.length.toLocaleString('ar-EG')} سجل في الدليل.`}
    </div>
    {ready.truncated&&<AdminTeacherIdLookup session={session}
-    onFound={teacher=>setLookup({session,teacher})}/>}
+    onClear={()=>setLookup(null)} onFound={teacher=>setLookup({session,teacher})}/>}
    {teachers.length===0?<div className={css.staffEmpty}>
     لا يوجد شيوخ مسجلون في قاعدة البيانات حاليًا.
    </div>:<div className={css.staffRows} aria-label="دليل الشيوخ الموثق">
