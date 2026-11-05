@@ -1,5 +1,5 @@
 ## #314 Sheikh lookup post-read role revocation (2026-11-05)
-- Client regression: `isAdminTeacherAccessRevoked` recognizes fresh 401/403/404, not 400/409/500/503/network. The exact-ID child must signal denial; parent must clear previously rendered roster, out-of-page choices and previous success ACK before any further staff action is displayed. A transient 503 must not be misrepresented as revoked role.
+- Client regression: `isAdminTeacherAccessRevoked` recognizes fresh 401/403/404, not 400/409/500/503/network. The exact-ID child must signal denial; parent must clear previously rendered roster, out-of-page choices and previous success ACK before any further staff action is displayed; the Sheikh invitation panel must also disappear after a fresh denial. A transient 503 must not be misrepresented as revoked role.
 - Required signed Dev/browser E2E: staff successfully reads 50+ records; revoke `roles.manage` in D1; next exact-ID GET returns 403; verify no stale teacher cards/action controls, and a later reauthorized reload is required. Check 360/390 keyboard and screen reader status. Source/unit CI alone is not Dev evidence.
 
 ## #314 Sheikh directory boundary regression — 2026-11-05
