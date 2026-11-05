@@ -62,6 +62,23 @@ describe('Admin teacher directory #305',()=>{
     code:'INVALID_TEACHER_LOOKUP',status:400});
   expect(mock).toHaveBeenCalledTimes(1);
  });
+ it('rejects stale or mismatched exact-ID success responses before staff selection',async()=>{
+  const wrong={...good,teachers:[{...teacher,id:'teacher-74'}]};
+  const multiple={...good,teachers:[
+   {...teacher,id:'teacher-75'},{...teacher,id:'teacher-74'}]};
+  const mock=vi.fn()
+   .mockResolvedValueOnce(respond(200,wrong))
+   .mockResolvedValueOnce(respond(200,multiple))
+   .mockResolvedValueOnce(respond(200,{...good,teachers:[]}))
+   .mockResolvedValueOnce(respond(200,{...good,teachers:[{...teacher,id:'teacher-75'}]}));
+  vi.stubGlobal('fetch',mock);
+  for(let i=0;i<2;i++)
+   await expect(fetchAdminTeachers(undefined,'teacher-75')).rejects.toMatchObject({
+    code:'INVALID_TEACHER_LOOKUP_RESPONSE',status:200});
+  expect((await fetchAdminTeachers(undefined,'teacher-75')).teachers).toEqual([]);
+  expect((await fetchAdminTeachers(undefined,'teacher-75')).teachers[0]?.id).toBe('teacher-75');
+  expect(mock).toHaveBeenCalledTimes(4);
+ });
  it('renders an accessible exact-ID lookup without personal or fake records',()=>{
   const html=renderToStaticMarkup(<AdminTeacherIdLookup
    session={{user:{id:'staff-1',name:'Synthetic'},phoneVerified:true}}
