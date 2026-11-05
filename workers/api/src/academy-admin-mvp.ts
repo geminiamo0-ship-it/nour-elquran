@@ -66,23 +66,41 @@ export async function ownerPackageRequest(db:CoreDatabase,subject:string,
   return {status:400,code:'ACADEMY_INVALID_REQUEST'} as const;
  if(!await verifiedOwner(db,subject,learnerId))
   return {status:404,code:'NOT_FOUND'} as const;
- const prior=await db.prepare(`SELECT id,learner_id AS learnerId,actor_subject AS actor,
+ type RequestReceipt={id:string;learnerId:string;actor:string;packageId:string};
+ const readPrior=()=>db.prepare(`SELECT id,learner_id AS learnerId,actor_subject AS actor,
  package_id AS packageId FROM academy_request_events WHERE operation_id=?`)
- .bind(raw.operationId).first<{id:string;learnerId:string;actor:string;packageId:string}>();
- if(prior)return prior.actor===subject&&prior.learnerId===learnerId&&
-  prior.packageId===raw.packageId?
-  {status:200,code:'ACADEMY_REQUEST_REPLAY',academyRequestId:prior.id} as const:
+ .bind(raw.operationId).first<RequestReceipt>();
+ const replay=(saved:RequestReceipt)=>saved.actor===subject&&
+  saved.learnerId===learnerId&&saved.packageId===raw.packageId?
+  {status:200,code:'ACADEMY_REQUEST_REPLAY',academyRequestId:saved.id} as const:
   {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const prior=await readPrior();
+ if(prior)return replay(prior);
  const pkg=await currentPackage(db,raw.packageId);
  if(!pkg||pkg.active!==1)return {status:409,code:'ACADEMY_PACKAGE_UNAVAILABLE'} as const;
  const id=crypto.randomUUID();
  try{
-  await db.prepare(`INSERT INTO academy_request_events
+  const receipt=await db.prepare(`INSERT INTO academy_request_events
    (id,operation_id,learner_id,actor_subject,package_id,package_version_id,kind,at_ms)
    VALUES(?,?,?,?,?,?,'subscription',?)`)
   .bind(id,raw.operationId,learnerId,subject,pkg.packageId,pkg.id,now).run();
+  // A resolved D1 write is not proof of a committed learner request.
+  if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
+     receipt.meta.changes<1){
+   const raced=await readPrior();
+   if(raced)return replay(raced);
+   return {status:503,code:'ACADEMY_REQUEST_STORAGE_UNAVAILABLE'} as const;
+  }
  }catch(e){
-  if(allowed(e))return {status:409,code:'ACADEMY_REQUEST_DENIED'} as const;
+  if(allowed(e)){
+   // A lost ACK or concurrent identical command must reuse the original
+   // request ID; never invent a second request or falsely report a conflict.
+   const raced=await readPrior();
+   if(raced)return replay(raced);
+   if(e instanceof Error&&!/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_REQUEST_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:'ACADEMY_REQUEST_DENIED'} as const;
+  }
   throw e;
  }
  return {status:201,code:'ACADEMY_REQUEST_CREATED',academyRequestId:id} as const;
