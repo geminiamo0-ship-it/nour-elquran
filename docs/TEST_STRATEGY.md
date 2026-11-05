@@ -1,3 +1,7 @@
+## #314 Admin roster invite controls fail-closed on fresh signed read (2026-11-05)
+- Regression: initial server-rendered loading directory must not mount the privileged `AdminAcademyMvp` invite UI; only a successful `ready` roster for the current session renders it. Existing tests cover exact-ID mismatch, bounded records, denial and receipt isolation.
+- Dev acceptance still required: signed staff sees invite panel after successful roster; revoked staff or 401/403/404 refresh never sees it; 503/loading hides it without claiming a role change; account switching and 360/390 keyboard/touch remain isolated. Check exact-head CI, no Production.
+
 ## #314 signed staff receipt invalidation regression (2026-11-05)
 - SSR/Vitest: confirmed staff D1 action ACK remains visible during normal roster refresh, but disappears after fresh 401/403/404 or an account switch; no receipt if absent. The roster's denial handler also clears previous lookup and ACK. No unverified data is treated as a successful refresh.
 - Release gate: exact-head Verify after this source change, then source-pinned Dev staff revocation after successful read and action ACK, mobile 360x667/390x844 and independent authorization/privacy review. Do not merge Draft #329 on local/CI alone.
