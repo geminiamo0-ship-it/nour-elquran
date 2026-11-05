@@ -1,3 +1,6 @@
+## #314 Worker receipt integrity regression (2026-11-05)
+- `workers/api/tests/staff-teacher-directory.test.ts`: D1 adapter returning the wrong ID for an exact Sheikh query must fail closed with sanitized 503; duplicate IDs in the bounded list must fail closed; distinct IDs remain readable. Check exact-head CI and signed Dev role/row-count/mobile acceptance before merge.
+
 ## #314 exact-ID staff Sheikh lookup response-target regression (2026-11-05)
 - Browser client must reject otherwise-valid 200 directory receipts for an exact ID when a different teacher ID or multiple teachers are returned; never add an unrequested Sheikh to the staff action selector. A valid empty list is a not-found result, and a single exact match is accepted. Test `admin-teachers-client.test.tsx` exercises all four cases.
 - This is a source-only defense-in-depth addition to Draft PR #329. New exact-head CI, independent auth/privacy review, and signed Dev/multi-viewport acceptance remain pending; prior Verify #41988466551 belongs to older HEAD.
