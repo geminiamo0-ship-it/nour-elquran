@@ -1,6 +1,7 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminTeacherDirectory} from './AdminTeacherDirectory';
+import {AdminTeacherIdLookup} from './AdminTeacherIdLookup';
 import {AdminTeachersError,fetchAdminTeachers,parseAdminTeachers} from './admin-teachers-client';
 const teacher={id:'teacher-1',name:'شيخ تجريبي',qualified:true,status:'active',
  currentLearners:2,upcomingLessons:3};
@@ -46,6 +47,29 @@ describe('Admin teacher directory #305',()=>{
    'INVALID_TEACHER_DIRECTORY','NETWORK_UNAVAILABLE']){
    await expect(fetchAdminTeachers()).rejects.toMatchObject({code});
   }
+ });
+ it('looks up an exact out-of-page Sheikh using only a signed bounded GET',async()=>{
+  const mock=vi.fn().mockResolvedValue(respond(200,{...good,teachers:[{...teacher,id:'teacher-75'}]}));
+  vi.stubGlobal('fetch',mock);
+  const value=await fetchAdminTeachers(undefined,'teacher-75');
+  expect(value.teachers[0]?.id).toBe('teacher-75');
+  expect(value.truncated).toBe(false);
+  expect(mock.mock.calls[0]?.[0]).toBe('/v1/staff/teachers?id=teacher-75');
+  expect(mock.mock.calls[0]?.[1]).toMatchObject({method:'GET',
+   credentials:'same-origin',cache:'no-store',redirect:'error'});
+  for(const id of ['', '../bad','teacher_75','x'.repeat(129)])
+   await expect(fetchAdminTeachers(undefined,id)).rejects.toMatchObject({
+    code:'INVALID_TEACHER_LOOKUP',status:400});
+  expect(mock).toHaveBeenCalledTimes(1);
+ });
+ it('renders an accessible exact-ID lookup without personal or fake records',()=>{
+  const html=renderToStaticMarkup(<AdminTeacherIdLookup
+   session={{user:{id:'staff-1',name:'Synthetic'},phoneVerified:true}}
+   onFound={()=>{}}/>);
+  expect(html).toContain('admin-exact-teacher-id');
+  expect(html).toContain('إظهار الشيخ');
+  expect(html).not.toContain('شيخ تجريبي');
+  expect(html).not.toContain('private@');
  });
  it('server-rendered initial state is loading, not synthetic records',()=>{
   const html=renderToStaticMarkup(<AdminTeacherDirectory
