@@ -53,6 +53,12 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
  const lookedUp=lookup?.session===session?lookup.teachers:[];
  const teachers=ready?[...ready.teachers,...lookedUp.filter(t=>
   !ready.teachers.some(existing=>existing.id===t.id))]:[];
+ const revokeStaffAccess=()=>{
+  setState(current=>current.phase==='ready'&&current.session===session
+   ?{phase:'denied'}:current);
+  setLookup(current=>current?.session===session?null:current);
+  setLatestAck(current=>current?.session===session?null:current);
+ };
  return <div className={css.staffDirectory}>
   <section className={css.staffIntro} aria-labelledby="admin-teachers-heading">
    <p className={css.kicker}>إدارة الشيوخ · قراءة فقط</p>
@@ -89,14 +95,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
      const previous=current?.session===session?current.teachers:[];
      return {session,teachers:previous.some(t=>t.id===teacher.id)?previous:[...previous,teacher]};
     })}
-    onAccessRevoked={()=>{
-     // A fresh denied lookup supersedes the earlier signed list. Remove
-     // all stale privileged records and actions for precisely this session.
-     setState(current=>current.phase==='ready'&&current.session===session
-      ?{phase:'denied'}:current);
-     setLookup(current=>current?.session===session?null:current);
-     setLatestAck(current=>current?.session===session?null:current);
-    }}/>}
+    onAccessRevoked={revokeStaffAccess}/>}
    {teachers.length===0?<div className={css.staffEmpty}>
     لا يوجد شيوخ مسجلون في قاعدة البيانات حاليًا.
    </div>:<div className={css.staffRows} aria-label="دليل الشيوخ الموثق">
@@ -122,6 +121,6 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
   {ready&&<AdminAcademyMvp key={session.user.id}
    session={session} mode="invites"/>}
   {ready&&<AdminOperations kind="teacher" session={session} teachers={teachers}
-   onApplied={value=>{setLatestAck({session,value});setLookup(null);setRetry(n=>n+1);}}/>}
+   onAccessRevoked={revokeStaffAccess} onApplied={value=>{setLatestAck({session,value});setLookup(null);setRetry(n=>n+1);}}/>}
  </div>;
 }

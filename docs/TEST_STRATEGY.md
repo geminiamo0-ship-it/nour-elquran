@@ -1,3 +1,8 @@
+## 2026-11-05 — #314 staff mutation authorization-denial UI invalidation (Draft PR #329)
+- Source audit found a distinct revoked-grant path: a signed `POST /v1/staff/teachers/transition` returning 401 or `403 STAFF_ACCESS_DENIED` previously left the successful roster, out-of-page Sheikh selections, prior action ACK and invite panel visible until a separate GET failed. The Worker already rejects unauthorized writes, but the browser should also fail closed immediately.
+- The generic `AdminOperations` now signals only a confirmed staff auth denial to its parent; `AdminTeacherDirectory` reuses its existing session-scoped roster/ACK/lookup invalidation. A domain-rule 403, missing-target 404, uncertain network result and 503 remain distinct and do not imply revocation. Added focused Vitest classification regressions. No SQL, auth grant, migration or Production changes.
+- Source candidate only: exact-head CI, independent security review and signed Cloudflare Dev mutation-denial/role-revocation/mobile acceptance remain required; keep #314 OPEN and PR #329 Draft. Rollback: revert this PR.
+
 ## #314 Admin roster invite controls fail-closed on fresh signed read (2026-11-05)
 - Regression: initial server-rendered loading directory must not mount the privileged `AdminAcademyMvp` invite UI; only a successful `ready` roster for the current session renders it. Existing tests cover exact-ID mismatch, bounded records, denial and receipt isolation.
 - Dev acceptance still required: signed staff sees invite panel after successful roster; revoked staff or 401/403/404 refresh never sees it; 503/loading hides it without claiming a role change; account switching and 360/390 keyboard/touch remain isolated. Check exact-head CI, no Production.

@@ -1,3 +1,8 @@
+## 2026-11-05 — #314 staff mutation authorization-denial UI invalidation (Draft PR #329)
+- Source audit found a distinct revoked-grant path: a signed `POST /v1/staff/teachers/transition` returning 401 or `403 STAFF_ACCESS_DENIED` previously left the successful roster, out-of-page Sheikh selections, prior action ACK and invite panel visible until a separate GET failed. The Worker already rejects unauthorized writes, but the browser should also fail closed immediately.
+- The generic `AdminOperations` now signals only a confirmed staff auth denial to its parent; `AdminTeacherDirectory` reuses its existing session-scoped roster/ACK/lookup invalidation. A domain-rule 403, missing-target 404, uncertain network result and 503 remain distinct and do not imply revocation. Added focused Vitest classification regressions. No SQL, auth grant, migration or Production changes.
+- Source candidate only: exact-head CI, independent security review and signed Cloudflare Dev mutation-denial/role-revocation/mobile acceptance remain required; keep #314 OPEN and PR #329 Draft. Rollback: revert this PR.
+
 ## 2026-11-05 — #314 follow-up: Sheikh invite panel fail-closed during roster refresh (PR #329)
 - Verified prior exact-head `2908eb7f` GitHub Verify [#42044601697](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42044601697) completed 4/4 SUCCESS. A new code change supersedes that CI evidence.
 - Found `AdminTeacherDirectory` mounted `AdminAcademyMvp` invite controls whenever the directory was not explicitly `denied`, including `loading` and `error`. Changed to render only on a `ready` receipt matching the current `AccountSession`; added initial SSR no-invite regression. Commits `7f1551cf`, `602e9910`. Server-side role checks remain authoritative.
