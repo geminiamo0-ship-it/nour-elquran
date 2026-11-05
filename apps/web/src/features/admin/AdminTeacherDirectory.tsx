@@ -1,7 +1,8 @@
 'use client';
 import {useEffect,useState} from 'react';
 import type {AccountSession} from '@/features/account';
-import {AdminTeachersError,fetchAdminTeachers,type AdminTeacher,type AdminTeacherDirectoryValue}
+import {AdminTeachersError,fetchAdminTeachers,reconcileVerifiedTeacherRows,
+ type AdminTeacher,type AdminTeacherDirectoryValue}
  from './admin-teachers-client';
 import css from './AdminPortal.module.css';
 import {AdminOperations} from './AdminOperations';
@@ -51,8 +52,9 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
  },[session,retry]);
  const ready=state.phase==='ready'&&state.session===session?state.value:null;
  const lookedUp=lookup?.session===session?lookup.teachers:[];
- const teachers=ready?[...ready.teachers,...lookedUp.filter(t=>
-  !ready.teachers.some(existing=>existing.id===t.id))]:[];
+ // An exact-ID recheck may return a changed qualification/status. The
+ // newer signed receipt wins even when that ID was already in the first 50.
+ const teachers=ready?reconcileVerifiedTeacherRows(ready.teachers,lookedUp):[];
  const revokeStaffAccess=()=>{
   setState(current=>current.phase==='ready'&&current.session===session
    ?{phase:'denied'}:current);
@@ -93,7 +95,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
    {ready.truncated&&<AdminTeacherIdLookup session={session}
     onFound={teacher=>setLookup(current=>{
      const previous=current?.session===session?current.teachers:[];
-     return {session,teachers:previous.some(t=>t.id===teacher.id)?previous:[...previous,teacher]};
+     return {session,teachers:reconcileVerifiedTeacherRows(previous,[teacher])};
     })}
     onAccessRevoked={revokeStaffAccess}/>}
    {teachers.length===0?<div className={css.staffEmpty}>
