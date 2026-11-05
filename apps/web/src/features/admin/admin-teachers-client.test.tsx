@@ -1,6 +1,6 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {AdminTeacherDirectory} from './AdminTeacherDirectory';
+import {AdminTeacherDirectory,AdminTeacherReceipt} from './AdminTeacherDirectory';
 import {AdminTeacherIdLookup} from './AdminTeacherIdLookup';
 import {AdminTeachersError,fetchAdminTeachers,parseAdminTeachers,isAdminTeacherAccessRevoked} from './admin-teachers-client';
 const teacher={id:'teacher-1',name:'شيخ تجريبي',qualified:true,status:'active',
@@ -115,6 +115,18 @@ describe('Admin teacher directory #305',()=>{
   expect(html).toContain('إظهار الشيخ');
   expect(html).not.toContain('شيخ تجريبي');
   expect(html).not.toContain('private@');
+ });
+ it('keeps confirmed receipts during refresh but hides them after staff revocation or account switch',()=>{
+  const session={user:{id:'staff-1',name:'Synthetic'},phoneVerified:true};
+  const other={user:{id:'staff-2',name:'Synthetic'},phoneVerified:true};
+  const receipt={session,value:{code:'TEACHER_ROLE_CHANGED',resourceId:'teacher-1'}};
+  const render=(denied:boolean,active=session)=>renderToStaticMarkup(
+   <AdminTeacherReceipt session={active} receipt={receipt} denied={denied}/>);
+  expect(render(false)).toContain('تم تأكيد الإجراء وحفظه');
+  expect(render(true)).not.toContain('TEACHER_ROLE_CHANGED');
+  expect(render(false,other)).not.toContain('TEACHER_ROLE_CHANGED');
+  expect(renderToStaticMarkup(<AdminTeacherReceipt session={session}
+   receipt={null} denied={false}/>)).toBe('');
  });
  it('server-rendered initial state is loading, not synthetic records',()=>{
   const html=renderToStaticMarkup(<AdminTeacherDirectory
