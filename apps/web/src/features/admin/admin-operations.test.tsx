@@ -1,7 +1,7 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminOperations} from './AdminOperations';
-import {submitAdminAction,validAdminAction}
+import {submitAdminAction,validAdminAction,AdminActionError,isAdminActionStaffRevoked}
  from './admin-operations-client';
 
 const operationId='124e4567-e89b-42d3-a456-426614174000';
@@ -68,6 +68,17 @@ describe('Admin operational D1 client #309',()=>{
    code:'SCHEDULE_ACTION_APPLIED',resourceId:'l1'});
   await expect(submitAdminAction('attendance',review)).rejects.toMatchObject({
    code:'UNKNOWN_SERVER_SUCCESS',uncertain:true});
+ });
+ it('revokes cached staff UI only for signed auth denial, not business-rule 403 or target 404',()=>{
+  for(const e of [new AdminActionError('UNAUTHENTICATED',401),
+   new AdminActionError('STAFF_ACCESS_DENIED',403),
+   new AdminActionError('UNAUTHENTICATED',403)])
+   expect(isAdminActionStaffRevoked(e)).toBe(true);
+  for(const e of [new AdminActionError('TEACHER_ROLE_TRANSITION_DENIED',403),
+   new AdminActionError('NOT_FOUND',404),
+   new AdminActionError('TEACHER_ROLE_GUARD_NOT_READY',503),
+   new AdminActionError('NETWORK_OUTCOME_UNKNOWN',0,true),Error('offline')])
+   expect(isAdminActionStaffRevoked(e)).toBe(false);
  });
  it('treats network interruption as uncertain rather than as a failed D1 write',async()=>{
   const mock=vi.fn().mockRejectedValue(Error('connection lost'));

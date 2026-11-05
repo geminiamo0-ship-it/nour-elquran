@@ -3,7 +3,7 @@ import {useEffect,useRef,useState} from 'react';
 import type {AccountSession} from '@/features/account';
 import type {AdminDataRow} from './admin-collections-client';
 import type {AdminTeacher} from './admin-teachers-client';
-import {submitAdminAction,validAdminAction,AdminActionError,
+import {submitAdminAction,validAdminAction,AdminActionError,isAdminActionStaffRevoked,
  type AdminOperationKind,type AdminActionResult} from './admin-operations-client';
 import css from './AdminOperations.module.css';
 
@@ -14,7 +14,7 @@ type Result=
  |{phase:'uncertain';command:unknown;operationId:string};
 type Props={kind:AdminOperationKind;session:AccountSession;
  rows?:readonly AdminDataRow[];teachers?:readonly AdminTeacher[];
- onApplied?:(result:AdminActionResult)=>void};
+ onApplied?:(result:AdminActionResult)=>void;onAccessRevoked?:()=>void};
 const actions:Record<AdminOperationKind,readonly {id:string;label:string}[]>={
  teacher:[
   {id:'provision',label:'تجهيز ملف شيخ غير نشط'},
@@ -45,7 +45,7 @@ const errors:Record<string,string>={
  ATTENDANCE_REVIEW_DENIED:'لا يمكن اعتماد قرار هذا الاعتراض.',
 };
 const toMillis=(s:string)=>s?new Date(s).getTime():NaN;
-export function AdminOperations({kind,session,rows=[],teachers=[],onApplied}:Props){
+export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAccessRevoked}:Props){
  const [action,setAction]=useState<string>(actions[kind][0]!.id);
  const [target,setTarget]=useState('');
  const [learner,setLearner]=useState('');
@@ -110,6 +110,9 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied}:Pro
    if(e instanceof AdminActionError&&e.uncertain){
     setResult({phase:'uncertain',command:value,operationId});return;
    }
+   // A signed mutation denial must also invalidate the already-visible staff
+   // roster; business-rule 403, target 404 and transient 503 must not.
+   if(isAdminActionStaffRevoked(e))onAccessRevoked?.();
    const code=e instanceof AdminActionError?e.code:'NETWORK_OUTCOME_UNKNOWN';
    setResult({phase:'error',message:errors[code]??('رفض الخادم العملية: '+code)});
   }finally{if(current.current===ctrl)current.current=null;}

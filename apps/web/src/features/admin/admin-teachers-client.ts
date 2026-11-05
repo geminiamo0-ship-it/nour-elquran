@@ -11,14 +11,22 @@ export type AdminTeacherDirectoryValue=Readonly<{
 export class AdminTeachersError extends Error{
  constructor(readonly code:string,readonly status=0){super(code);}
 }
+// A later signed denial supersedes a previously successful staff roster read.
+export const isAdminTeacherAccessRevoked=(error:unknown):error is AdminTeachersError=>
+ error instanceof AdminTeachersError&&[401,403,404].includes(error.status);
 const record=(v:unknown):v is Record<string,unknown> =>
  v!==null&&typeof v==='object'&&!Array.isArray(v);
 const keys=['id','name','qualified','status','currentLearners','upcomingLessons'] as const;
+// Fail closed if an API regression adds staff/guardian PII or unreviewed metadata
+// to the top-level directory envelope, not just to individual Sheikh rows.
+const envelopeKeys=['code','readOnly','asOfMs','teachers','truncated'] as const;
 const id=/^[a-zA-Z0-9-]{1,128}$/;
 const integer=(v:unknown):v is number=>Number.isSafeInteger(v)&&Number(v)>=0;
 
 export function parseAdminTeachers(value:unknown):AdminTeacherDirectoryValue{
- if(!record(value)||value.code!=='STAFF_TEACHER_DIRECTORY'||value.readOnly!==true||
+ if(!record(value)||Object.keys(value).length!==envelopeKeys.length||
+  !envelopeKeys.every(k=>Object.hasOwn(value,k))||
+  value.code!=='STAFF_TEACHER_DIRECTORY'||value.readOnly!==true||
   !integer(value.asOfMs)||typeof value.truncated!=='boolean'||
   !Array.isArray(value.teachers)||value.teachers.length>50)
   throw new AdminTeachersError('INVALID_TEACHER_DIRECTORY');
@@ -45,10 +53,25 @@ export function parseAdminTeachers(value:unknown):AdminTeacherDirectoryValue{
   throw new AdminTeachersError('INVALID_TEACHER_DIRECTORY');
  return {asOfMs:value.asOfMs as number,teachers,truncated:value.truncated};
 }
-export async function fetchAdminTeachers(signal?:AbortSignal):Promise<AdminTeacherDirectoryValue>{
+/** #314: later signed exact-ID reads supersede stale roster/lookup facts for
+ * the same Sheikh, without changing the selected actor ID or other choices.
+ * The caller supplies only already-validated, current-session API rows.
+ */
+export function reconcileVerifiedTeacherRows(
+ existing:readonly AdminTeacher[],fresh:readonly AdminTeacher[],
+):AdminTeacher[]{
+ const byId=new Map(existing.map(teacher=>[teacher.id,teacher]));
+ for(const teacher of fresh)byId.set(teacher.id,teacher);
+ return [...byId.values()];
+}
+export async function fetchAdminTeachers(signal?:AbortSignal,teacherId?:string):Promise<AdminTeacherDirectoryValue>{
+ if(teacherId!==undefined&&!id.test(teacherId))
+  throw new AdminTeachersError('INVALID_TEACHER_LOOKUP',400);
+ const url=teacherId===undefined?'/v1/staff/teachers':
+  `/v1/staff/teachers?id=${encodeURIComponent(teacherId)}`;
  let response:Response;
  try{
-  response=await fetch('/v1/staff/teachers',{method:'GET',credentials:'same-origin',
+  response=await fetch(url,{method:'GET',credentials:'same-origin',
    cache:'no-store',redirect:'error',...(signal?{signal}:{})});
  }catch{throw new AdminTeachersError('NETWORK_UNAVAILABLE');}
  let payload:unknown;
@@ -59,5 +82,12 @@ export async function fetchAdminTeachers(signal?:AbortSignal):Promise<AdminTeach
   throw new AdminTeachersError(record(payload)&&typeof payload.code==='string'
    ?payload.code:'STAFF_TEACHERS_UNAVAILABLE',response.status);
  }
- return parseAdminTeachers(payload);
+ const directory=parseAdminTeachers(payload);
+ // #314: a successful exact-ID response must prove the requested target.
+ // Never let an intermediary's stale/mismatched 200 add another Sheikh
+ // to the staff action selector, even if its general DTO is well formed.
+ if(teacherId!==undefined&&(directory.truncated||directory.teachers.length>1||
+    directory.teachers.some(teacher=>teacher.id!==teacherId)))
+  throw new AdminTeachersError('INVALID_TEACHER_LOOKUP_RESPONSE',response.status);
+ return directory;
 }

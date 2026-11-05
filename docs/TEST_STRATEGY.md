@@ -1,3 +1,40 @@
+## #314 repeated exact-ID Sheikh lookup freshness regression — 2026-11-05
+- A signed exact-ID recheck must replace prior facts for that *same* Sheikh, including when present in the original first 50; other verified actors and stable IDs/order must remain unchanged. The client must not mutate the old server receipt. See `admin-teachers-client.test.tsx` and `reconcileVerifiedTeacherRows`.
+- Exact-head GitHub Verify, independent role/privacy review, real signed Cloudflare Dev revocation/0-1-50-51-100+ and 360/390 keyboard/touch acceptance remain mandatory before merge. No Production or financial changes.
+
+## 2026-11-05 — #314 staff mutation authorization-denial UI invalidation (Draft PR #329)
+- Source audit found a distinct revoked-grant path: a signed `POST /v1/staff/teachers/transition` returning 401 or `403 STAFF_ACCESS_DENIED` previously left the successful roster, out-of-page Sheikh selections, prior action ACK and invite panel visible until a separate GET failed. The Worker already rejects unauthorized writes, but the browser should also fail closed immediately.
+- The generic `AdminOperations` now signals only a confirmed staff auth denial to its parent; `AdminTeacherDirectory` reuses its existing session-scoped roster/ACK/lookup invalidation. A domain-rule 403, missing-target 404, uncertain network result and 503 remain distinct and do not imply revocation. Added focused Vitest classification regressions. No SQL, auth grant, migration or Production changes.
+- Source candidate only: exact-head CI, independent security review and signed Cloudflare Dev mutation-denial/role-revocation/mobile acceptance remain required; keep #314 OPEN and PR #329 Draft. Rollback: revert this PR.
+
+## #314 Admin roster invite controls fail-closed on fresh signed read (2026-11-05)
+- Regression: initial server-rendered loading directory must not mount the privileged `AdminAcademyMvp` invite UI; only a successful `ready` roster for the current session renders it. Existing tests cover exact-ID mismatch, bounded records, denial and receipt isolation.
+- Dev acceptance still required: signed staff sees invite panel after successful roster; revoked staff or 401/403/404 refresh never sees it; 503/loading hides it without claiming a role change; account switching and 360/390 keyboard/touch remain isolated. Check exact-head CI, no Production.
+
+## #314 signed staff receipt invalidation regression (2026-11-05)
+- SSR/Vitest: confirmed staff D1 action ACK remains visible during normal roster refresh, but disappears after fresh 401/403/404 or an account switch; no receipt if absent. The roster's denial handler also clears previous lookup and ACK. No unverified data is treated as a successful refresh.
+- Release gate: exact-head Verify after this source change, then source-pinned Dev staff revocation after successful read and action ACK, mobile 360x667/390x844 and independent authorization/privacy review. Do not merge Draft #329 on local/CI alone.
+
+## #314 Sheikh lookup post-read role revocation (2026-11-05)
+- Client regression: `isAdminTeacherAccessRevoked` recognizes fresh 401/403/404, not 400/409/500/503/network. The exact-ID child must signal denial; parent must clear previously rendered roster, out-of-page choices and previous success ACK before any further staff action is displayed; the Sheikh invitation panel must also disappear after a fresh denial. A transient 503 must not be misrepresented as revoked role.
+- Required signed Dev/browser E2E: staff successfully reads 50+ records; revoke `roles.manage` in D1; next exact-ID GET returns 403; verify no stale teacher cards/action controls, and a later reauthorized reload is required. Check 360/390 keyboard and screen reader status. Source/unit CI alone is not Dev evidence.
+
+## #314 Sheikh directory boundary regression — 2026-11-05
+- Worker Node test covers 0, 1, 50, 51 and 101 simulated total rows under the fixed `LIMIT 51` query, exact 50-row output, extra-page indicator, no duplicate IDs and malformed 52-row D1 adapter denial.
+- Browser Vitest tests accept 0/1/50 DTO rows and fail closed for 51/101 returned rows; this is source regression, **not** live D1 pagination evidence. Require source-pinned signed Dev tests, revoked staff and mobile keyboard/touch acceptance before merge.
+
+## #314 Worker receipt integrity regression (2026-11-05)
+- `workers/api/tests/staff-teacher-directory.test.ts`: D1 adapter returning the wrong ID for an exact Sheikh query must fail closed with sanitized 503; duplicate IDs in the bounded list must fail closed; distinct IDs remain readable. Check exact-head CI and signed Dev role/row-count/mobile acceptance before merge.
+
+## #314 exact-ID staff Sheikh lookup response-target regression (2026-11-05)
+- Browser client must reject otherwise-valid 200 directory receipts for an exact ID when a different teacher ID or multiple teachers are returned; never add an unrequested Sheikh to the staff action selector. A valid empty list is a not-found result, and a single exact match is accepted. Test `admin-teachers-client.test.tsx` exercises all four cases.
+- This is a source-only defense-in-depth addition to Draft PR #329. New exact-head CI, independent auth/privacy review, and signed Dev/multi-viewport acceptance remain pending; prior Verify #41988466551 belongs to older HEAD.
+
+## 2026-11-05 — #314 out-of-page Sheikh directory source gates
+- Verify exact-head Node D1-adapter contract: 50+1 original list, single-ID `LIMIT 1`, current staff grant, malformed/duplicate row denial, missing ID as truthful empty, invalid ID 400, nonstaff 403, no PII columns.
+- Verify frontend Vitest: same-origin no-store GET with exact ID, no role header, invalid ID denied before network, SSR has no synthetic or prior actor record; keyboard/focus and mobile 360×667/390×844 Browser QA still required.
+- Required signed isolated Cloudflare Dev: 0/1/50/51/100+ Sheikh rows; staff can operate on ID outside first 50 only after authoritative lookup; nonstaff/revoked staff cannot read it; no duplicates or cross-actor stale display. Not yet performed. Keep #314 OPEN.
+
 ## #309 Admin operation release gates (2026-11-01)
 - Unit: strict teacher roster transition parser, authorized staff pre-query, active class guard, exact client payload/action allowlist, 401/403, network-uncertain write (no false success/retry), SSR forms locked unless explicit consent.
 - Native SQL: all migrations through 0027; active scheduled/live Sheikh cannot be suspended or de-qualified, no immutable event on denial, cancellation then transition, unrelated teacher permitted, and legacy B2 endpoint inherits same trigger.
