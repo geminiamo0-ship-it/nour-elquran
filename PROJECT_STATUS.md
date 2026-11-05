@@ -1,3 +1,9 @@
+## 2026-11-05 — #314 exact Sheikh lookup response-target hardening (PR #329; source candidate)
+- A successful signed GET exact-ID response could be syntactically valid but contain another teacher ID (or multiple rows); the browser previously accepted the first row into the staff action selector. The Worker already uses `WHERE teacher.id=? LIMIT 1`, but the browser must fail closed on a stale/mismatched intermediary response.
+- `admin-teachers-client.ts` now rejects any exact-ID success receipt containing an ID other than the requested one, more than one row, or truncation. Empty exact lookup remains a valid not-found state. Added focused Vitest negative/positive regressions.
+- Commits `b932d2ea` and `646ffaad` on Draft PR #329. **CI and Cloudflare Dev not yet verified for this new HEAD**; prior 4/4 Verify #41988466551 only covers older HEAD `880f302c`. Keep #314 OPEN, PR Draft, no Production change.
+- NEXT: inspect exact-head Verify, independent auth/privacy review and signed Dev 0/1/50/51/100+ / staff-revocation / mobile tests before any merge.
+
 ## 2026-11-05 — Admin Sheikh directory exact-ID fallback (#314; source candidate)
 - New isolated branch `feat/314-admin-teacher-id-lookup` adds a bounded signed exact-ID lookup for an authorized staff member whose Sheikh is outside the first 50 directory records. Existing list remains 50+1 and read-only; exact lookup uses fixed SQL `WHERE teacher.id=? LIMIT 1` with current D1 `roles.manage` grant, strict ID and query-key validation, no contact/auth-subject/learner identity fields.
 - Arabic RTL Admin Teachers page offers the fallback only when the list is truncated; a verified result is de-duplicated into the existing roster and operational selector. Lookup aborts on session change; stale staff data is not rendered on an actor change. No new teacher mutation, schema, financial action or role grant.
