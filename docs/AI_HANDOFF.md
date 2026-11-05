@@ -1,3 +1,7 @@
+## 2026-11-05 — #314 Worker exact-ID and duplicate receipt guards (PR #329)
+- Branch `feat/314-admin-teacher-id-lookup` received Worker commit `bc7a0252` and regression commit `10ccf7c7`. Server `readAdminTeachers` now rejects a D1 exact-ID receipt that does not match the requested Sheikh and rejects duplicate IDs in a 50+1 directory, returning sanitized 503 instead of a misleading 200. Browser target pin from earlier commits remains intact.
+- New exact-head GitHub Verify is required; do not reuse the earlier successful #42000148225 for this updated head. Independent privacy/security review and source-pinned signed Cloudflare Dev + 360/390 browser checks remain open. No merge/Production/finance/WhatsApp/voice/cumulative-ink changes.
+
 ## 2026-11-05 — #314 staff exact-ID receipt target pin (PR #329)
 - On branch `feat/314-admin-teacher-id-lookup`, code commit `b932d2ea` and regression commit `646ffaad` fail closed if an HTTP 200 exact-ID response contains another Sheikh or multiple entries. General DTO validation alone had not enforced equality with the requested ID; stale intermediary receipts could contaminate staff action target selection. Empty valid response stays not-found.
 - Prior exact-head Verify #41988466551 passed 4/4 on `880f302c` **before** these changes. Verify new HEAD, check independent security review and signed Cloudflare Dev actor/sibling/role-revocation and 360/390 UX. No deployment/merge/payment/Production or ink flag authorized.
