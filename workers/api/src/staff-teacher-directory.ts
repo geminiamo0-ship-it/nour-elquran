@@ -74,7 +74,11 @@ export async function readAdminTeachers(
  const sql=exact?ADMIN_TEACHER_BY_ID_SQL:ADMIN_TEACHERS_SQL;
  const rows=await db.prepare(sql).bind(now,now,now,...(exact?[teacherId]:[])).all<TeacherRow>();
  if(!Array.isArray(rows.results)||rows.results.length>(exact?1:ADMIN_TEACHER_LIMIT+1)||
-   rows.results.some(row=>!row||!validRow(row)))
+   rows.results.some(row=>!row||!validRow(row))||
+   // #314: even a valid-looking adapter receipt must match the exact actor
+   // and must not contain duplicate IDs in the bounded staff directory.
+   (exact&&rows.results.some(row=>row.id!==teacherId))||
+   new Set(rows.results.map(row=>row.id)).size!==rows.results.length)
   return {status:503,code:'STAFF_TEACHERS_UNAVAILABLE'} as const;
  const teachers:AdminTeacher[]=rows.results.slice(0,ADMIN_TEACHER_LIMIT).map(row=>({
   id:row.id as string,name:(row.name as string).trim(),
