@@ -161,9 +161,18 @@ describe('clean, truthful subscriptions #324',()=>{
    [0,null]
   ] as const)expect(classifyAcademyPackageRequestResponse(status,payload))
    .toBe('uncertain');
-  for(const status of [400,401,403,404,409,422])
+  for(const status of [400,401,403,404,422])
    expect(classifyAcademyPackageRequestResponse(status,{code:'ACADEMY_REQUEST_DENIED'}))
     .toBe('denied');
+  // Only an exact Worker conflict proves the request was not accepted.
+  // An intermediary/malformed 409 must keep the same operationId retryable.
+  for(const code of ['ACADEMY_OPERATION_CONFLICT','ACADEMY_PACKAGE_CHANGED',
+   'ACADEMY_REQUEST_DENIED'])
+   expect(classifyAcademyPackageRequestResponse(409,{code})).toBe('denied');
+  for(const payload of [null,{}, {code:'UNKNOWN_CONFLICT'},
+   {code:'ACADEMY_REQUEST_DENIED',academyRequestId:id},
+   {code:'ACADEMY_PACKAGE_CHANGED',debug:'unexpected'}])
+   expect(classifyAcademyPackageRequestResponse(409,payload)).toBe('uncertain');
  });
  it('remounts both signed subscription balances before a sibling switch can paint old D1 data',()=>{
   const homeA=HomeSubscriptionStatus({learnerId:'synthetic-learner-a'});
