@@ -69,6 +69,16 @@ export function academyAdminSameSession<T>(started:T,current:T){
 export function academyAdminSessionViewIsReady<T>(rendered:T,current:T){
  return academyAdminSameSession(rendered,current);
 }
+/** A revoked staff session cannot apply a late successful mutation receipt,
+ * including a one-use Sheikh invite token, even if its session object matches. */
+export function academyAdminMutationMayApply<T>(started:T,current:T,revoked:boolean){
+ return academyAdminSameSession(started,current)&&!revoked;
+}
+/** New commands and exact-operation retries require a fresh signed staff read. */
+export function academyAdminCanSend(
+ phase:AcademyReadPhase,hasSnapshot:boolean,revoked:boolean){
+ return phase==='ready'&&hasSnapshot&&!revoked;
+}
 /** An unfinished request from an old staff session must not lock the new one. */
 export function academyAdminSessionLockIsBusy<T>(inFlightSession:T|null,session:T){
  return inFlightSession!==null&&academyAdminSameSession(inFlightSession,session);
@@ -199,6 +209,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  },[session,refresh]);
  const busy=result.phase==='busy'||result.phase==='uncertain';
  async function send(path:string,payload:unknown){
+  if(!academyAdminCanSend(readPhase,data!==null,revokedStaff.current))return;
   if(academyAdminSessionLockIsBusy(sending.current?.session??null,session))return;
   const held=academyPendingStore.forActor(session.user.id);
   // A new financial operation cannot replace an unresolved original payload.
@@ -211,7 +222,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   if(!academyPendingStore.beginAttempt(operation,attempt))return;
   sending.current={session,attempt};
   const startedSession=session;
-  const stillCurrent=()=>academyAdminSameSession(startedSession,currentSession.current);
+  const stillCurrent=()=>academyAdminMutationMayApply(
+   startedSession,currentSession.current,revokedStaff.current);
   setResult({phase:'busy',message:'جارٍ تسجيل العملية لدى الخادم…'});
   pendingOpRef.current=operation;
   setPendingOp(operation);
@@ -390,7 +402,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   </>}
   {result.phase!=='idle'&&<p role={result.phase==='error'?'alert':'status'}>
    {result.message}</p>}
-  {result.phase==='uncertain'&&pendingOp&&<button type="button"
+  {result.phase==='uncertain'&&pendingOp&&
+   academyAdminCanSend(readPhase,data!==null,revokedStaff.current)&&<button type="button"
    onClick={()=>void send(pendingOp.path,pendingOp.payload)}>إعادة نفس العملية بمعرّفها الأصلي</button>}
  </section>;
 }
