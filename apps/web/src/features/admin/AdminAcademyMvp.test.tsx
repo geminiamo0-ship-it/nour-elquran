@@ -4,7 +4,7 @@ import {academyAdminAckIsVerified,academyAdminOutcomeIsUncertain,academyAdminSam
  academyAdminSessionLockIsBusy,academyAdminPendingForActor,
  academyAdminCommandAllowed,academyAdminSessionViewIsReady,
  academyAdminStaffAccessRevoked,academyAdminReadMayApply,
- AdminAcademyMvp} from './AdminAcademyMvp';
+ academyAdminEmptyReadMessage,AdminAcademyMvp} from './AdminAcademyMvp';
 
 describe('admin academy staff revocation and late-read privacy #315',()=>{
  it('hides old staff state only for genuine authorization denial',()=>{
@@ -23,6 +23,17 @@ describe('admin academy staff revocation and late-read privacy #315',()=>{
   expect(academyAdminReadMayApply(true,false)).toBe(false);
   expect(academyAdminReadMayApply(false,true)).toBe(false);
   expect(academyAdminReadMayApply(true,true)).toBe(false);
+ });
+});
+
+describe('admin academy terminal read states #315',()=>{
+ it('distinguishes pending signed reads from denied and malformed/unavailable responses',()=>{
+  expect(academyAdminEmptyReadMessage('loading')).toContain('جارٍ تحميل');
+  expect(academyAdminEmptyReadMessage('error')).toContain('تعذّر تحميل');
+  expect(academyAdminEmptyReadMessage('denied')).toContain('إخفاء بيانات الإدارة');
+  expect(academyAdminEmptyReadMessage('ready')).toBeNull();
+  expect(academyAdminEmptyReadMessage('error')).not.toContain('جارٍ تحميل');
+  expect(academyAdminEmptyReadMessage('denied')).not.toContain('جارٍ تحميل');
  });
 });
 
