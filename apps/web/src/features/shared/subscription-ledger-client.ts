@@ -15,6 +15,10 @@ const isObject=(value:unknown):value is Record<string,unknown>=>
  value!==null&&typeof value==='object'&&!Array.isArray(value);
 const nonnegative=(value:unknown):value is number=>
  Number.isSafeInteger(value)&&typeof value==='number'&&value>=0;
+// Date/Intl throw RangeError outside the ECMAScript timestamp range. Never
+// let a malformed D1 cycle crash the signed student home or subscription UI.
+const dateTimestamp=(value:unknown):value is number=>
+ nonnegative(value)&&value<=8_640_000_000_000_000;
 // Worker verifiedOwner accepts legacy/synthetic learner IDs with underscores.
 const learnerIdPattern=/^[A-Za-z0-9_-]{1,128}$/;
 
@@ -27,8 +31,8 @@ export function parseSubscriptionLedger(raw:unknown):SubscriptionLedger{
  const item=raw.latestCycle;
  let latestCycle:SubscriptionCycle|null=null;
  if(item!==null){
-  if(!isObject(item)||!nonnegative(item.startsAtMs)||
-   !nonnegative(item.endsAtMs)||item.endsAtMs<=item.startsAtMs||
+  if(!isObject(item)||!dateTimestamp(item.startsAtMs)||
+   !dateTimestamp(item.endsAtMs)||item.endsAtMs<=item.startsAtMs||
    !nonnegative(item.baseSessions)||!nonnegative(item.rolloverSessions)||
    !nonnegative(item.spentSessions)||!nonnegative(item.recordedUnspentSessions)||
    item.baseSessions<1||item.baseSessions>60||item.rolloverSessions>60||
