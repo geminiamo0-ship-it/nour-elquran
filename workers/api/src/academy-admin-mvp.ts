@@ -265,15 +265,19 @@ export async function staffActivate(db:CoreDatabase,subject:string,raw:unknown,n
  raw.manualConfirmed!==true)
  return {status:400,code:'ACADEMY_INVALID_ACTIVATION'} as const;
  if(!await canManageTeachers(db,subject))return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
- const previous=await db.prepare(`SELECT id,actor_subject AS actor,learner_id AS learnerId,
- package_version_id AS packageVersionId,request_id AS requestId
+ type ActivationReceipt={actor:string;learnerId:string;packageVersionId:string;
+  requestId:string|null;note:string};
+ const readPrevious=()=>db.prepare(`SELECT actor_subject AS actor,learner_id AS learnerId,
+ package_version_id AS packageVersionId,request_id AS requestId,note
  FROM academy_subscription_activation_events WHERE operation_id=?`)
- .bind(raw.operationId).first<{id:string;actor:string;learnerId:string;
- packageVersionId:string;requestId:string|null}>();
- if(previous)return previous.actor===subject&&previous.learnerId===raw.learnerId&&
- previous.packageVersionId===raw.packageVersionId&&previous.requestId===raw.requestId?
- {status:200,code:'ACADEMY_ACTIVATION_REPLAY'} as const:
- {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ .bind(raw.operationId).first<ActivationReceipt>();
+ const replay=(saved:ActivationReceipt)=>saved.actor===subject&&
+  saved.learnerId===raw.learnerId&&saved.packageVersionId===raw.packageVersionId&&
+  saved.requestId===raw.requestId&&saved.note===raw.note?
+  {status:200,code:'ACADEMY_ACTIVATION_REPLAY'} as const:
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const previous=await readPrevious();
+ if(previous)return replay(previous);
  // A displayed request is an immutable quote, not an HTTP request trace.
  // Confirm the exact learner, quote and pending state before touching credits.
  if(raw.requestId!==null){
@@ -314,13 +318,34 @@ export async function staffActivate(db:CoreDatabase,subject:string,raw:unknown,n
  const carry=last&&start<=last.endsAtMs+259200000?
  Math.min(last.baseSessions,Math.max(0,last.baseSessions+last.rolloverSessions-last.spent)):0;
  try{
- await db.prepare(`INSERT INTO academy_subscription_activation_events
+  const receipt=await db.prepare(`INSERT INTO academy_subscription_activation_events
  (id,operation_id,actor_subject,learner_id,request_id,package_version_id,cycle_id,
  previous_cycle_id,rollover_sessions,starts_at_ms,ends_at_ms,note,manually_confirmed,at_ms)
  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,1,?)`).bind(crypto.randomUUID(),raw.operationId,subject,
  raw.learnerId,raw.requestId,raw.packageVersionId,crypto.randomUUID(),
  last?.id??null,carry,start,ends,raw.note,start).run();
- }catch(e){if(allowed(e))return {status:409,code:activationDeniedCode(e)} as const;throw e;}
+  // The activation INSERT creates a cycle through a SQLite trigger.
+  // D1 may count trigger effects as additional changes, so require a
+  // positive receipt rather than assuming exactly one total changed row.
+  if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
+     receipt.meta.changes<1){
+   const raced=await readPrevious();
+   if(raced)return replay(raced);
+   return {status:503,code:'ACADEMY_ACTIVATION_STORAGE_UNAVAILABLE'} as const;
+  }
+ }catch(e){
+  if(allowed(e)){
+   // An identical concurrent command or lost ACK may already have committed.
+   // Recover only the exact immutable operation, including its audit note.
+   const raced=await readPrevious();
+   if(raced)return replay(raced);
+   if(e instanceof Error&&/abort/i.test(e.message)&&
+      !/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_ACTIVATION_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:activationDeniedCode(e)} as const;
+  }
+  throw e;
+ }
  return {status:201,code:'ACADEMY_SUBSCRIPTION_ACTIVATED',startsAtMs:start,
  endsAtMs:ends,rolloverSessions:carry} as const;
 }
