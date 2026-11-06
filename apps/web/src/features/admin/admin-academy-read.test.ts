@@ -46,6 +46,17 @@ describe('bounded signed staff academy read #315',()=>{
    {...valid(),requests:[{...requestRow,learnerName:null}]},
    {...valid(),invites:[{...inviteRow,expiresAtMs:'1700600000000'}]},
    {...valid(),invites:[{...inviteRow,claimed:2}]},
+   // A malformed signed D1 row cannot misrepresent a claimed Sheikh as pending,
+   // or invent a claim outside the invitation's valid lifetime.
+   {...valid(),invites:[{...inviteRow,claimed:0}]},
+   {...valid(),invites:[{...inviteRow,claimed:0,teacherName:null,
+    teacherId:null}]},
+   {...valid(),invites:[{...inviteRow,claimed:0,teacherId:null,
+    claimedAtMs:null}]},
+   {...valid(),invites:[{...inviteRow,claimed:1,claimedAtMs:null}]},
+   {...valid(),invites:[{...inviteRow,claimedAtMs:inviteRow.createdAtMs-1}]},
+   {...valid(),invites:[{...inviteRow,claimedAtMs:inviteRow.expiresAtMs+1}]},
+   {...valid(),invites:[{...inviteRow,expiresAtMs:inviteRow.createdAtMs}]},
    {...valid(),whatsappNumber:'not-a-phone'},
    {...valid(),whatsappNumber:undefined},
   ])expect(()=>parseAdminAcademyRead(bad)).toThrow('ACADEMY_STAFF_INVALID_RESPONSE');
