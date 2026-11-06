@@ -148,7 +148,9 @@ describe('admin academy strict durable acknowledgement #315',()=>{
   const packageId='11111111-1111-4111-8111-111111111111';
   for(const [path,created,replayed] of cases){
    const command=path==='packages'?{packageId}:{};
-   const ack=(code:string)=>path==='packages'?{code,packageId}:{code};
+   const ack=(code:string)=>path==='packages'?{code,packageId}:
+    path==='activate'&&code==='ACADEMY_SUBSCRIPTION_ACTIVATED'?
+     {code,startsAtMs:1700000000000,endsAtMs:1702600000000,rolloverSessions:0}:{code};
    expect(academyAdminAckIsVerified(path,201,ack(created),command)).toBe(true);
    expect(academyAdminAckIsVerified(path,200,ack(replayed),command)).toBe(true);
    expect(academyAdminAckIsVerified(path,200,ack(created),command)).toBe(false);
@@ -170,6 +172,29 @@ describe('admin academy strict durable acknowledgement #315',()=>{
    expect(academyAdminAckIsVerified('packages',status,
     {code,packageId:command.packageId},{})).toBe(false);
   }
+ });
+ it('does not clear a committed activation on a malformed or absent D1 cycle ACK',()=>{
+  const code='ACADEMY_SUBSCRIPTION_ACTIVATED';
+  const good={code,startsAtMs:1700000000000,endsAtMs:1702600000000,
+   rolloverSessions:8};
+  expect(academyAdminAckIsVerified('activate',201,good,{})).toBe(true);
+  for(const bad of [
+   {code},
+   {...good,startsAtMs:undefined},
+   {...good,startsAtMs:'1700000000000'},
+   {...good,startsAtMs:-1},
+   {...good,startsAtMs:Number.MAX_SAFE_INTEGER},
+   {...good,endsAtMs:good.startsAtMs},
+   {...good,endsAtMs:good.startsAtMs-1},
+   {...good,endsAtMs:Number.MAX_SAFE_INTEGER},
+   {...good,rolloverSessions:undefined},
+   {...good,rolloverSessions:-1},
+   {...good,rolloverSessions:61},
+   {...good,rolloverSessions:1.5},
+  ])expect(academyAdminAckIsVerified('activate',201,bad,{})).toBe(false);
+  // Replay receipts intentionally omit cycle details and require a fresh read.
+  expect(academyAdminAckIsVerified('activate',200,
+   {code:'ACADEMY_ACTIVATION_REPLAY'},{})).toBe(true);
  });
  it('requires a newly issued one-use invite token and a valid expiry',()=>{
   const valid={code:'ACADEMY_INVITE_ISSUED',token:'a'.repeat(64),
