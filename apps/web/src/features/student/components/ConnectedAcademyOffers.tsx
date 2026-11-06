@@ -58,6 +58,16 @@ export function createAcademyReadEpoch(){
   isCurrent:(token:number)=>token===epoch
  };
 }
+/** The same-operation replay must remain reachable even when the catalog
+ * GET fails after an ambiguous POST; it never mints a new operation ID. */
+export function AcademyUncertainRequestRecovery({onRetry}:{onRetry:()=>void}){
+ return <div role="alert" className={css.message}>
+  <p>لم نتأكد من نتيجة الطلب. أعد نفس العملية فقط دون إنشاء طلب آخر.</p>
+  <button type="button" className={css.buttonOutline} onClick={onRetry}>
+   إعادة نفس طلب الباقة</button>
+ </div>;
+}
+
 /** Key the entire signed request lifecycle by learner, not just its GET effect.
  * A sibling switch must never inherit an in-flight write, replay token, or
  * old request list from the previous learner's mounted component. */
@@ -172,11 +182,6 @@ function ScopedAcademyOffers({learnerId}:{learnerId:string}){
      </article>)}</div>}
    {writeState==='confirming'&&<p className={css.message} role="status">
     جارٍ تأكيد ظهور الطلب في سجل الأكاديمية؛ لا ترسل طلبًا جديدًا.</p>}
-   {writeState==='uncertain'&&attempt&&<div role="alert" className={css.message}>
-    <p>لم نتأكد من نتيجة الطلب. أعد نفس العملية فقط دون إنشاء طلب آخر.</p>
-    <button type="button" className={css.buttonOutline}
-     onClick={()=>void send(attempt,true)}>إعادة نفس طلب الباقة</button>
-   </div>}
    {data!.whatsappNumber&&<div className={css.contact}>
     <p>لإتمام الدفع أو السؤال عن باقة، تواصل مع الأكاديمية.</p>
     <a className={css.buttonOutline} target="_blank" rel="noopener noreferrer"
@@ -192,5 +197,7 @@ function ScopedAcademyOffers({learnerId}:{learnerId:string}){
     </div>)}
    </details>}
   </>}
+  {writeState==='uncertain'&&attempt&&
+   <AcademyUncertainRequestRecovery onRetry={()=>void send(attempt,true)}/>}
  </section>;
 }
