@@ -6,7 +6,7 @@ import styles from './AdminAcademyMvp.module.css';
 type Package={id:string;packageId:string;title:string;priceEgp:number;sessions:number;active:number};
 type Request={id:string;learnerId:string;learnerName:string;title:string;priceEgp:number;
  sessions:number;packageVersionId:string;state:string};
-type Invite={id:string;teacherName:string|null;claimedSubject:string|null;
+type Invite={id:string;teacherName:string|null;claimed:0|1;
  teacherId:string|null;expiresAtMs:number};
 type Academy={code:string;packages:Package[];requests:Request[];invites:Invite[];
  whatsappNumber:string|null};
@@ -217,12 +217,11 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    <h3>الدعوات المرسلة</h3>
    {data.invites.map(i=><article key={i.id}>
     {i.teacherName??'لم يُستخدم الرابط بعد'} ·
-    {' '}{i.claimedSubject?'تم تسجيل حساب الشيخ':'بانتظار التسجيل'}
+    {' '}{i.claimed===1?'تم تسجيل حساب الشيخ':'بانتظار التسجيل'}
     {i.teacherId?' · موجود في دليل الشيوخ':''}
     {' · انتهاء: '}{date.format(new Date(i.expiresAtMs))}
-    {i.claimedSubject&&!i.teacherId&&<p>
-     الحساب جاهز للاعتماد الإداري بعد التحقق من هويته؛ معرّفه:
-     <code dir="ltr">{i.claimedSubject}</code></p>}
+    {i.claimed===1&&!i.teacherId&&<p>
+     ملف الشيخ غير متاح في الدليل بعد؛ راجع السجل قبل الإسناد.</p>}
    </article>)}
   </>}
   {data&&mode==='contact'&&<>
