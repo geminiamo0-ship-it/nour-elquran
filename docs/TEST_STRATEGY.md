@@ -1,3 +1,7 @@
+## 2026-11-06 — #315 academy signed read DTO privacy regression
+- `workers/api/tests/academy-staff-invite-privacy.test.ts`: inject extra private guardian phone, auth subject and payment token fields into synthetic D1 package/request adapter rows. Assert staff package/request and owner package/request responses include only the approved fields; owner must not receive staff-only learner identifiers or names. Existing invite redaction and revoked staff denial remain tested.
+- Exact-head CI and independent privacy review are mandatory. Signed isolated Cloudflare Dev staff/guardian/sibling and mobile 360/390 acceptance are **not** replaced by synthetic unit tests. No Production, child media or financial activation.
+
 ## 2026-11-06 — #315 invite roster privacy regression
 - Node synthetic D1 test `workers/api/tests/academy-staff-invite-privacy.test.ts`: signed staff receives claimed/unclaimed state without `claimedSubject` or any private auth-subject field, even if an adapter row includes one; unauthorized staff is rejected before invite/learner queries. The Admin browser displays academic teacher ID only when available, never a private auth subject.
 - Exact-head Verify and independent review still required; signed isolated Cloudflare Dev tests must check a claimed invitation and revoked-staff access, including 360/390 RTL. No Production changes.
