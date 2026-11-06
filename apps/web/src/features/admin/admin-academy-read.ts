@@ -62,6 +62,12 @@ function inviteRow(v:unknown):AcademyInvite{
   !(v.teacherId===null||id(v.teacherId))||
   !integer(v.createdAtMs)||!integer(v.expiresAtMs)||
   !(v.claimedAtMs===null||integer(v.claimedAtMs)))throw fail();
+ // A claimed invitation must have a durable claim timestamp inside its
+ // issued validity window. An unclaimed invitation cannot identify a Sheikh.
+ // Fail closed instead of displaying contradictory privileged D1 receipts.
+ if(v.expiresAtMs<=v.createdAtMs||
+  (v.claimed===0&&(v.teacherName!==null||v.teacherId!==null||v.claimedAtMs!==null))||
+  (v.claimed===1&&!integer(v.claimedAtMs,v.createdAtMs,v.expiresAtMs)))throw fail();
  return {id:v.id,teacherName:v.teacherName,claimed:v.claimed,
   teacherId:v.teacherId,createdAtMs:v.createdAtMs,
   expiresAtMs:v.expiresAtMs,claimedAtMs:v.claimedAtMs};
