@@ -1,3 +1,7 @@
+## #315 staff academy signed GET generation fence — 2026-11-06
+- Vitest `AdminAcademyMvp.test.tsx`: only the latest signed read generation may apply; aborted/revoked/older post-write GETs fail closed. A confirmed staff command must clear the old actionable snapshot until signed reconciliation succeeds; a failed reconciliation requires explicit read retry while preserving the committed command ACK.
+- Exact-head GitHub Verify, then signed isolated Cloudflare Dev test: staff package update followed by delayed GET and manual refresh, revoked staff session, guardian denial, sibling isolation, mobile 360×667/390×844. Do not infer remote race acceptance from a pure unit test. No Production.
+
 ## #315 signed staff academy read DTO runtime validation (2026-11-06)
 - `admin-academy-read.test.ts` asserts an exact projected public staff DTO despite injected D1/HTTP private keys, empty/active/disabled records, and rejects missing/malformed/overlong/coerced fields, duplicate IDs and arrays beyond Worker maxima (100 package versions, 100 requests, 50 invites).
 - `AdminAcademyMvp` must fail closed on malformed 200 replies without showing demo/zero values; existing signed 401/403 revocation, uncertain operation ID replay and cross-session isolation remain required.
