@@ -45,6 +45,12 @@ describe('bounded signed staff academy read #315',()=>{
    {...valid(),requests:[{...requestRow,state:'paid'}]},
    {...valid(),requests:[{...requestRow,learnerName:null}]},
    {...valid(),invites:[{...inviteRow,expiresAtMs:'1700600000000'}]},
+   // A safe integer can still be outside the valid Date/Intl range.
+   {...valid(),invites:[{...inviteRow,expiresAtMs:Number.MAX_SAFE_INTEGER}]},
+   {...valid(),invites:[{...inviteRow,createdAtMs:Number.MAX_SAFE_INTEGER}]},
+   {...valid(),invites:[{...inviteRow,claimedAtMs:Number.MAX_SAFE_INTEGER}]},
+   {...valid(),packages:[{...packageRow,atMs:Number.MAX_SAFE_INTEGER}]},
+   {...valid(),requests:[{...requestRow,atMs:Number.MAX_SAFE_INTEGER}]},
    {...valid(),invites:[{...inviteRow,claimed:2}]},
    // A malformed signed D1 row cannot misrepresent a claimed Sheikh as pending,
    // or invent a claim outside the invitation's valid lifetime.
