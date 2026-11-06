@@ -57,7 +57,10 @@ export async function ownerAcademy(db:CoreDatabase,subject:string,learnerId:stri
  return {status:200,code:'ACADEMY_OWNER',packages:p.results.filter(x=>x.active===1)
   .map(({id,packageId,title,priceEgp,sessions})=>
    ({versionId:id,packageId,title,priceEgp,sessions})),
-  requests:r.results,whatsappNumber:w} as const;
+  // Never forward unreviewed adapter keys into a learner's signed response.
+  requests:r.results.map(({id,packageVersionId,title,priceEgp,sessions,atMs,state})=>
+   ({id,packageVersionId,title,priceEgp,sessions,atMs,state})),
+  whatsappNumber:w} as const;
 }
 export async function ownerPackageRequest(db:CoreDatabase,subject:string,
  learnerId:string,raw:unknown,now=Date.now()){
@@ -130,7 +133,13 @@ export async function staffAcademy(db:CoreDatabase,subject:string){
    ORDER BY inv.created_at_ms DESC,inv.id DESC LIMIT 50`).all<Record<string,unknown>>(),
   contact(db),
  ]);
- return {status:200,code:'ACADEMY_STAFF',packages:p.results,requests:r.results,
+ // Explicitly project staff-facing fields; D1/adapter rows are not public DTOs.
+ return {status:200,code:'ACADEMY_STAFF',
+  packages:p.results.map(({id,packageId,title,priceEgp,sessions,active,atMs})=>
+   ({id,packageId,title,priceEgp,sessions,active,atMs})),
+  requests:r.results.map(({id,learnerId,learnerName,title,priceEgp,sessions,
+   packageVersionId,atMs,state})=>
+   ({id,learnerId,learnerName,title,priceEgp,sessions,packageVersionId,atMs,state})),
   invites:i.results.map(({id,createdAtMs,expiresAtMs,claimedAtMs,
    teacherName,claimed,teacherId})=>({id,createdAtMs,expiresAtMs,claimedAtMs,
    teacherName,claimed,teacherId})),whatsappNumber:w} as const;
