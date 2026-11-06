@@ -4,6 +4,7 @@ import {academyAdminAckIsVerified,academyAdminOutcomeIsUncertain,academyAdminSam
  academyAdminSessionLockIsBusy,academyAdminPendingForActor,
  academyAdminCommandAllowed,academyAdminSessionViewIsReady,
  academyAdminStaffAccessRevoked,academyAdminReadMayApply,
+ academyAdminMutationMayApply,academyAdminCanSend,
  academyAdminEmptyReadMessage,AdminAcademyMvp} from './AdminAcademyMvp';
 
 describe('admin academy staff revocation and late-read privacy #315',()=>{
@@ -159,5 +160,25 @@ describe('admin academy strict durable acknowledgement #315',()=>{
   }
   expect(academyAdminAckIsVerified('activate',201,{code:'ACADEMY_PACKAGE_SAVED'},{})).toBe(false);
   expect(academyAdminAckIsVerified('other',201,{code:'ACADEMY_PACKAGE_SAVED'},{})).toBe(false);
+ });
+});
+
+describe('admin academy denied-session mutation fencing #315',()=>{
+ it('requires a fresh signed staff snapshot before new or same-operation retry POSTs',()=>{
+  expect(academyAdminCanSend('ready',true,false)).toBe(true);
+  for(const phase of ['loading','error','denied'] as const){
+   expect(academyAdminCanSend(phase,true,false)).toBe(false);
+  }
+  expect(academyAdminCanSend('ready',false,false)).toBe(false);
+  expect(academyAdminCanSend('ready',true,true)).toBe(false);
+  expect(academyAdminCanSend('denied',false,true)).toBe(false);
+ });
+ it('discards late successful invite/activation receipts after staff revocation',()=>{
+  const signed={user:{id:'synthetic-staff'},session:'synthetic-session'};
+  expect(academyAdminMutationMayApply(signed,signed,false)).toBe(true);
+  // Same authenticated object is not sufficient after an authoritative 403.
+  expect(academyAdminMutationMayApply(signed,signed,true)).toBe(false);
+  expect(academyAdminMutationMayApply(signed,{...signed},false)).toBe(false);
+  expect(academyAdminMutationMayApply(signed,{...signed},true)).toBe(false);
  });
 });
