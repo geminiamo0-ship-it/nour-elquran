@@ -128,6 +128,17 @@ export function academyAdminAckIsVerified(path:string,status:number,raw:unknown,
   const expectedPackageId=(command as Record<string,unknown>).packageId;
   if(typeof expectedPackageId!=='string'||v.packageId!==expectedPackageId)return false;
  }
+ // A fresh activation ACK must include the authoritative D1 cycle window.
+ // A 200 immutable replay intentionally has only its replay code; the staff
+ // must re-read the signed ledger before initiating another operation.
+ if(path==='activate'&&status===201){
+  if(!Number.isSafeInteger(v.startsAtMs)||!Number.isSafeInteger(v.endsAtMs)||
+   typeof v.startsAtMs!=='number'||typeof v.endsAtMs!=='number'||
+   v.startsAtMs<0||v.endsAtMs<=v.startsAtMs||
+   v.endsAtMs>8_640_000_000_000_000||
+   !Number.isSafeInteger(v.rolloverSessions)||typeof v.rolloverSessions!=='number'||
+   v.rolloverSessions<0||v.rolloverSessions>60)return false;
+ }
  if(path==='invites')return status===201&&typeof v.token==='string'&&
   /^[0-9a-f]{64}$/.test(v.token)&&typeof v.expiresAtMs==='number'&&
   Number.isSafeInteger(v.expiresAtMs)&&v.expiresAtMs>Date.now();
