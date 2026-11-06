@@ -27,6 +27,9 @@ const label=(v:unknown,max=200):v is string=>
  typeof v==='string'&&v.trim().length>0&&v.length<=max;
 const integer=(v:unknown,min=0,max=Number.MAX_SAFE_INTEGER):v is number=>
  Number.isSafeInteger(v)&&Number(v)>=min&&Number(v)<=max;
+// Intl.DateTimeFormat and Date reject timestamps beyond the ECMAScript Date range.
+// Reject corrupt D1 timestamps at the network boundary, never crash staff UI.
+const timestamp=(v:unknown):v is number=>integer(v,0,8_640_000_000_000_000);
 const fail=():never=>{throw new Error('ACADEMY_STAFF_INVALID_RESPONSE');};
 function list<T>(v:unknown,max:number,parse:(row:unknown)=>T,key:(row:T)=>string):T[]{
  if(!Array.isArray(v)||v.length>max)throw fail();
@@ -40,7 +43,7 @@ function list<T>(v:unknown,max:number,parse:(row:unknown)=>T,key:(row:T)=>string
 function packageRow(v:unknown):AcademyPackage{
  if(!record(v)||!id(v.id)||!id(v.packageId)||!label(v.title,80)||
   !integer(v.priceEgp,1,100000)||!integer(v.sessions,1,60)||
-  (v.active!==0&&v.active!==1)||!integer(v.atMs))throw fail();
+  (v.active!==0&&v.active!==1)||!timestamp(v.atMs))throw fail();
  return {id:v.id,packageId:v.packageId,title:v.title,priceEgp:v.priceEgp,
   sessions:v.sessions,active:v.active,atMs:v.atMs};
 }
@@ -48,7 +51,7 @@ function requestRow(v:unknown):AcademyRequest{
  if(!record(v)||!id(v.id)||!id(v.learnerId)||!label(v.learnerName)||
   !label(v.title,80)||!integer(v.priceEgp,1,100000)||
   !integer(v.sessions,1,60)||!id(v.packageVersionId)||
-  !integer(v.atMs)||(v.state!=='pending'&&v.state!=='activated'&&v.state!=='rejected'))
+  !timestamp(v.atMs)||(v.state!=='pending'&&v.state!=='activated'&&v.state!=='rejected'))
   throw fail();
  return {id:v.id,learnerId:v.learnerId,learnerName:v.learnerName,
   title:v.title,priceEgp:v.priceEgp,sessions:v.sessions,
@@ -60,8 +63,8 @@ function inviteRow(v:unknown):AcademyInvite{
   !(v.teacherName===null||label(v.teacherName))||
   (v.claimed!==0&&v.claimed!==1)||
   !(v.teacherId===null||id(v.teacherId))||
-  !integer(v.createdAtMs)||!integer(v.expiresAtMs)||
-  !(v.claimedAtMs===null||integer(v.claimedAtMs)))throw fail();
+  !timestamp(v.createdAtMs)||!timestamp(v.expiresAtMs)||
+  !(v.claimedAtMs===null||timestamp(v.claimedAtMs)))throw fail();
  // A claimed invitation must have a durable claim timestamp inside its
  // issued validity window. An unclaimed invitation cannot identify a Sheikh.
  // Fail closed instead of displaying contradictory privileged D1 receipts.
