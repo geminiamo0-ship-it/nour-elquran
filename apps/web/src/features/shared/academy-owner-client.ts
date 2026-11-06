@@ -24,7 +24,8 @@ export function parseOwnerAcademy(raw:unknown):OwnerAcademy{
  const requests:AcademyRequest[]=raw.requests.map((r:unknown)=>{
   if(!isObject(r)||!uid(r.id)||!title(r.title)||!price(r.priceEgp)||
    !sessions(r.sessions)||!int(r.atMs)||
-   !['pending','activated','rejected'].includes(String(r.state)))throw Error('ACADEMY_INVALID_RESPONSE');
+   // JSON arrays coerce to valid strings; require the exact D1 state literal.
+   (r.state!=='pending'&&r.state!=='activated'&&r.state!=='rejected'))throw Error('ACADEMY_INVALID_RESPONSE');
   return {id:r.id as string,title:r.title as string,priceEgp:r.priceEgp as number,
    sessions:r.sessions as number,atMs:r.atMs as number,
    state:r.state as AcademyRequest['state']};
