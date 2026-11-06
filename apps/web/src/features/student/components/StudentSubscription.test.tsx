@@ -146,13 +146,17 @@ describe('clean, truthful subscriptions #324',()=>{
   expect(classifyAcademyPackageRequestResponse(201,{
    code:'ACADEMY_REQUEST_CREATED',academyRequestId:id})).toBe('ack');
   expect(classifyAcademyPackageRequestResponse(200,{
-   code:'ACADEMY_REQUEST_REPLAY',academyRequestId:id,requestId:'synthetic'})).toBe('ack');
+   code:'ACADEMY_REQUEST_REPLAY',academyRequestId:id})).toBe('ack');
   for(const [status,payload] of [
    [201,{code:'ACADEMY_REQUEST_CREATED'}],
    [201,{code:'ACADEMY_REQUEST_CREATED',academyRequestId:'invalid'}],
    [200,{code:'ACADEMY_REQUEST_CREATED',academyRequestId:id}],
    [201,{code:'ACADEMY_REQUEST_REPLAY',academyRequestId:id}],
    [201,{code:'ACADEMY_REQUEST_CREATED',academyRequestId:id,paid:true}],
+   // The Worker never returns `requestId`: an unexpected extra field must
+   // not be mistaken for a durable financial/academy acknowledgement.
+   [200,{code:'ACADEMY_REQUEST_REPLAY',academyRequestId:id,requestId:'synthetic'}],
+   [201,{code:'ACADEMY_REQUEST_CREATED',academyRequestId:id,requestId:null}],
    [408,null],[425,null],[429,null],[503,{code:'ACADEMY_UNAVAILABLE'}],
    [0,null]
   ] as const)expect(classifyAcademyPackageRequestResponse(status,payload))
