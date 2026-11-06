@@ -29,18 +29,18 @@ const integer=(v:unknown,min=0,max=Number.MAX_SAFE_INTEGER):v is number=>
  Number.isSafeInteger(v)&&Number(v)>=min&&Number(v)<=max;
 const fail=():never=>{throw new Error('ACADEMY_STAFF_INVALID_RESPONSE');};
 function list<T>(v:unknown,max:number,parse:(row:unknown)=>T,key:(row:T)=>string):T[]{
- if(!Array.isArray(v)||v.length>max)fail();
+ if(!Array.isArray(v)||v.length>max)throw fail();
  const seen=new Set<string>();
  return v.map(item=>{
   const row=parse(item),k=key(row);
-  if(seen.has(k))fail();
+  if(seen.has(k))throw fail();
   seen.add(k);return row;
  });
 }
 function packageRow(v:unknown):AcademyPackage{
  if(!record(v)||!id(v.id)||!id(v.packageId)||!label(v.title,80)||
   !integer(v.priceEgp,1,100000)||!integer(v.sessions,1,60)||
-  (v.active!==0&&v.active!==1)||!integer(v.atMs))fail();
+  (v.active!==0&&v.active!==1)||!integer(v.atMs))throw fail();
  return {id:v.id,packageId:v.packageId,title:v.title,priceEgp:v.priceEgp,
   sessions:v.sessions,active:v.active,atMs:v.atMs};
 }
@@ -49,7 +49,7 @@ function requestRow(v:unknown):AcademyRequest{
   !label(v.title,80)||!integer(v.priceEgp,1,100000)||
   !integer(v.sessions,1,60)||!id(v.packageVersionId)||
   !integer(v.atMs)||(v.state!=='pending'&&v.state!=='activated'&&v.state!=='rejected'))
-  fail();
+  throw fail();
  return {id:v.id,learnerId:v.learnerId,learnerName:v.learnerName,
   title:v.title,priceEgp:v.priceEgp,sessions:v.sessions,
   packageVersionId:v.packageVersionId,atMs:v.atMs,
@@ -61,21 +61,21 @@ function inviteRow(v:unknown):AcademyInvite{
   (v.claimed!==0&&v.claimed!==1)||
   !(v.teacherId===null||id(v.teacherId))||
   !integer(v.createdAtMs)||!integer(v.expiresAtMs)||
-  !(v.claimedAtMs===null||integer(v.claimedAtMs)))fail();
+  !(v.claimedAtMs===null||integer(v.claimedAtMs)))throw fail();
  return {id:v.id,teacherName:v.teacherName,claimed:v.claimed,
   teacherId:v.teacherId,createdAtMs:v.createdAtMs,
   expiresAtMs:v.expiresAtMs,claimedAtMs:v.claimedAtMs};
 }
 /** Malformed signed receipts are errors, never empty/demo lists or trusted UI data. */
 export function parseAdminAcademyRead(raw:unknown):AdminAcademySnapshot{
- if(!record(raw)||raw.code!=='ACADEMY_STAFF')fail();
+ if(!record(raw)||raw.code!=='ACADEMY_STAFF')throw fail();
  const packages=list(raw.packages,100,packageRow,row=>row.id);
  const requests=list(raw.requests,100,requestRow,row=>row.id);
  const invites=list(raw.invites,50,inviteRow,row=>row.id);
  if(!(raw.whatsappNumber===null||
   (typeof raw.whatsappNumber==='string'&&
-   /^[1-9][0-9]{9,14}$/.test(raw.whatsappNumber))))fail();
- if(new Set(packages.map(p=>p.packageId)).size!==packages.length)fail();
+   /^[1-9][0-9]{9,14}$/.test(raw.whatsappNumber))))throw fail();
+ if(new Set(packages.map(p=>p.packageId)).size!==packages.length)throw fail();
  return {code:'ACADEMY_STAFF',packages,requests,invites,
   whatsappNumber:raw.whatsappNumber};
 }
