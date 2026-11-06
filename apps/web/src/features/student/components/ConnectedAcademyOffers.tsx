@@ -21,6 +21,17 @@ type WriteState='idle'|'busy'|'uncertain'|'confirming'|'denied';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function classifyAcademyPackageRequestResponse(status:number,raw:unknown):
  'ack'|'denied'|'uncertain'{
+ // A generic 409 (proxy, stale gateway or malformed Worker response) is not
+ // proof that D1 rejected the write. Preserve the immutable operationId for
+ // exact replay unless the Worker returned a recognized deterministic conflict.
+ if(status===409){
+  if(!raw||typeof raw!=='object'||Array.isArray(raw))return 'uncertain';
+  const error=raw as Record<string,unknown>;
+  return Object.keys(error).length===1&&
+   (error.code==='ACADEMY_OPERATION_CONFLICT'||
+    error.code==='ACADEMY_PACKAGE_CHANGED'||
+    error.code==='ACADEMY_REQUEST_DENIED')?'denied':'uncertain';
+ }
  if(status>=400&&status<500&&![408,425,429].includes(status))return 'denied';
  if(!raw||typeof raw!=='object'||Array.isArray(raw))return 'uncertain';
  const data=raw as Record<string,unknown>;
