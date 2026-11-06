@@ -16,10 +16,10 @@ Keep package selection, academic session balance, requests and homepage status *
 ## Data trust contracts
 - D1 `GET /v1/me/learners/:learnerId/subscription-ledger` is learner-scoped and read-only, with `bookingEnabled:false`; `latestCycle` recorded-unspent units and end date are **academic facts, not available-to-book paid credits, receipts or automatic renewal**.
 - `GET /v1/me/learners/:learnerId/academy` returns active catalog versions, request state and academy WhatsApp. Client parser `features/shared/academy-owner-client.ts` verifies bounded fields and phone digits before display. Failed reads show a safe error, never invented zero or paid state.
-- `POST /v1/me/learners/:learnerId/academy` sends operationId UUID + packageId only. One pending request disables duplicate; uncertain response blocks subsequent POST until a confirmed GET refresh. Client never issues a credit grant.
+- `POST /v1/me/learners/:learnerId/academy` sends an immutable operationId UUID, packageId **and the displayed packageVersionId**. The Worker checks that version at the atomic D1 insert boundary (#326); stale versions return 409, while same-operation replay retains the original quote. One pending request disables duplicates; uncertain results require replay of the same operationId, not a new request. Client never issues a credit grant.
 - External WhatsApp link contains only a generic academy message, **no learner name/identifier or private record**.
 - In authenticated Home the strip uses an independent bounded Promise.allSettled (ledger + academy), never blocks lesson/task/report. `/preview/student/subscription` is explicitly non-auth illustration and has no API or payment action.
-- Admin `/admin/packages` only collapses/organizes existing authorized list/add/edit/disable controls. It still requires explicit staff confirmation and keeps existing idempotency and D1 rules; all backend/payment/scheduling logic untouched.
+- Admin `/admin/packages` organizes existing authorized list/add/edit/disable controls with explicit confirmation and D1 idempotency. This PR also contains the separately tracked #326 quote-version backend guard; it does **not** enable payment gateways, alter settlement policy or change scheduling.
 
 ## Main code
 - `apps/web/src/features/student/components/StudentSubscription.module.css`: premium responsive tokens for catalog/status strip.
