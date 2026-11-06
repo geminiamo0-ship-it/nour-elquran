@@ -4,7 +4,7 @@ import {academyAdminAckIsVerified,academyAdminOutcomeIsUncertain,academyAdminSam
  academyAdminSessionLockIsBusy,academyAdminPendingForActor,
  academyAdminCommandAllowed,academyAdminSessionViewIsReady,
  academyAdminStaffAccessRevoked,academyAdminReadMayApply,
- academyAdminMutationMayApply,academyAdminCanSend,
+ academyAdminMutationMayApply,academyAdminCanSend,academyAdminCanRefresh,
  academyAdminEmptyReadMessage,AdminAcademyMvp} from './AdminAcademyMvp';
 
 describe('admin academy staff revocation and late-read privacy #315',()=>{
@@ -35,6 +35,21 @@ describe('admin academy terminal read states #315',()=>{
   expect(academyAdminEmptyReadMessage('ready')).toBeNull();
   expect(academyAdminEmptyReadMessage('error')).not.toContain('جارٍ تحميل');
   expect(academyAdminEmptyReadMessage('denied')).not.toContain('جارٍ تحميل');
+ });
+});
+
+describe('admin academy uncertain-write read recovery #315',()=>{
+ it('keeps signed read-only refresh available while an unknown write is held',()=>{
+  // A failed GET after session renewal must be recoverable without a reload.
+  // The pending operation remains held; this never authorizes a new POST.
+  expect(academyAdminCanRefresh('uncertain')).toBe(true);
+  expect(academyAdminCanRefresh('error')).toBe(true);
+  expect(academyAdminCanRefresh('idle')).toBe(true);
+  expect(academyAdminCanRefresh('done')).toBe(true);
+  expect(academyAdminCanRefresh('busy')).toBe(false);
+  expect(academyAdminCanSend('error',false,false)).toBe(false);
+  expect(academyAdminCanSend('loading',false,false)).toBe(false);
+  expect(academyAdminCanSend('ready',true,true)).toBe(false);
  });
 });
 
