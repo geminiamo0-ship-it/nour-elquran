@@ -48,7 +48,7 @@ function requestRow(v:unknown):AcademyRequest{
  if(!record(v)||!id(v.id)||!id(v.learnerId)||!label(v.learnerName)||
   !label(v.title,80)||!integer(v.priceEgp,1,100000)||
   !integer(v.sessions,1,60)||!id(v.packageVersionId)||
-  !integer(v.atMs)||!['pending','activated','rejected'].includes(String(v.state)))
+  !integer(v.atMs)||(v.state!=='pending'&&v.state!=='activated'&&v.state!=='rejected'))
   fail();
  return {id:v.id,learnerId:v.learnerId,learnerName:v.learnerName,
   title:v.title,priceEgp:v.priceEgp,sessions:v.sessions,
