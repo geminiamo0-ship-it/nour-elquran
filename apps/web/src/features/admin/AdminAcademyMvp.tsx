@@ -3,14 +3,7 @@ import {useEffect,useRef,useState,type FormEvent} from 'react';
 import type {AccountSession} from '@/features/account';
 import styles from './AdminAcademyMvp.module.css';
 import {academyPendingStore,type AcademyPendingCommand} from './admin-academy-pending';
-
-type Package={id:string;packageId:string;title:string;priceEgp:number;sessions:number;active:number};
-type Request={id:string;learnerId:string;learnerName:string;title:string;priceEgp:number;
- sessions:number;packageVersionId:string;state:string};
-type Invite={id:string;teacherName:string|null;claimed:0|1;
- teacherId:string|null;expiresAtMs:number};
-type Academy={code:string;packages:Package[];requests:Request[];invites:Invite[];
- whatsappNumber:string|null};
+import {parseAdminAcademyRead,type AdminAcademySnapshot as Academy} from './admin-academy-read';
 type Result={phase:'idle'|'busy'|'done'|'error'|'uncertain';message:string};
 type Mode='packages'|'requests'|'invites'|'contact';
 type PendingOp=AcademyPendingCommand;
@@ -25,11 +18,8 @@ async function readAcademy(signal:AbortSignal):Promise<Academy>{
  if(res.status===401||res.status===403)
   throw new AcademyCommandError('STAFF_ACCESS_DENIED',res.status);
  const v:unknown=await res.json();
- if(!res.ok||!v||typeof v!=='object'||Array.isArray(v)||
-  (v as Academy).code!=='ACADEMY_STAFF'||!Array.isArray((v as Academy).packages)||
-  !Array.isArray((v as Academy).requests)||!Array.isArray((v as Academy).invites))
-  throw new Error('تعذّر قراءة الإدارة من الخادم');
- return v as Academy;
+ if(!res.ok)throw new Error('تعذّر قراءة الإدارة من الخادم');
+ return parseAdminAcademyRead(v);
 }
 const operationErrors:Record<string,string>={
  ACADEMY_REQUEST_ALREADY_ACTIVATED:'الطلب اتفعّل بالفعل. اضغط تحديث وشوف الاشتراك في ملف الطالب.',
