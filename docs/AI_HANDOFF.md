@@ -1,3 +1,8 @@
+## 2026-11-06 — #324 strict subscription cycle-state DTO guard (Draft PR #325)
+- Source review found `String(item.state)` accepted JSON arrays such as `['within_period']` as a valid cycle state, while returning the original array to the UI. That could make the signed balance appear expired/unknown despite a malformed successful response. The client now requires the exact string literal `within_period` or `expired`; regression tests cover array coercion and the valid string case.
+- Source commits: `ffe3c30dc8a2b666d0fb9f1fc5e55d84342dce20`, `1252e002fd0b3aea7c41fe906658c14528efb200`. Previous exact-head Verify [#42234153319](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42234153319) was green 4/4 on `ec91dd7714f4c4624966dd89a0fc9d239d50ad1b` **before** these commits. New exact-head CI not yet verified; source-only candidate, no Dev/Production changes.
+- Next: inspect exact-head Verify, independently review privacy/financial quote safeguards, reconcile overlap with Draft #327, then signed Cloudflare Dev guardian/two-sibling/price-change tests and 360/390 mobile review before merge.
+
 ## 2026-11-06 — #324 signed D1 cycle timestamp safety on PR #325
 - Previous #325 head `0282b20a` passed [Verify #42226009500](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42226009500). After reading AGENTS/STATUS/PLAN/TEST/SECURITY, identified a signed UI crash: `parseSubscriptionLedger` accepted safe integers beyond Date's representable range, but student Home/Subscription format `endsAtMs` with Intl.
 - Fixed in `apps/web/src/features/shared/subscription-ledger-client.ts` (`8c660252`) and added `StudentSubscription.test.tsx` regression (`e63f7ef5`); no real data, D1 writes, payment, Dev or Production changes.
