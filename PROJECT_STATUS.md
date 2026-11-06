@@ -1,3 +1,9 @@
+## 2026-11-06 — #315 private Sheikh invitation identity minimization (Draft PR #327; source candidate)
+- Source review found the signed staff academy invite list projected `academy_teacher_invites.claimed_subject` into the browser and printed that private Better Auth subject as an operator-facing ID. The academic `teacherId` is the intended operational identifier.
+- Candidate fix: Worker still joins the private subject internally, but exposes only a numeric `claimed` status and the public academic `teacherId`; an explicit invitation DTO projection drops unexpected D1 adapter keys. The Admin invite view no longer prints the private auth subject, and an unlinked account gets an honest review message.
+- Added synthetic Node regression `workers/api/tests/academy-staff-invite-privacy.test.ts` for claimed/unclaimed invitations, injected private adapter keys, and revoked-staff denial before invite reads. No D1 schema, staff grants, payments, secrets or Production change.
+- **NOT verified yet:** exact-head GitHub CI after these commits, independent security review, signed Cloudflare Dev staff/guardian/revocation tests and 360/390 mobile acceptance. Keep #315 OPEN and PR #327 Draft; do not merge on source evidence.
+
 ## 2026-11-05 — #315 academy staff denial fail-closed (Draft PR #327; source candidate)
 - Reviewed latest `main@4c15b59f`, open Issues/PRs, source security/testing rules and previous [Verify #41981807741](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/41981807741): **4/4 PASS only for older head `1aac554b`**.
 - Found source privacy gap: after a signed staff POST 401/403 or background academy GET revocation, previously loaded learner/request/invite data (including one-use invite URL) could remain visible. A late in-flight successful GET could repopulate it after denial.
