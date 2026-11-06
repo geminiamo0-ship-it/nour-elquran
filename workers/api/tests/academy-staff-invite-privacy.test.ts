@@ -15,10 +15,15 @@ function fixture(granted=true,claimed:0|1=1){
   // explicitly project its allowlist, not spread arbitrary D1 row keys.
   claimedSubject:'private-auth-subject-not-for-browser',
  };
+ type FakeStatement={
+  bind:(...args:unknown[])=>FakeStatement;
+  first:()=>Promise<unknown>;
+  all:()=>Promise<{results:unknown[]}>;
+ };
  const db={
   prepare(sql:string){
    reads.push(sql);
-   const statement={
+   const statement:FakeStatement={
     bind(..._args:unknown[]){return statement;},
     async first(){
      if(sql.includes('FROM staff_grants'))
