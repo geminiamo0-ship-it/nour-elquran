@@ -29,6 +29,7 @@ const integer=(v:unknown,min=0,max=Number.MAX_SAFE_INTEGER):v is number=>
  Number.isSafeInteger(v)&&Number(v)>=min&&Number(v)<=max;
 // Intl.DateTimeFormat and Date reject timestamps beyond the ECMAScript Date range.
 // Reject corrupt D1 timestamps at the network boundary, never crash staff UI.
+const INVITE_MAX_LIFETIME_MS=7*86_400_000;
 const timestamp=(v:unknown):v is number=>integer(v,0,8_640_000_000_000_000);
 const fail=():never=>{throw new Error('ACADEMY_STAFF_INVALID_RESPONSE');};
 function list<T>(v:unknown,max:number,parse:(row:unknown)=>T,key:(row:T)=>string):T[]{
@@ -69,6 +70,7 @@ function inviteRow(v:unknown):AcademyInvite{
  // issued validity window. An unclaimed invitation cannot identify a Sheikh.
  // Fail closed instead of displaying contradictory privileged D1 receipts.
  if(v.expiresAtMs<=v.createdAtMs||
+  v.expiresAtMs-v.createdAtMs>INVITE_MAX_LIFETIME_MS||
   (v.claimed===0&&(v.teacherName!==null||v.teacherId!==null||v.claimedAtMs!==null))||
   (v.claimed===1&&!integer(v.claimedAtMs,v.createdAtMs,v.expiresAtMs)))throw fail();
  return {id:v.id,teacherName:v.teacherName,claimed:v.claimed,
