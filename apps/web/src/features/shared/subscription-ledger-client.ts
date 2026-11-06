@@ -40,7 +40,7 @@ export function parseSubscriptionLedger(raw:unknown):SubscriptionLedger{
    item.spentSessions>item.baseSessions+item.rolloverSessions||
    item.recordedUnspentSessions!==
     item.baseSessions+item.rolloverSessions-item.spentSessions||
-   !['within_period','expired'].includes(String(item.state)))
+   (item.state!=='within_period'&&item.state!=='expired'))
    throw new SubscriptionLedgerError('INVALID_LEDGER_RESPONSE');
   latestCycle={
    startsAtMs:item.startsAtMs,endsAtMs:item.endsAtMs,
