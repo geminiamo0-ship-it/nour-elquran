@@ -2,14 +2,9 @@
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import type {AccountSession} from '@/features/account';
 import styles from './AdminAcademyMvp.module.css';
+import {parseAdminAcademyRead,type AdminAcademySnapshot} from './admin-academy-read';
 
-type Package={id:string;packageId:string;title:string;priceEgp:number;sessions:number;active:number};
-type Request={id:string;learnerId:string;learnerName:string;title:string;priceEgp:number;
- sessions:number;packageVersionId:string;state:string};
-type Invite={id:string;teacherName:string|null;claimed:0|1;
- teacherId:string|null;expiresAtMs:number};
-type Academy={code:string;packages:Package[];requests:Request[];invites:Invite[];
- whatsappNumber:string|null};
+type Academy=AdminAcademySnapshot;
 type Result={phase:'idle'|'busy'|'done'|'error'|'uncertain';message:string};
 type Mode='packages'|'requests'|'invites'|'contact';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -20,11 +15,9 @@ async function readAcademy(signal:AbortSignal):Promise<Academy>{
  const res=await fetch('/v1/staff/academy',{credentials:'same-origin',cache:'no-store',
   redirect:'error',signal});
  const v:unknown=await res.json();
- if(!res.ok||!v||typeof v!=='object'||Array.isArray(v)||
-  (v as Academy).code!=='ACADEMY_STAFF'||!Array.isArray((v as Academy).packages)||
-  !Array.isArray((v as Academy).requests)||!Array.isArray((v as Academy).invites))
-  throw new Error('تعذّر قراءة الإدارة من الخادم');
- return v as Academy;
+ if(!res.ok)throw new Error('تعذّر قراءة الإدارة من الخادم');
+ try{return parseAdminAcademyRead(v);}
+ catch{throw new Error('تعذّر قراءة الإدارة من الخادم');}
 }
 const operationErrors:Record<string,string>={
  ACADEMY_REQUEST_ALREADY_ACTIVATED:'الطلب اتفعّل بالفعل. اضغط تحديث وشوف الاشتراك في ملف الطالب.',
