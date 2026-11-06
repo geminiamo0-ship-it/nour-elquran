@@ -79,6 +79,12 @@ export function academyAdminCanSend(
  phase:AcademyReadPhase,hasSnapshot:boolean,revoked:boolean){
  return phase==='ready'&&hasSnapshot&&!revoked;
 }
+/** A pending unknown POST outcome must not disable the read-only refresh
+ * needed to restore a signed staff snapshot before an exact-operation retry.
+ * Only an actively sending command disables the refresh button. */
+export function academyAdminCanRefresh(phase:Result['phase']){
+ return phase!=='busy';
+}
 /** An unfinished request from an old staff session must not lock the new one. */
 export function academyAdminSessionLockIsBusy<T>(inFlightSession:T|null,session:T){
  return inFlightSession!==null&&academyAdminSameSession(inFlightSession,session);
@@ -282,7 +288,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  return <section dir="rtl" className={styles.root} aria-label={modeTitle}>
   <h2>{modeTitle}</h2>
   <p>كل تعديل يتطلب صلاحية الإدارة الحالية وتأكيدًا صريحًا. الدفع لا يُثبت تلقائيًا من واتساب.</p>
-  <button type="button" onClick={()=>setRefresh(n=>n+1)} disabled={busy}>
+  <button type="button" onClick={()=>setRefresh(n=>n+1)} disabled={!academyAdminCanRefresh(result.phase)}>
    تحديث البيانات</button>
   {!data&&academyAdminEmptyReadMessage(readPhase)&&
    <p role={readPhase==='loading'?'status':'alert'}>
