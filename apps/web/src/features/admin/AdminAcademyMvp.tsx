@@ -139,9 +139,16 @@ export function academyAdminAckIsVerified(path:string,status:number,raw:unknown,
    !Number.isSafeInteger(v.rolloverSessions)||typeof v.rolloverSessions!=='number'||
    v.rolloverSessions<0||v.rolloverSessions>60)return false;
  }
- if(path==='invites')return status===201&&typeof v.token==='string'&&
-  /^[0-9a-f]{64}$/.test(v.token)&&typeof v.expiresAtMs==='number'&&
-  Number.isSafeInteger(v.expiresAtMs)&&v.expiresAtMs>Date.now();
+ if(path==='invites'){
+  // A one-use invite expires in seven days. A valid-looking token must not
+  // clear an uncertain write if the receipt advertises an impossible TTL.
+  const now=Date.now();
+  return status===201&&typeof v.token==='string'&&
+   /^[0-9a-f]{64}$/.test(v.token)&&typeof v.expiresAtMs==='number'&&
+   Number.isSafeInteger(v.expiresAtMs)&&v.expiresAtMs>now&&
+   v.expiresAtMs<=8_640_000_000_000_000&&
+   v.expiresAtMs<=now+7*86400000+5*60000;
+ }
  return true;
 }
 async function submit(path:string,command:unknown){
