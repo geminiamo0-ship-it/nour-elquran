@@ -56,6 +56,11 @@ export function academyAdminStaffAccessRevoked(status:number,code:string){
 export function academyAdminReadMayApply(aborted:boolean,revoked:boolean){
  return !aborted&&!revoked;
 }
+/** A slower signed GET cannot replace a newer post-write or manual refresh. */
+export function academyAdminReadEpochMayApply(
+ started:number,current:number,aborted:boolean,revoked:boolean){
+ return started===current&&academyAdminReadMayApply(aborted,revoked);
+}
 /** A 5xx or retryable HTTP response cannot prove whether D1 committed.
  * Preserve the original operationId and prohibit a second financial command. */
 export function academyAdminOutcomeIsUncertain(status:number){
@@ -170,6 +175,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const sending=useRef<{session:AccountSession;attempt:object}|null>(null);
  const currentSession=useRef(session);
  const revokedStaff=useRef(false);
+ const readEpoch=useRef(0);
  currentSession.current=session;
  function invalidateStaffData(){
   revokedStaff.current=true;
@@ -189,6 +195,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  },[visibleSession,session]);
  useEffect(()=>{
   const ctrl=new AbortController();
+  const epoch=++readEpoch.current;
   revokedStaff.current=false;
   setReadPhase('loading');
   setData(null);setInviteUrl('');
@@ -200,11 +207,12 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   setResult(held?{phase:'uncertain',message:uncertainMessage}:
    {phase:'idle',message:''});
   void readAcademy(ctrl.signal).then(v=>{
-   if(academyAdminReadMayApply(ctrl.signal.aborted,revokedStaff.current)){
+   if(academyAdminReadEpochMayApply(epoch,readEpoch.current,
+    ctrl.signal.aborted,revokedStaff.current)){
     setData(v);setReadPhase('ready');setWhatsapp(v.whatsappNumber??'');
    }
   }).catch(e=>{
-   if(ctrl.signal.aborted)return;
+   if(ctrl.signal.aborted||epoch!==readEpoch.current)return;
    if(e instanceof AcademyCommandError&&academyAdminStaffAccessRevoked(e.status,e.code))
     invalidateStaffData();
    else setReadPhase('error');
@@ -244,16 +252,24 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     const token=(ack as {code:string;token?:string}).token!;
     setInviteUrl(window.location.origin+'/teacher/join?token='+token);
    }else{
-    // Refresh the authoritative list without erasing the confirmed receipt.
+    // A committed write invalidates every older roster GET. Keep the signed
+    // receipt visible, but require a fresh list before another command.
+    const epoch=++readEpoch.current;
+    setData(null);setReadPhase('loading');
     const ctrl=new AbortController();
     void readAcademy(ctrl.signal).then(v=>{
-     if(stillCurrent()&&academyAdminReadMayApply(ctrl.signal.aborted,revokedStaff.current))
-      setData(v);
+     if(stillCurrent()&&academyAdminReadEpochMayApply(epoch,readEpoch.current,
+      ctrl.signal.aborted,revokedStaff.current)){
+      setData(v);setReadPhase('ready');setWhatsapp(v.whatsappNumber??'');
+     }
     }).catch(e=>{
-     if(!stillCurrent()||ctrl.signal.aborted)return;
+     if(!stillCurrent()||epoch!==readEpoch.current||ctrl.signal.aborted)return;
      if(e instanceof AcademyCommandError&&academyAdminStaffAccessRevoked(e.status,e.code)){
       invalidateStaffData();
       setResult({phase:'error',message:operationErrors.ACADEMY_STAFF_ACCESS_CHANGED??'صلاحية الإدارة اتغيرت.'});
+     }else{
+      // A failed reconciliation is not permission to act on a stale snapshot.
+      setData(null);setReadPhase('error');
      }
     });
    }
@@ -288,7 +304,10 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  return <section dir="rtl" className={styles.root} aria-label={modeTitle}>
   <h2>{modeTitle}</h2>
   <p>كل تعديل يتطلب صلاحية الإدارة الحالية وتأكيدًا صريحًا. الدفع لا يُثبت تلقائيًا من واتساب.</p>
-  <button type="button" onClick={()=>setRefresh(n=>n+1)} disabled={!academyAdminCanRefresh(result.phase)}>
+  <button type="button" onClick={()=>{
+   ++readEpoch.current;setData(null);setReadPhase('loading');
+   setRefresh(n=>n+1);
+  }} disabled={!academyAdminCanRefresh(result.phase)}>
    تحديث البيانات</button>
   {!data&&academyAdminEmptyReadMessage(readPhase)&&
    <p role={readPhase==='loading'?'status':'alert'}>
