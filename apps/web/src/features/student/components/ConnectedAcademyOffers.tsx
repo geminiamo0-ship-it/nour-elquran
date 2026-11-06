@@ -28,7 +28,7 @@ export function classifyAcademyPackageRequestResponse(status:number,raw:unknown)
   (status===200&&data.code==='ACADEMY_REQUEST_REPLAY');
  return validCode&&typeof data.academyRequestId==='string'&&
   UUID.test(data.academyRequestId)&&
-  Object.keys(data).every(k=>['code','academyRequestId','requestId'].includes(k))?
+  Object.keys(data).every(k=>['code','academyRequestId'].includes(k))?
   'ack':'uncertain';
 }
 export function createAcademyPackageRequestGate(){
