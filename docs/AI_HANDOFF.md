@@ -1,3 +1,8 @@
+## 2026-11-06 — #324 signed D1 cycle timestamp safety on PR #325
+- Previous #325 head `0282b20a` passed [Verify #42226009500](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42226009500). After reading AGENTS/STATUS/PLAN/TEST/SECURITY, identified a signed UI crash: `parseSubscriptionLedger` accepted safe integers beyond Date's representable range, but student Home/Subscription format `endsAtMs` with Intl.
+- Fixed in `apps/web/src/features/shared/subscription-ledger-client.ts` (`8c660252`) and added `StudentSubscription.test.tsx` regression (`e63f7ef5`); no real data, D1 writes, payment, Dev or Production changes.
+- NEXT exact action: verify latest #325 exact-head CI (not yet claimed), fix any failure; independent privacy/security review, signed isolated Dev two siblings/guardian/staff repricing and 360/390 RTL browser QA. Reconcile Draft #327 staff writer/receipt/session changes with #325's immutable guardian quote before merging. Keep #324/#326/#315 OPEN, #325/#327 Draft.
+
 ## 2026-11-06 — #325/#327 privacy bridge (#315)
 - Read AGENTS/STATUS/PLAN/TEST/SECURITY before changes; main remains `4c15b59f`. #325 HEAD originally `8f888a60` and #327 `7d3bd14a`, both Draft; both original exact-head Verify runs succeeded. No independent approval or signed Dev acceptance.
 - Updated #325 source: `643d66fb` explicitly projects owner and staff D1 academy read DTOs, replacing claimed auth subject with boolean-like 0/1; `4e38099d` removes private subject rendering from staff invitation list; `bab16f41` adds synthetic D1 injected-private-fields and revoked-staff regression. Preserves #325's atomic immutable guardian quote; does not merge #327.
