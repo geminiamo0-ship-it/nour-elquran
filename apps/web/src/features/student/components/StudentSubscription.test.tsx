@@ -69,6 +69,20 @@ describe('clean, truthful subscriptions #324',()=>{
   expect(()=>parseSubscriptionLedger({...valid,latestCycle:{...valid.latestCycle,
    startsAtMs:beyondDate}})).toThrow('INVALID_LEDGER_RESPONSE');
  });
+ it('rejects JSON arrays masquerading as a cycle state (#324)',()=>{
+  const valid={code:'SUBSCRIPTION_LEDGER',bookingEnabled:false,
+   compensationUnspentSessions:0,compensationGrantCount:0,
+   latestCycle:{state:'within_period',startsAtMs:1760000000000,
+    endsAtMs:1800000000000,baseSessions:8,rolloverSessions:0,
+    spentSessions:1,recordedUnspentSessions:7}};
+  expect(parseSubscriptionLedger(valid).latestCycle?.state).toBe('within_period');
+  // String(['within_period']) used to pass the parser, then the UI received
+  // an array instead of the exact discriminant and mislabeled the balance.
+  for(const state of [['within_period'],['expired']]){
+   expect(()=>parseSubscriptionLedger({...valid,
+    latestCycle:{...valid.latestCycle,state}})).toThrow('INVALID_LEDGER_RESPONSE');
+  }
+ });
  it('does not claim a missing subscription when only the catalog succeeded',()=>{
   const academy=parseOwnerAcademy({...sample,requests:[]});
   const unknown=homeSubscriptionSummary(null,academy,1760000000000);
