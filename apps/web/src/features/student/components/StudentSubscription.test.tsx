@@ -24,6 +24,14 @@ describe('clean, truthful subscriptions #324',()=>{
   expect(()=>parseOwnerAcademy({...sample,whatsappNumber:'https://example.com'})).toThrow();
   expect(()=>parseOwnerAcademy({...sample,packages:[{...sample.packages[0],priceEgp:-2}]})).toThrow();
   expect(()=>parseOwnerAcademy({...sample,requests:[{...sample.requests[0],state:'paid'}]})).toThrow();
+  // Signed JSON arrays such as ['pending'] must never bypass the state
+  // discriminant and hide an actual pending request, enabling a duplicate.
+  for(const state of [['pending'],['activated'],['rejected']]){
+   expect(()=>parseOwnerAcademy({...sample,
+    requests:[{...sample.requests[0],state}]}))
+    .toThrow('ACADEMY_INVALID_RESPONSE');
+  }
+  expect(parseOwnerAcademy(sample).requests[0]?.state).toBe('pending');
   // Duplicate server IDs must not silently render ambiguous React keys/history.
   expect(()=>parseOwnerAcademy({...sample,packages:[sample.packages[0],sample.packages[0]]})).toThrow('ACADEMY_INVALID_RESPONSE');
   expect(()=>parseOwnerAcademy({...sample,requests:[sample.requests[0],sample.requests[0]]})).toThrow('ACADEMY_INVALID_RESPONSE');
