@@ -1,3 +1,9 @@
+## 2026-11-07 — #315 activation receipt integration onto Draft #325
+- Canonical working branch: `feat/student-subscriptions-clarity-20261101`, PR #325. Read AGENTS.md and all mandatory policy docs before further edits. Parallel Draft #327 `fix/315-atomic-package-version-order-20261104` is NOT merged.
+- New source commit `ec52ef1d` ports only #327's `staffActivate` durable D1 write-receipt validation, exact operation recovery and audit-note matching. Regression commit `831c7ecc` adds `workers/api/tests/academy-activation-receipt.test.ts`. The owner immutable displayed quote `packageVersionId` atomic INSERT in #325 remains intact.
+- This is source-only, NOT Dev-accepted or merged. Do not treat a `run()` promise resolution as a committed manual credit grant. Keep Draft, no Production/payment/WhatsApp/child audio or cumulative ink flag changes.
+- NEXT: verify latest exact-head 4/4 GitHub Verify; review/reconcile #327's staffReject/staffContact/staffInvite durability and signed UI before independent security review, isolated Dev role/sibling/replay and mobile 360/390 acceptance. #315/#324 stay OPEN.
+
 ## 2026-11-07 — #324 unknown 409 must not release guardian quote replay (Draft PR #325)
 - Source review of the signed learner package POST found that any HTTP 409 was treated as a definite denial, even if a proxy/malformed response carried no recognized Worker conflict code. A committed write with an ambiguous 409 could therefore lose the original operationId and allow a second request after GET.
 - Changed `apps/web/src/features/student/components/ConnectedAcademyOffers.tsx`: only exact, single-field 409 codes `ACADEMY_OPERATION_CONFLICT`, `ACADEMY_PACKAGE_CHANGED`, `ACADEMY_REQUEST_DENIED` close the attempt. Unknown/malformed 409 stays uncertain and replays the original immutable operationId and packageVersionId. No new price, D1, Worker, or payment behavior.
