@@ -5,6 +5,14 @@ import styles from './AdminAcademyMvp.module.css';
 import {academyPendingStore,type AcademyPendingCommand} from './admin-academy-pending';
 import {parseAdminAcademyRead,type AdminAcademySnapshot as Academy} from './admin-academy-read';
 type Result={phase:'idle'|'busy'|'done'|'error'|'uncertain';message:string};
+type AcademyReadPhase='loading'|'ready'|'error'|'denied';
+/** Empty staff state must never keep displaying a loading message after a failed read. */
+export function academyAdminEmptyReadMessage(phase:AcademyReadPhase):string|null{
+ if(phase==='loading')return 'جارٍ تحميل البيانات المصرح بها…';
+ if(phase==='denied')return 'تم إخفاء بيانات الإدارة لعدم توفر الصلاحية.';
+ if(phase==='error')return 'تعذّر تحميل بيانات الأكاديمية. اضغط تحديث البيانات للمحاولة مجددًا.';
+ return null;
+}
 type Mode='packages'|'requests'|'invites'|'contact';
 type PendingOp=AcademyPendingCommand;
 const uncertainMessage='تعذّر تأكيد العملية السابقة. لا تبدأ تفعيلًا جديدًا؛ أعد نفس العملية بمعرّفها الأصلي.';
@@ -127,6 +135,7 @@ async function submit(path:string,command:unknown){
 /** Operations never optimistically claim a payment or an activation. */
 export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode}){
  const [data,setData]=useState<Academy|null>(null);
+ const [readPhase,setReadPhase]=useState<AcademyReadPhase>('loading');
  const [refresh,setRefresh]=useState(0);
  const [result,setResult]=useState<Result>({phase:'idle',message:''});
  const [title,setTitle]=useState('');
@@ -148,12 +157,14 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  currentSession.current=session;
  function invalidateStaffData(){
   revokedStaff.current=true;
+  setReadPhase('denied');
   setData(null);setInviteUrl('');setWhatsapp('');setConfirmed(false);
  }
  // A new session must not paint the previous staff actor's data, selected
  // learner, settlement note or one-use Sheikh invitation before effects run.
  useEffect(()=>{
   if(academyAdminSessionViewIsReady(visibleSession,session))return;
+  setReadPhase('loading');
   setData(null);setInviteUrl('');setTitle('');setPrice('');setSessions('8');
   setSelectedPackage('');setSelectedRequest('');setLearnerId('');
   setReason('');setConfirmed(false);setWhatsapp('');setPendingOp(null);
@@ -163,6 +174,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  useEffect(()=>{
   const ctrl=new AbortController();
   revokedStaff.current=false;
+  setReadPhase('loading');
   setData(null);setInviteUrl('');
   // Session objects change on re-authentication. Do not lose an uncertain
   // activation's original operationId when the authenticated actor is unchanged.
@@ -173,12 +185,13 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    {phase:'idle',message:''});
   void readAcademy(ctrl.signal).then(v=>{
    if(academyAdminReadMayApply(ctrl.signal.aborted,revokedStaff.current)){
-    setData(v);setWhatsapp(v.whatsappNumber??'');
+    setData(v);setReadPhase('ready');setWhatsapp(v.whatsappNumber??'');
    }
   }).catch(e=>{
    if(ctrl.signal.aborted)return;
    if(e instanceof AcademyCommandError&&academyAdminStaffAccessRevoked(e.status,e.code))
     invalidateStaffData();
+   else setReadPhase('error');
    if(!pendingOpRef.current)setResult({phase:'error',
     message:e instanceof Error?e.message:'تعذّر تحميل البيانات'});
   });
@@ -259,7 +272,9 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   <p>كل تعديل يتطلب صلاحية الإدارة الحالية وتأكيدًا صريحًا. الدفع لا يُثبت تلقائيًا من واتساب.</p>
   <button type="button" onClick={()=>setRefresh(n=>n+1)} disabled={busy}>
    تحديث البيانات</button>
-  {!data&&<p role="status">جارٍ تحميل البيانات المصرح بها…</p>}
+  {!data&&academyAdminEmptyReadMessage(readPhase)&&
+   <p role={readPhase==='loading'?'status':'alert'}>
+    {academyAdminEmptyReadMessage(readPhase)}</p>}
   {data&&mode==='packages'&&<>
    <h3>الباقات المسجلة</h3>
    {data.packages.length===0?<p>لا توجد باقات مضافة بعد.</p>:
