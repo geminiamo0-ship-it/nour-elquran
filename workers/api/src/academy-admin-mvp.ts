@@ -171,23 +171,50 @@ export async function staffPackage(db:CoreDatabase,subject:string,raw:unknown,no
  Number(raw.sessions)<1||Number(raw.sessions)>60||typeof raw.active!=='boolean')
   return {status:400,code:'ACADEMY_INVALID_PACKAGE'} as const;
  if(!await canManageTeachers(db,subject))return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
- const prior=await db.prepare(`SELECT id,package_id AS packageId,actor_subject AS actor,
+ const readPrior=()=>db.prepare(`SELECT id,package_id AS packageId,actor_subject AS actor,
  title,price_egp AS priceEgp,sessions,active FROM academy_package_events
  WHERE operation_id=?`).bind(raw.operationId).first<PackageRow&{actor:string}>();
- if(prior)return prior.actor===subject&&prior.packageId===raw.packageId&&
- prior.title===raw.title&&prior.priceEgp===raw.priceEgp&&prior.sessions===raw.sessions&&
- prior.active===(raw.active?1:0)?
+ const replay=(prior:PackageRow&{actor:string})=>prior.actor===subject&&
+  prior.packageId===raw.packageId&&prior.title===raw.title&&
+  prior.priceEgp===raw.priceEgp&&prior.sessions===raw.sessions&&
+  prior.active===(raw.active?1:0)?
   {status:200,code:'ACADEMY_PACKAGE_REPLAY',packageId:prior.packageId} as const:
   {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
- const last=await currentPackage(db,raw.packageId);
- const at=Math.max(now,(last?.atMs??0)+1);
+ const prior=await readPrior();
+ if(prior)return replay(prior);
  const id=crypto.randomUUID();
- try{await db.prepare(`INSERT INTO academy_package_events
-  (id,operation_id,package_id,actor_subject,title,price_egp,sessions,active,at_ms)
-  VALUES(?,?,?,?,?,?,?,?,?)`)
- .bind(id,raw.operationId,raw.packageId,subject,raw.title,raw.priceEgp,
- raw.sessions,raw.active?1:0,at).run();}
- catch(e){if(allowed(e))return {status:409,code:'ACADEMY_PACKAGE_DENIED'} as const;throw e;}
+ try{
+  // The version clock must be calculated inside the same SQLite write as
+  // INSERT. Two staff requests can otherwise read the same prior timestamp,
+  // tie on at_ms, and expose the older edit as the current catalog version.
+  const receipt=await db.prepare(`INSERT INTO academy_package_events
+   (id,operation_id,package_id,actor_subject,title,price_egp,sessions,active,at_ms)
+   SELECT ?,?,?,?,?,?,?,?,
+    MAX(?,COALESCE((SELECT MAX(at_ms)+1 FROM academy_package_events
+     WHERE package_id=?),?))`)
+  .bind(id,raw.operationId,raw.packageId,subject,raw.title,raw.priceEgp,
+   raw.sessions,raw.active?1:0,now,raw.packageId,now).run();
+  // A resolved D1 response is not proof of a committed version. Do not
+  // acknowledge a package/price change when the write reports no success.
+  if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
+     receipt.meta.changes<1)
+   return {status:503,code:'ACADEMY_PACKAGE_STORAGE_UNAVAILABLE'} as const;
+ }catch(e){
+  if(allowed(e)){
+   // A concurrent identical operation can win the UNIQUE constraint.
+   // Return its existing immutable ACK, not an invented new version.
+   const raced=await readPrior();
+   if(raced)return replay(raced);
+   // A transport/transaction abort has an unknown commit outcome, not a
+   // proven business conflict. The client must retain its operationId and
+   // reconcile through the same idempotent request rather than inventing
+   // a new edit after a misleading 409.
+   if(e instanceof Error&&!/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_PACKAGE_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:'ACADEMY_PACKAGE_DENIED'} as const;
+  }
+  throw e;
+ }
  return {status:201,code:'ACADEMY_PACKAGE_SAVED',packageId:raw.packageId} as const;
 }
 // One month of wall-clock time in Africa/Cairo, including DST transitions.
