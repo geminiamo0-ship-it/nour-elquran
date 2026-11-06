@@ -204,6 +204,9 @@ describe('admin academy strict durable acknowledgement #315',()=>{
    {...valid,token:undefined},{...valid,token:'not-a-token'},
    {...valid,expiresAtMs:0},{...valid,expiresAtMs:Date.now()-60000},
    {...valid,expiresAtMs:'1700000000000'},
+   {...valid,expiresAtMs:8_640_000_000_000_001},
+   {...valid,expiresAtMs:Number.MAX_SAFE_INTEGER},
+   {...valid,expiresAtMs:Date.now()+8*86400000},
    {...valid,code:'ACADEMY_INVITE_ALREADY_ISSUED'},
   ])expect(academyAdminAckIsVerified('invites',201,invalid,{})).toBe(false);
   expect(academyAdminAckIsVerified('invites',200,valid,{})).toBe(false);
