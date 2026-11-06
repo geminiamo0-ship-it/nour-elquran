@@ -3,7 +3,7 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {academyAdminAckIsVerified,academyAdminOutcomeIsUncertain,academyAdminSameSession,
  academyAdminSessionLockIsBusy,academyAdminPendingForActor,
  academyAdminCommandAllowed,academyAdminSessionViewIsReady,
- academyAdminStaffAccessRevoked,academyAdminReadMayApply,
+ academyAdminStaffAccessRevoked,academyAdminReadMayApply,academyAdminReadEpochMayApply,
  academyAdminMutationMayApply,academyAdminCanSend,academyAdminCanRefresh,
  academyAdminEmptyReadMessage,AdminAcademyMvp} from './AdminAcademyMvp';
 
@@ -24,6 +24,20 @@ describe('admin academy staff revocation and late-read privacy #315',()=>{
   expect(academyAdminReadMayApply(true,false)).toBe(false);
   expect(academyAdminReadMayApply(false,true)).toBe(false);
   expect(academyAdminReadMayApply(true,true)).toBe(false);
+ });
+});
+
+describe('admin academy signed read generation fence #315',()=>{
+ it('ignores a delayed post-write list when manual refresh has already started',()=>{
+  // Epoch 7 is a post-write read; epoch 8 is the newer user refresh.
+  expect(academyAdminReadEpochMayApply(7,8,false,false)).toBe(false);
+  expect(academyAdminReadEpochMayApply(8,8,false,false)).toBe(true);
+  expect(academyAdminReadEpochMayApply(8,8,true,false)).toBe(false);
+  expect(academyAdminReadEpochMayApply(8,8,false,true)).toBe(false);
+ });
+ it('never lets a pre-write list overwrite the committed command reconciliation',()=>{
+  expect(academyAdminReadEpochMayApply(11,12,false,false)).toBe(false);
+  expect(academyAdminReadEpochMayApply(12,12,false,false)).toBe(true);
  });
 });
 
