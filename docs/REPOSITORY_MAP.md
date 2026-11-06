@@ -1,3 +1,8 @@
+## #315 staff academy read boundary (Draft PR #327, 2026-11-06)
+- `apps/web/src/features/admin/admin-academy-read.ts`: strict runtime projection/validation of signed staff packages, learner requests, teacher invites and academy WhatsApp contact, with bounded arrays and duplicate-ID checks; no direct D1/SQL in React.
+- `apps/web/src/features/admin/admin-academy-read.test.ts`: synthetic DTO privacy, malformed/over-limit and numeric/state contract tests.
+- `apps/web/src/features/admin/AdminAcademyMvp.tsx`: invokes this parser before accepting a signed roster, preserving staff-revocation and immutable pending-command fences.
+
 ## #315 academy read DTO privacy boundary (Draft PR #327; 2026-11-06)
 - `workers/api/src/academy-admin-mvp.ts`: staff packages/requests and owner requests use explicit allowlisted JSON DTO projections rather than forwarding arbitrary D1 adapter row properties; invitation projection remains in place.
 - `workers/api/tests/academy-staff-invite-privacy.test.ts`: synthetic injected sensitive row fields test both signed staff and owner response allowlists; separate Dev/independent review remains pending.
