@@ -1,3 +1,7 @@
+## 2026-11-06 — #315 strict TypeScript CI correction
+- [Verify #42144886933](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42144886933) failed `code-quality` at `admin-academy-read.ts` TS18046/TS7006: control-flow narrowing did not recognize the prior `fail()` branch as a terminal assertion. Governance/repository policy passed; native D1 was still running at inspection.
+- [3ce77f74](https://github.com/geminiamo0-ship-it/nour-elquran/commit/3ce77f743803e0adb30a79e5b41b680d0799f699) uses explicit `throw fail()` on invalid paths so TypeScript narrows the checked `unknown` values. No schema, runtime success-path behavior or privacy policy change. **New exact-head CI must be inspected**; do not claim pass from older run.
+
 ## 2026-11-06 — #315 signed staff academy read validation (Draft PR #327)
 - Source review found `AdminAcademyMvp.readAcademy` trusted a 200 response whenever `code` and three arrays existed; malformed price/session/state/invite fields or unbounded/duplicate D1 rows could enter staff UI state and crash rendering or mislead manual settlement.
 - Added `admin-academy-read.ts` with an explicit projected, typed and bounded (100 package versions / 100 requests / 50 invites) runtime parser, strict numeric/state/contact fields and duplicate-ID detection; malformed signed responses fail closed, never turn into empty/demo data. The existing 401/403 staff-revocation handling remains authoritative.
