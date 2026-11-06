@@ -57,7 +57,10 @@ export async function ownerAcademy(db:CoreDatabase,subject:string,learnerId:stri
  return {status:200,code:'ACADEMY_OWNER',packages:p.results.filter(x=>x.active===1)
   .map(({id,packageId,title,priceEgp,sessions})=>
    ({versionId:id,packageId,title,priceEgp,sessions})),
-  requests:r.results,whatsappNumber:w} as const;
+  // Never expose unreviewed D1 adapter keys in an owner-bound response.
+  requests:r.results.map(({id,packageVersionId,title,priceEgp,sessions,atMs,state})=>
+   ({id,packageVersionId,title,priceEgp,sessions,atMs,state})),
+  whatsappNumber:w} as const;
 }
 /** Bind the guardian's displayed immutable quote to the D1 write. A staff
  * package edit between GET and POST must not silently change price/sessions.
@@ -142,15 +145,24 @@ export async function staffAcademy(db:CoreDatabase,subject:string){
    ORDER BY req.at_ms DESC,req.id DESC LIMIT 100`).all<Record<string,unknown>>(),
   db.prepare(`SELECT inv.id,inv.created_at_ms AS createdAtMs,inv.expires_at_ms AS expiresAtMs,
    inv.claimed_at_ms AS claimedAtMs,u.name AS teacherName,
-   inv.claimed_subject AS claimedSubject, t.id AS teacherId
+   CASE WHEN inv.claimed_subject IS NULL THEN 0 ELSE 1 END AS claimed,
+   t.id AS teacherId
    FROM academy_teacher_invites inv
    LEFT JOIN auth_users u ON u.id=inv.claimed_subject
    LEFT JOIN teachers t ON t.auth_subject=inv.claimed_subject
    ORDER BY inv.created_at_ms DESC,inv.id DESC LIMIT 50`).all<Record<string,unknown>>(),
   contact(db),
  ]);
- return {status:200,code:'ACADEMY_STAFF',packages:p.results,requests:r.results,
-  invites:i.results,whatsappNumber:w} as const;
+ // Project an explicit staff DTO. Never send auth subjects or private adapter fields.
+ return {status:200,code:'ACADEMY_STAFF',
+  packages:p.results.map(({id,packageId,title,priceEgp,sessions,active,atMs})=>
+   ({id,packageId,title,priceEgp,sessions,active,atMs})),
+  requests:r.results.map(({id,learnerId,learnerName,title,priceEgp,sessions,
+   packageVersionId,atMs,state})=>
+   ({id,learnerId,learnerName,title,priceEgp,sessions,packageVersionId,atMs,state})),
+  invites:i.results.map(({id,createdAtMs,expiresAtMs,claimedAtMs,
+   teacherName,claimed,teacherId})=>({id,createdAtMs,expiresAtMs,claimedAtMs,
+   teacherName,claimed,teacherId})),whatsappNumber:w} as const;
 }
 export async function staffPackage(db:CoreDatabase,subject:string,raw:unknown,now=Date.now()){
  if(!object(raw)||!exact(raw,['operationId','packageId','title','priceEgp','sessions','active'])||
