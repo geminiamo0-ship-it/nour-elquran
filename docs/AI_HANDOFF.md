@@ -1,3 +1,7 @@
+## 2026-11-06 — #324 next action: guardian uncertain-write recovery in Draft PR #325
+- Current source changes: 02d16ef6 (recovery action visible even when catalog GET errors), 8d7ded38 (SSR recovery regression). Before this, an ambiguous signed package POST followed by a failed catalog GET hid the only exact-operation retry UI. New action retains the original immutable payload and existing gate, without claiming a paid activation.
+- NEXT: inspect exact-head GitHub Verify 4/4 on PR #325, fix failures; obtain independent security review; run isolated Cloudflare Dev guardian synthetic ambiguous POST/GET failure/replay, two-sibling isolation and mobile 360/390. Reconcile with Draft #327's staff pending-command/ACK hardening without dropping immutable package quotes. Keep #324/#315 open and Draft; no Production or paid operation activation.
+
 ## 2026-11-06 — #315/#324 staff academy signed read contract reconciled into PR #325 (source only)
 - Fresh GitHub: main baseline `4c15b59f`, #325 and #327 OPEN/Draft; prior exact-head Verify #42271129989 (#325) and #42282845159 (#327) each completed SUCCESS 4/4, but neither validates this new integration commit.
 - #325 AdminAcademyMvp previously cast unvalidated signed JSON directly to staff Academy. Ported #327's bounded allowlisted parser and regression suite into #325, then wired the actual admin GET through the parser. This rejects malformed amounts, statuses, duplicate IDs, impossible dates/invite lifetimes and unreviewed D1/HTTP fields; the displayed guardian quote version and #325 Worker SQL remain unchanged.
