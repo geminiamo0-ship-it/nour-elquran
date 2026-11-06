@@ -63,9 +63,18 @@ describe('bounded signed staff academy read #315',()=>{
    {...valid(),invites:[{...inviteRow,claimedAtMs:inviteRow.createdAtMs-1}]},
    {...valid(),invites:[{...inviteRow,claimedAtMs:inviteRow.expiresAtMs+1}]},
    {...valid(),invites:[{...inviteRow,expiresAtMs:inviteRow.createdAtMs}]},
+   // A signed invitation is never valid for longer than the issued 7 days.
+   {...valid(),invites:[{...inviteRow,
+    expiresAtMs:inviteRow.createdAtMs+7*86_400_000+1}]},
    {...valid(),whatsappNumber:'not-a-phone'},
    {...valid(),whatsappNumber:undefined},
   ])expect(()=>parseAdminAcademyRead(bad)).toThrow('ACADEMY_STAFF_INVALID_RESPONSE');
+ });
+ it('accepts the seven-day expiry boundary without rounding it down',()=>{
+  const exactlySevenDays={...inviteRow,
+   expiresAtMs:inviteRow.createdAtMs+7*86_400_000};
+  expect(parseAdminAcademyRead({...valid(),invites:[exactlySevenDays]})
+   .invites[0]?.expiresAtMs).toBe(exactlySevenDays.expiresAtMs);
  });
  it('enforces fixed Worker bounds and unique identifiers, not unbounded browser arrays',()=>{
   for(const bad of [
