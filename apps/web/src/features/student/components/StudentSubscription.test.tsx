@@ -10,7 +10,7 @@ import {HomeSubscriptionStatus,homeSubscriptionSummary} from './HomeSubscription
 import {ConnectedSubscriptionLedger} from './ConnectedSubscriptionLedger';
 import {ConnectedAcademyOffers,createAcademyPackageRequestGate,
  createAcademyReadEpoch,classifyAcademyPackageRequestResponse,
- academyPackageRequestBody} from './ConnectedAcademyOffers';
+ academyPackageRequestBody,AcademyUncertainRequestRecovery} from './ConnectedAcademyOffers';
 
 describe('clean, truthful subscriptions #324',()=>{
  const sample={code:'ACADEMY_OWNER',
@@ -205,6 +205,15 @@ describe('clean, truthful subscriptions #324',()=>{
   expect(epoch.isCurrent(afterAck)).toBe(true);
   epoch.invalidate(); // unmount / sibling switch
   expect(epoch.isCurrent(afterAck)).toBe(false);
+ });
+ it('keeps exact-operation recovery visible independently of failed catalog GET (#324)',()=>{
+  // This recovery UI is rendered outside loading/error/ready catalog branches.
+  // Its callback is bound to the original immutable PackageAttempt, not a new request.
+  const html=renderToStaticMarkup(<AcademyUncertainRequestRecovery onRetry={()=>{}}/>);
+  expect(html).toContain('role="alert"');
+  expect(html).toContain('إعادة نفس طلب الباقة');
+  expect(html).toContain('دون إنشاء طلب آخر');
+  expect(html).not.toContain('اطلب الباقة');
  });
  it('latches one operationId across double taps, ambiguous outcomes and explicit replay',()=>{
   const gate=createAcademyPackageRequestGate();
