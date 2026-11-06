@@ -122,7 +122,8 @@ export async function staffAcademy(db:CoreDatabase,subject:string){
    ORDER BY req.at_ms DESC,req.id DESC LIMIT 100`).all<Record<string,unknown>>(),
   db.prepare(`SELECT inv.id,inv.created_at_ms AS createdAtMs,inv.expires_at_ms AS expiresAtMs,
    inv.claimed_at_ms AS claimedAtMs,u.name AS teacherName,
-   inv.claimed_subject AS claimedSubject, t.id AS teacherId
+   CASE WHEN inv.claimed_subject IS NULL THEN 0 ELSE 1 END AS claimed,
+   t.id AS teacherId
    FROM academy_teacher_invites inv
    LEFT JOIN auth_users u ON u.id=inv.claimed_subject
    LEFT JOIN teachers t ON t.auth_subject=inv.claimed_subject
@@ -130,7 +131,9 @@ export async function staffAcademy(db:CoreDatabase,subject:string){
   contact(db),
  ]);
  return {status:200,code:'ACADEMY_STAFF',packages:p.results,requests:r.results,
-  invites:i.results,whatsappNumber:w} as const;
+  invites:i.results.map(({id,createdAtMs,expiresAtMs,claimedAtMs,
+   teacherName,claimed,teacherId})=>({id,createdAtMs,expiresAtMs,claimedAtMs,
+   teacherName,claimed,teacherId})),whatsappNumber:w} as const;
 }
 export async function staffPackage(db:CoreDatabase,subject:string,raw:unknown,now=Date.now()){
  if(!object(raw)||!exact(raw,['operationId','packageId','title','priceEgp','sessions','active'])||
