@@ -1,3 +1,8 @@
+## 2026-11-06 — #315 staff invitation lifetime read guard (Draft PR #327)
+- The signed Admin academy read parser previously accepted an invitation expiring more than seven days after creation, despite the Worker issuing exactly seven-day links. The browser now fails closed for overlong invitation lifetimes and retains the exact seven-day boundary.
+- Source commit `a847076f3dcc3cc2d146510c9cc79256efe79a1a`; regression commit `ab38671d6b8d24a19b84e6c826095c227fdea80d`. No database, token issuance, or Production change. Exact-head CI must be rechecked; previous PR #327 Verify #42209653821 4/4 applied only to older head.
+- NEXT: inspect new Verify at exact head; independent staff privacy/security review; reconcile overlapping Worker and UI files with Draft PR #325 without dropping immutable guardian package-version consent; signed isolated Cloudflare Dev and 360/390 viewport checks before merge.
+
 ## 2026-11-06 — #315 bounded one-use Sheikh invite receipt (Draft PR #327)
 - Rechecked main `4c15b59f`, open #315 and Draft #327/#325; exact-head [Verify #42201064570](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42201064570) succeeded 4/4 on **prior** `2c9cf3f8`.
 - Source `c295531e` and regression `d032dab4` reject invite HTTP 201 acknowledgements whose expiry exceeds the JavaScript Date range or the approved seven-day validity by more than five minutes of client/server clock tolerance. A malformed receipt retains the original uncertain operation ID rather than displaying a potentially unbounded one-use invite secret. Existing 200 replay denial is unchanged.
