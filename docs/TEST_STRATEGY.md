@@ -1,3 +1,7 @@
+## 2026-11-06 — #315 invite roster privacy regression
+- Node synthetic D1 test `workers/api/tests/academy-staff-invite-privacy.test.ts`: signed staff receives claimed/unclaimed state without `claimedSubject` or any private auth-subject field, even if an adapter row includes one; unauthorized staff is rejected before invite/learner queries. The Admin browser displays academic teacher ID only when available, never a private auth subject.
+- Exact-head Verify and independent review still required; signed isolated Cloudflare Dev tests must check a claimed invitation and revoked-staff access, including 360/390 RTL. No Production changes.
+
 ## #315 staff revocation privacy regression — 2026-11-05
 - In academy GET/POST, 401 and 403 STAFF_ACCESS_DENIED / ACADEMY_STAFF_ACCESS_CHANGED must clear prior authorized learner/package/invite view, private one-use invite URL, and confirmation; malformed staff denial body fails closed. Business-rule 403/409 and ambiguous 503 must not masquerade as grant revocation; explicit D1 `409 ACADEMY_STAFF_ACCESS_CHANGED` does revoke the view.
 - A late successful academy GET begun before revocation must never re-display old records. Focused pure Vitest checks cover denial classification and the stale-read fence. Real browser and signed Dev revocation test are still mandatory; this source-only test is not equivalent to them.
