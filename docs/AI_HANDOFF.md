@@ -1,3 +1,8 @@
+## 2026-11-06 — #315 invite lifetime parser hardening on Draft PR #327
+- Verified current PR #325 head `8726c38ee2982c40ae7d9e6cb388f497a6249d1c` and PR #327 prior head `7d3bd14acbf0a77fa5079bd8c1238a9adf7aaa6a`; both previous exact-head Verify runs (#42271129989 and #42209653821) completed 4/4, but are superseded for #327 by new commits.
+- Admin `parseAdminAcademyRead` now rejects signed Sheikh invitation rows with `expiresAtMs-createdAtMs` above seven days, matching `staffInvite` issuance. Source `a847076f3dcc3cc2d146510c9cc79256efe79a1a`; tests `ab38671d6b8d24a19b84e6c826095c227fdea80d` include 7 days + 1ms rejection and exact-boundary acceptance. No tokens, private data, schema or flags modified.
+- NEXT: exact-head GitHub Verify on #327; investigate failures if any, update Issue #315. Remains Draft until independent security/privacy review, #325/#327 shared-file reconciliation (especially immutable quote version), signed Dev staff/guardian/sibling and mobile 360/390 acceptance. Do not merge or deploy Production.
+
 ## 2026-11-06 — #315 invite ACK seven-day expiry guard (Draft PR #327)
 - Latest main `4c15b59f`; Draft #327 previous head `2c9cf3f8` passed [Verify #42201064570](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42201064570) 4/4, before this change. Existing #325 still overlaps staff academy Worker and UI.
 - Source `c295531e` and test `d032dab4` bound new one-use invite HTTP 201 expiry to valid Date and seven-day TTL (+5-minute clock tolerance); malformed acknowledgements remain uncertain, with no false successful secret display. Status documentation commit `c59c90d4`.
