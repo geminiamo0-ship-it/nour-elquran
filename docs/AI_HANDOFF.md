@@ -1,3 +1,9 @@
+## 2026-11-06 — #315 academy pending-write recovery follow-up (PR #327)
+- Checked latest Noor main and open PRs/issues. PR #327 was Draft at `6d6c5071` with exact-head Verify [#42172017061](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42172017061) completed SUCCESS; independent review and signed Dev were still missing.
+- Found that `result.phase==='uncertain'` disabled the only read-only refresh button, even though same-operation replay requires a fresh signed staff read. On same-actor re-auth plus transient GET failure, the UI could become stuck. Changed `AdminAcademyMvp.tsx` to permit refresh during `uncertain`, not `busy`; the pending command and exact-operation POST lock are preserved. Added a Vitest policy regression. Source commits: `49d87628`, `fcd1317c`.
+- Updated `PROJECT_STATUS.md`; **new exact-head CI not yet confirmed**. No merge, Cloudflare deployment, finance activation, WhatsApp send, child media, or cumulative Quran ink flag change.
+- NEXT EXACT ACTION: check PR #327 latest head Verify 4/4, repair failures, obtain independent security review, then isolated Dev synthetic staff unknown-write→signed GET failure→refresh→same-ID replay, revoked-role negative and 360/390 browser checks. Reconcile overlap with Draft PR #325 before merging. Keep #315 OPEN and #327 Draft.
+
 ## 2026-11-06 — #315 academy read Date-range safety, PR #327 (source-only)
 - Latest cycle reviewed GitHub main, open issues/PRs, mandatory governance/test/security documents and previous exact-head Verify #42158322061: completed 4/4 on `57d06194` before new edits.
 - In branch `fix/315-atomic-package-version-order-20261104`, source `43de59ba` bounds signed staff academy timestamp DTOs to valid ECMAScript Date range, test `972cd98b` rejects Number.MAX_SAFE_INTEGER for invite, package and request timestamps. Prevents RangeError in the Arabic invite-expiry renderer from malformed D1 receipts. No production or financial mutation.
