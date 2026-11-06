@@ -54,6 +54,21 @@ describe('clean, truthful subscriptions #324',()=>{
    expect(fetchMock).toHaveBeenCalledTimes(2);
   }finally{vi.unstubAllGlobals();}
  });
+ it('rejects D1 cycle timestamps that would crash Intl.DateTimeFormat in signed views',()=>{
+  const valid={code:'SUBSCRIPTION_LEDGER',bookingEnabled:false,
+   compensationUnspentSessions:0,compensationGrantCount:0,
+   latestCycle:{state:'within_period',startsAtMs:1760000000000,
+    endsAtMs:1800000000000,baseSessions:8,rolloverSessions:0,
+    spentSessions:1,recordedUnspentSessions:7}};
+  expect(parseSubscriptionLedger(valid).latestCycle?.endsAtMs).toBe(1800000000000);
+  const beyondDate=8_640_000_000_000_001;
+  expect(Number.isSafeInteger(beyondDate)).toBe(true);
+  expect(Number.isNaN(new Date(beyondDate).getTime())).toBe(true);
+  expect(()=>parseSubscriptionLedger({...valid,latestCycle:{...valid.latestCycle,
+   endsAtMs:beyondDate}})).toThrow('INVALID_LEDGER_RESPONSE');
+  expect(()=>parseSubscriptionLedger({...valid,latestCycle:{...valid.latestCycle,
+   startsAtMs:beyondDate}})).toThrow('INVALID_LEDGER_RESPONSE');
+ });
  it('does not claim a missing subscription when only the catalog succeeded',()=>{
   const academy=parseOwnerAcademy({...sample,requests:[]});
   const unknown=homeSubscriptionSummary(null,academy,1760000000000);
