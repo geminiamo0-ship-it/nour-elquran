@@ -24,7 +24,7 @@ function fixture(granted=true,claimed:0|1=1){
   prepare(sql:string){
    reads.push(sql);
    const statement:FakeStatement={
-    bind(..._args:unknown[]){return statement;},
+    bind(){return statement;},
     async first(){
      if(sql.includes('FROM staff_grants'))
       return granted?{subject:'synthetic-staff'}:null;
