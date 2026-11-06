@@ -1,3 +1,8 @@
+## 2026-11-06 — #315 invite ACK seven-day expiry guard (Draft PR #327)
+- Latest main `4c15b59f`; Draft #327 previous head `2c9cf3f8` passed [Verify #42201064570](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42201064570) 4/4, before this change. Existing #325 still overlaps staff academy Worker and UI.
+- Source `c295531e` and test `d032dab4` bound new one-use invite HTTP 201 expiry to valid Date and seven-day TTL (+5-minute clock tolerance); malformed acknowledgements remain uncertain, with no false successful secret display. Status documentation commit `c59c90d4`.
+- NEXT EXACT ACTION: inspect exact latest #327 HEAD Verify and repair failures; independently review security and source-pinned Cloudflare Dev signed staff/guardian/revocation/learner isolation plus 360×667/390×844. Coordinate #325 overlap; do not merge Draft PR, close #315, deploy Production, enable payments/WhatsApp/audio or cumulative ink flag.
+
 ## 2026-11-06 — #315 fresh activation receipt validation (Draft PR #327)
 - Checked Noor main `4c15b59f` and open Draft PR #327 `ec56178d` / #325 `8f888a60` before editing. Existing #327 Verify [42188523029](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42188523029) was 4/4 PASS on the old head; it does NOT cover new changes.
 - On branch `fix/315-atomic-package-version-order-20261104`, commits `27513741` and `e98d72c` require fresh activation HTTP 201 receipts to contain bounded D1 cycle dates and rollover count, without rejecting minimal 200 immutable replay. New synthetic Vitest regressions reject incomplete/corrupt ACKs; no local or remote test result claimed yet.
