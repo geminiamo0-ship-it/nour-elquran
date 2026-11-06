@@ -1,10 +1,10 @@
 import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
 import type {CoreDatabase} from '../src/bindings.ts';
-import {staffAcademy} from '../src/academy-admin-mvp.ts';
+import {ownerAcademy,staffAcademy} from '../src/academy-admin-mvp.ts';
 
 /** #315: the staff roster needs invite status, never a private auth subject. */
-function fixture(granted=true,claimed:0|1=1){
+function fixture(granted=true,claimed:0|1=1,withRows=false){
  const reads:string[]=[];
  const invite={
   id:'invite-synthetic',createdAtMs:1700000000000,
@@ -28,13 +28,26 @@ function fixture(granted=true,claimed:0|1=1){
     async first(){
      if(sql.includes('FROM staff_grants'))
       return granted?{subject:'synthetic-staff'}:null;
+     if(sql.includes('FROM learners l JOIN accounts a'))return {ok:1};
      if(sql.includes('FROM academy_contact_events'))return null;
      throw Error('Unexpected D1 first');
     },
     async all(){
      if(sql.includes('FROM academy_teacher_invites'))return {results:[invite]};
-     if(sql.includes('FROM academy_package_events')||
-        sql.includes('FROM academy_request_events'))return {results:[]};
+     if(sql.includes('FROM academy_package_events'))return {results:withRows?[{
+      id:'version-synthetic',packageId:'package-synthetic',
+      title:'Synthetic package',priceEgp:200,sessions:2,active:1,
+      atMs:1700000000000,guardianPhone:'private-guardian-phone',
+      authSubject:'private-subject',
+     }]:[]};
+     if(sql.includes('FROM academy_request_events'))return {results:withRows?[{
+      id:'request-synthetic',learnerId:'learner-synthetic',
+      learnerName:'Synthetic learner',title:'Synthetic package',
+      priceEgp:200,sessions:2,packageVersionId:'version-synthetic',
+      atMs:1700000000000,state:'pending',
+      guardianPhone:'private-guardian-phone',authSubject:'private-subject',
+      paymentToken:'private-payment-token',
+     }]:[]};
      throw Error('Unexpected D1 all');
     },
    };
@@ -70,4 +83,40 @@ test('revoked staff grant denies before reading invite or learner records',async
   {status:403,code:'STAFF_ACCESS_DENIED'});
  assert.equal(reads.some(sql=>sql.includes('academy_teacher_invites')||
   sql.includes('academy_request_events')),false);
+});
+
+test('staff package and learner request DTOs drop unreviewed D1 private fields',async()=>{
+ const {db}=fixture(true,1,true);
+ const result=await staffAcademy(db,'synthetic-staff');
+ assert.equal(result.status,200);
+ if(result.status!==200)throw Error('Unexpected staff denial');
+ assert.deepEqual(result.packages,[{
+  id:'version-synthetic',packageId:'package-synthetic',
+  title:'Synthetic package',priceEgp:200,sessions:2,active:1,atMs:1700000000000,
+ }]);
+ assert.deepEqual(result.requests,[{
+  id:'request-synthetic',learnerId:'learner-synthetic',
+  learnerName:'Synthetic learner',title:'Synthetic package',
+  priceEgp:200,sessions:2,packageVersionId:'version-synthetic',
+  atMs:1700000000000,state:'pending',
+ }]);
+ assert.doesNotMatch(JSON.stringify(result),/private-|guardianPhone|authSubject|paymentToken/);
+});
+
+test('owner package request DTO does not expose staff-only or injected D1 fields',async()=>{
+ const {db}=fixture(true,1,true);
+ const result=await ownerAcademy(db,'synthetic-owner','learner-synthetic');
+ assert.equal(result.status,200);
+ if(result.status!==200)throw Error('Unexpected owner denial');
+ assert.deepEqual(result.packages,[{
+  versionId:'version-synthetic',packageId:'package-synthetic',
+  title:'Synthetic package',priceEgp:200,sessions:2,
+ }]);
+ assert.deepEqual(result.requests,[{
+  id:'request-synthetic',packageVersionId:'version-synthetic',
+  title:'Synthetic package',priceEgp:200,sessions:2,
+  atMs:1700000000000,state:'pending',
+ }]);
+ assert.doesNotMatch(JSON.stringify(result),
+  /private-|guardianPhone|authSubject|paymentToken|learnerName|learnerId/);
 });
