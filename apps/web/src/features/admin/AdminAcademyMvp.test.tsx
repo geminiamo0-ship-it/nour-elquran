@@ -5,7 +5,7 @@ import {academyAdminAckIsVerified,academyAdminOutcomeIsUncertain,academyAdminSam
  academyAdminCommandAllowed,academyAdminSessionViewIsReady,
  academyAdminStaffAccessRevoked,academyAdminReadMayApply,academyAdminReadEpochMayApply,
  academyAdminMutationMayApply,academyAdminCanSend,academyAdminCanRefresh,
- academyAdminCanReject,academyAdminEmptyReadMessage,AdminAcademyMvp} from './AdminAcademyMvp';
+ academyAdminCanReject,academyAdminInviteStatus,academyAdminEmptyReadMessage,AdminAcademyMvp} from './AdminAcademyMvp';
 
 describe('admin academy staff revocation and late-read privacy #315',()=>{
  it('hides old staff state only for genuine authorization denial',()=>{
@@ -64,6 +64,20 @@ describe('admin academy uncertain-write read recovery #315',()=>{
   expect(academyAdminCanSend('error',false,false)).toBe(false);
   expect(academyAdminCanSend('loading',false,false)).toBe(false);
   expect(academyAdminCanSend('ready',true,true)).toBe(false);
+ });
+});
+
+describe('admin academy Sheikh invite expiry truthfulness #315',()=>{
+ it('shows pending only until the durable expiry and never revives an expired invite',()=>{
+  const issued={claimed:0 as const,expiresAtMs:1_800_000_000_000};
+  expect(academyAdminInviteStatus(issued,issued.expiresAtMs-1)).toBe('pending');
+  // Worker allows a claim at the exact millisecond of expiry.
+  expect(academyAdminInviteStatus(issued,issued.expiresAtMs)).toBe('pending');
+  expect(academyAdminInviteStatus(issued,issued.expiresAtMs+1)).toBe('expired');
+ });
+ it('retains a durably claimed Sheikh invitation after its original expiry',()=>{
+  const claimed={claimed:1 as const,expiresAtMs:1_800_000_000_000};
+  expect(academyAdminInviteStatus(claimed,claimed.expiresAtMs+86_400_000)).toBe('claimed');
  });
 });
 
