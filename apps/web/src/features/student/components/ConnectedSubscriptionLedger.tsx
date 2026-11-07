@@ -22,13 +22,15 @@ function ScopedSubscriptionLedger({learnerId}:{learnerId:string}){
   return()=>ctrl.abort();
  },[learnerId,retry]);
  const cycle=view.phase==='ready'?view.ledger.latestCycle:null;
- const activeCycle=cycle?.state==='within_period'&&cycle.endsAtMs>Date.now();
+ const now=Date.now();
+ const futureCycle=cycle!==null&&cycle.startsAtMs>now;
+ const activeCycle=!futureCycle&&cycle?.state==='within_period'&&cycle.endsAtMs>now;
  const compensation=view.phase==='ready'?view.ledger.compensationUnspentSessions:0;
  return <section className={css.hero} aria-label="حالة اشتراك الطالب">
   <div className={css.heroTop}>
    <h2>اشتراكي</h2>
    {view.phase==='ready'&&<span className={css.heroBadge}>
-    {cycle?currentCycleLabel(cycle.state,cycle.endsAtMs,Date.now()):
+    {cycle?currentCycleLabel(cycle.state,cycle.endsAtMs,now,cycle.startsAtMs):
      compensation>0?'رصيد تعويض مسجل':'بانتظار التفعيل'}</span>}
   </div>
   {view.phase==='loading'?<p className={css.heroPlaceholder} role="status">
@@ -38,12 +40,14 @@ function ScopedSubscriptionLedger({learnerId}:{learnerId:string}){
     <button type="button" className={css.buttonOutline} onClick={()=>setRetry(n=>n+1)}>
      إعادة المحاولة</button>
    </div>:cycle?<div className={css.heroFacts}>
-    <div className={css.heroFact}><small>{activeCycle?'حصص الدورة غير المستخدمة':
+    <div className={css.heroFact}><small>{futureCycle?'حصص الدورة القادمة المسجلة':
+     activeCycle?'حصص الدورة غير المستخدمة':
      'حصص غير مستخدمة من الدورة المنتهية'}</small>
      <strong>{cycle.recordedUnspentSessions.toLocaleString('ar-EG')}</strong></div>
-    <div className={css.heroFact}><small>{activeCycle?'نهاية الدورة المسجلة':
+    <div className={css.heroFact}><small>{futureCycle?'تبدأ الدورة في':
+     activeCycle?'نهاية الدورة المسجلة':
      'انتهت الدورة في'}</small>
-     <strong>{format.format(new Date(cycle.endsAtMs))}</strong></div>
+     <strong>{format.format(new Date(futureCycle?cycle.startsAtMs:cycle.endsAtMs))}</strong></div>
     {view.ledger.compensationUnspentSessions>0&&
      <div className={css.heroFact}><small>حصص تعويض مسجلة</small>
       <strong>{view.ledger.compensationUnspentSessions.toLocaleString('ar-EG')}</strong></div>}
