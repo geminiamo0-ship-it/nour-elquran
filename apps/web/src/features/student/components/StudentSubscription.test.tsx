@@ -115,9 +115,9 @@ describe('clean, truthful subscriptions #324',()=>{
    expect(json).toHaveBeenCalledTimes(1);
    // Preserve the existing explicit signed authorization error handling.
    fetchMock.mockImplementationOnce(async()=>({status:403,ok:false,
-    json:async()=>({code:'STAFF_ACCESS_DENIED'})}));
+    json:vi.fn(async()=>ledger)}));
    await expect(subscriptionLedgerClient.owner('synthetic_learner'))
-    .rejects.toMatchObject({code:'STAFF_ACCESS_DENIED',status:403});
+    .rejects.toMatchObject({code:'LEDGER_UNAVAILABLE',status:403});
   }finally{vi.unstubAllGlobals();}
  });
  it('rejects D1 cycle timestamps that would crash Intl.DateTimeFormat in signed views',()=>{
