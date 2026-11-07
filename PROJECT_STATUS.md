@@ -1,3 +1,9 @@
+## 2026-11-07 — #315 issued Sheikh invite retry recovery (Draft PR #327)
+- Verified [Verify #42329573257](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42329573257) completed 4/4 on prior HEAD `062f56e2`; this new source/test change requires a fresh exact-head run.
+- `staffInvite` intentionally returns `ACADEMY_INVITE_ALREADY_ISSUED` when the same operation is already durably recorded: its one-time token cannot be recovered. Admin previously treated that known 409 as uncertain, trapping staff in a permanent retry of the same unrecoverable invite.
+- `AdminAcademyMvp.tsx` now treats **only this proven issued-invite code** as terminal, clears the held operation, and explains that a new invitation is required. Unknown 409 and `ACADEMY_INVITE_DENIED` still preserve the original command. Synthetic Vitest regression in `AdminAcademyMvp.test.tsx`. No Worker/D1 change, token disclosure, payment or Production action.
+- NEXT: exact-head Verify, independent security review, signed isolated Dev lost-ACK→issued-invite 409→new invite flow, staff revocation and mobile 360/390. Reconcile overlapping Draft #325 before merge; #315 remains OPEN.
+
 ## 2026-11-07 — #315 ambiguous Admin HTTP 409 write outcome (Draft PR #327)
 - Source review found that the signed Admin academy client released an unresolved idempotent staff command on **every** HTTP 409, even when the Worker returned a generic D1 constraint/unknown conflict without proving the write did not commit. A second activation/package mutation could then be initiated with a new operationId.
 - Updated `apps/web/src/features/admin/AdminAcademyMvp.tsx` to keep the original in-memory operation/payload for unknown 409 codes, permitting only explicit same-operation replay after a fresh signed staff GET. Only reviewed terminal business-conflict codes release the fence; known 4xx validation/authorization behavior is unchanged. Regression cases in `AdminAcademyMvp.test.tsx`.
