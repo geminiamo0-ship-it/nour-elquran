@@ -1,3 +1,8 @@
+## 2026-11-07 — #324 null-cycle TypeScript fix after failed Verify (PR #325)
+- Checked actual [GitHub Verify #42379594742](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42379594742): code-quality failed TS18047 on `apps/web/src/features/student/components/HomeSubscriptionStatus.tsx:18`; other three jobs succeeded. `latestCycle` is nullable and checking only `!==undefined` does not narrow `null`.
+- Source commit `fbafb913` changes the guard to `cycle!=null`; test commit `6116362d` adds an explicit signed ledger with `latestCycle:null`. Both on `feat/student-subscriptions-clarity-20261101`, PR #325. No local execution claimed.
+- **Next exact action:** inspect the GitHub Verify associated with the new documentation HEAD; if it fails, inspect the failing job and repair. If green, continue independent security review and signed Dev owner/two-sibling/staff reprice plus mobile 360/390. PR #325/#327 overlap remains; do not merge, deploy Production, change financial settings or enable child audio/ink.
+
 ## 2026-11-07 — #324 future subscription cycle status (PR #325, source-only)
 - Observed from `workers/api/src/subscription-ledger.ts`: a future `startsAtMs` produces `state:'expired'` because the current D1 contract has only two states. Both signed student subscription surfaces previously displayed "ended" for that future cycle.
 - Changed `apps/web/src/features/shared/academy-owner-client.ts`, `student/components/HomeSubscriptionStatus.tsx`, `student/components/ConnectedSubscriptionLedger.tsx` to label future cycles by the signed start date, without widening backend contracts or making a paid/booking claim. Added `StudentSubscription.test.tsx` regression.
