@@ -1,3 +1,8 @@
+## 2026-11-07 — #315 Draft PR #327 signed staff roster HTTP/body mismatch hardening
+- Baseline `main@4c15b59f`; previous PR HEAD `b1aee270` passed exact-head [Verify #42346921447](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42346921447) 4/4; this PASS does **not** cover the new source changes.
+- Staff GET now accepts only HTTP 200 and a strictly parsed body `status:200`, `code:'ACADEMY_STAFF'`; an unexpected 201/202/204 or mismatched body status cannot restore privileged roster after revocation. Synthetic Vitest regressions in `AdminAcademyMvp.test.tsx` and `admin-academy-read.test.ts` cover the two boundaries. No schema/financial/role-grant change.
+- NEXT EXACT ACTION: inspect new PR #327 head and matching Verify run; fix failures, independent auth/privacy review and signed isolated Dev role/revocation/sibling plus 360/390 visual QA. Reconcile PR #325 shared admin files before any merge. No Production, payment provider, WhatsApp sends, private audio or cumulative ink flag changes.
+
 ## 2026-11-07 — #315 staff invitation display truthfulness, PR #327
 - Read required AGENTS, status, plan, engineering, testing and privacy docs; verified `main@4c15b59f` and PR #327 previously `e063b287`. Prior [Verify #42344294123](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42344294123) completed 4/4; it predates this change.
 - Fixed confirmed staff invite presentation inconsistency: `claimed=1,teacherName=null` was shown as unused. `AdminAcademyMvp.tsx` now renders «حساب الشيخ غير متاح» while preserving the separate claimed status and not fabricating an identity; `AdminAcademyMvp.test.tsx` covers the three cases with synthetic names. Commits `9aa33906`, `13bffb8f`.
