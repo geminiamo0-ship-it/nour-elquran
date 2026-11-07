@@ -1,7 +1,8 @@
 import {describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {parseOwnerAcademy,latestPendingAcademyRequest,currentCycleLabel,
- parseSubscriptionLedger,readOwnerAcademy,subscriptionLedgerClient,
+ parseSubscriptionLedger,readOwnerAcademy,ownerAcademyReadHttpStatusIsValid,
+ subscriptionLedgerClient,
  type SubscriptionLedger} from '../../shared';
 import {StudentProvider} from '../StudentContext';
 import {DEMO_PROFILES} from '../mock-adapter';
@@ -45,7 +46,7 @@ describe('clean, truthful subscriptions #324',()=>{
   const ledger={code:'SUBSCRIPTION_LEDGER',bookingEnabled:false,latestCycle:null,
    compensationUnspentSessions:0,compensationGrantCount:0};
   const fetchMock=vi.fn(async (url:string)=>({
-   ok:true,json:async()=>url.endsWith('/academy')?sample:ledger
+   status:200,ok:true,json:async()=>url.endsWith('/academy')?sample:ledger
   }));
   vi.stubGlobal('fetch',fetchMock);
   try{
@@ -60,6 +61,28 @@ describe('clean, truthful subscriptions #324',()=>{
    await expect(readOwnerAcademy('bad/learner')).rejects.toThrow('INVALID_LEARNER');
    await expect(subscriptionLedgerClient.owner('bad/learner')).rejects.toThrow('INVALID_LEARNER');
    expect(fetchMock).toHaveBeenCalledTimes(2);
+  }finally{vi.unstubAllGlobals();}
+ });
+ it('requires exact HTTP 200 for a complete signed academy catalog (#324)',async()=>{
+  expect(ownerAcademyReadHttpStatusIsValid(200)).toBe(true);
+  for(const status of [0,201,202,204,206,301,401,403,409,503])
+   expect(ownerAcademyReadHttpStatusIsValid(status)).toBe(false);
+  const json=vi.fn(async()=>sample);
+  const fetchMock=vi.fn(async()=>({status:201,ok:true,json}));
+  vi.stubGlobal('fetch',fetchMock);
+  try{
+   // Even valid-looking D1 JSON on an unexpected 2xx must not be displayed
+   // as the learner's current price or a reliable pending-request snapshot.
+   for(const status of [201,202,206]){
+    fetchMock.mockImplementationOnce(async()=>({status,ok:true,json}));
+    await expect(readOwnerAcademy('synthetic_learner'))
+     .rejects.toThrow('ACADEMY_UNAVAILABLE');
+   }
+   expect(json).not.toHaveBeenCalled();
+   fetchMock.mockImplementationOnce(async()=>({status:200,ok:true,json}));
+   await expect(readOwnerAcademy('synthetic_learner'))
+    .resolves.toMatchObject({packages:[{priceEgp:1600}]});
+   expect(json).toHaveBeenCalledTimes(1);
   }finally{vi.unstubAllGlobals();}
  });
  it('rejects D1 cycle timestamps that would crash Intl.DateTimeFormat in signed views',()=>{
