@@ -62,6 +62,12 @@ export function academyAdminReadEpochMayApply(
  started:number,current:number,aborted:boolean,revoked:boolean){
  return started===current&&academyAdminReadMayApply(aborted,revoked);
 }
+/** Only a fresh, successfully parsed signed GET can lift a staff revocation
+ * fence. A read begun before the denial is invalidated by its epoch. */
+export function academyAdminSignedReadMayRestore(
+ started:number,current:number,aborted:boolean){
+ return started===current&&!aborted;
+}
 /** A 5xx or retryable HTTP response cannot prove whether D1 committed.
  * Preserve the original operationId and prohibit a second financial command. */
 // A generic 409 is NOT proof that an idempotent D1 write failed. Some
@@ -231,6 +237,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const readEpoch=useRef(0);
  currentSession.current=session;
  function invalidateStaffData(){
+  // Invalidate any pre-denial GET, including a post-write reconciliation.
+  ++readEpoch.current;
   revokedStaff.current=true;
   setReadPhase('denied');
   setData(null);setInviteUrl('');setWhatsapp('');setConfirmed(false);
@@ -249,7 +257,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  useEffect(()=>{
   const ctrl=new AbortController();
   const epoch=++readEpoch.current;
-  revokedStaff.current=false;
+  // Keep a previous staff denial fenced while re-authentication is pending.
+  // Clearing this before a verified GET would expose a late invite/POST ACK.
   setReadPhase('loading');
   setData(null);setInviteUrl('');
   // Session objects change on re-authentication. Do not lose an uncertain
@@ -260,8 +269,9 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   setResult(held?{phase:'uncertain',message:uncertainMessage}:
    {phase:'idle',message:''});
   void readAcademy(ctrl.signal).then(v=>{
-   if(academyAdminReadEpochMayApply(epoch,readEpoch.current,
-    ctrl.signal.aborted,revokedStaff.current)){
+   if(academyAdminSignedReadMayRestore(epoch,readEpoch.current,
+    ctrl.signal.aborted)){
+    revokedStaff.current=false;
     setData(v);setReadPhase('ready');setWhatsapp(v.whatsappNumber??'');
    }
   }).catch(e=>{
