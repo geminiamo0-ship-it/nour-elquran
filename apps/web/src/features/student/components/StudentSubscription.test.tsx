@@ -196,9 +196,18 @@ describe('clean, truthful subscriptions #324',()=>{
    [0,null]
   ] as const)expect(classifyAcademyPackageRequestResponse(status,payload))
    .toBe('uncertain');
-  for(const status of [400,401,403,404,422])
-   expect(classifyAcademyPackageRequestResponse(status,{code:'ACADEMY_REQUEST_DENIED'}))
-    .toBe('denied');
+  // The Worker sends these exact pre-write denials; unknown gateway 4xx
+  // cannot prove D1 did not commit an earlier request.
+  for(const [status,code] of [
+   [400,'ACADEMY_INVALID_REQUEST'],[401,'UNAUTHENTICATED'],
+   [403,'BAD_ORIGIN'],[404,'NOT_FOUND'],[405,'METHOD_NOT_ALLOWED']
+  ] as const)
+   expect(classifyAcademyPackageRequestResponse(status,{code})).toBe('denied');
+  for(const status of [400,401,403,404,405,422]){
+   for(const payload of [null,{}, {code:'ACADEMY_REQUEST_DENIED'},
+    {code:'UNAUTHENTICATED',proxy:true},{gateway:'blocked'}])
+    expect(classifyAcademyPackageRequestResponse(status,payload)).toBe('uncertain');
+  }
   // Only an exact Worker conflict proves the request was not accepted.
   // An intermediary/malformed 409 must keep the same operationId retryable.
   for(const code of ['ACADEMY_OPERATION_CONFLICT','ACADEMY_PACKAGE_CHANGED',
