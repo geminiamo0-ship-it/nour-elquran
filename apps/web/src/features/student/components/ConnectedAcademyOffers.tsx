@@ -32,7 +32,20 @@ export function classifyAcademyPackageRequestResponse(status:number,raw:unknown)
     error.code==='ACADEMY_PACKAGE_CHANGED'||
     error.code==='ACADEMY_REQUEST_DENIED')?'denied':'uncertain';
  }
- if(status>=400&&status<500&&![408,425,429].includes(status))return 'denied';
+ // Only a recognized, exact Worker error proves a 4xx was decided before
+ // a durable academy write. A proxy may replace a committed POST response
+ // with a generic 400/401/403/404/422: keep its operationId for replay.
+ if(status>=400&&status<500){
+  if([408,425,429].includes(status)||!raw||typeof raw!=='object'||Array.isArray(raw))
+   return 'uncertain';
+  const error=raw as Record<string,unknown>;
+  const codes:Record<number,string>={400:'ACADEMY_INVALID_REQUEST',
+   401:'UNAUTHENTICATED',403:'BAD_ORIGIN',404:'NOT_FOUND',
+   405:'METHOD_NOT_ALLOWED'};
+  const expected=codes[status];
+  return expected!==undefined&&Object.keys(error).length===1&&error.code===expected?
+   'denied':'uncertain';
+ }
  if(!raw||typeof raw!=='object'||Array.isArray(raw))return 'uncertain';
  const data=raw as Record<string,unknown>;
  const validCode=(status===201&&data.code==='ACADEMY_REQUEST_CREATED')||
