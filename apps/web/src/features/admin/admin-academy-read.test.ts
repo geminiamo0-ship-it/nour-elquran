@@ -9,7 +9,8 @@ const requestRow={id:'request-1',learnerId:'learner-1',learnerName:'Synthetic le
 const inviteRow={id:'invite-1',teacherName:'Synthetic Sheikh',claimed:1,
  teacherId:'teacher-1',createdAtMs:1700000000000,
  expiresAtMs:1700600000000,claimedAtMs:1700001000000};
-const valid=()=>({status:200,code:'ACADEMY_STAFF',
+// Worker routes intentionally strip `status` from the JSON body.
+const valid=()=>({code:'ACADEMY_STAFF',
  packages:[{...packageRow}],requests:[{...requestRow}],
  invites:[{...inviteRow}],whatsappNumber:'201000000000'});
 
