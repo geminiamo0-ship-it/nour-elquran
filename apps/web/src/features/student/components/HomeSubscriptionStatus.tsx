@@ -5,6 +5,7 @@ import {subscriptionLedgerClient,type SubscriptionLedger} from '../../shared';
 import {readOwnerAcademy,latestPendingAcademyRequest,currentCycleLabel,
  type OwnerAcademy} from '../../shared';
 import css from './StudentSubscription.module.css';
+import {useSubscriptionBoundaryClock} from './subscription-boundary-clock';
 
 type View={phase:'loading'}|{phase:'ready';ledger:SubscriptionLedger|null;academy:OwnerAcademy|null};
 const day=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',day:'numeric',month:'short'});
@@ -16,7 +17,7 @@ export function homeSubscriptionSummary(ledger:SubscriptionLedger|null,
  const pending=academy&&latestPendingAcademyRequest(academy);
  const cycle=ledger?.latestCycle;
  const futureCycle=cycle!=null&&cycle.startsAtMs>now;
- const activeCycle=!futureCycle&&cycle?.state==='within_period'&&cycle.endsAtMs>now;
+ const activeCycle=!futureCycle&&cycle!=null&&cycle.startsAtMs<=now&&cycle.endsAtMs>now;
  const compensation=ledger?.compensationUnspentSessions??0;
  // A pending renewal/package request does not replace an already recorded
  // learner cycle. Keep the D1 balance visible and mention the request beside it.
@@ -64,12 +65,14 @@ function ScopedHomeSubscriptionStatus({learnerId,preview=false,basePath='/studen
   return()=>ctrl.abort();
  },[learnerId,preview]);
  if(!preview&&!learnerId)return null;
+ const cycle=data.phase==='ready'?data.ledger?.latestCycle:null;
+ const now=useSubscriptionBoundaryClock(cycle?.startsAtMs,cycle?.endsAtMs);
  const to=basePath+'/subscription';
  let status='معاينة الباقات';let detail='أسعار الاشتراك تظهر من الأكاديمية بعد تسجيل الدخول.';
  if(!preview){
   if(data.phase==='loading'){status='جارٍ التحقق من الاشتراك…';detail='';}
   else{
-   ({status,detail}=homeSubscriptionSummary(data.ledger,data.academy,Date.now()));
+   ({status,detail}=homeSubscriptionSummary(data.ledger,data.academy,now));
   }
  }
  return <section className={css.homeStrip} aria-label="ملخص الاشتراك">
