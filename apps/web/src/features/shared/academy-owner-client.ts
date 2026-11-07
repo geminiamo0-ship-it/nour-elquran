@@ -40,6 +40,8 @@ export function parseOwnerAcademy(raw:unknown):OwnerAcademy{
   throw Error('ACADEMY_INVALID_RESPONSE');
  return {packages,requests,whatsappNumber:raw.whatsappNumber as string|null};
 }
+/** The signed owner catalog is a complete GET snapshot, never a 201/202/206 partial response. */
+export function ownerAcademyReadHttpStatusIsValid(status:number){return status===200;}
 export async function readOwnerAcademy(learnerId:string,signal?:AbortSignal):Promise<OwnerAcademy>{
  if(!learnerIdPattern.test(learnerId))throw Error('INVALID_LEARNER');
  let response:Response;
@@ -47,9 +49,12 @@ export async function readOwnerAcademy(learnerId:string,signal?:AbortSignal):Pro
   response=await fetch('/v1/me/learners/'+encodeURIComponent(learnerId)+'/academy',{
    credentials:'same-origin',cache:'no-store',redirect:'error',...(signal?{signal}:{})});
  }catch{throw Error('ACADEMY_UNAVAILABLE');}
+ // An intermediary can return a valid-looking catalog with an unexpected
+ // success status. Never treat it as a complete, authorized D1 snapshot.
+ if(!ownerAcademyReadHttpStatusIsValid(response.status))
+  throw Error('ACADEMY_UNAVAILABLE');
  let raw:unknown;
  try{raw=await response.json();}catch{throw Error('ACADEMY_UNAVAILABLE');}
- if(!response.ok)throw Error('ACADEMY_UNAVAILABLE');
  return parseOwnerAcademy(raw);
 }
 export function latestPendingAcademyRequest(data:OwnerAcademy){
