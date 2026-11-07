@@ -3,6 +3,7 @@ import {useEffect,useState} from 'react';
 import {subscriptionLedgerClient,type SubscriptionLedger} from '../../shared';
 import {currentCycleLabel} from '../../shared';
 import css from './StudentSubscription.module.css';
+import {useSubscriptionBoundaryClock} from './subscription-boundary-clock';
 type State={phase:'loading'}|{phase:'error'}|{phase:'ready';ledger:SubscriptionLedger};
 const format=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',dateStyle:'medium'});
 /** Remount before paint when the selected sibling changes. Clearing state in
@@ -22,9 +23,9 @@ function ScopedSubscriptionLedger({learnerId}:{learnerId:string}){
   return()=>ctrl.abort();
  },[learnerId,retry]);
  const cycle=view.phase==='ready'?view.ledger.latestCycle:null;
- const now=Date.now();
+ const now=useSubscriptionBoundaryClock(cycle?.startsAtMs,cycle?.endsAtMs);
  const futureCycle=cycle!==null&&cycle.startsAtMs>now;
- const activeCycle=!futureCycle&&cycle?.state==='within_period'&&cycle.endsAtMs>now;
+ const activeCycle=!futureCycle&&cycle!==null&&cycle.startsAtMs<=now&&cycle.endsAtMs>now;
  const compensation=view.phase==='ready'?view.ledger.compensationUnspentSessions:0;
  return <section className={css.hero} aria-label="حالة اشتراك الطالب">
   <div className={css.heroTop}>
