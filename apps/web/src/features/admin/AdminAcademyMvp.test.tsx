@@ -6,7 +6,8 @@ import {academyAdminAckIsVerified,academyAdminOutcomeIsUncertain,academyAdminSam
  academyAdminStaffAccessRevoked,academyAdminReadMayApply,academyAdminReadEpochMayApply,
  academyAdminSignedReadMayRestore,
  academyAdminMutationMayApply,academyAdminCanSend,academyAdminCanRefresh,
- academyAdminCanReject,academyAdminInviteStatus,academyAdminEmptyReadMessage,AdminAcademyMvp} from './AdminAcademyMvp';
+ academyAdminCanReject,academyAdminInviteStatus,academyAdminInviteDisplayName,
+ academyAdminEmptyReadMessage,AdminAcademyMvp} from './AdminAcademyMvp';
 
 describe('admin academy staff revocation and late-read privacy #315',()=>{
  it('hides old staff state only for genuine authorization denial',()=>{
@@ -97,6 +98,17 @@ describe('admin academy Sheikh invite expiry truthfulness #315',()=>{
  it('retains a durably claimed Sheikh invitation after its original expiry',()=>{
   const claimed={claimed:1 as const,expiresAtMs:1_800_000_000_000};
   expect(academyAdminInviteStatus(claimed,claimed.expiresAtMs+86_400_000)).toBe('claimed');
+ });
+});
+
+describe('admin academy claimed invitation identity truthfulness #315',()=>{
+ it('never describes a durably claimed invitation as unused when user join is missing',()=>{
+  expect(academyAdminInviteDisplayName({claimed:1,teacherName:null}))
+   .toBe('حساب الشيخ غير متاح');
+  expect(academyAdminInviteDisplayName({claimed:0,teacherName:null}))
+   .toBe('لم يُستخدم الرابط بعد');
+  expect(academyAdminInviteDisplayName({claimed:1,teacherName:'شيخ تجريبي'}))
+   .toBe('شيخ تجريبي');
  });
 });
 
