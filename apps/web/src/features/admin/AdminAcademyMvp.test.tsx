@@ -5,7 +5,7 @@ import {academyAdminAckIsVerified,academyAdminOutcomeIsUncertain,academyAdminSam
  academyAdminCommandAllowed,academyAdminSessionViewIsReady,
  academyAdminStaffAccessRevoked,academyAdminReadMayApply,academyAdminReadEpochMayApply,
  academyAdminMutationMayApply,academyAdminCanSend,academyAdminCanRefresh,
- academyAdminEmptyReadMessage,AdminAcademyMvp} from './AdminAcademyMvp';
+ academyAdminCanReject,academyAdminEmptyReadMessage,AdminAcademyMvp} from './AdminAcademyMvp';
 
 describe('admin academy staff revocation and late-read privacy #315',()=>{
  it('hides old staff state only for genuine authorization denial',()=>{
@@ -64,6 +64,32 @@ describe('admin academy uncertain-write read recovery #315',()=>{
   expect(academyAdminCanSend('error',false,false)).toBe(false);
   expect(academyAdminCanSend('loading',false,false)).toBe(false);
   expect(academyAdminCanSend('ready',true,true)).toBe(false);
+ });
+});
+
+describe('admin academy request rejection safety #315',()=>{
+ const requests=[
+  {id:'synthetic-pending',state:'pending'},
+  {id:'synthetic-activated',state:'activated'},
+  {id:'synthetic-rejected',state:'rejected'},
+ ];
+ it('enables rejection only for a pending signed request with an audit note and confirmation',()=>{
+  expect(academyAdminCanReject(requests,'synthetic-pending',
+   'Reviewed manually',true,false)).toBe(true);
+  for(const id of ['synthetic-activated','synthetic-rejected','unknown','']){
+   expect(academyAdminCanReject(requests,id,'Reviewed manually',true,false)).toBe(false);
+  }
+ });
+ it('never sends an empty, short, oversized or unconfirmed rejection',()=>{
+  for(const note of ['', '   ', 'too short', 'a'.repeat(501)]){
+   expect(academyAdminCanReject(requests,'synthetic-pending',note,true,false)).toBe(false);
+  }
+  expect(academyAdminCanReject(requests,'synthetic-pending',
+   'Reviewed manually',false,false)).toBe(false);
+  expect(academyAdminCanReject(requests,'synthetic-pending',
+   'Reviewed manually',true,true)).toBe(false);
+  expect(academyAdminCanReject([], 'synthetic-pending',
+   'Reviewed manually',true,false)).toBe(false);
  });
 });
 
