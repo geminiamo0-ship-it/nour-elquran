@@ -1,3 +1,7 @@
+## 2026-11-07 — #315 terminal issued-invite 409 regression
+- `AdminAcademyMvp.test.tsx`: a confirmed `ACADEMY_INVITE_ALREADY_ISSUED` 409 is terminal because its secret is intentionally never replayed, allowing staff to issue a new link. `ACADEMY_INVITE_DENIED`, empty/unknown 409 and activation/financial ambiguity must remain uncertain with their immutable operationId held.
+- Source/test commits require new exact-head GitHub Verify 4/4. Remote acceptance still requires synthetic signed Cloudflare Dev first invite lost ACK → exact retry 409 → new invite, revoked staff denial, and mobile 360/390. Never claim recovered old secret or Production readiness.
+
 ## 2026-11-07 — #315 Admin request rejection UI gate
 - Vitest: rejection only for a currently pending signed D1 request; reject disabled on activated/rejected/missing ID, empty/short/oversized audit reason, unchecked confirmation or busy POST. Successful terminal activation/rejection clears prior request/learner/version selection; no optimistic financial claim.
 - Exact-head PR Verify is required before review; isolated signed Dev must still test stale request transitions, concurrent staff decisions and explicit immutable operation replay. No production test or financial integration.
