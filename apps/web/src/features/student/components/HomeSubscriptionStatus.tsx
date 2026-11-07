@@ -64,9 +64,9 @@ function ScopedHomeSubscriptionStatus({learnerId,preview=false,basePath='/studen
   });
   return()=>ctrl.abort();
  },[learnerId,preview]);
- if(!preview&&!learnerId)return null;
  const cycle=data.phase==='ready'?data.ledger?.latestCycle:null;
  const now=useSubscriptionBoundaryClock(cycle?.startsAtMs,cycle?.endsAtMs);
+ if(!preview&&!learnerId)return null;
  const to=basePath+'/subscription';
  let status='معاينة الباقات';let detail='أسعار الاشتراك تظهر من الأكاديمية بعد تسجيل الدخول.';
  if(!preview){
