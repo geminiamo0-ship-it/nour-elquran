@@ -2,14 +2,9 @@
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import type {AccountSession} from '@/features/account';
 import styles from './AdminAcademyMvp.module.css';
+import {parseAdminAcademyRead,type AdminAcademySnapshot} from './admin-academy-read';
 
-type Package={id:string;packageId:string;title:string;priceEgp:number;sessions:number;active:number};
-type Request={id:string;learnerId:string;learnerName:string;title:string;priceEgp:number;
- sessions:number;packageVersionId:string;state:string};
-type Invite={id:string;teacherName:string|null;claimedSubject:string|null;
- teacherId:string|null;expiresAtMs:number};
-type Academy={code:string;packages:Package[];requests:Request[];invites:Invite[];
- whatsappNumber:string|null};
+type Academy=AdminAcademySnapshot;
 type Result={phase:'idle'|'busy'|'done'|'error'|'uncertain';message:string};
 type Mode='packages'|'requests'|'invites'|'contact';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -20,11 +15,9 @@ async function readAcademy(signal:AbortSignal):Promise<Academy>{
  const res=await fetch('/v1/staff/academy',{credentials:'same-origin',cache:'no-store',
   redirect:'error',signal});
  const v:unknown=await res.json();
- if(!res.ok||!v||typeof v!=='object'||Array.isArray(v)||
-  (v as Academy).code!=='ACADEMY_STAFF'||!Array.isArray((v as Academy).packages)||
-  !Array.isArray((v as Academy).requests)||!Array.isArray((v as Academy).invites))
-  throw new Error('تعذّر قراءة الإدارة من الخادم');
- return v as Academy;
+ if(!res.ok)throw new Error('تعذّر قراءة الإدارة من الخادم');
+ try{return parseAdminAcademyRead(v);}
+ catch{throw new Error('تعذّر قراءة الإدارة من الخادم');}
 }
 const operationErrors:Record<string,string>={
  ACADEMY_REQUEST_ALREADY_ACTIVATED:'الطلب اتفعّل بالفعل. اضغط تحديث وشوف الاشتراك في ملف الطالب.',
@@ -63,6 +56,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const [price,setPrice]=useState('');
  const [sessions,setSessions]=useState('8');
  const [selectedPackage,setSelectedPackage]=useState('');
+ const [packageFormOpen,setPackageFormOpen]=useState(false);
  const [selectedRequest,setSelectedRequest]=useState('');
  const [learnerId,setLearnerId]=useState('');
  const [reason,setReason]=useState('');
@@ -115,24 +109,30 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   invites:'إضافة شيخ بدعوة',contact:'واتساب الأكاديمية'}[mode];
  return <section dir="rtl" className={styles.root} aria-label={modeTitle}>
   <h2>{modeTitle}</h2>
-  <p>كل تعديل يتطلب صلاحية الإدارة الحالية وتأكيدًا صريحًا. الدفع لا يُثبت تلقائيًا من واتساب.</p>
+  {mode==='packages'?<p>أضف باقة أو عدّل سعرها وعدد حصصها. التعديلات الجديدة لا تغيّر الاشتراكات السابقة.</p>:
+   <p>تُراجع كل عملية من الإدارة؛ واتساب ليس إثبات دفع تلقائيًا.</p>}
   <button type="button" onClick={()=>setRefresh(n=>n+1)} disabled={busy}>
    تحديث البيانات</button>
   {!data&&<p role="status">جارٍ تحميل البيانات المصرح بها…</p>}
   {data&&mode==='packages'&&<>
-   <h3>الباقات المسجلة</h3>
+   <div className={styles.packageHeading}><h3>الباقات الحالية</h3>
+    <button type="button" onClick={()=>{
+     setSelectedPackage('');setTitle('');setPrice('');setSessions('8');
+     setConfirmed(false);setPackageFormOpen(true);
+    }}>+ إضافة باقة</button></div>
    {data.packages.length===0?<p>لا توجد باقات مضافة بعد.</p>:
     <div className={styles.options}>
      {data.packages.map(p=><article key={p.id}>
-      <strong>{p.title}</strong> — {label(p.priceEgp)} جنيه / {label(p.sessions)} حصص
-      {' · '}{p.active===1?'متاحة':'موقوفة'}
+      <div className={styles.packageFacts}><strong>{p.title}</strong>
+       <span>{label(p.priceEgp)} جنيه / {label(p.sessions)} حصص</span>
+       <small>{p.active===1?'متاحة':'موقوفة'}</small></div>
       <button type="button" onClick={()=>{
        setSelectedPackage(p.packageId);setTitle(p.title);setPrice(String(p.priceEgp));
-       setSessions(String(p.sessions));setConfirmed(false);
+       setSessions(String(p.sessions));setConfirmed(false);setPackageFormOpen(true);
       }}>تعديل الإصدار القادم</button>
      </article>)}
     </div>}
-   <form onSubmit={e=>guard(e,()=>void send('packages',{
+   {packageFormOpen&&<form onSubmit={e=>guard(e,()=>void send('packages',{
     operationId:iso(),packageId:UUID.test(selectedPackage)?selectedPackage:iso(),
     title:title.trim(),priceEgp:Number(price),sessions:Number(sessions),
     active:(e.nativeEvent as SubmitEvent).submitter instanceof HTMLButtonElement?
@@ -144,16 +144,14 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
      value={price} onChange={e=>setPrice(e.target.value)}/></label>
     <label>عدد الحصص<input required type="number" min={1} max={60} step={1}
      value={sessions} onChange={e=>setSessions(e.target.value)}/></label>
-    <p>الإصدار الجديد لا يغيّر أسعار الطلبات أو الاشتراكات السابقة.</p>
+    <p>السعر الجديد للطلبات القادمة فقط.</p>
     <Confirm checked={confirmed} onChange={setConfirmed}/>
     <button type="submit" disabled={!confirmed||busy} data-active="true">
      {selectedPackage?'حفظ السعر والباقة':'إضافة باقة'}</button>
     {selectedPackage&&<button type="submit" disabled={!confirmed||busy}
      data-active="false">تعطيل الباقة</button>}
-    {selectedPackage&&<button type="button" onClick={()=>{
-     setSelectedPackage('');setTitle('');setPrice('');setSessions('8');setConfirmed(false);
-    }}>باقة جديدة</button>}
-   </form>
+    <button type="button" onClick={()=>{setPackageFormOpen(false);setConfirmed(false);}}>إلغاء</button>
+   </form>}
   </>}
   {data&&mode==='requests'&&<>
    <h3>طلبات الطلاب</h3>
@@ -212,12 +210,11 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    <h3>الدعوات المرسلة</h3>
    {data.invites.map(i=><article key={i.id}>
     {i.teacherName??'لم يُستخدم الرابط بعد'} ·
-    {' '}{i.claimedSubject?'تم تسجيل حساب الشيخ':'بانتظار التسجيل'}
+    {' '}{i.claimed===1?'تم تسجيل حساب الشيخ':'بانتظار التسجيل'}
     {i.teacherId?' · موجود في دليل الشيوخ':''}
     {' · انتهاء: '}{date.format(new Date(i.expiresAtMs))}
-    {i.claimedSubject&&!i.teacherId&&<p>
-     الحساب جاهز للاعتماد الإداري بعد التحقق من هويته؛ معرّفه:
-     <code dir="ltr">{i.claimedSubject}</code></p>}
+    {i.claimed===1&&!i.teacherId&&<p>
+     ملف الشيخ غير متاح في الدليل بعد؛ راجع السجل قبل الإسناد.</p>}
    </article>)}
   </>}
   {data&&mode==='contact'&&<>

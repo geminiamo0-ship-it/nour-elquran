@@ -1,0 +1,77 @@
+/** Signed learner-scoped academy catalog and requests. Never a payment receipt. */
+export type AcademyOffer=Readonly<{versionId:string;packageId:string;title:string;priceEgp:number;sessions:number}>;
+export type AcademyRequest=Readonly<{id:string;title:string;priceEgp:number;sessions:number;atMs:number;state:'pending'|'activated'|'rejected'}>;
+export type OwnerAcademy=Readonly<{packages:readonly AcademyOffer[];requests:readonly AcademyRequest[];whatsappNumber:string|null}>;
+const isObject=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==='object'&&!Array.isArray(v);
+const int=(v:unknown)=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=0;
+const uid=(v:unknown)=>typeof v==='string'&&/^[A-Za-z0-9-]{1,128}$/.test(v);
+// The Worker only accepts v4 package/version UUIDs on the guardian POST.
+// Reject an impossible-to-request catalog card before displaying its price.
+const packageUuid=(v:unknown)=>typeof v==='string'&&
+ /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+// Match the Worker learner ID contract; package/version IDs remain stricter.
+const learnerIdPattern=/^[A-Za-z0-9_-]{1,128}$/;
+const title=(v:unknown)=>typeof v==='string'&&v.length>=2&&v.length<=80;
+const price=(v:unknown)=>int(v)&&Number(v)>=1&&Number(v)<=100000;
+const sessions=(v:unknown)=>int(v)&&Number(v)>=1&&Number(v)<=60;
+export function parseOwnerAcademy(raw:unknown):OwnerAcademy{
+ if(!isObject(raw)||raw.code!=='ACADEMY_OWNER'||!Array.isArray(raw.packages)||
+  !Array.isArray(raw.requests)||raw.packages.length>100||raw.requests.length>30||
+  !(raw.whatsappNumber===null||(typeof raw.whatsappNumber==='string'&&
+   /^[1-9][0-9]{9,14}$/.test(raw.whatsappNumber))))throw Error('ACADEMY_INVALID_RESPONSE');
+ const packages:AcademyOffer[]=raw.packages.map((p:unknown)=>{
+  if(!isObject(p)||!packageUuid(p.versionId)||!packageUuid(p.packageId)||!title(p.title)||
+   !price(p.priceEgp)||!sessions(p.sessions))throw Error('ACADEMY_INVALID_RESPONSE');
+  return {versionId:p.versionId as string,packageId:p.packageId as string,
+   title:p.title as string,priceEgp:p.priceEgp as number,sessions:p.sessions as number};
+ });
+ const requests:AcademyRequest[]=raw.requests.map((r:unknown)=>{
+  if(!isObject(r)||!uid(r.id)||!title(r.title)||!price(r.priceEgp)||
+   !sessions(r.sessions)||!int(r.atMs)||
+   // JSON arrays coerce to valid strings; require the exact D1 state literal.
+   (r.state!=='pending'&&r.state!=='activated'&&r.state!=='rejected'))throw Error('ACADEMY_INVALID_RESPONSE');
+  return {id:r.id as string,title:r.title as string,priceEgp:r.priceEgp as number,
+   sessions:r.sessions as number,atMs:r.atMs as number,
+   state:r.state as AcademyRequest['state']};
+ });
+ // D1 serves one current version per package and permits at most one pending
+ // request per learner. Reject contradictory signed reads rather than render
+ // multiple buttons or quietly select one of several conflicting requests.
+ if(new Set(packages.map(p=>p.versionId)).size!==packages.length||
+  new Set(packages.map(p=>p.packageId)).size!==packages.length||
+  new Set(requests.map(r=>r.id)).size!==requests.length||
+  requests.filter(r=>r.state==='pending').length>1)
+  throw Error('ACADEMY_INVALID_RESPONSE');
+ return {packages,requests,whatsappNumber:raw.whatsappNumber as string|null};
+}
+/** The signed owner catalog is a complete GET snapshot, never a 201/202/206 partial response. */
+export function ownerAcademyReadHttpStatusIsValid(status:number){return status===200;}
+export async function readOwnerAcademy(learnerId:string,signal?:AbortSignal):Promise<OwnerAcademy>{
+ if(!learnerIdPattern.test(learnerId))throw Error('INVALID_LEARNER');
+ let response:Response;
+ try{
+  response=await fetch('/v1/me/learners/'+encodeURIComponent(learnerId)+'/academy',{
+   credentials:'same-origin',cache:'no-store',redirect:'error',...(signal?{signal}:{})});
+ }catch{throw Error('ACADEMY_UNAVAILABLE');}
+ // An intermediary can return a valid-looking catalog with an unexpected
+ // success status. Never treat it as a complete, authorized D1 snapshot.
+ if(!ownerAcademyReadHttpStatusIsValid(response.status))
+  throw Error('ACADEMY_UNAVAILABLE');
+ let raw:unknown;
+ try{raw=await response.json();}catch{throw Error('ACADEMY_UNAVAILABLE');}
+ return parseOwnerAcademy(raw);
+}
+export function latestPendingAcademyRequest(data:OwnerAcademy){
+ return data.requests.filter(r=>r.state==='pending').sort((a,b)=>b.atMs-a.atMs)[0]??null;
+}
+export function currentCycleLabel(state:'within_period'|'expired',endsAtMs:number,now:number,startsAtMs?:number){
+ // The Worker currently labels a not-yet-started cycle `expired` too.
+ // Do not tell a guardian that a future D1 cycle has already ended.
+ if(startsAtMs!==undefined){
+  if(startsAtMs>now)return 'الدورة القادمة لم تبدأ بعد';
+  // D1's state was calculated at GET time. The page may stay open while a
+  // future cycle starts; the signed timestamps, not the stale state, win.
+  return endsAtMs>now?'دورة حصص مسجلة':'الدورة السابقة انتهت';
+ }
+ return state==='within_period'&&endsAtMs>now?'دورة حصص مسجلة':'الدورة السابقة انتهت';
+}

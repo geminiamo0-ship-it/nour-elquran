@@ -57,32 +57,73 @@ export async function ownerAcademy(db:CoreDatabase,subject:string,learnerId:stri
  return {status:200,code:'ACADEMY_OWNER',packages:p.results.filter(x=>x.active===1)
   .map(({id,packageId,title,priceEgp,sessions})=>
    ({versionId:id,packageId,title,priceEgp,sessions})),
-  requests:r.results,whatsappNumber:w} as const;
+  // Never expose unreviewed D1 adapter keys in an owner-bound response.
+  requests:r.results.map(({id,packageVersionId,title,priceEgp,sessions,atMs,state})=>
+   ({id,packageVersionId,title,priceEgp,sessions,atMs,state})),
+  whatsappNumber:w} as const;
 }
+/** Bind the guardian's displayed immutable quote to the D1 write. A staff
+ * package edit between GET and POST must not silently change price/sessions.
+ * Version freshness and INSERT are one SQLite statement (not a racy GET).
+ * A lost-ACK replay is resolved first, even if the quote was later retired. */
 export async function ownerPackageRequest(db:CoreDatabase,subject:string,
  learnerId:string,raw:unknown,now=Date.now()){
- if(!object(raw)||!exact(raw,['operationId','packageId'])||
-  !uuid(raw.operationId)||!uuid(raw.packageId))
+ if(!object(raw)||!exact(raw,['operationId','packageId','packageVersionId'])||
+  !uuid(raw.operationId)||!uuid(raw.packageId)||!uuid(raw.packageVersionId))
   return {status:400,code:'ACADEMY_INVALID_REQUEST'} as const;
  if(!await verifiedOwner(db,subject,learnerId))
   return {status:404,code:'NOT_FOUND'} as const;
- const prior=await db.prepare(`SELECT id,learner_id AS learnerId,actor_subject AS actor,
- package_id AS packageId FROM academy_request_events WHERE operation_id=?`)
- .bind(raw.operationId).first<{id:string;learnerId:string;actor:string;packageId:string}>();
- if(prior)return prior.actor===subject&&prior.learnerId===learnerId&&
-  prior.packageId===raw.packageId?
+ type ExistingRequest={id:string;learnerId:string;actor:string;
+  packageId:string;packageVersionId:string};
+ const readExisting=()=>db.prepare(`SELECT id,learner_id AS learnerId,actor_subject AS actor,
+ package_id AS packageId,package_version_id AS packageVersionId
+ FROM academy_request_events WHERE operation_id=?`)
+ .bind(raw.operationId).first<ExistingRequest>();
+ const replayResult=(prior:ExistingRequest)=>prior.actor===subject&&
+  prior.learnerId===learnerId&&prior.packageId===raw.packageId&&
+  prior.packageVersionId===raw.packageVersionId?
   {status:200,code:'ACADEMY_REQUEST_REPLAY',academyRequestId:prior.id} as const:
   {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
- const pkg=await currentPackage(db,raw.packageId);
- if(!pkg||pkg.active!==1)return {status:409,code:'ACADEMY_PACKAGE_UNAVAILABLE'} as const;
+ const prior=await readExisting();
+ if(prior)return replayResult(prior);
  const id=crypto.randomUUID();
  try{
-  await db.prepare(`INSERT INTO academy_request_events
+  const written=await db.prepare(`INSERT INTO academy_request_events
    (id,operation_id,learner_id,actor_subject,package_id,package_version_id,kind,at_ms)
-   VALUES(?,?,?,?,?,?,'subscription',?)`)
-  .bind(id,raw.operationId,learnerId,subject,pkg.packageId,pkg.id,now).run();
+   SELECT ?,?,?,?,p.package_id,p.id,'subscription',?
+   FROM academy_package_events p
+   WHERE p.id=? AND p.package_id=? AND p.active=1
+   AND NOT EXISTS(SELECT 1 FROM academy_package_events newer
+    WHERE newer.package_id=p.package_id AND
+    (newer.at_ms>p.at_ms OR (newer.at_ms=p.at_ms AND newer.id>p.id)))`)
+  .bind(id,raw.operationId,learnerId,subject,now,raw.packageVersionId,raw.packageId).run();
+  // D1 can resolve with a failed or incomplete write receipt. A stale
+  // quote is a proven zero-row success, not an uncertain storage outcome.
+  if(written.success!==true||!Number.isSafeInteger(written.meta?.changes)){
+   const raced=await readExisting();
+   if(raced)return replayResult(raced);
+   return {status:503,code:'ACADEMY_REQUEST_STORAGE_UNAVAILABLE'} as const;
+  }
+  if(written.meta.changes!==1){
+   // A competing same-operation request may have committed before staff
+   // repriced this quote. Zero-row INSERT..SELECT is not always a new request.
+   const raced=await readExisting();
+   if(raced)return replayResult(raced);
+   return {status:409,code:'ACADEMY_PACKAGE_CHANGED'} as const;
+  }
  }catch(e){
-  if(allowed(e))return {status:409,code:'ACADEMY_REQUEST_DENIED'} as const;
+  if(allowed(e)){
+   // Two signed requests can both miss the pre-INSERT lookup. If the same
+   // operation won the unique D1 race, return its immutable ACK instead of
+   // falsely denying a legitimate retry. Never disclose another actor's ID.
+   const raced=await readExisting();
+   if(raced)return replayResult(raced);
+   // A D1 abort may have committed despite a lost ACK. Do not describe an
+   // unknown transport outcome as a confirmed quote/business conflict.
+   if(e instanceof Error&&!/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_REQUEST_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:'ACADEMY_REQUEST_DENIED'} as const;
+  }
   throw e;
  }
  return {status:201,code:'ACADEMY_REQUEST_CREATED',academyRequestId:id} as const;
@@ -104,15 +145,24 @@ export async function staffAcademy(db:CoreDatabase,subject:string){
    ORDER BY req.at_ms DESC,req.id DESC LIMIT 100`).all<Record<string,unknown>>(),
   db.prepare(`SELECT inv.id,inv.created_at_ms AS createdAtMs,inv.expires_at_ms AS expiresAtMs,
    inv.claimed_at_ms AS claimedAtMs,u.name AS teacherName,
-   inv.claimed_subject AS claimedSubject, t.id AS teacherId
+   CASE WHEN inv.claimed_subject IS NULL THEN 0 ELSE 1 END AS claimed,
+   t.id AS teacherId
    FROM academy_teacher_invites inv
    LEFT JOIN auth_users u ON u.id=inv.claimed_subject
    LEFT JOIN teachers t ON t.auth_subject=inv.claimed_subject
    ORDER BY inv.created_at_ms DESC,inv.id DESC LIMIT 50`).all<Record<string,unknown>>(),
   contact(db),
  ]);
- return {status:200,code:'ACADEMY_STAFF',packages:p.results,requests:r.results,
-  invites:i.results,whatsappNumber:w} as const;
+ // Project an explicit staff DTO. Never send auth subjects or private adapter fields.
+ return {status:200,code:'ACADEMY_STAFF',
+  packages:p.results.map(({id,packageId,title,priceEgp,sessions,active,atMs})=>
+   ({id,packageId,title,priceEgp,sessions,active,atMs})),
+  requests:r.results.map(({id,learnerId,learnerName,title,priceEgp,sessions,
+   packageVersionId,atMs,state})=>
+   ({id,learnerId,learnerName,title,priceEgp,sessions,packageVersionId,atMs,state})),
+  invites:i.results.map(({id,createdAtMs,expiresAtMs,claimedAtMs,
+   teacherName,claimed,teacherId})=>({id,createdAtMs,expiresAtMs,claimedAtMs,
+   teacherName,claimed,teacherId})),whatsappNumber:w} as const;
 }
 export async function staffPackage(db:CoreDatabase,subject:string,raw:unknown,now=Date.now()){
  if(!object(raw)||!exact(raw,['operationId','packageId','title','priceEgp','sessions','active'])||
@@ -121,23 +171,50 @@ export async function staffPackage(db:CoreDatabase,subject:string,raw:unknown,no
  Number(raw.sessions)<1||Number(raw.sessions)>60||typeof raw.active!=='boolean')
   return {status:400,code:'ACADEMY_INVALID_PACKAGE'} as const;
  if(!await canManageTeachers(db,subject))return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
- const prior=await db.prepare(`SELECT id,package_id AS packageId,actor_subject AS actor,
+ const readPrior=()=>db.prepare(`SELECT id,package_id AS packageId,actor_subject AS actor,
  title,price_egp AS priceEgp,sessions,active FROM academy_package_events
  WHERE operation_id=?`).bind(raw.operationId).first<PackageRow&{actor:string}>();
- if(prior)return prior.actor===subject&&prior.packageId===raw.packageId&&
- prior.title===raw.title&&prior.priceEgp===raw.priceEgp&&prior.sessions===raw.sessions&&
- prior.active===(raw.active?1:0)?
+ const replay=(prior:PackageRow&{actor:string})=>prior.actor===subject&&
+  prior.packageId===raw.packageId&&prior.title===raw.title&&
+  prior.priceEgp===raw.priceEgp&&prior.sessions===raw.sessions&&
+  prior.active===(raw.active?1:0)?
   {status:200,code:'ACADEMY_PACKAGE_REPLAY',packageId:prior.packageId} as const:
   {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
- const last=await currentPackage(db,raw.packageId);
- const at=Math.max(now,(last?.atMs??0)+1);
+ const prior=await readPrior();
+ if(prior)return replay(prior);
  const id=crypto.randomUUID();
- try{await db.prepare(`INSERT INTO academy_package_events
-  (id,operation_id,package_id,actor_subject,title,price_egp,sessions,active,at_ms)
-  VALUES(?,?,?,?,?,?,?,?,?)`)
- .bind(id,raw.operationId,raw.packageId,subject,raw.title,raw.priceEgp,
- raw.sessions,raw.active?1:0,at).run();}
- catch(e){if(allowed(e))return {status:409,code:'ACADEMY_PACKAGE_DENIED'} as const;throw e;}
+ try{
+  // The version clock must be calculated inside the same SQLite write as
+  // INSERT. Two staff requests can otherwise read the same prior timestamp,
+  // tie on at_ms, and expose the older edit as the current catalog version.
+  const receipt=await db.prepare(`INSERT INTO academy_package_events
+   (id,operation_id,package_id,actor_subject,title,price_egp,sessions,active,at_ms)
+   SELECT ?,?,?,?,?,?,?,?,
+    MAX(?,COALESCE((SELECT MAX(at_ms)+1 FROM academy_package_events
+     WHERE package_id=?),?))`)
+  .bind(id,raw.operationId,raw.packageId,subject,raw.title,raw.priceEgp,
+   raw.sessions,raw.active?1:0,now,raw.packageId,now).run();
+  // A resolved D1 response is not proof of a committed version. Do not
+  // acknowledge a package/price change when the write reports no success.
+  if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
+     receipt.meta.changes<1)
+   return {status:503,code:'ACADEMY_PACKAGE_STORAGE_UNAVAILABLE'} as const;
+ }catch(e){
+  if(allowed(e)){
+   // A concurrent identical operation can win the UNIQUE constraint.
+   // Return its existing immutable ACK, not an invented new version.
+   const raced=await readPrior();
+   if(raced)return replay(raced);
+   // A transport/transaction abort has an unknown commit outcome, not a
+   // proven business conflict. The client must retain its operationId and
+   // reconcile through the same idempotent request rather than inventing
+   // a new edit after a misleading 409.
+   if(e instanceof Error&&!/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_PACKAGE_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:'ACADEMY_PACKAGE_DENIED'} as const;
+  }
+  throw e;
+ }
  return {status:201,code:'ACADEMY_PACKAGE_SAVED',packageId:raw.packageId} as const;
 }
 // One month of wall-clock time in Africa/Cairo, including DST transitions.
@@ -188,15 +265,19 @@ export async function staffActivate(db:CoreDatabase,subject:string,raw:unknown,n
  raw.manualConfirmed!==true)
  return {status:400,code:'ACADEMY_INVALID_ACTIVATION'} as const;
  if(!await canManageTeachers(db,subject))return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
- const previous=await db.prepare(`SELECT id,actor_subject AS actor,learner_id AS learnerId,
- package_version_id AS packageVersionId,request_id AS requestId
+ type ActivationReceipt={actor:string;learnerId:string;packageVersionId:string;
+  requestId:string|null;note:string};
+ const readPrevious=()=>db.prepare(`SELECT actor_subject AS actor,learner_id AS learnerId,
+ package_version_id AS packageVersionId,request_id AS requestId,note
  FROM academy_subscription_activation_events WHERE operation_id=?`)
- .bind(raw.operationId).first<{id:string;actor:string;learnerId:string;
- packageVersionId:string;requestId:string|null}>();
- if(previous)return previous.actor===subject&&previous.learnerId===raw.learnerId&&
- previous.packageVersionId===raw.packageVersionId&&previous.requestId===raw.requestId?
- {status:200,code:'ACADEMY_ACTIVATION_REPLAY'} as const:
- {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ .bind(raw.operationId).first<ActivationReceipt>();
+ const replay=(saved:ActivationReceipt)=>saved.actor===subject&&
+  saved.learnerId===raw.learnerId&&saved.packageVersionId===raw.packageVersionId&&
+  saved.requestId===raw.requestId&&saved.note===raw.note?
+  {status:200,code:'ACADEMY_ACTIVATION_REPLAY'} as const:
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const previous=await readPrevious();
+ if(previous)return replay(previous);
  // A displayed request is an immutable quote, not an HTTP request trace.
  // Confirm the exact learner, quote and pending state before touching credits.
  if(raw.requestId!==null){
@@ -237,13 +318,34 @@ export async function staffActivate(db:CoreDatabase,subject:string,raw:unknown,n
  const carry=last&&start<=last.endsAtMs+259200000?
  Math.min(last.baseSessions,Math.max(0,last.baseSessions+last.rolloverSessions-last.spent)):0;
  try{
- await db.prepare(`INSERT INTO academy_subscription_activation_events
+  const receipt=await db.prepare(`INSERT INTO academy_subscription_activation_events
  (id,operation_id,actor_subject,learner_id,request_id,package_version_id,cycle_id,
  previous_cycle_id,rollover_sessions,starts_at_ms,ends_at_ms,note,manually_confirmed,at_ms)
  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,1,?)`).bind(crypto.randomUUID(),raw.operationId,subject,
  raw.learnerId,raw.requestId,raw.packageVersionId,crypto.randomUUID(),
  last?.id??null,carry,start,ends,raw.note,start).run();
- }catch(e){if(allowed(e))return {status:409,code:activationDeniedCode(e)} as const;throw e;}
+  // The activation INSERT creates a cycle through a SQLite trigger.
+  // D1 may count trigger effects as additional changes, so require a
+  // positive receipt rather than assuming exactly one total changed row.
+  if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
+     receipt.meta.changes<1){
+   const raced=await readPrevious();
+   if(raced)return replay(raced);
+   return {status:503,code:'ACADEMY_ACTIVATION_STORAGE_UNAVAILABLE'} as const;
+  }
+ }catch(e){
+  if(allowed(e)){
+   // An identical concurrent command or lost ACK may already have committed.
+   // Recover only the exact immutable operation, including its audit note.
+   const raced=await readPrevious();
+   if(raced)return replay(raced);
+   if(e instanceof Error&&/abort/i.test(e.message)&&
+      !/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_ACTIVATION_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:activationDeniedCode(e)} as const;
+  }
+  throw e;
+ }
  return {status:201,code:'ACADEMY_SUBSCRIPTION_ACTIVATED',startsAtMs:start,
  endsAtMs:ends,rolloverSessions:carry} as const;
 }

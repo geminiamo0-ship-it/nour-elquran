@@ -1,3 +1,47 @@
+## #324 academic ledger HTTP status regression (2026-11-07)
+- For signed learner `GET /subscription-ledger`, accept only HTTP 200 as a complete academic balance snapshot; reject 201/202/204/206 before JSON parsing. Preserve explicit 403 and strict ledger DTO checks. Test on Draft PR #325; exact-head Verify and signed remote Dev acceptance are separate gates.
+
+## #326 native signed sibling/quote replay isolation — 2026-11-03
+- Added to `scripts/cloudflare-auth-smoke.mjs`: after concurrent signed guardian package requests produce one immutable D1 ACK, reuse the same operationId against a different owned sibling and a different packageVersionId. Both must return 409 `ACADEMY_OPERATION_CONFLICT` without an `academyRequestId`; sibling's signed GET must exclude the first learner's request. The fixture reuses an existing synthetic sibling and does not create paid entitlements or affect free-trial acceptance.
+- Test commit `5f7580ee`; CI at new exact HEAD must be verified. These local signed tests are not substitutes for isolated Cloudflare Dev and mobile acceptance.
+
+## #326 overlapping signed native D1 HTTP test — 2026-11-03
+- `scripts/cloudflare-auth-smoke.mjs` now starts two concurrent signed HTTP package POSTs with identical immutable operationId/packageId/packageVersionId against disposable local Better Auth+D1; requires one 201 created and one 200 replay, both referencing exactly the same request ID. Sequential replay, stale quote 409, and original price snapshot remain covered.
+- This detects an actual local Worker/D1 race beyond mocked SQL exceptions, but is **not** evidence of remote Cloudflare Dev concurrency or browser behavior. Inspect exact-head GitHub Verify and run source-pinned remote synthetic role tests before merge.
+
+## #326 immutable guardian quote concurrent replay regression (2026-11-03)
+- Node Worker contract simulates two requests that both miss the pre-INSERT operationId lookup: after a SQLite UNIQUE conflict, the loser must re-read the committed row and return the exact immutable request ID only when actor, learner, package and version match.
+- Negative cases: same operationId with changed package version or foreign actor returns 409 without exposing a request ID; unrelated pending-request constraint without a matching operation remains denied.
+- This is source-level test coverage, not a live concurrent D1 proof. Required next: exact-head Verify, isolated signed Cloudflare Dev two-concurrent-POST owner replay, different-owner/learner denial, staff quote change between GET/POST, network loss/retry, and 360/390 browser QA. No Production or provider activation.
+
+## #326 immutable package quote and replay gate (2026-11-03; candidate)
+- Frontend: POST includes exactly operationId, packageId and the versionId displayed with the guardian's price/session count. Never send learner name/ID in the JSON body or WhatsApp. No optimistic activation or payment claim.
+- Worker: require all three UUIDs; reject extra fields; authorize owner before any operation replay. Exact same actor/learner/package/version/operation returns original immutable request ID even after staff reprices; mismatched replay returns 409. New write uses one atomic D1 INSERT..SELECT with current active version check; zero changes => 409 ACADEMY_PACKAGE_CHANGED, never a different price.
+- Native SQLite: stale quote after staff edit => zero writes; current quote => exactly one immutable request; disabled latest => zero writes; D1 uniqueness/foreign keys intact. Signed local Better Auth smoke includes owner/foreign-owner denial, staff edit, stale quote, original replay, and recorded historic price.
+- **Release gate:** exact-head GitHub Verify, independent security review, source-pinned signed Cloudflare Dev same GET→staff-edit→POST flow and two-sibling isolation; 360/390 RTL. Dev test harness must be updated for required packageVersionId. No Production or payment changes.
+
+## #324 owner academy contradictory catalog/read invariants (2026-11-03 candidate)
+- Vitest: a signed `ACADEMY_OWNER` payload with distinct `versionId`s but duplicate `packageId`s must fail closed; likewise two different pending request IDs for the same learner must fail closed. D1 serves only the current version per package and allows one pending request per learner. The parser must not pick a misleading subset or expose duplicate actions.
+- Previous HEAD `9e26fb07` passed Verify #41608959997 4/4; this change needs fresh exact-head CI. No signed remote Dev browser/role proof, independent review or 360/390 evidence yet.
+
+## #324 native D1 ambiguous package POST fence — 2026-11-03
+- Disposable SQLite test in `workers/api/tests/test_academy_admin_mvp.py` asserts that the same operation ID cannot insert twice, a different operation ID cannot create a second unresolved request for one learner, and only recorded staff settlement permits a later request. This is a database contract regression, **not** signed Worker replay or a browser lost-ACK simulation. Verify exact PR head in CI; test remote Dev with synthetic guardian/siblings and unknown POST→same-id replay→owner-read after refresh before acceptance.
+
+## #324 malformed academy duplicate IDs — 2026-11-03
+- The signed owner catalog parser must reject duplicate package version IDs and duplicate request IDs rather than rendering ambiguous React keys or request history. Unit regression uses synthetic duplicate payloads; source CI does not replace Dev owner/sibling checks.
+
+## #324 signed subscription sibling-switch render isolation — 2026-11-03
+- Home and full subscription ledger must remount signed fetch state synchronously on learner ID change; aborting the old request in `useEffect` alone is insufficient to prevent one frame of sibling A's academic balance appearing under sibling B.
+- Fast Vitest verifies keyed scoped Home/ledger identities and preview-to-signed isolation; exact-head GitHub Verify must pass. Real Dev acceptance still requires rapid guardian sibling switching while a prior ledger request is pending/fulfilled, refresh/relogin, and 360×667/390×844 browser screenshots. No private child fixtures or paid-state assumptions.
+
+## #324 expired academic cycle truthfulness (2026-11-03)
+- Unit: Home status for `latestCycle.state='expired'` with recorded unused units must label them as **historical**, not current usable lessons; independent compensation grant count remains visible. `within_period` is also expired in the browser when the end timestamp is in the past.
+- UI: Subscription hero uses expired-cycle labels for both remaining units and end date. Verify source exact-head GitHub CI; then signed isolated Dev synthetic owner/second sibling, cycle expiry, independent compensation and pending renewal with 360/390 mobile visual QA. Do not equate D1 academic units with payment or booking rights.
+
+## #324 signed academy catalog GET race regression — 2026-11-03
+- A GET started before a manual refresh, a package POST or unmount must not repopulate offer/request state if it settles before React effect cleanup. The per-learner synchronous read epoch is invalidated on these events, with a focused Vitest regression.
+- Source tests are insufficient for full acceptance: require exact-head Verify 4/4, independent review, signed Cloudflare Dev owner/two-sibling role isolation, immutable unknown-result replay/owner-read, compensation-only D1 state and 360/390 browser QA. No Production or payment enablement.
+
 ## #309 Admin operation release gates (2026-11-01)
 - Unit: strict teacher roster transition parser, authorized staff pre-query, active class guard, exact client payload/action allowlist, 401/403, network-uncertain write (no false success/retry), SSR forms locked unless explicit consent.
 - Native SQL: all migrations through 0027; active scheduled/live Sheikh cannot be suspended or de-qualified, no immutable event on denial, cancellation then transition, unrelated teacher permitted, and legacy B2 endpoint inherits same trigger.
