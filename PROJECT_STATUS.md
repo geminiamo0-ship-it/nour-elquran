@@ -1,3 +1,8 @@
+## 2026-11-07 — Future subscription cycle label regression (#324; Draft PR #325)
+- Source candidate on `feat/student-subscriptions-clarity-20261101`: a signed D1 subscription cycle whose start is in the future is currently returned by the Worker with state `expired` (the Worker only distinguishes within-period vs not-within-period). Student Home and subscription detail previously rendered that as an already-ended cycle.
+- Client now uses the signed `startsAtMs` before the `expired` label: future cycles display "الدورة القادمة لم تبدأ بعد", the recorded units, and the future start date; ended and active cycles retain their prior labels. No backend/financial write, package pricing, or Production change.
+- Added regression in `StudentSubscription.test.tsx` for future, ended, and active cycles. **Exact-head CI and signed Cloudflare Dev/browser acceptance are pending**; no claim of successful execution. PR #325 remains Draft; coordinate its overlapping Worker files with PR #327 before any merge.
+
 ## 2026-11-07 — #324 signed subscription-ledger complete-response guard (Draft PR #325)
 - Source review found that the signed learner academic-credit ledger accepted any `response.ok` 2xx, including 201/202/204/206, as a complete D1 balance snapshot. This is distinct from the academy catalog HTTP 200 guard already on the branch.
 - `apps/web/src/features/shared/subscription-ledger-client.ts` now rejects unexpected successful statuses before parsing JSON; genuine 200 keeps existing strict DTO validation, and 401/403 error-code handling is unchanged. `StudentSubscription.test.tsx` covers partial/accepted responses and explicit 403. No SQL, financial operation, provider, child data or Production change.
