@@ -67,6 +67,10 @@ export const subscriptionLedgerClient={
     '/subscription-ledger',{method:'GET',credentials:'same-origin',
      cache:'no-store',redirect:'error',...(signal?{signal}:{})});
   }catch{throw new SubscriptionLedgerError('NETWORK_UNAVAILABLE');}
+  // A ledger is an authoritative full D1 snapshot, not a partial/accepted
+  // response. Do not render balances from 201/202/206 or a proxy 2xx.
+  if(response.status!==200)
+   throw new SubscriptionLedgerError('LEDGER_UNAVAILABLE',response.status);
   let payload:unknown;
   try{payload=await response.json();}
   catch{throw new SubscriptionLedgerError('INVALID_LEDGER_RESPONSE',response.status);}
