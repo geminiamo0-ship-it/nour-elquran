@@ -1,0 +1,122 @@
+import {strict as assert} from 'node:assert';
+import {test} from 'node:test';
+import type {CoreDatabase} from '../src/bindings.ts';
+import {ownerAcademy,staffAcademy} from '../src/academy-admin-mvp.ts';
+
+/** #315: the staff roster needs invite status, never a private auth subject. */
+function fixture(granted=true,claimed:0|1=1,withRows=false){
+ const reads:string[]=[];
+ const invite={
+  id:'invite-synthetic',createdAtMs:1700000000000,
+  expiresAtMs:1700600000000,claimedAtMs:claimed?1700001000000:null,
+  teacherName:claimed?'Synthetic Sheikh':null,
+  claimed,teacherId:claimed?'teacher-synthetic':null,
+  // Deliberately inject a sensitive adapter field: the public DTO must
+  // explicitly project its allowlist, not spread arbitrary D1 row keys.
+  claimedSubject:'private-auth-subject-not-for-browser',
+ };
+ type FakeStatement={
+  bind:(...args:unknown[])=>FakeStatement;
+  first:()=>Promise<unknown>;
+  all:()=>Promise<{results:unknown[]}>;
+ };
+ const db={
+  prepare(sql:string){
+   reads.push(sql);
+   const statement:FakeStatement={
+    bind(){return statement;},
+    async first(){
+     if(sql.includes('FROM staff_grants'))
+      return granted?{subject:'synthetic-staff'}:null;
+     if(sql.includes('FROM learners l JOIN accounts a'))return {ok:1};
+     if(sql.includes('FROM academy_contact_events'))return null;
+     throw Error('Unexpected D1 first');
+    },
+    async all(){
+     if(sql.includes('FROM academy_teacher_invites'))return {results:[invite]};
+     if(sql.includes('FROM academy_package_events'))return {results:withRows?[{
+      id:'version-synthetic',packageId:'package-synthetic',
+      title:'Synthetic package',priceEgp:200,sessions:2,active:1,
+      atMs:1700000000000,guardianPhone:'private-guardian-phone',
+      authSubject:'private-subject',
+     }]:[]};
+     if(sql.includes('FROM academy_request_events'))return {results:withRows?[{
+      id:'request-synthetic',learnerId:'learner-synthetic',
+      learnerName:'Synthetic learner',title:'Synthetic package',
+      priceEgp:200,sessions:2,packageVersionId:'version-synthetic',
+      atMs:1700000000000,state:'pending',
+      guardianPhone:'private-guardian-phone',authSubject:'private-subject',
+      paymentToken:'private-payment-token',
+     }]:[]};
+     throw Error('Unexpected D1 all');
+    },
+   };
+   return statement;
+  },
+ } as unknown as CoreDatabase;
+ return {db,reads};
+}
+
+test('signed staff invite status uses only an allowlisted DTO, never auth subject',async()=>{
+ for(const claimed of [0,1] as const){
+  const {db,reads}=fixture(true,claimed);
+  const result=await staffAcademy(db,'synthetic-staff');
+  assert.equal(result.status,200);
+  if(result.status!==200)throw Error('Unexpected staff denial');
+  assert.deepEqual(result.invites,[{
+   id:'invite-synthetic',createdAtMs:1700000000000,
+   expiresAtMs:1700600000000,claimedAtMs:claimed?1700001000000:null,
+   teacherName:claimed?'Synthetic Sheikh':null,claimed,
+   teacherId:claimed?'teacher-synthetic':null,
+  }]);
+  assert.doesNotMatch(JSON.stringify(result),/claimedSubject|private-auth-subject/);
+  const sql=reads.find(query=>query.includes('FROM academy_teacher_invites'));
+  assert.ok(sql);
+  assert.match(sql,/CASE WHEN inv.claimed_subject IS NULL THEN 0 ELSE 1 END AS claimed/);
+  assert.doesNotMatch(sql,/AS claimedSubject/);
+ }
+});
+
+test('revoked staff grant denies before reading invite or learner records',async()=>{
+ const {db,reads}=fixture(false);
+ assert.deepEqual(await staffAcademy(db,'synthetic-staff'),
+  {status:403,code:'STAFF_ACCESS_DENIED'});
+ assert.equal(reads.some(sql=>sql.includes('academy_teacher_invites')||
+  sql.includes('academy_request_events')),false);
+});
+
+test('staff package and learner request DTOs drop unreviewed D1 private fields',async()=>{
+ const {db}=fixture(true,1,true);
+ const result=await staffAcademy(db,'synthetic-staff');
+ assert.equal(result.status,200);
+ if(result.status!==200)throw Error('Unexpected staff denial');
+ assert.deepEqual(result.packages,[{
+  id:'version-synthetic',packageId:'package-synthetic',
+  title:'Synthetic package',priceEgp:200,sessions:2,active:1,atMs:1700000000000,
+ }]);
+ assert.deepEqual(result.requests,[{
+  id:'request-synthetic',learnerId:'learner-synthetic',
+  learnerName:'Synthetic learner',title:'Synthetic package',
+  priceEgp:200,sessions:2,packageVersionId:'version-synthetic',
+  atMs:1700000000000,state:'pending',
+ }]);
+ assert.doesNotMatch(JSON.stringify(result),/private-|guardianPhone|authSubject|paymentToken/);
+});
+
+test('owner package request DTO does not expose staff-only or injected D1 fields',async()=>{
+ const {db}=fixture(true,1,true);
+ const result=await ownerAcademy(db,'synthetic-owner','learner-synthetic');
+ assert.equal(result.status,200);
+ if(result.status!==200)throw Error('Unexpected owner denial');
+ assert.deepEqual(result.packages,[{
+  versionId:'version-synthetic',packageId:'package-synthetic',
+  title:'Synthetic package',priceEgp:200,sessions:2,
+ }]);
+ assert.deepEqual(result.requests,[{
+  id:'request-synthetic',packageVersionId:'version-synthetic',
+  title:'Synthetic package',priceEgp:200,sessions:2,
+  atMs:1700000000000,state:'pending',
+ }]);
+ assert.doesNotMatch(JSON.stringify(result),
+  /private-|guardianPhone|authSubject|paymentToken|learnerName|learnerId/);
+});

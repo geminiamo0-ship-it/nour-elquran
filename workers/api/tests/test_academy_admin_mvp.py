@@ -7,6 +7,13 @@ DAY=86400000
 PKG="""INSERT INTO academy_package_events
 (id,operation_id,package_id,actor_subject,title,price_egp,sessions,active,at_ms)
 VALUES(?,?,?,?,?,?,?,?,?)"""
+# Mirrors the Worker single-statement package version clock. Computing the
+# timestamp in a separate SELECT permits simultaneous staff edits to tie.
+PKG_ATOMIC="""INSERT INTO academy_package_events
+(id,operation_id,package_id,actor_subject,title,price_egp,sessions,active,at_ms)
+SELECT ?,?,?,?,?,?,?,?,
+ MAX(?,COALESCE((SELECT MAX(at_ms)+1 FROM academy_package_events
+ WHERE package_id=?),?))"""
 REQUEST="""INSERT INTO academy_request_events
 (id,operation_id,learner_id,actor_subject,package_id,package_version_id,kind,at_ms)
 VALUES(?,?,?,?,?,?,'subscription',?)"""
@@ -56,6 +63,45 @@ class AcademyAdminD1(unittest.TestCase):
   self.activate(p,request)
   with self.assertRaises(sqlite3.IntegrityError):
    self.activate(p,None)
+ def test_atomic_package_clock_preserves_last_committed_staff_edit(self):
+  # Both requests may have observed the same previous version and identical
+  # now; the second INSERT must still win, even with a lexically smaller UUID.
+  self.version(price=1600,at=T)
+  first='ffffffff-ffff-4fff-8fff-ffffffffffff'
+  second='00000000-0000-4000-8000-000000000000'
+  for version,price in ((first,1800),(second,2200)):
+   self.db.execute(PKG_ATOMIC,(version,str(uuid4()),self.package,'staff',
+    'Eight Quran lessons',price,8,1,T,self.package,T))
+  versions=self.db.execute("""SELECT id,price_egp,at_ms
+   FROM academy_package_events WHERE package_id=?
+   ORDER BY at_ms DESC,id DESC""",(self.package,)).fetchall()
+  self.assertEqual(versions[0],(second,2200,T+2))
+  self.assertEqual(versions[1],(first,1800,T+1))
+  self.assertEqual(versions[2][2],T)
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
+ def test_package_clock_keeps_disabled_version_current_under_clock_skew(self):
+  # An earlier wall clock must never resurrect a previous active offer.
+  initial=self.version(price=1600,at=T+1000)
+  disabled=str(uuid4())
+  reenabled=str(uuid4())
+  for version,price,active in ((disabled,1800,0),(reenabled,2000,1)):
+   self.db.execute(PKG_ATOMIC,(version,str(uuid4()),self.package,'staff',
+    'Eight Quran lessons',price,8,active,T-500,self.package,T-500))
+  current=self.db.execute("""SELECT id,active,price_egp,at_ms
+   FROM academy_package_events WHERE package_id=?
+   ORDER BY at_ms DESC,id DESC LIMIT 1""",(self.package,)).fetchone()
+  self.assertEqual(current,(reenabled,1,2000,T+1002))
+  self.assertEqual(self.db.execute("""SELECT id,active,at_ms
+   FROM academy_package_events WHERE id=?""",(disabled,)).fetchone(),
+   (disabled,0,T+1001))
+  # An unrelated package starts its own clock, not this package's future clock.
+  other=str(uuid4())
+  other_version=str(uuid4())
+  self.db.execute(PKG_ATOMIC,(other_version,str(uuid4()),other,'staff',
+   'Other Quran lessons',1200,4,1,T-500,other,T-500))
+  self.assertEqual(self.db.execute("""SELECT at_ms FROM academy_package_events
+   WHERE id=?""",(other_version,)).fetchone(),(T-500,))
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
  def test_foreign_owner_staff_revocation_and_legacy_credit_constraints(self):
   p=self.version()
   with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_OWNER_DENIED'):

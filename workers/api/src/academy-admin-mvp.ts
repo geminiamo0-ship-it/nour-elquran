@@ -57,7 +57,10 @@ export async function ownerAcademy(db:CoreDatabase,subject:string,learnerId:stri
  return {status:200,code:'ACADEMY_OWNER',packages:p.results.filter(x=>x.active===1)
   .map(({id,packageId,title,priceEgp,sessions})=>
    ({versionId:id,packageId,title,priceEgp,sessions})),
-  requests:r.results,whatsappNumber:w} as const;
+  // Never forward unreviewed adapter keys into a learner's signed response.
+  requests:r.results.map(({id,packageVersionId,title,priceEgp,sessions,atMs,state})=>
+   ({id,packageVersionId,title,priceEgp,sessions,atMs,state})),
+  whatsappNumber:w} as const;
 }
 export async function ownerPackageRequest(db:CoreDatabase,subject:string,
  learnerId:string,raw:unknown,now=Date.now()){
@@ -66,23 +69,41 @@ export async function ownerPackageRequest(db:CoreDatabase,subject:string,
   return {status:400,code:'ACADEMY_INVALID_REQUEST'} as const;
  if(!await verifiedOwner(db,subject,learnerId))
   return {status:404,code:'NOT_FOUND'} as const;
- const prior=await db.prepare(`SELECT id,learner_id AS learnerId,actor_subject AS actor,
+ type RequestReceipt={id:string;learnerId:string;actor:string;packageId:string};
+ const readPrior=()=>db.prepare(`SELECT id,learner_id AS learnerId,actor_subject AS actor,
  package_id AS packageId FROM academy_request_events WHERE operation_id=?`)
- .bind(raw.operationId).first<{id:string;learnerId:string;actor:string;packageId:string}>();
- if(prior)return prior.actor===subject&&prior.learnerId===learnerId&&
-  prior.packageId===raw.packageId?
-  {status:200,code:'ACADEMY_REQUEST_REPLAY',academyRequestId:prior.id} as const:
+ .bind(raw.operationId).first<RequestReceipt>();
+ const replay=(saved:RequestReceipt)=>saved.actor===subject&&
+  saved.learnerId===learnerId&&saved.packageId===raw.packageId?
+  {status:200,code:'ACADEMY_REQUEST_REPLAY',academyRequestId:saved.id} as const:
   {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const prior=await readPrior();
+ if(prior)return replay(prior);
  const pkg=await currentPackage(db,raw.packageId);
  if(!pkg||pkg.active!==1)return {status:409,code:'ACADEMY_PACKAGE_UNAVAILABLE'} as const;
  const id=crypto.randomUUID();
  try{
-  await db.prepare(`INSERT INTO academy_request_events
+  const receipt=await db.prepare(`INSERT INTO academy_request_events
    (id,operation_id,learner_id,actor_subject,package_id,package_version_id,kind,at_ms)
    VALUES(?,?,?,?,?,?,'subscription',?)`)
   .bind(id,raw.operationId,learnerId,subject,pkg.packageId,pkg.id,now).run();
+  // A resolved D1 write is not proof of a committed learner request.
+  if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
+     receipt.meta.changes<1){
+   const raced=await readPrior();
+   if(raced)return replay(raced);
+   return {status:503,code:'ACADEMY_REQUEST_STORAGE_UNAVAILABLE'} as const;
+  }
  }catch(e){
-  if(allowed(e))return {status:409,code:'ACADEMY_REQUEST_DENIED'} as const;
+  if(allowed(e)){
+   // A lost ACK or concurrent identical command must reuse the original
+   // request ID; never invent a second request or falsely report a conflict.
+   const raced=await readPrior();
+   if(raced)return replay(raced);
+   if(e instanceof Error&&!/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_REQUEST_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:'ACADEMY_REQUEST_DENIED'} as const;
+  }
   throw e;
  }
  return {status:201,code:'ACADEMY_REQUEST_CREATED',academyRequestId:id} as const;
@@ -104,15 +125,24 @@ export async function staffAcademy(db:CoreDatabase,subject:string){
    ORDER BY req.at_ms DESC,req.id DESC LIMIT 100`).all<Record<string,unknown>>(),
   db.prepare(`SELECT inv.id,inv.created_at_ms AS createdAtMs,inv.expires_at_ms AS expiresAtMs,
    inv.claimed_at_ms AS claimedAtMs,u.name AS teacherName,
-   inv.claimed_subject AS claimedSubject, t.id AS teacherId
+   CASE WHEN inv.claimed_subject IS NULL THEN 0 ELSE 1 END AS claimed,
+   t.id AS teacherId
    FROM academy_teacher_invites inv
    LEFT JOIN auth_users u ON u.id=inv.claimed_subject
    LEFT JOIN teachers t ON t.auth_subject=inv.claimed_subject
    ORDER BY inv.created_at_ms DESC,inv.id DESC LIMIT 50`).all<Record<string,unknown>>(),
   contact(db),
  ]);
- return {status:200,code:'ACADEMY_STAFF',packages:p.results,requests:r.results,
-  invites:i.results,whatsappNumber:w} as const;
+ // Explicitly project staff-facing fields; D1/adapter rows are not public DTOs.
+ return {status:200,code:'ACADEMY_STAFF',
+  packages:p.results.map(({id,packageId,title,priceEgp,sessions,active,atMs})=>
+   ({id,packageId,title,priceEgp,sessions,active,atMs})),
+  requests:r.results.map(({id,learnerId,learnerName,title,priceEgp,sessions,
+   packageVersionId,atMs,state})=>
+   ({id,learnerId,learnerName,title,priceEgp,sessions,packageVersionId,atMs,state})),
+  invites:i.results.map(({id,createdAtMs,expiresAtMs,claimedAtMs,
+   teacherName,claimed,teacherId})=>({id,createdAtMs,expiresAtMs,claimedAtMs,
+   teacherName,claimed,teacherId})),whatsappNumber:w} as const;
 }
 export async function staffPackage(db:CoreDatabase,subject:string,raw:unknown,now=Date.now()){
  if(!object(raw)||!exact(raw,['operationId','packageId','title','priceEgp','sessions','active'])||
@@ -121,23 +151,50 @@ export async function staffPackage(db:CoreDatabase,subject:string,raw:unknown,no
  Number(raw.sessions)<1||Number(raw.sessions)>60||typeof raw.active!=='boolean')
   return {status:400,code:'ACADEMY_INVALID_PACKAGE'} as const;
  if(!await canManageTeachers(db,subject))return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
- const prior=await db.prepare(`SELECT id,package_id AS packageId,actor_subject AS actor,
+ const readPrior=()=>db.prepare(`SELECT id,package_id AS packageId,actor_subject AS actor,
  title,price_egp AS priceEgp,sessions,active FROM academy_package_events
  WHERE operation_id=?`).bind(raw.operationId).first<PackageRow&{actor:string}>();
- if(prior)return prior.actor===subject&&prior.packageId===raw.packageId&&
- prior.title===raw.title&&prior.priceEgp===raw.priceEgp&&prior.sessions===raw.sessions&&
- prior.active===(raw.active?1:0)?
+ const replay=(prior:PackageRow&{actor:string})=>prior.actor===subject&&
+  prior.packageId===raw.packageId&&prior.title===raw.title&&
+  prior.priceEgp===raw.priceEgp&&prior.sessions===raw.sessions&&
+  prior.active===(raw.active?1:0)?
   {status:200,code:'ACADEMY_PACKAGE_REPLAY',packageId:prior.packageId} as const:
   {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
- const last=await currentPackage(db,raw.packageId);
- const at=Math.max(now,(last?.atMs??0)+1);
+ const prior=await readPrior();
+ if(prior)return replay(prior);
  const id=crypto.randomUUID();
- try{await db.prepare(`INSERT INTO academy_package_events
-  (id,operation_id,package_id,actor_subject,title,price_egp,sessions,active,at_ms)
-  VALUES(?,?,?,?,?,?,?,?,?)`)
- .bind(id,raw.operationId,raw.packageId,subject,raw.title,raw.priceEgp,
- raw.sessions,raw.active?1:0,at).run();}
- catch(e){if(allowed(e))return {status:409,code:'ACADEMY_PACKAGE_DENIED'} as const;throw e;}
+ try{
+  // The version clock must be calculated inside the same SQLite write as
+  // INSERT. Two staff requests can otherwise read the same prior timestamp,
+  // tie on at_ms, and expose the older edit as the current catalog version.
+  const receipt=await db.prepare(`INSERT INTO academy_package_events
+   (id,operation_id,package_id,actor_subject,title,price_egp,sessions,active,at_ms)
+   SELECT ?,?,?,?,?,?,?,?,
+    MAX(?,COALESCE((SELECT MAX(at_ms)+1 FROM academy_package_events
+     WHERE package_id=?),?))`)
+  .bind(id,raw.operationId,raw.packageId,subject,raw.title,raw.priceEgp,
+   raw.sessions,raw.active?1:0,now,raw.packageId,now).run();
+  // A resolved D1 response is not proof of a committed version. Do not
+  // acknowledge a package/price change when the write reports no success.
+  if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
+     receipt.meta.changes<1)
+   return {status:503,code:'ACADEMY_PACKAGE_STORAGE_UNAVAILABLE'} as const;
+ }catch(e){
+  if(allowed(e)){
+   // A concurrent identical operation can win the UNIQUE constraint.
+   // Return its existing immutable ACK, not an invented new version.
+   const raced=await readPrior();
+   if(raced)return replay(raced);
+   // A transport/transaction abort has an unknown commit outcome, not a
+   // proven business conflict. The client must retain its operationId and
+   // reconcile through the same idempotent request rather than inventing
+   // a new edit after a misleading 409.
+   if(e instanceof Error&&!/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_PACKAGE_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:'ACADEMY_PACKAGE_DENIED'} as const;
+  }
+  throw e;
+ }
  return {status:201,code:'ACADEMY_PACKAGE_SAVED',packageId:raw.packageId} as const;
 }
 // One month of wall-clock time in Africa/Cairo, including DST transitions.
@@ -188,15 +245,19 @@ export async function staffActivate(db:CoreDatabase,subject:string,raw:unknown,n
  raw.manualConfirmed!==true)
  return {status:400,code:'ACADEMY_INVALID_ACTIVATION'} as const;
  if(!await canManageTeachers(db,subject))return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
- const previous=await db.prepare(`SELECT id,actor_subject AS actor,learner_id AS learnerId,
- package_version_id AS packageVersionId,request_id AS requestId
+ type ActivationReceipt={actor:string;learnerId:string;packageVersionId:string;
+  requestId:string|null;note:string};
+ const readPrevious=()=>db.prepare(`SELECT actor_subject AS actor,learner_id AS learnerId,
+ package_version_id AS packageVersionId,request_id AS requestId,note
  FROM academy_subscription_activation_events WHERE operation_id=?`)
- .bind(raw.operationId).first<{id:string;actor:string;learnerId:string;
- packageVersionId:string;requestId:string|null}>();
- if(previous)return previous.actor===subject&&previous.learnerId===raw.learnerId&&
- previous.packageVersionId===raw.packageVersionId&&previous.requestId===raw.requestId?
- {status:200,code:'ACADEMY_ACTIVATION_REPLAY'} as const:
- {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ .bind(raw.operationId).first<ActivationReceipt>();
+ const replay=(saved:ActivationReceipt)=>saved.actor===subject&&
+  saved.learnerId===raw.learnerId&&saved.packageVersionId===raw.packageVersionId&&
+  saved.requestId===raw.requestId&&saved.note===raw.note?
+  {status:200,code:'ACADEMY_ACTIVATION_REPLAY'} as const:
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const previous=await readPrevious();
+ if(previous)return replay(previous);
  // A displayed request is an immutable quote, not an HTTP request trace.
  // Confirm the exact learner, quote and pending state before touching credits.
  if(raw.requestId!==null){
@@ -237,13 +298,34 @@ export async function staffActivate(db:CoreDatabase,subject:string,raw:unknown,n
  const carry=last&&start<=last.endsAtMs+259200000?
  Math.min(last.baseSessions,Math.max(0,last.baseSessions+last.rolloverSessions-last.spent)):0;
  try{
- await db.prepare(`INSERT INTO academy_subscription_activation_events
+  const receipt=await db.prepare(`INSERT INTO academy_subscription_activation_events
  (id,operation_id,actor_subject,learner_id,request_id,package_version_id,cycle_id,
  previous_cycle_id,rollover_sessions,starts_at_ms,ends_at_ms,note,manually_confirmed,at_ms)
  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,1,?)`).bind(crypto.randomUUID(),raw.operationId,subject,
  raw.learnerId,raw.requestId,raw.packageVersionId,crypto.randomUUID(),
  last?.id??null,carry,start,ends,raw.note,start).run();
- }catch(e){if(allowed(e))return {status:409,code:activationDeniedCode(e)} as const;throw e;}
+  // The activation INSERT creates a cycle through a SQLite trigger.
+  // D1 may count trigger effects as additional changes, so require a
+  // positive receipt rather than assuming exactly one total changed row.
+  if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
+     receipt.meta.changes<1){
+   const raced=await readPrevious();
+   if(raced)return replay(raced);
+   return {status:503,code:'ACADEMY_ACTIVATION_STORAGE_UNAVAILABLE'} as const;
+  }
+ }catch(e){
+  if(allowed(e)){
+   // An identical concurrent command or lost ACK may already have committed.
+   // Recover only the exact immutable operation, including its audit note.
+   const raced=await readPrevious();
+   if(raced)return replay(raced);
+   if(e instanceof Error&&/abort/i.test(e.message)&&
+      !/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_ACTIVATION_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:activationDeniedCode(e)} as const;
+  }
+  throw e;
+ }
  return {status:201,code:'ACADEMY_SUBSCRIPTION_ACTIVATED',startsAtMs:start,
  endsAtMs:ends,rolloverSessions:carry} as const;
 }
@@ -252,10 +334,37 @@ export async function staffReject(db:CoreDatabase,subject:string,raw:unknown,now
  !uuid(raw.operationId)||!uuid(raw.requestId)||!validNote(raw.reason))
  return {status:400,code:'ACADEMY_INVALID_REJECTION'} as const;
  if(!await canManageTeachers(db,subject))return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
- try{await db.prepare(`INSERT INTO academy_request_rejections
-  (id,operation_id,request_id,actor_subject,reason,at_ms) VALUES(?,?,?,?,?,?)`)
- .bind(crypto.randomUUID(),raw.operationId,raw.requestId,subject,raw.reason,now).run();}
- catch(e){if(allowed(e))return {status:409,code:'ACADEMY_REQUEST_REJECTION_DENIED'} as const;throw e;}
+ type RejectionReceipt={actor:string;requestId:string;reason:string};
+ const readPrior=()=>db.prepare(`SELECT actor_subject AS actor,request_id AS requestId,reason
+ FROM academy_request_rejections WHERE operation_id=?`)
+ .bind(raw.operationId).first<RejectionReceipt>();
+ const replay=(saved:RejectionReceipt)=>saved.actor===subject&&
+  saved.requestId===raw.requestId&&saved.reason===raw.reason?
+  {status:200,code:'ACADEMY_REQUEST_REJECTION_REPLAY'} as const:
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const prior=await readPrior();
+ if(prior)return replay(prior);
+ try{
+  const receipt=await db.prepare(`INSERT INTO academy_request_rejections
+   (id,operation_id,request_id,actor_subject,reason,at_ms) VALUES(?,?,?,?,?,?)`)
+  .bind(crypto.randomUUID(),raw.operationId,raw.requestId,subject,raw.reason,now).run();
+  if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
+     receipt.meta.changes<1){
+   const raced=await readPrior();
+   return raced?replay(raced):
+    {status:503,code:'ACADEMY_REJECTION_STORAGE_UNAVAILABLE'} as const;
+  }
+ }catch(e){
+  if(allowed(e)){
+   const raced=await readPrior();
+   if(raced)return replay(raced);
+   if(e instanceof Error&&/abort/i.test(e.message)&&
+      !/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_REJECTION_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:'ACADEMY_REQUEST_REJECTION_DENIED'} as const;
+  }
+  throw e;
+ }
  return {status:201,code:'ACADEMY_REQUEST_REJECTED'} as const;
 }
 export async function staffContact(db:CoreDatabase,subject:string,raw:unknown,now=Date.now()){
@@ -264,10 +373,37 @@ export async function staffContact(db:CoreDatabase,subject:string,raw:unknown,no
  !/^[1-9][0-9]{9,14}$/.test(raw.whatsappNumber))
  return {status:400,code:'ACADEMY_INVALID_CONTACT'} as const;
  if(!await canManageTeachers(db,subject))return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
- try{await db.prepare(`INSERT INTO academy_contact_events
- (id,operation_id,actor_subject,whatsapp_number,at_ms) VALUES(?,?,?,?,?)`)
- .bind(crypto.randomUUID(),raw.operationId,subject,raw.whatsappNumber,now).run();}
- catch(e){if(allowed(e))return {status:409,code:'ACADEMY_CONTACT_DENIED'} as const;throw e;}
+ type ContactReceipt={actor:string;whatsappNumber:string};
+ const readPrior=()=>db.prepare(`SELECT actor_subject AS actor,
+ whatsapp_number AS whatsappNumber FROM academy_contact_events WHERE operation_id=?`)
+ .bind(raw.operationId).first<ContactReceipt>();
+ const replay=(saved:ContactReceipt)=>saved.actor===subject&&
+  saved.whatsappNumber===raw.whatsappNumber?
+  {status:200,code:'ACADEMY_CONTACT_REPLAY'} as const:
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const prior=await readPrior();
+ if(prior)return replay(prior);
+ try{
+  const receipt=await db.prepare(`INSERT INTO academy_contact_events
+  (id,operation_id,actor_subject,whatsapp_number,at_ms) VALUES(?,?,?,?,?)`)
+  .bind(crypto.randomUUID(),raw.operationId,subject,raw.whatsappNumber,now).run();
+  if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
+     receipt.meta.changes<1){
+   const raced=await readPrior();
+   return raced?replay(raced):
+    {status:503,code:'ACADEMY_CONTACT_STORAGE_UNAVAILABLE'} as const;
+  }
+ }catch(e){
+  if(allowed(e)){
+   const raced=await readPrior();
+   if(raced)return replay(raced);
+   if(e instanceof Error&&/abort/i.test(e.message)&&
+      !/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_CONTACT_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:'ACADEMY_CONTACT_DENIED'} as const;
+  }
+  throw e;
+ }
  return {status:201,code:'ACADEMY_WHATSAPP_SAVED'} as const;
 }
 function hex(bytes:Uint8Array){return [...bytes].map(x=>x.toString(16).padStart(2,'0')).join('');}
@@ -278,18 +414,50 @@ export async function staffInvite(db:CoreDatabase,subject:string,raw:unknown,now
  if(!object(raw)||!exact(raw,['operationId'])||!uuid(raw.operationId))
  return {status:400,code:'ACADEMY_INVALID_INVITE'} as const;
  if(!await canManageTeachers(db,subject))return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
- // Do not reveal the one-time secret on idempotent replay: server stores hash only.
- const prior=await db.prepare('SELECT id FROM academy_teacher_invites WHERE operation_id=?')
- .bind(raw.operationId).first<{id:string}>();
+ // A replay must not reveal a one-time secret. Only a newly generated
+ // token may be returned, and only after its exact hashed D1 row is proven.
+ type InviteReceipt={actor:string;tokenHash:string;expiresAtMs:number};
+ const readIssued=()=>db.prepare(`SELECT actor_subject AS actor,
+ token_hash AS tokenHash,expires_at_ms AS expiresAtMs
+ FROM academy_teacher_invites WHERE operation_id=?`)
+ .bind(raw.operationId).first<InviteReceipt>();
+ const prior=await readIssued();
  if(prior)return {status:409,code:'ACADEMY_INVITE_ALREADY_ISSUED'} as const;
  const token=hex(crypto.getRandomValues(new Uint8Array(32)));
  const tokenHash=await digest(token);
- try{await db.prepare(`INSERT INTO academy_teacher_invites
+ const expiresAtMs=now+7*86400000;
+ const confirmed=async()=>{
+  const saved=await readIssued();
+  return saved?.actor===subject&&saved.tokenHash===tokenHash&&
+   saved.expiresAtMs===expiresAtMs;
+ };
+ try{
+  const receipt=await db.prepare(`INSERT INTO academy_teacher_invites
   (id,operation_id,token_hash,actor_subject,created_at_ms,expires_at_ms)
   VALUES(?,?,?,?,?,?)`).bind(crypto.randomUUID(),raw.operationId,tokenHash,
-   subject,now,now+7*86400000).run();}
- catch(e){if(allowed(e))return {status:409,code:'ACADEMY_INVITE_DENIED'} as const;throw e;}
- return {status:201,code:'ACADEMY_INVITE_ISSUED',token,expiresAtMs:now+7*86400000} as const;
+   subject,now,expiresAtMs).run();
+  // A resolved D1 response without an affirmative receipt cannot authorize
+  // showing a secret. A readback also detects a conflicting operation race.
+  if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
+     receipt.meta.changes<1){
+   if(!await confirmed())
+    return {status:503,code:'ACADEMY_INVITE_STORAGE_UNAVAILABLE'} as const;
+  }else if(!await confirmed())
+   return {status:503,code:'ACADEMY_INVITE_STORAGE_UNAVAILABLE'} as const;
+ }catch(e){
+  // An ACK can be lost after the INSERT commits. Recover the *new* token
+  // only when its hash, actor and expiry exactly match the durable row.
+  if(await confirmed())
+   return {status:201,code:'ACADEMY_INVITE_ISSUED',token,expiresAtMs} as const;
+  if(allowed(e)){
+   if(e instanceof Error&&/abort/i.test(e.message)&&
+      !/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_INVITE_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:'ACADEMY_INVITE_DENIED'} as const;
+  }
+  throw e;
+ }
+ return {status:201,code:'ACADEMY_INVITE_ISSUED',token,expiresAtMs} as const;
 }
 export async function claimInvite(db:CoreDatabase,subject:string,raw:unknown,now=Date.now()){
  if(!object(raw)||!exact(raw,['token'])||typeof raw.token!=='string'||
@@ -302,17 +470,35 @@ export async function claimInvite(db:CoreDatabase,subject:string,raw:unknown,now
  if(!current||current.expiresAtMs<now)return {status:404,code:'ACADEMY_INVITE_NOT_FOUND'} as const;
  if(current.claimedSubject===subject)return {status:200,code:'ACADEMY_INVITE_CLAIMED'} as const;
  if(current.claimedSubject)return {status:409,code:'ACADEMY_INVITE_USED'} as const;
+ const readClaim=()=>db.prepare(`SELECT claimed_subject AS claimedSubject
+ FROM academy_teacher_invites WHERE id=?`).bind(current.id)
+ .first<{claimedSubject:string|null}>();
  try{
  const response=await db.prepare(`UPDATE academy_teacher_invites SET claimed_subject=?,claimed_at_ms=?
  WHERE id=? AND claimed_subject IS NULL AND expires_at_ms>=?`)
  .bind(subject,now,current.id,now).run();
- // The same atomic UPDATE creates the Sheikh row in an AFTER trigger.
- // D1 meta.changes may count the trigger's write as well; it is not a
- // trustworthy "exactly one invite row" receipt.
- const confirmed=await db.prepare(`SELECT claimed_subject AS claimedSubject
- FROM academy_teacher_invites WHERE id=?`).bind(current.id)
- .first<{claimedSubject:string|null}>();
- if(confirmed?.claimedSubject!==subject)return {status:409,code:'ACADEMY_INVITE_USED'} as const;
- return {status:response.meta.changes>0?201:200,code:'ACADEMY_INVITE_CLAIMED'} as const;
- }catch(e){if(allowed(e))return {status:409,code:'ACADEMY_INVITE_DENIED'} as const;throw e;}
+ // The UPDATE also creates the Sheikh row through a D1 trigger. A
+ // resolved or failed write receipt is not authoritative: confirm the
+ // exact claimant before returning success, including zero-change ACKs.
+ const confirmed=await readClaim();
+ if(confirmed?.claimedSubject===subject)
+  return {status:response.success===true&&Number.isSafeInteger(response.meta?.changes)&&
+   response.meta.changes>0?201:200,code:'ACADEMY_INVITE_CLAIMED'} as const;
+ if(confirmed?.claimedSubject)return {status:409,code:'ACADEMY_INVITE_USED'} as const;
+ return {status:503,code:'ACADEMY_INVITE_STORAGE_UNAVAILABLE'} as const;
+ }catch(e){
+  // An aborted transport can occur AFTER D1 committed. Recover only
+  // this claimant's durable receipt; never report a false rejection.
+  const confirmed=await readClaim();
+  if(confirmed?.claimedSubject===subject)
+   return {status:200,code:'ACADEMY_INVITE_CLAIMED'} as const;
+  if(confirmed?.claimedSubject)return {status:409,code:'ACADEMY_INVITE_USED'} as const;
+  if(allowed(e)){
+   if(e instanceof Error&&/abort/i.test(e.message)&&
+      !/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_INVITE_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:'ACADEMY_INVITE_DENIED'} as const;
+  }
+  throw e;
+ }
 }

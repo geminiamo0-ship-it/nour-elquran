@@ -1,3 +1,47 @@
+## 2026-11-07 #315 staff academy signed read status regression (PR #327)
+- `admin-academy-read.test.ts` uses the real Worker JSON shape: `workers/api/src/auth/routes.ts` strips `status` from the body; the parser must accept a valid status-free `ACADEMY_STAFF` response and still validate every projected row.
+- `AdminAcademyMvp.test.tsx` verifies only HTTP 200 is an acceptable staff GET receipt (not other 2xx/3xx/4xx/5xx). A revoked staff view cannot be restored from unexpected 2xx read success. New exact-head CI must run; previous Verify #42346921447 PASS 4/4 belongs to old `b1aee270`.
+- Separate signed Cloudflare Dev staff/nonstaff/revoked and two-sibling tests and mobile 360/390 remain mandatory; source tests do not prove deployment.
+
+## 2026-11-07 — #315 staff reauthorization refresh gate
+- `AdminAcademyMvp.test.tsx` now checks that an epoch invalidated by staff denial cannot restore data, aborted signed reads do not restore, and late mutation receipts stay hidden while the revocation fence remains true. Source uses epoch increment at staff denial and clears the fence only on a current successfully parsed signed `ACADEMY_STAFF` GET.
+- Exact-head Verify and signed Cloudflare Dev role revocation→refresh→late response (with synthetic staff) remain mandatory; pure tests are not a substitute for browser E2E or independent privacy review. Draft only, no Production/financial/audio/WhatsApp/ink changes.
+
+## 2026-11-07 — #315 terminal issued-invite 409 regression
+- `AdminAcademyMvp.test.tsx`: a confirmed `ACADEMY_INVITE_ALREADY_ISSUED` 409 is terminal because its secret is intentionally never replayed, allowing staff to issue a new link. `ACADEMY_INVITE_DENIED`, empty/unknown 409 and activation/financial ambiguity must remain uncertain with their immutable operationId held.
+- Source/test commits require new exact-head GitHub Verify 4/4. Remote acceptance still requires synthetic signed Cloudflare Dev first invite lost ACK → exact retry 409 → new invite, revoked staff denial, and mobile 360/390. Never claim recovered old secret or Production readiness.
+
+## 2026-11-07 — #315 Admin request rejection UI gate
+- Vitest: rejection only for a currently pending signed D1 request; reject disabled on activated/rejected/missing ID, empty/short/oversized audit reason, unchecked confirmation or busy POST. Successful terminal activation/rejection clears prior request/learner/version selection; no optimistic financial claim.
+- Exact-head PR Verify is required before review; isolated signed Dev must still test stale request transitions, concurrent staff decisions and explicit immutable operation replay. No production test or financial integration.
+
+## #315 — Sheikh invitation claim unknown-outcome regression (2026-11-07)
+- `workers/api/tests/academy-claim-invite-receipt.test.ts` exercises synthetic D1 trigger-inclusive success, same-actor replay, committed UPDATE followed by transport abort, aborted uncommitted UPDATE, zero-change receipt, foreign claimant race, expired invitation and invalid token.
+- Contract: only durable same-subject claimant readback may return success. A lost ACK is recoverable with 200; unknown/no-claim is retryable 503; foreign claimant is 409. Never leak a one-use token or raw SQL in errors.
+- CI: `pnpm test:backend`, strict TS, full Verify at exact PR head still required; tests are synthetic and do **not** replace signed native Cloudflare Dev claim/role/mobile acceptance.
+
+## #315 staff academy signed GET generation fence — 2026-11-06
+- Vitest `AdminAcademyMvp.test.tsx`: only the latest signed read generation may apply; aborted/revoked/older post-write GETs fail closed. A confirmed staff command must clear the old actionable snapshot until signed reconciliation succeeds; a failed reconciliation requires explicit read retry while preserving the committed command ACK.
+- Exact-head GitHub Verify, then signed isolated Cloudflare Dev test: staff package update followed by delayed GET and manual refresh, revoked staff session, guardian denial, sibling isolation, mobile 360×667/390×844. Do not infer remote race acceptance from a pure unit test. No Production.
+
+## #315 signed staff academy read DTO runtime validation (2026-11-06)
+- `admin-academy-read.test.ts` asserts an exact projected public staff DTO despite injected D1/HTTP private keys, empty/active/disabled records, and rejects missing/malformed/overlong/coerced fields, duplicate IDs and arrays beyond Worker maxima (100 package versions, 100 requests, 50 invites).
+- `AdminAcademyMvp` must fail closed on malformed 200 replies without showing demo/zero values; existing signed 401/403 revocation, uncertain operation ID replay and cross-session isolation remain required.
+- Run exact-head GitHub Verify (lint, strict TypeScript, Vitest, build/smoke and native D1), then separate signed isolated Cloudflare Dev staff/guardian/revoked and 360/390 touch/keyboard acceptance. Source CI does not authorize merge or Production.
+
+## 2026-11-06 — #315 academy signed read DTO privacy regression
+- `workers/api/tests/academy-staff-invite-privacy.test.ts`: inject extra private guardian phone, auth subject and payment token fields into synthetic D1 package/request adapter rows. Assert staff package/request and owner package/request responses include only the approved fields; owner must not receive staff-only learner identifiers or names. Existing invite redaction and revoked staff denial remain tested.
+- Exact-head CI and independent privacy review are mandatory. Signed isolated Cloudflare Dev staff/guardian/sibling and mobile 360/390 acceptance are **not** replaced by synthetic unit tests. No Production, child media or financial activation.
+
+## 2026-11-06 — #315 invite roster privacy regression
+- Node synthetic D1 test `workers/api/tests/academy-staff-invite-privacy.test.ts`: signed staff receives claimed/unclaimed state without `claimedSubject` or any private auth-subject field, even if an adapter row includes one; unauthorized staff is rejected before invite/learner queries. The Admin browser displays academic teacher ID only when available, never a private auth subject.
+- Exact-head Verify and independent review still required; signed isolated Cloudflare Dev tests must check a claimed invitation and revoked-staff access, including 360/390 RTL. No Production changes.
+
+## #315 staff revocation privacy regression — 2026-11-05
+- In academy GET/POST, 401 and 403 STAFF_ACCESS_DENIED / ACADEMY_STAFF_ACCESS_CHANGED must clear prior authorized learner/package/invite view, private one-use invite URL, and confirmation; malformed staff denial body fails closed. Business-rule 403/409 and ambiguous 503 must not masquerade as grant revocation; explicit D1 `409 ACADEMY_STAFF_ACCESS_CHANGED` does revoke the view.
+- A late successful academy GET begun before revocation must never re-display old records. Focused pure Vitest checks cover denial classification and the stale-read fence. Real browser and signed Dev revocation test are still mandatory; this source-only test is not equivalent to them.
+- Verify strict TypeScript, lint, Vitest, build, smoke and native D1 at exact PR head; independent security/privacy review before merge. No real data, payment, WhatsApp send or Production.
+
 ## #309 Admin operation release gates (2026-11-01)
 - Unit: strict teacher roster transition parser, authorized staff pre-query, active class guard, exact client payload/action allowlist, 401/403, network-uncertain write (no false success/retry), SSR forms locked unless explicit consent.
 - Native SQL: all migrations through 0027; active scheduled/live Sheikh cannot be suspended or de-qualified, no immutable event on denial, cancellation then transition, unrelated teacher permitted, and legacy B2 endpoint inherits same trigger.
@@ -235,3 +279,6 @@ No app runtime, browser tests, DO stress tests or LiveKit load tests have been e
 - `tests/architecture.test.mjs` exercises route-to-feature **public index only** imports. Negative fixtures include alias, relative path and dynamic `import()` deep-import bypasses; a positive fixture uses the feature's public index.
 - The AST architecture scanner runs in `pnpm lint`, and these tests run in `pnpm test` on the #39 branch. **Verified** on `51fbde724dac1f9a424f210d953986d47e2f983e` / [Verify 40698369854](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/40698369854) (all three jobs success, including architecture tests, production build and Chrome smoke). Recheck later documentation commits separately.
 
+## 2026-11-06 — #315 mid-flight staff revocation / privileged receipt
+- Fast Vitest helper regressions: new and exact-operation retry POST permitted only after a fresh authorized signed academy snapshot; loading/error/denied and revoked flag all deny. A late successful mutation ACK must be discarded after staff revocation even with the same session object; a different session also discards it.
+- Signed isolated Dev acceptance still needed: begin synthetic staff invite/activation, revoke `roles.manage` before delayed ACK, confirm no token/learner/confirmation painted and no retry permitted until fresh authorization; verify original operation reconciliation after regrant. No child or real payment data. Source-only tests do not prove Dev or browser timing.

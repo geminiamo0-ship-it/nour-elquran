@@ -1,3 +1,16 @@
+## #315 staff academy read boundary (Draft PR #327, 2026-11-06)
+- `apps/web/src/features/admin/admin-academy-read.ts`: strict runtime projection/validation of signed staff packages, learner requests, teacher invites and academy WhatsApp contact, with bounded arrays and duplicate-ID checks; no direct D1/SQL in React.
+- `apps/web/src/features/admin/admin-academy-read.test.ts`: synthetic DTO privacy, malformed/over-limit and numeric/state contract tests.
+- `apps/web/src/features/admin/AdminAcademyMvp.tsx`: invokes this parser before accepting a signed roster, preserving staff-revocation and immutable pending-command fences.
+
+## #315 academy read DTO privacy boundary (Draft PR #327; 2026-11-06)
+- `workers/api/src/academy-admin-mvp.ts`: staff packages/requests and owner requests use explicit allowlisted JSON DTO projections rather than forwarding arbitrary D1 adapter row properties; invitation projection remains in place.
+- `workers/api/tests/academy-staff-invite-privacy.test.ts`: synthetic injected sensitive row fields test both signed staff and owner response allowlists; separate Dev/independent review remains pending.
+
+## #315 owner package request receipt verification (PR #327 candidate)
+- `workers/api/src/academy-admin-mvp.ts` / `ownerPackageRequest`: exact signed owner/learner/package idempotent replay, positive D1 write receipt required, unknown abort -> 503 (no invented successful student package request).
+- `workers/api/tests/academy-owner-request-receipt.test.ts`: synthetic owner, actor, learner and catalog scope plus resolved-failure, duplicate/lost ACK and outage tests. Exact-head CI and signed Dev still pending.
+
 ## #322 Premium learner portal refresh (PR #323; source candidate)
 - `apps/web/src/features/student/{StudentShell.tsx,StudentPremium.module.css}`: reusable premium RTL sidebar/header/profile/bell and four-item mobile navigation; preserve authenticated session and profile-swap Quran save safeguards.
 - `apps/web/src/features/student/{PremiumHome.tsx,StudentDashboard.tsx,ConnectedStudentDashboard.tsx}`: same screen for demo and signed learner, server-authoritative home lesson/task/report content and fail-closed loading/error states.
