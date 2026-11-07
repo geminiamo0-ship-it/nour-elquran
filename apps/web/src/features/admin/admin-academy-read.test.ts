@@ -38,6 +38,10 @@ describe('bounded signed staff academy read #315',()=>{
  it('rejects malformed status, numeric coercion, fake states and missing fields',()=>{
   for(const bad of [
    null,[],{...valid(),code:'ACADEMY_OWNER'},
+   {...valid(),status:201},
+   {...valid(),status:'200'},
+   {...valid(),status:undefined},
+   {...valid(),status:204},
    {...valid(),packages:null},
    {...valid(),packages:[{...packageRow,priceEgp:'200'}]},
    {...valid(),packages:[{...packageRow,sessions:0}]},
