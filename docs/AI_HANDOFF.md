@@ -1,6 +1,6 @@
 ## 2026-11-07 — #315 Draft PR #327 signed staff roster HTTP/body mismatch hardening
 - Baseline `main@4c15b59f`; previous PR HEAD `b1aee270` passed exact-head [Verify #42346921447](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42346921447) 4/4; this PASS does **not** cover the new source changes.
-- Staff GET now accepts only HTTP 200 and a strictly parsed body `status:200`, `code:'ACADEMY_STAFF'`; an unexpected 201/202/204 or mismatched body status cannot restore privileged roster after revocation. Synthetic Vitest regressions in `AdminAcademyMvp.test.tsx` and `admin-academy-read.test.ts` cover the two boundaries. No schema/financial/role-grant change.
+- Staff GET now accepts only HTTP 200 and the strictly parsed `code:'ACADEMY_STAFF'` body. `workers/api/src/auth/routes.ts` deliberately strips the internal `status` before JSON serialization, so the browser parser must accept a body **without** `status`. A first attempted body-status requirement was corrected after inspecting this route; parser fixture now matches the actual Worker. Vitest regressions cover the HTTP 200-only predicate. No schema/financial/role-grant change.
 - NEXT EXACT ACTION: inspect new PR #327 head and matching Verify run; fix failures, independent auth/privacy review and signed isolated Dev role/revocation/sibling plus 360/390 visual QA. Reconcile PR #325 shared admin files before any merge. No Production, payment provider, WhatsApp sends, private audio or cumulative ink flag changes.
 
 ## 2026-11-07 — #315 staff invitation display truthfulness, PR #327
