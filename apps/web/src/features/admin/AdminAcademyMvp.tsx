@@ -125,6 +125,12 @@ export function academyAdminInviteStatus(
  if(invite.claimed===1)return 'claimed';
  return invite.expiresAtMs<now?'expired':'pending';
 }
+/* A claimed invite can outlive a deleted/unavailable user record. Never
+ * label that durable claim as an unused invitation just because the join
+ * cannot resolve the Sheikh display name. */
+export function academyAdminInviteDisplayName(invite:{claimed:0|1;teacherName:string|null}){
+ return invite.teacherName??(invite.claimed===1?'حساب الشيخ غير متاح':'لم يُستخدم الرابط بعد');
+}
 /** A pending unknown POST outcome must not disable the read-only refresh
  * needed to restore a signed staff snapshot before an exact-operation retry.
  * Only an actively sending command disables the refresh button. */
@@ -476,7 +482,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
      نسخ الرابط</button></div>}
    <h3>الدعوات المرسلة</h3>
    {data.invites.map(i=><article key={i.id}>
-    {i.teacherName??'لم يُستخدم الرابط بعد'} ·
+    {academyAdminInviteDisplayName(i)} ·
     {' '}{({claimed:'تم تسجيل حساب الشيخ',expired:'انتهت صلاحية الدعوة',
       pending:'بانتظار التسجيل'} as const)[academyAdminInviteStatus(i,Date.now())]}
     {i.teacherId?' · موجود في دليل الشيوخ':''}
