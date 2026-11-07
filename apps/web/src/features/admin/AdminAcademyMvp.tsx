@@ -38,6 +38,7 @@ const operationErrors:Record<string,string>={
  ACADEMY_CYCLE_OVERLAP:'فيه اشتراك متداخل لنفس الطالب. راجع مدة الباقة الحالية قبل التجديد.',
  ACADEMY_RENEWAL_CONFLICT:'سلسلة تجديد الباقة تغيّرت. حدّث الملف وتحقق من الاشتراك الموجود.',
  ACADEMY_ROLLOVER_CONFLICT:'رصيد الترحيل تغيّر. حدّث بيانات الطالب ثم جرّب مرة واحدة.',
+ ACADEMY_INVITE_ALREADY_ISSUED:'تم إصدار الدعوة السابقة بالفعل، لكن رابطها السري لا يمكن استعادته. أنشئ دعوة جديدة بدل إعادة المحاولة.',
  ACADEMY_STAFF_ACCESS_CHANGED:'صلاحية الإدارة اتغيرت. سجّل الدخول بحساب إداري معتمد.',
  ACADEMY_LEARNER_UNAVAILABLE:'ملف الطالب غير نشط أو غير متاح. راجع ملف الطالب.',
  ACADEMY_REFERENCE_UNAVAILABLE:'الطالب أو إصدار الباقة غير موجود في قاعدة البيانات.',
@@ -74,6 +75,9 @@ const terminalAcademyConflicts=new Set([
  'ACADEMY_OPERATION_CONFLICT','ACADEMY_PACKAGE_UNAVAILABLE',
  'ACADEMY_LEARNER_UNAVAILABLE','ACADEMY_REFERENCE_UNAVAILABLE',
  'ACADEMY_STAFF_ACCESS_CHANGED',
+ // A prior invite is durably issued, but its one-time token is intentionally
+ // unrecoverable. Replaying this operation cannot produce another URL.
+ 'ACADEMY_INVITE_ALREADY_ISSUED',
 ]);
 export function academyAdminOutcomeIsUncertain(status:number,code=''){
  if(status===409)return !terminalAcademyConflicts.has(code);
