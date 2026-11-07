@@ -157,6 +157,22 @@ test('D1 failed write receipt never masquerades as a stale guardian quote',async
  }
 });
 
+test('anomalous D1 affected-row counts never become a definitive stale quote',async()=>{
+ // D1 INSERT..SELECT writes either 0 (stale) or 1 (created). A malformed
+ // successful receipt with -1 or 2 changes cannot prove a safe rejection.
+ for(const changes of [-1,2]){
+  const unknown=fixture({changes});
+  assert.deepEqual(await ownerPackageRequest(unknown.db,OWNER,LEARNER,request),
+   {status:503,code:'ACADEMY_REQUEST_STORAGE_UNAVAILABLE'});
+  assert.equal(unknown.writes.length,1);
+ }
+ const committed={id:'44444444-4444-4444-8444-444444444444',
+  learnerId:LEARNER,actor:OWNER,packageId:PACKAGE,packageVersionId:VERSION};
+ const replay=fixture({changes:2,priorAfterWrite:committed});
+ assert.deepEqual(await ownerPackageRequest(replay.db,OWNER,LEARNER,request),
+  {status:200,code:'ACADEMY_REQUEST_REPLAY',academyRequestId:committed.id});
+});
+
 test('failed D1 receipt after commit recovers only the exact immutable operation',async()=>{
  const committed={id:'44444444-4444-4444-8444-444444444444',
   learnerId:LEARNER,actor:OWNER,packageId:PACKAGE,packageVersionId:VERSION};
