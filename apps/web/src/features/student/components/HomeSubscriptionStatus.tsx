@@ -15,16 +15,18 @@ export function homeSubscriptionSummary(ledger:SubscriptionLedger|null,
  academy:OwnerAcademy|null,now:number):{status:string;detail:string}{
  const pending=academy&&latestPendingAcademyRequest(academy);
  const cycle=ledger?.latestCycle;
- const activeCycle=cycle?.state==='within_period'&&cycle.endsAtMs>now;
+ const futureCycle=cycle!==undefined&&cycle.startsAtMs>now;
+ const activeCycle=!futureCycle&&cycle?.state==='within_period'&&cycle.endsAtMs>now;
  const compensation=ledger?.compensationUnspentSessions??0;
  // A pending renewal/package request does not replace an already recorded
  // learner cycle. Keep the D1 balance visible and mention the request beside it.
  if(cycle)return {
-  status:currentCycleLabel(cycle.state,cycle.endsAtMs,now),
+  status:currentCycleLabel(cycle.state,cycle.endsAtMs,now,cycle.startsAtMs),
   detail:cycle.recordedUnspentSessions.toLocaleString('ar-EG')+
-   (activeCycle?' حصص مسجلة غير مستخدمة · حتى ':
+   (futureCycle?' حصص مسجلة لدورة قادمة · تبدأ في ':
+    activeCycle?' حصص مسجلة غير مستخدمة · حتى ':
     ' حصص غير مستخدمة من دورة منتهية · انتهت في ')+
-   day.format(new Date(cycle.endsAtMs))+
+   day.format(new Date(futureCycle?cycle.startsAtMs:cycle.endsAtMs))+
    (compensation>0?' · '+compensation.toLocaleString('ar-EG')+' حصص تعويض مسجلة':'')+
    (pending?' · طلب باقة قيد المراجعة':'')
  };
