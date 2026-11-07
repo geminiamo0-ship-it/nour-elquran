@@ -10,6 +10,14 @@ import {academyAdminAckIsVerified,academyAdminOutcomeIsUncertain,academyAdminSam
  academyAdminEmptyReadMessage,academyAdminReadHttpStatusIsValid,
  AdminAcademyMvp} from './AdminAcademyMvp';
 
+describe('admin academy exact signed roster HTTP status #315',()=>{
+ it('accepts only HTTP 200, not other success statuses or errors',()=>{
+  expect(academyAdminReadHttpStatusIsValid(200)).toBe(true);
+  for(const status of [0,201,202,204,206,301,401,403,409,503])
+   expect(academyAdminReadHttpStatusIsValid(status)).toBe(false);
+ });
+});
+
 describe('admin academy staff revocation and late-read privacy #315',()=>{
  it('hides old staff state only for genuine authorization denial',()=>{
   expect(academyAdminStaffAccessRevoked(401,'UNAUTHENTICATED')).toBe(true);
