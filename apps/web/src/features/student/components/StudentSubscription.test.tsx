@@ -15,13 +15,25 @@ import {ConnectedAcademyOffers,createAcademyPackageRequestGate,
 
 describe('clean, truthful subscriptions #324',()=>{
  const sample={code:'ACADEMY_OWNER',
-  packages:[{versionId:'ver-1',packageId:'pkg-1',title:'باقة ٨ حصص',priceEgp:1600,sessions:8}],
+  packages:[{versionId:'22222222-2222-4222-8222-222222222222',packageId:'11111111-1111-4111-8111-111111111111',title:'باقة ٨ حصص',priceEgp:1600,sessions:8}],
   requests:[{id:'req-1',title:'باقة ٨ حصص',priceEgp:1600,sessions:8,atMs:1760000000000,state:'pending'}],
   whatsappNumber:'201000000000'};
  it('validates actual catalog, request state, and WhatsApp before showing prices',()=>{
   const parsed=parseOwnerAcademy(sample);
   expect(latestPendingAcademyRequest(parsed)?.id).toBe('req-1');
   expect(parsed.packages[0]?.priceEgp).toBe(1600);
+  // The Worker requires UUID v4 for both identifiers in a POST. A malformed
+  // signed catalog must not display a price with a permanently broken CTA.
+  for(const invalid of ['pkg-1','11111111-1111-1111-8111-111111111111',
+   ['11111111-1111-4111-8111-111111111111']]){
+   expect(()=>parseOwnerAcademy({...sample,packages:[{
+    ...sample.packages[0],packageId:invalid}]}))
+    .toThrow('ACADEMY_INVALID_RESPONSE');
+   expect(()=>parseOwnerAcademy({...sample,packages:[{
+    ...sample.packages[0],versionId:invalid}]}))
+    .toThrow('ACADEMY_INVALID_RESPONSE');
+  }
+
   expect(()=>parseOwnerAcademy({...sample,whatsappNumber:'https://example.com'})).toThrow();
   expect(()=>parseOwnerAcademy({...sample,packages:[{...sample.packages[0],priceEgp:-2}]})).toThrow();
   expect(()=>parseOwnerAcademy({...sample,requests:[{...sample.requests[0],state:'paid'}]})).toThrow();
@@ -38,7 +50,7 @@ describe('clean, truthful subscriptions #324',()=>{
   expect(()=>parseOwnerAcademy({...sample,requests:[sample.requests[0],sample.requests[0]]})).toThrow('ACADEMY_INVALID_RESPONSE');
   // Distinct version/request IDs are insufficient if D1 invariants disagree.
   expect(()=>parseOwnerAcademy({...sample,packages:[sample.packages[0],
-   {...sample.packages[0],versionId:'ver-2'}]})).toThrow('ACADEMY_INVALID_RESPONSE');
+   {...sample.packages[0],versionId:'33333333-3333-4333-8333-333333333333'}]})).toThrow('ACADEMY_INVALID_RESPONSE');
   expect(()=>parseOwnerAcademy({...sample,requests:[sample.requests[0],
    {...sample.requests[0],id:'req-2'}]})).toThrow('ACADEMY_INVALID_RESPONSE');
  });
