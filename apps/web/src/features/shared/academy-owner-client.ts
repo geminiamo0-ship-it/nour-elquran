@@ -5,6 +5,10 @@ export type OwnerAcademy=Readonly<{packages:readonly AcademyOffer[];requests:rea
 const isObject=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 const int=(v:unknown)=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=0;
 const uid=(v:unknown)=>typeof v==='string'&&/^[A-Za-z0-9-]{1,128}$/.test(v);
+// The Worker only accepts v4 package/version UUIDs on the guardian POST.
+// Reject an impossible-to-request catalog card before displaying its price.
+const packageUuid=(v:unknown)=>typeof v==='string'&&
+ /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
 // Match the Worker learner ID contract; package/version IDs remain stricter.
 const learnerIdPattern=/^[A-Za-z0-9_-]{1,128}$/;
 const title=(v:unknown)=>typeof v==='string'&&v.length>=2&&v.length<=80;
@@ -16,7 +20,7 @@ export function parseOwnerAcademy(raw:unknown):OwnerAcademy{
   !(raw.whatsappNumber===null||(typeof raw.whatsappNumber==='string'&&
    /^[1-9][0-9]{9,14}$/.test(raw.whatsappNumber))))throw Error('ACADEMY_INVALID_RESPONSE');
  const packages:AcademyOffer[]=raw.packages.map((p:unknown)=>{
-  if(!isObject(p)||!uid(p.versionId)||!uid(p.packageId)||!title(p.title)||
+  if(!isObject(p)||!packageUuid(p.versionId)||!packageUuid(p.packageId)||!title(p.title)||
    !price(p.priceEgp)||!sessions(p.sessions))throw Error('ACADEMY_INVALID_RESPONSE');
   return {versionId:p.versionId as string,packageId:p.packageId as string,
    title:p.title as string,priceEgp:p.priceEgp as number,sessions:p.sessions as number};
