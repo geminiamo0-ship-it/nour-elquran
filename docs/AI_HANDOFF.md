@@ -1,3 +1,8 @@
+## 2026-11-07 — #324 owner academy signed GET contract (Draft #325)
+- Verified source defect: `readOwnerAcademy` previously accepted any HTTP 2xx via `response.ok`; a valid-looking 201/202/206 could be mistaken for a complete authorized D1 catalog and pending-request list. The client now checks exact HTTP 200 before JSON parsing, with focused Vitest cases and the existing successful 200 mock updated.
+- Changes are confined to `apps/web/src/features/shared/academy-owner-client.ts`, `apps/web/src/features/student/components/StudentSubscription.test.tsx` and these handoff/status notes. No migrations, payments, WhatsApp send, Production, audio or cumulative ink changes.
+- **Next exact action:** inspect PR #325 final exact-head Verify (code-quality and native D1), fix any regressions, coordinate shared `academy-admin-mvp.ts` edits with Draft #327, obtain independent review and signed Dev owner/two-sibling/staff reprice plus mobile 360/390 acceptance before any merge. Issue #324 stays OPEN.
+
 ## 2026-11-07 — #315 activation receipt integration onto Draft #325
 - Canonical working branch: `feat/student-subscriptions-clarity-20261101`, PR #325. Read AGENTS.md and all mandatory policy docs before further edits. Parallel Draft #327 `fix/315-atomic-package-version-order-20261104` is NOT merged.
 - New source commit `ec52ef1d` ports only #327's `staffActivate` durable D1 write-receipt validation, exact operation recovery and audit-note matching. Regression commit `831c7ecc` adds `workers/api/tests/academy-activation-receipt.test.ts`. The owner immutable displayed quote `packageVersionId` atomic INSERT in #325 remains intact.
