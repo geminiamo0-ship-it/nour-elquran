@@ -1,3 +1,6 @@
+## #324 academic ledger HTTP status regression (2026-11-07)
+- For signed learner `GET /subscription-ledger`, accept only HTTP 200 as a complete academic balance snapshot; reject 201/202/204/206 before JSON parsing. Preserve explicit 403 and strict ledger DTO checks. Test on Draft PR #325; exact-head Verify and signed remote Dev acceptance are separate gates.
+
 ## #326 native signed sibling/quote replay isolation — 2026-11-03
 - Added to `scripts/cloudflare-auth-smoke.mjs`: after concurrent signed guardian package requests produce one immutable D1 ACK, reuse the same operationId against a different owned sibling and a different packageVersionId. Both must return 409 `ACADEMY_OPERATION_CONFLICT` without an `academyRequestId`; sibling's signed GET must exclude the first learner's request. The fixture reuses an existing synthetic sibling and does not create paid entitlements or affect free-trial acceptance.
 - Test commit `5f7580ee`; CI at new exact HEAD must be verified. These local signed tests are not substitutes for isolated Cloudflare Dev and mobile acceptance.
