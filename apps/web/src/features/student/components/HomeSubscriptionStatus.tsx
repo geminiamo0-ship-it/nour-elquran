@@ -15,7 +15,7 @@ export function homeSubscriptionSummary(ledger:SubscriptionLedger|null,
  academy:OwnerAcademy|null,now:number):{status:string;detail:string}{
  const pending=academy&&latestPendingAcademyRequest(academy);
  const cycle=ledger?.latestCycle;
- const futureCycle=cycle!==undefined&&cycle.startsAtMs>now;
+ const futureCycle=cycle!=null&&cycle.startsAtMs>now;
  const activeCycle=!futureCycle&&cycle?.state==='within_period'&&cycle.endsAtMs>now;
  const compensation=ledger?.compensationUnspentSessions??0;
  // A pending renewal/package request does not replace an already recorded
