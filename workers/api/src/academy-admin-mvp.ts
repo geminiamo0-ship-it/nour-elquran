@@ -99,12 +99,16 @@ export async function ownerPackageRequest(db:CoreDatabase,subject:string,
   .bind(id,raw.operationId,learnerId,subject,now,raw.packageVersionId,raw.packageId).run();
   // D1 can resolve with a failed or incomplete write receipt. A stale
   // quote is a proven zero-row success, not an uncertain storage outcome.
-  if(written.success!==true||!Number.isSafeInteger(written.meta?.changes)){
+  // Only zero (no insert) or one (committed insert) is a valid receipt.
+  // Other affected-row counts are ambiguous, not proof of a stale quote.
+  const changes=written.meta?.changes;
+  if(written.success!==true||!Number.isSafeInteger(changes)||
+   (changes!==0&&changes!==1)){
    const raced=await readExisting();
    if(raced)return replayResult(raced);
    return {status:503,code:'ACADEMY_REQUEST_STORAGE_UNAVAILABLE'} as const;
   }
-  if(written.meta.changes!==1){
+  if(changes===0){
    // A competing same-operation request may have committed before staff
    // repriced this quote. Zero-row INSERT..SELECT is not always a new request.
    const raced=await readExisting();
