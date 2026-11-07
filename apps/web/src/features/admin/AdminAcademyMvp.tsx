@@ -84,6 +84,15 @@ export function academyAdminCanSend(
  phase:AcademyReadPhase,hasSnapshot:boolean,revoked:boolean){
  return phase==='ready'&&hasSnapshot&&!revoked;
 }
+/** The reject button bypasses native form submission validation.
+ * Require a real pending D1 request and a usable audit reason before POST. */
+export function academyAdminCanReject(
+ requests:ReadonlyArray<{id:string;state:string}>,
+ requestId:string,reason:string,confirmed:boolean,busy:boolean){
+ const note=reason.trim();
+ return confirmed&&!busy&&note.length>=10&&note.length<=500&&
+  requests.some(r=>r.id===requestId&&r.state==='pending');
+}
 /** A pending unknown POST outcome must not disable the read-only refresh
  * needed to restore a signed staff snapshot before an exact-operation retry.
  * Only an actively sending command disables the refresh button. */
@@ -264,6 +273,11 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    if(!stillCurrent())return;
    setResult({phase:'done',message:'سجّل الخادم العملية: '+ack.code});
    setConfirmed(false);setReason('');
+   // Do not retain a terminal request selection after its authoritative ACK.
+   // A subsequent activation/rejection requires an explicit fresh selection.
+   if(path==='activate'||path==='reject'){
+    setSelectedRequest('');setSelectedPackage('');setLearnerId('');
+   }
    academyPendingStore.clearIfSame(operation);
    if(pendingOpRef.current===operation){pendingOpRef.current=null;setPendingOp(null);}
    if(path==='invites'&&typeof (ack as {token?:unknown}).token==='string'){
@@ -405,9 +419,13 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     <Confirm checked={confirmed} onChange={setConfirmed}/>
     <button type="submit" disabled={!confirmed||busy||!UUID.test(learnerId)||!UUID.test(selectedPackage)}>
      تأكيد الاستلام وتفعيل الاشتراك</button>
-    {selectedRequest&&<button type="button" disabled={!confirmed||busy}
-     onClick={()=>void send('reject',{operationId:iso(),requestId:selectedRequest,
-      reason:reason.trim()})}>رفض الطلب مع تسجيل السبب</button>}
+    {selectedRequest&&<button type="button"
+     disabled={!academyAdminCanReject(data.requests,selectedRequest,reason,confirmed,busy)}
+     onClick={()=>{
+      if(!academyAdminCanReject(data.requests,selectedRequest,reason,confirmed,busy))return;
+      void send('reject',{operationId:iso(),requestId:selectedRequest,
+       reason:reason.trim()});
+     }}>رفض الطلب مع تسجيل السبب</button>}
    </form>
   </>}
   {data&&mode==='invites'&&<>
