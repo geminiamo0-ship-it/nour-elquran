@@ -20,6 +20,7 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
 const iso=()=>crypto.randomUUID();
 const date=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',dateStyle:'medium'});
 function label(v:number){return v.toLocaleString('ar-EG');}
+export function academyAdminReadHttpStatusIsValid(status:number){return status===200;}
 async function readAcademy(signal:AbortSignal):Promise<Academy>{
  const res=await fetch('/v1/staff/academy',{credentials:'same-origin',cache:'no-store',
   redirect:'error',signal});
