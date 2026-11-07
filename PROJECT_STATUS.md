@@ -1,3 +1,8 @@
+## 2026-11-07 — #315 Sheikh invite expiry UI accuracy (Draft PR #327)
+- Source [68f37509](https://github.com/geminiamo0-ship-it/nour-elquran/commit/68f3750966199acd1f618b970aa600176c687ee4) updates the staff invite roster to show **expired** instead of **awaiting registration** for an unclaimed invite after its signed D1 expiry. Already-claimed invites remain claimed even after the original seven-day window. Exact-boundary comparison matches the Worker (`expires_at_ms < now`).
+- Test [a7b5a2b8](https://github.com/geminiamo0-ship-it/nour-elquran/commit/a7b5a2b88d0d8b26c68677ec60f2440136ed78a4) covers pending/exact expiry/expired/claimed states. Source-only: exact-head CI and real Dev/browser acceptance still required. No secret, D1 schema, price, payment, flag or Production change.
+- NEXT: inspect GitHub Verify on the **final documentation HEAD**; keep #315 and PR #327 OPEN/Draft until independent security review, signed Cloudflare Dev and 360/390 viewport QA, and reconcile PR #325.
+
 ## 2026-11-07 — #315 issued Sheikh invite retry recovery (Draft PR #327)
 - Verified [Verify #42329573257](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42329573257) completed 4/4 on prior HEAD `062f56e2`; this new source/test change requires a fresh exact-head run.
 - `staffInvite` intentionally returns `ACADEMY_INVITE_ALREADY_ISSUED` when the same operation is already durably recorded: its one-time token cannot be recovered. Admin previously treated that known 409 as uncertain, trapping staff in a permanent retry of the same unrecoverable invite.
