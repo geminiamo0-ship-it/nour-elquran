@@ -1,3 +1,7 @@
+## 2026-11-07 — #315 Admin request rejection UI gate
+- Vitest: rejection only for a currently pending signed D1 request; reject disabled on activated/rejected/missing ID, empty/short/oversized audit reason, unchecked confirmation or busy POST. Successful terminal activation/rejection clears prior request/learner/version selection; no optimistic financial claim.
+- Exact-head PR Verify is required before review; isolated signed Dev must still test stale request transitions, concurrent staff decisions and explicit immutable operation replay. No production test or financial integration.
+
 ## #315 — Sheikh invitation claim unknown-outcome regression (2026-11-07)
 - `workers/api/tests/academy-claim-invite-receipt.test.ts` exercises synthetic D1 trigger-inclusive success, same-actor replay, committed UPDATE followed by transport abort, aborted uncommitted UPDATE, zero-change receipt, foreign claimant race, expired invitation and invalid token.
 - Contract: only durable same-subject claimant readback may return success. A lost ACK is recoverable with 200; unknown/no-claim is retryable 503; foreign claimant is 409. Never leak a one-use token or raw SQL in errors.
