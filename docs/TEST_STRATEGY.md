@@ -1,3 +1,8 @@
+## #315 — Sheikh invitation claim unknown-outcome regression (2026-11-07)
+- `workers/api/tests/academy-claim-invite-receipt.test.ts` exercises synthetic D1 trigger-inclusive success, same-actor replay, committed UPDATE followed by transport abort, aborted uncommitted UPDATE, zero-change receipt, foreign claimant race, expired invitation and invalid token.
+- Contract: only durable same-subject claimant readback may return success. A lost ACK is recoverable with 200; unknown/no-claim is retryable 503; foreign claimant is 409. Never leak a one-use token or raw SQL in errors.
+- CI: `pnpm test:backend`, strict TS, full Verify at exact PR head still required; tests are synthetic and do **not** replace signed native Cloudflare Dev claim/role/mobile acceptance.
+
 ## #315 staff academy signed GET generation fence — 2026-11-06
 - Vitest `AdminAcademyMvp.test.tsx`: only the latest signed read generation may apply; aborted/revoked/older post-write GETs fail closed. A confirmed staff command must clear the old actionable snapshot until signed reconciliation succeeds; a failed reconciliation requires explicit read retry while preserving the committed command ACK.
 - Exact-head GitHub Verify, then signed isolated Cloudflare Dev test: staff package update followed by delayed GET and manual refresh, revoked staff session, guardian denial, sibling isolation, mobile 360×667/390×844. Do not infer remote race acceptance from a pure unit test. No Production.
