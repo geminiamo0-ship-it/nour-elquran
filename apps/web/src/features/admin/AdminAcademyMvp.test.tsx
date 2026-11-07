@@ -105,9 +105,16 @@ describe('admin academy manual settlement retry semantics #315',()=>{
  it('retains the exact operation on ambiguous 409 instead of risking a duplicate settlement',()=>{
   for(const code of ['', 'UNRECOGNIZED_CONFLICT','ACADEMY_REQUEST_DENIED',
    'ACADEMY_PACKAGE_DENIED','ACADEMY_REQUEST_REJECTION_DENIED',
-   'ACADEMY_ACTIVATION_DENIED']){
+   'ACADEMY_ACTIVATION_DENIED','ACADEMY_INVITE_DENIED']){
    expect(academyAdminOutcomeIsUncertain(409,code)).toBe(true);
   }
+ });
+ it('releases an issued-but-unrecoverable invite without losing other uncertain writes',()=>{
+  // The Worker has confirmed an invite row, but never reissues its secret.
+  // Replaying the old operation cannot recover a link; a fresh invite is safe.
+  expect(academyAdminOutcomeIsUncertain(409,'ACADEMY_INVITE_ALREADY_ISSUED')).toBe(false);
+  expect(academyAdminOutcomeIsUncertain(409,'ACADEMY_INVITE_DENIED')).toBe(true);
+  expect(academyAdminOutcomeIsUncertain(409,'')).toBe(true);
  });
  it('releases the held operation only on explicit terminal 409 business conflicts',()=>{
   for(const code of ['ACADEMY_REQUEST_MISMATCH',
@@ -116,7 +123,8 @@ describe('admin academy manual settlement retry semantics #315',()=>{
    'ACADEMY_REQUEST_ALREADY_ACTIVATED','ACADEMY_REQUEST_REJECTED',
    'ACADEMY_REQUEST_NOT_FOUND','ACADEMY_OPERATION_CONFLICT',
    'ACADEMY_PACKAGE_UNAVAILABLE','ACADEMY_LEARNER_UNAVAILABLE',
-   'ACADEMY_REFERENCE_UNAVAILABLE','ACADEMY_STAFF_ACCESS_CHANGED']){
+   'ACADEMY_REFERENCE_UNAVAILABLE','ACADEMY_STAFF_ACCESS_CHANGED',
+   'ACADEMY_INVITE_ALREADY_ISSUED']){
    expect(academyAdminOutcomeIsUncertain(409,code)).toBe(false);
   }
  });
