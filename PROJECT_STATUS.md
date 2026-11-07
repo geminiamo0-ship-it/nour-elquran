@@ -1,3 +1,8 @@
+## 2026-11-07 — #315 claimed invite missing-name UI truthfulness (Draft PR #327)
+- Source commit `9aa33906` changes the staff invitation list to distinguish a durably claimed invitation whose joined Sheikh name is unavailable from an unclaimed invitation. Previously both displayed «لم يُستخدم الرابط بعد» even when `claimed=1`. No API, D1, role or child data changes.
+- Regression commit `13bffb8f` tests claimed/missing, unclaimed/missing and claimed/named synthetic DTOs. The prior exact-head Verify [#42344294123](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42344294123) succeeded 4/4 on OLD HEAD `e063b287`; **new exact-head CI is pending**. No local full-suite or remote Dev/browser acceptance claimed.
+- Remains Draft/unmerged: independent privacy review, Cloudflare Dev signed staff/revoked/guardian/two-sibling, 360/390 mobile QA and reconciliation with Draft #325 before merge. No Production or finance/media flag changes.
+
 ## 2026-11-07 — #315 staff reauthorization privacy fence (PR #327, source candidate)
 - Review found a race in AdminAcademyMvp: a 403 staff revocation set `revokedStaff`, but a manual refresh cleared the fence **before** the signed GET succeeded. A late in-flight invite/activation ACK could then be applied while authorization was still unverified.
 - `invalidateStaffData()` now advances the read epoch to invalidate pre-denial GETs; refresh keeps the revoked fence set until a new strictly parsed signed `ACADEMY_STAFF` GET succeeds. A failed/aborted read cannot restore privileged data. Pure regression checks cover epoch and late receipt gates.
