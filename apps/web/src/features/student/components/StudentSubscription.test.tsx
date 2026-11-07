@@ -97,6 +97,29 @@ describe('clean, truthful subscriptions #324',()=>{
    expect(json).toHaveBeenCalledTimes(1);
   }finally{vi.unstubAllGlobals();}
  });
+ it('requires a complete HTTP 200 D1 ledger snapshot, not accepted/partial 2xx (#324)',async()=>{
+  const ledger={code:'SUBSCRIPTION_LEDGER',bookingEnabled:false,
+   compensationUnspentSessions:0,compensationGrantCount:0,latestCycle:null};
+  const json=vi.fn(async()=>ledger);
+  const fetchMock=vi.fn(async()=>({status:200,ok:true,json}));
+  vi.stubGlobal('fetch',fetchMock);
+  try{
+   for(const status of [201,202,204,206]){
+    fetchMock.mockImplementationOnce(async()=>({status,ok:true,json}));
+    await expect(subscriptionLedgerClient.owner('synthetic_learner'))
+     .rejects.toMatchObject({code:'INVALID_LEDGER_RESPONSE',status});
+   }
+   expect(json).not.toHaveBeenCalled();
+   await expect(subscriptionLedgerClient.owner('synthetic_learner'))
+    .resolves.toMatchObject({bookingEnabled:false,latestCycle:null});
+   expect(json).toHaveBeenCalledTimes(1);
+   // Preserve the existing explicit signed authorization error handling.
+   fetchMock.mockImplementationOnce(async()=>({status:403,ok:false,
+    json:async()=>({code:'STAFF_ACCESS_DENIED'})}));
+   await expect(subscriptionLedgerClient.owner('synthetic_learner'))
+    .rejects.toMatchObject({code:'STAFF_ACCESS_DENIED',status:403});
+  }finally{vi.unstubAllGlobals();}
+ });
  it('rejects D1 cycle timestamps that would crash Intl.DateTimeFormat in signed views',()=>{
   const valid={code:'SUBSCRIPTION_LEDGER',bookingEnabled:false,
    compensationUnspentSessions:0,compensationGrantCount:0,
