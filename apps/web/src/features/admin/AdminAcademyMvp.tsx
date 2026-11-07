@@ -25,8 +25,10 @@ async function readAcademy(signal:AbortSignal):Promise<Academy>{
   redirect:'error',signal});
  if(res.status===401||res.status===403)
   throw new AcademyCommandError('STAFF_ACCESS_DENIED',res.status);
+ // A read-only staff GET must return exactly HTTP 200. An unexpected 2xx
+ // cannot prove that this is the authorized roster response.
+ if(res.status!==200)throw new Error('تعذّر قراءة الإدارة من الخادم');
  const v:unknown=await res.json();
- if(!res.ok)throw new Error('تعذّر قراءة الإدارة من الخادم');
  return parseAdminAcademyRead(v);
 }
 const operationErrors:Record<string,string>={
