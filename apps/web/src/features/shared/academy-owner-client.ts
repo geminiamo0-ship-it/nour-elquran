@@ -64,6 +64,9 @@ export async function readOwnerAcademy(learnerId:string,signal?:AbortSignal):Pro
 export function latestPendingAcademyRequest(data:OwnerAcademy){
  return data.requests.filter(r=>r.state==='pending').sort((a,b)=>b.atMs-a.atMs)[0]??null;
 }
-export function currentCycleLabel(state:'within_period'|'expired',endsAtMs:number,now:number){
+export function currentCycleLabel(state:'within_period'|'expired',endsAtMs:number,now:number,startsAtMs?:number){
+ // The Worker currently labels a not-yet-started cycle `expired` too.
+ // Do not tell a guardian that a future D1 cycle has already ended.
+ if(startsAtMs!==undefined&&startsAtMs>now)return 'الدورة القادمة لم تبدأ بعد';
  return state==='within_period'&&endsAtMs>now?'دورة حصص مسجلة':'الدورة السابقة انتهت';
 }
