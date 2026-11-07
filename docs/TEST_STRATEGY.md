@@ -1,3 +1,7 @@
+## 2026-11-07 — #315 staff reauthorization refresh gate
+- `AdminAcademyMvp.test.tsx` now checks that an epoch invalidated by staff denial cannot restore data, aborted signed reads do not restore, and late mutation receipts stay hidden while the revocation fence remains true. Source uses epoch increment at staff denial and clears the fence only on a current successfully parsed signed `ACADEMY_STAFF` GET.
+- Exact-head Verify and signed Cloudflare Dev role revocation→refresh→late response (with synthetic staff) remain mandatory; pure tests are not a substitute for browser E2E or independent privacy review. Draft only, no Production/financial/audio/WhatsApp/ink changes.
+
 ## 2026-11-07 — #315 terminal issued-invite 409 regression
 - `AdminAcademyMvp.test.tsx`: a confirmed `ACADEMY_INVITE_ALREADY_ISSUED` 409 is terminal because its secret is intentionally never replayed, allowing staff to issue a new link. `ACADEMY_INVITE_DENIED`, empty/unknown 409 and activation/financial ambiguity must remain uncertain with their immutable operationId held.
 - Source/test commits require new exact-head GitHub Verify 4/4. Remote acceptance still requires synthetic signed Cloudflare Dev first invite lost ACK → exact retry 409 → new invite, revoked staff denial, and mobile 360/390. Never claim recovered old secret or Production readiness.
