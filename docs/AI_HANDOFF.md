@@ -1,3 +1,8 @@
+## 2026-11-07 — #315 confirmed issued-invite 409 is terminal (Draft #327)
+- Fresh GitHub main `4c15b59f`; #325/#327 still Draft. Previous exact-head #327 [Verify #42329573257](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42329573257) **SUCCESS 4/4** on `062f56e2` only.
+- Reviewed `staffInvite`: an existing operation returns 409 `ACADEMY_INVITE_ALREADY_ISSUED`, deliberately withholding the unrecoverable one-use token. Admin's unknown-409 safety fence otherwise forced endless exact-operation retry. Changed `AdminAcademyMvp.tsx` to release only this confirmed terminal invite state and show a clear instruction to issue a new invite; unknown/denied 409 remains held. Added synthetic Vitest coverage.
+- **NEXT EXACT ACTION:** inspect Verify for new PR #327 HEAD and fix failures; then signed isolated Dev invite lost-ACK/retry/new-link, independent security review, sibling/role isolation and 360/390 mobile, plus PR #325 overlap reconciliation. No merge, Production, paid integrations, WhatsApp send, audio or cumulative ink flag changes.
+
 ## 2026-11-07 — #315 unknown 409 idempotency safety on Draft PR #327
 - GitHub main base `4c15b59f` and Draft #325/#327 reviewed; previous #327 Verify #42325629997 succeeded 4/4 on older `cfcb0dc6`. This change requires its own exact-head CI.
 - Concrete bug: AdminAcademyMvp treated all HTTP 409 errors as terminal and discarded the held immutable operation. Generic D1 conflict/uncertain-write 409 can leave a committed activation unconfirmed; allowing a new operationId risks duplicate manual settlement.
