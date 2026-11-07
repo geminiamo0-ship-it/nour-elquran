@@ -1,3 +1,8 @@
+## 2026-11-07 #315 staff academy signed read status regression (PR #327)
+- `admin-academy-read.test.ts` now rejects body `status` other than numeric 200, including 201/204, string and missing status; successful signed body must still carry exact `ACADEMY_STAFF` and strict projected rows.
+- `AdminAcademyMvp.test.tsx` verifies only HTTP 200 is an acceptable staff GET receipt (not other 2xx/3xx/4xx/5xx). A revoked staff view cannot be restored from malformed read success. New exact-head CI must run; previous Verify #42346921447 PASS 4/4 belongs to old `b1aee270`.
+- Separate signed Cloudflare Dev staff/nonstaff/revoked and two-sibling tests and mobile 360/390 remain mandatory; source tests do not prove deployment.
+
 ## 2026-11-07 — #315 staff reauthorization refresh gate
 - `AdminAcademyMvp.test.tsx` now checks that an epoch invalidated by staff denial cannot restore data, aborted signed reads do not restore, and late mutation receipts stay hidden while the revocation fence remains true. Source uses epoch increment at staff denial and clears the fence only on a current successfully parsed signed `ACADEMY_STAFF` GET.
 - Exact-head Verify and signed Cloudflare Dev role revocation→refresh→late response (with synthetic staff) remain mandatory; pure tests are not a substitute for browser E2E or independent privacy review. Draft only, no Production/financial/audio/WhatsApp/ink changes.
