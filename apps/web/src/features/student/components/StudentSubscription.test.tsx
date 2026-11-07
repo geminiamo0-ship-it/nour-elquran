@@ -211,9 +211,13 @@ describe('clean, truthful subscriptions #324',()=>{
    .toContain('تعذّر التحقق');
  });
  it('does not hide an existing learner cycle behind a pending package renewal',()=>{
-  const ledger={latestCycle:{
-   state:'within_period',endsAtMs:1800000000000,recordedUnspentSessions:3
-  }} as unknown as SubscriptionLedger;
+  // Use a complete signed D1 cycle. Without startsAtMs the UI correctly
+  // cannot establish an active period, making this test fixture misleading.
+  const ledger=parseSubscriptionLedger({code:'SUBSCRIPTION_LEDGER',
+   bookingEnabled:false,compensationUnspentSessions:0,compensationGrantCount:0,
+   latestCycle:{state:'within_period',startsAtMs:1750000000000,
+    endsAtMs:1800000000000,baseSessions:8,rolloverSessions:0,
+    spentSessions:5,recordedUnspentSessions:3}});
   const status=homeSubscriptionSummary(ledger,parseOwnerAcademy(sample),1760000000000);
   expect(status.status).toContain('مسجلة');
   expect(status.detail).toContain('حصص مسجلة غير مستخدمة');
