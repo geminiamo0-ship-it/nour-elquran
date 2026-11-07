@@ -98,9 +98,27 @@ describe('admin academy manual settlement retry semantics #315',()=>{
   for(const status of [408,425,429,500,502,503,504,599])
    expect(academyAdminOutcomeIsUncertain(status)).toBe(true);
  });
- it('does not turn a proven validation/permission conflict into a retry',()=>{
-  for(const status of [400,401,403,404,409,422])
+ it('does not turn proven validation and permission errors into a retry',()=>{
+  for(const status of [400,401,403,404,422])
    expect(academyAdminOutcomeIsUncertain(status)).toBe(false);
+ });
+ it('retains the exact operation on ambiguous 409 instead of risking a duplicate settlement',()=>{
+  for(const code of ['', 'UNRECOGNIZED_CONFLICT','ACADEMY_REQUEST_DENIED',
+   'ACADEMY_PACKAGE_DENIED','ACADEMY_REQUEST_REJECTION_DENIED',
+   'ACADEMY_ACTIVATION_DENIED']){
+   expect(academyAdminOutcomeIsUncertain(409,code)).toBe(true);
+  }
+ });
+ it('releases the held operation only on explicit terminal 409 business conflicts',()=>{
+  for(const code of ['ACADEMY_REQUEST_MISMATCH',
+   'ACADEMY_PACKAGE_VERSION_UNAVAILABLE','ACADEMY_CYCLE_OVERLAP',
+   'ACADEMY_RENEWAL_CONFLICT','ACADEMY_ROLLOVER_CONFLICT',
+   'ACADEMY_REQUEST_ALREADY_ACTIVATED','ACADEMY_REQUEST_REJECTED',
+   'ACADEMY_REQUEST_NOT_FOUND','ACADEMY_OPERATION_CONFLICT',
+   'ACADEMY_PACKAGE_UNAVAILABLE','ACADEMY_LEARNER_UNAVAILABLE',
+   'ACADEMY_REFERENCE_UNAVAILABLE','ACADEMY_STAFF_ACCESS_CHANGED']){
+   expect(academyAdminOutcomeIsUncertain(409,code)).toBe(false);
+  }
  });
 });
 
