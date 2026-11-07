@@ -110,6 +110,15 @@ export function academyAdminCanReject(
  return confirmed&&!busy&&note.length>=10&&note.length<=500&&
   requests.some(r=>r.id===requestId&&r.state==='pending');
 }
+/** A still-unclaimed invite is not pending after its server-issued expiry.
+ * Use the same strict < comparison as the Worker claim guard; a claimed
+ * invite remains claimed even when its original seven-day window passes. */
+export function academyAdminInviteStatus(
+ invite:{claimed:0|1;expiresAtMs:number},now:number):
+ 'claimed'|'expired'|'pending'{
+ if(invite.claimed===1)return 'claimed';
+ return invite.expiresAtMs<now?'expired':'pending';
+}
 /** A pending unknown POST outcome must not disable the read-only refresh
  * needed to restore a signed staff snapshot before an exact-operation retry.
  * Only an actively sending command disables the refresh button. */
@@ -458,7 +467,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    <h3>الدعوات المرسلة</h3>
    {data.invites.map(i=><article key={i.id}>
     {i.teacherName??'لم يُستخدم الرابط بعد'} ·
-    {' '}{i.claimed===1?'تم تسجيل حساب الشيخ':'بانتظار التسجيل'}
+    {' '}{({claimed:'تم تسجيل حساب الشيخ',expired:'انتهت صلاحية الدعوة',
+      pending:'بانتظار التسجيل'} as const)[academyAdminInviteStatus(i,Date.now())]}
     {i.teacherId?' · موجود في دليل الشيوخ':''}
     {' · انتهاء: '}{date.format(new Date(i.expiresAtMs))}
     {i.claimed===1&&!i.teacherId&&<p>
