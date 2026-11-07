@@ -171,6 +171,13 @@ describe('clean, truthful subscriptions #324',()=>{
     latestCycle:{...valid.latestCycle,state}})).toThrow('INVALID_LEDGER_RESPONSE');
   }
  });
+ it('handles a signed ledger with no cycle without accessing null dates (#324)',()=>{
+  const ledger=parseSubscriptionLedger({code:'SUBSCRIPTION_LEDGER',
+   bookingEnabled:false,compensationUnspentSessions:0,
+   compensationGrantCount:0,latestCycle:null});
+  expect(homeSubscriptionSummary(ledger,null,1760000000000))
+   .toEqual({status:'لا توجد دورة حصص مسجلة',detail:''});
+ });
  it('does not claim a missing subscription when only the catalog succeeded',()=>{
   const academy=parseOwnerAcademy({...sample,requests:[]});
   const unknown=homeSubscriptionSummary(null,academy,1760000000000);
