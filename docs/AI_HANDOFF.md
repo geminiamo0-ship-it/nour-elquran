@@ -1,3 +1,8 @@
+## 2026-11-07 — #324 future subscription cycle status (PR #325, source-only)
+- Observed from `workers/api/src/subscription-ledger.ts`: a future `startsAtMs` produces `state:'expired'` because the current D1 contract has only two states. Both signed student subscription surfaces previously displayed "ended" for that future cycle.
+- Changed `apps/web/src/features/shared/academy-owner-client.ts`, `student/components/HomeSubscriptionStatus.tsx`, `student/components/ConnectedSubscriptionLedger.tsx` to label future cycles by the signed start date, without widening backend contracts or making a paid/booking claim. Added `StudentSubscription.test.tsx` regression.
+- NEXT: inspect exact PR #325 HEAD Verify 4/4, review future/active/expired D1 fixtures in source-pinned signed Cloudflare Dev and 360/390 RTL browser, coordinate overlapping PR #327, obtain independent security review. Keep #324 OPEN, PR Draft, main/Production untouched, no WhatsApp/payment/audio or cumulative ink enablement.
+
 ## 2026-11-07 — #324 signed subscription-ledger complete-response guard (Draft PR #325)
 - Source review found that the signed learner academic-credit ledger accepted any `response.ok` 2xx, including 201/202/204/206, as a complete D1 balance snapshot. This is distinct from the academy catalog HTTP 200 guard already on the branch.
 - `apps/web/src/features/shared/subscription-ledger-client.ts` now rejects unexpected successful statuses before parsing JSON; genuine 200 keeps existing strict DTO validation, and 401/403 error-code handling is unchanged. `StudentSubscription.test.tsx` covers partial/accepted responses and explicit 403. No SQL, financial operation, provider, child data or Production change.
