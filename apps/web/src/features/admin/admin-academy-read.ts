@@ -79,7 +79,7 @@ function inviteRow(v:unknown):AcademyInvite{
 }
 /** Malformed signed receipts are errors, never empty/demo lists or trusted UI data. */
 export function parseAdminAcademyRead(raw:unknown):AdminAcademySnapshot{
- if(!record(raw)||raw.code!=='ACADEMY_STAFF')throw fail();
+ if(!record(raw)||raw.status!==200||raw.code!=='ACADEMY_STAFF')throw fail();
  const packages=list(raw.packages,100,packageRow,row=>row.id);
  const requests=list(raw.requests,100,requestRow,row=>row.id);
  const invites=list(raw.invites,50,inviteRow,row=>row.id);
