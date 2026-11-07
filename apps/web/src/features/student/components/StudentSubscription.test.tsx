@@ -120,6 +120,28 @@ describe('clean, truthful subscriptions #324',()=>{
     .rejects.toMatchObject({code:'STAFF_ACCESS_DENIED',status:403});
   }finally{vi.unstubAllGlobals();}
  });
+ it('never calls a future recorded cycle expired in guardian subscription UI (#324)',()=>{
+  // The current Worker contract returns `expired` when now is before the
+  // cycle start. The UI must use the signed start date, not that label alone.
+  const now=1760000000000;
+  const start=now+86_400_000;
+  const end=start+30*86_400_000;
+  const ledger=parseSubscriptionLedger({code:'SUBSCRIPTION_LEDGER',
+   bookingEnabled:false,compensationUnspentSessions:0,compensationGrantCount:0,
+   latestCycle:{state:'expired',startsAtMs:start,endsAtMs:end,
+    baseSessions:8,rolloverSessions:0,spentSessions:0,recordedUnspentSessions:8}});
+  expect(currentCycleLabel('expired',end,now,start))
+   .toBe('الدورة القادمة لم تبدأ بعد');
+  const summary=homeSubscriptionSummary(ledger,null,now);
+  expect(summary.status).toBe('الدورة القادمة لم تبدأ بعد');
+  expect(summary.detail).toContain('حصص مسجلة لدورة قادمة');
+  expect(summary.detail).toContain('تبدأ في');
+  expect(summary.detail).not.toContain('انتهت في');
+  expect(currentCycleLabel('expired',now-1,now,now-86_400_000))
+   .toBe('الدورة السابقة انتهت');
+  expect(currentCycleLabel('within_period',now+1000,now,now-1000))
+   .toBe('دورة حصص مسجلة');
+ });
  it('rejects D1 cycle timestamps that would crash Intl.DateTimeFormat in signed views',()=>{
   const valid={code:'SUBSCRIPTION_LEDGER',bookingEnabled:false,
    compensationUnspentSessions:0,compensationGrantCount:0,
