@@ -63,7 +63,20 @@ export function academyAdminReadEpochMayApply(
 }
 /** A 5xx or retryable HTTP response cannot prove whether D1 committed.
  * Preserve the original operationId and prohibit a second financial command. */
-export function academyAdminOutcomeIsUncertain(status:number){
+// A generic 409 is NOT proof that an idempotent D1 write failed. Some
+// constraint/transport paths return 409 after an ambiguous receipt. Only
+// explicit, reviewed business conflicts can release the held operation.
+const terminalAcademyConflicts=new Set([
+ 'ACADEMY_REQUEST_MISMATCH','ACADEMY_PACKAGE_VERSION_UNAVAILABLE',
+ 'ACADEMY_CYCLE_OVERLAP','ACADEMY_RENEWAL_CONFLICT',
+ 'ACADEMY_ROLLOVER_CONFLICT','ACADEMY_REQUEST_ALREADY_ACTIVATED',
+ 'ACADEMY_REQUEST_REJECTED','ACADEMY_REQUEST_NOT_FOUND',
+ 'ACADEMY_OPERATION_CONFLICT','ACADEMY_PACKAGE_UNAVAILABLE',
+ 'ACADEMY_LEARNER_UNAVAILABLE','ACADEMY_REFERENCE_UNAVAILABLE',
+ 'ACADEMY_STAFF_ACCESS_CHANGED',
+]);
+export function academyAdminOutcomeIsUncertain(status:number,code=''){
+ if(status===409)return !terminalAcademyConflicts.has(code);
  return status===408||status===425||status===429||status>=500;
 }
 /** An in-flight staff response must never be applied after account/session swap. */
@@ -309,7 +322,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    if(!stillCurrent())return;
    if(e instanceof AcademyCommandError&&academyAdminStaffAccessRevoked(e.status,e.code))
     invalidateStaffData();
-   if(e instanceof AcademyCommandError&&!academyAdminOutcomeIsUncertain(e.status)){
+   if(e instanceof AcademyCommandError&&!academyAdminOutcomeIsUncertain(e.status,e.code)){
     academyPendingStore.clearIfSame(operation);
    if(pendingOpRef.current===operation){pendingOpRef.current=null;setPendingOp(null);}
     setResult({phase:'error',message:operationErrors[e.code]??'تعذّر تنفيذ العملية: '+e.code});
