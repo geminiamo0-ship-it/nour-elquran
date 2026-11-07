@@ -9,6 +9,7 @@ import {DEMO_PROFILES} from '../mock-adapter';
 import {SubscriptionWorkspace} from './SubscriptionWorkspace';
 import {HomeSubscriptionStatus,homeSubscriptionSummary} from './HomeSubscriptionStatus';
 import {ConnectedSubscriptionLedger} from './ConnectedSubscriptionLedger';
+import {nextSubscriptionBoundaryDelay} from './subscription-boundary-clock';
 import {ConnectedAcademyOffers,createAcademyPackageRequestGate,
  createAcademyReadEpoch,classifyAcademyPackageRequestResponse,
  academyPackageRequestBody,AcademyUncertainRequestRecovery} from './ConnectedAcademyOffers';
@@ -141,6 +142,27 @@ describe('clean, truthful subscriptions #324',()=>{
    .toBe('الدورة السابقة انتهت');
   expect(currentCycleLabel('within_period',now+1000,now,now-1000))
    .toBe('دورة حصص مسجلة');
+ });
+ it('recomputes a signed future-cycle label on start and expiry without a new GET (#324)',()=>{
+  const now=1_760_000_000_000;
+  const start=now+1_000;
+  const end=start+5_000;
+  const ledger=parseSubscriptionLedger({code:'SUBSCRIPTION_LEDGER',
+   bookingEnabled:false,compensationUnspentSessions:0,compensationGrantCount:0,
+   latestCycle:{state:'expired',startsAtMs:start,endsAtMs:end,
+    baseSessions:8,rolloverSessions:0,spentSessions:0,recordedUnspentSessions:8}});
+  // A long-open tab must wake just after the next boundary, not poll D1.
+  expect(nextSubscriptionBoundaryDelay(now,start,end)).toBe(1001);
+  expect(nextSubscriptionBoundaryDelay(start,start,end)).toBe(5001);
+  expect(nextSubscriptionBoundaryDelay(end,start,end)).toBeNull();
+  expect(nextSubscriptionBoundaryDelay(now,now+3_000_000_000)).toBe(2_147_483_647);
+  expect(homeSubscriptionSummary(ledger,null,now).status).toContain('القادمة');
+  expect(homeSubscriptionSummary(ledger,null,start).status).toBe('دورة حصص مسجلة');
+  expect(homeSubscriptionSummary(ledger,null,start).detail).toContain('حصص مسجلة غير مستخدمة');
+  expect(homeSubscriptionSummary(ledger,null,end).status).toContain('انتهت');
+  // The Worker calculated 'expired' at the earlier GET; its signed dates
+  // are authoritative when the browser clock crosses the start boundary.
+  expect(currentCycleLabel('expired',end,start,start)).toBe('دورة حصص مسجلة');
  });
  it('rejects D1 cycle timestamps that would crash Intl.DateTimeFormat in signed views',()=>{
   const valid={code:'SUBSCRIPTION_LEDGER',bookingEnabled:false,
