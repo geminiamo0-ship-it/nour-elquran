@@ -4,6 +4,7 @@ import {academyAdminAckIsVerified,academyAdminOutcomeIsUncertain,academyAdminSam
  academyAdminSessionLockIsBusy,academyAdminPendingForActor,
  academyAdminCommandAllowed,academyAdminSessionViewIsReady,
  academyAdminStaffAccessRevoked,academyAdminReadMayApply,academyAdminReadEpochMayApply,
+ academyAdminSignedReadMayRestore,
  academyAdminMutationMayApply,academyAdminCanSend,academyAdminCanRefresh,
  academyAdminCanReject,academyAdminInviteStatus,academyAdminEmptyReadMessage,AdminAcademyMvp} from './AdminAcademyMvp';
 
@@ -38,6 +39,24 @@ describe('admin academy signed read generation fence #315',()=>{
  it('never lets a pre-write list overwrite the committed command reconciliation',()=>{
   expect(academyAdminReadEpochMayApply(11,12,false,false)).toBe(false);
   expect(academyAdminReadEpochMayApply(12,12,false,false)).toBe(true);
+ });
+});
+
+describe('admin academy signed re-authorization fence #315',()=>{
+ it('never restores staff visibility from a pre-denial or aborted GET',()=>{
+  // A staff 403 increments the epoch, invalidating the old successful GET.
+  expect(academyAdminSignedReadMayRestore(7,8,false)).toBe(false);
+  expect(academyAdminSignedReadMayRestore(8,8,true)).toBe(false);
+  // Only a newly authenticated and strictly parsed staff snapshot can
+  // clear the revocation fence; network failure cannot do so.
+  expect(academyAdminSignedReadMayRestore(8,8,false)).toBe(true);
+ });
+ it('keeps late mutation receipts hidden until a fresh staff read succeeds',()=>{
+  const session={user:{id:'synthetic-staff'}};
+  expect(academyAdminMutationMayApply(session,session,true)).toBe(false);
+  // A manual refresh must not clear revoked=true until its verified ACK.
+  expect(academyAdminSignedReadMayRestore(4,5,false)).toBe(false);
+  expect(academyAdminMutationMayApply(session,session,true)).toBe(false);
  });
 });
 
