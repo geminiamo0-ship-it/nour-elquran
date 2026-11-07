@@ -397,10 +397,37 @@ export async function staffContact(db:CoreDatabase,subject:string,raw:unknown,no
  !/^[1-9][0-9]{9,14}$/.test(raw.whatsappNumber))
  return {status:400,code:'ACADEMY_INVALID_CONTACT'} as const;
  if(!await canManageTeachers(db,subject))return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
- try{await db.prepare(`INSERT INTO academy_contact_events
- (id,operation_id,actor_subject,whatsapp_number,at_ms) VALUES(?,?,?,?,?)`)
- .bind(crypto.randomUUID(),raw.operationId,subject,raw.whatsappNumber,now).run();}
- catch(e){if(allowed(e))return {status:409,code:'ACADEMY_CONTACT_DENIED'} as const;throw e;}
+ type ContactReceipt={actor:string;whatsappNumber:string};
+ const readPrior=()=>db.prepare(`SELECT actor_subject AS actor,
+ whatsapp_number AS whatsappNumber FROM academy_contact_events WHERE operation_id=?`)
+ .bind(raw.operationId).first<ContactReceipt>();
+ const replay=(saved:ContactReceipt)=>saved.actor===subject&&
+  saved.whatsappNumber===raw.whatsappNumber?
+  {status:200,code:'ACADEMY_CONTACT_REPLAY'} as const:
+  {status:409,code:'ACADEMY_OPERATION_CONFLICT'} as const;
+ const prior=await readPrior();
+ if(prior)return replay(prior);
+ try{
+  const receipt=await db.prepare(`INSERT INTO academy_contact_events
+  (id,operation_id,actor_subject,whatsapp_number,at_ms) VALUES(?,?,?,?,?)`)
+  .bind(crypto.randomUUID(),raw.operationId,subject,raw.whatsappNumber,now).run();
+  if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
+     receipt.meta.changes<1){
+   const raced=await readPrior();
+   return raced?replay(raced):
+    {status:503,code:'ACADEMY_CONTACT_STORAGE_UNAVAILABLE'} as const;
+  }
+ }catch(e){
+  if(allowed(e)){
+   const raced=await readPrior();
+   if(raced)return replay(raced);
+   if(e instanceof Error&&/abort/i.test(e.message)&&
+      !/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_CONTACT_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:'ACADEMY_CONTACT_DENIED'} as const;
+  }
+  throw e;
+ }
  return {status:201,code:'ACADEMY_WHATSAPP_SAVED'} as const;
 }
 function hex(bytes:Uint8Array){return [...bytes].map(x=>x.toString(16).padStart(2,'0')).join('');}
