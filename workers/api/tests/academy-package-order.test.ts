@@ -138,3 +138,28 @@ test('an abort after commit still replays the same immutable staff operation',as
   {status:200,code:'ACADEMY_PACKAGE_REPLAY',packageId:PACKAGE});
  assert.equal(f.writes.length,1);
 });
+
+test('uncertain resolved D1 receipt replays only the exact durable staff package edit',async()=>{
+ const committed={id:'33333333-3333-4333-8333-333333333333',
+  actor:STAFF,packageId:PACKAGE,title:command.title,priceEgp:1600,
+  sessions:8,active:1};
+ for(const receipt of [
+  {success:false,meta:{changes:0}},
+  {success:true,meta:{changes:0}},
+ ]) {
+  const exact=fixture({writeResult:receipt,raced:committed});
+  assert.deepEqual(await staffPackage(exact.db,STAFF,command),
+   {status:200,code:'ACADEMY_PACKAGE_REPLAY',packageId:PACKAGE});
+  assert.equal(exact.writes.length,1);
+
+  const otherPrice=fixture({writeResult:receipt,raced:{...committed,priceEgp:1800}});
+  assert.deepEqual(await staffPackage(otherPrice.db,STAFF,command),
+   {status:409,code:'ACADEMY_OPERATION_CONFLICT'});
+  assert.equal(otherPrice.writes.length,1);
+
+  const otherActor=fixture({writeResult:receipt,raced:{...committed,actor:'other-staff'}});
+  assert.deepEqual(await staffPackage(otherActor.db,STAFF,command),
+   {status:409,code:'ACADEMY_OPERATION_CONFLICT'});
+  assert.equal(otherActor.writes.length,1);
+ }
+});
