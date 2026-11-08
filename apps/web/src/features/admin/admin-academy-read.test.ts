@@ -1,6 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
- parseAdminAcademyRead,academyAdminInviteStatusLabel} from './admin-academy-read';
+ parseAdminAcademyRead,academyAdminInviteStatusLabel,academyAdminReadEpochMayApply,
+ academyAdminStaffAccessRevoked,academyAdminMutationMayApply} from './admin-academy-read';
 
 const packageRow={id:'version-1',packageId:'package-1',title:'Synthetic package',
  priceEgp:200,sessions:8,active:1,atMs:1700000000000};
@@ -127,5 +128,28 @@ describe('academy staff session view isolation #315',()=>{
   const renewed={...old};
   expect(academyAdminSessionViewIsReady(old,renewed)).toBe(false);
   expect(academyAdminSessionViewIsReady(renewed,renewed)).toBe(true);
+ });
+});
+
+describe('signed staff read epoch and revocation fence #315',()=>{
+ it('rejects stale GETs after refresh, post-write reconciliation and session swap',()=>{
+  expect(academyAdminReadEpochMayApply(7,7,false,true)).toBe(true);
+  expect(academyAdminReadEpochMayApply(7,8,false,true)).toBe(false);
+  expect(academyAdminReadEpochMayApply(7,7,true,true)).toBe(false);
+  expect(academyAdminReadEpochMayApply(7,7,false,false)).toBe(false);
+ });
+ it('revokes on auth denial, not unrelated business constraints',()=>{
+  expect(academyAdminStaffAccessRevoked(401,'UNKNOWN')).toBe(true);
+  expect(academyAdminStaffAccessRevoked(403,'STAFF_ACCESS_DENIED')).toBe(true);
+  expect(academyAdminStaffAccessRevoked(409,'ACADEMY_STAFF_ACCESS_CHANGED')).toBe(true);
+  expect(academyAdminStaffAccessRevoked(403,'ACADEMY_REFERENCE_UNAVAILABLE')).toBe(false);
+  expect(academyAdminStaffAccessRevoked(409,'ACADEMY_CYCLE_OVERLAP')).toBe(false);
+  expect(academyAdminStaffAccessRevoked(503,'D1_UNKNOWN')).toBe(false);
+ });
+ it('never applies an invite token after revocation or actor switch',()=>{
+  const staff={id:'synthetic-staff'};
+  expect(academyAdminMutationMayApply(staff,staff,false)).toBe(true);
+  expect(academyAdminMutationMayApply(staff,staff,true)).toBe(false);
+  expect(academyAdminMutationMayApply(staff,{...staff},false)).toBe(false);
  });
 });
