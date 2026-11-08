@@ -1,3 +1,8 @@
+## 2026-11-09 — #315 staff retry UI after failed signed read
+- Latest checked `main@4c15b59f`; Draft #325 previous head `da8eb2d6` passed [Verify #42524327408](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42524327408) 4/4. Draft #327 `7d55b03c` remains separate; 19 overlapping paths and independent review/Dev acceptance are outstanding.
+- On #325, after an uncertain POST followed by 403/503 or malformed staff GET, the exact-operation retry button was enabled but `send()` refused without `visibleData`. Added `academyAdminCanReplay`, disabled-state explanation and unit tests (source commits `aa2a14bc`, `568f8c5c`, `a5886342`). Never drop the original operationId on failed read or manufacture a new financial action.
+- NEXT: inspect GitHub Verify for new exact HEAD; resolve any CI failures, then independent security review, reconcile #325/#327, signed Cloudflare Dev staff/role-revoked/unknown-write replay and 360/390 touch tests. No merge, Production, paid provider, WhatsApp send, R2 audio or cumulative-ink enablement.
+
 ## 2026-11-08 — #315 next cycle: confirmation revisit guard on PR #325
 - Read latest `main`/PR #325/#327, AGENTS/status/plan/test/privacy docs. PR #325 at `4bdaded9` had Verify #42521371408 success 4/4; #327 at `7d55b03c` had Verify #42350942468 success. They share 19 changed paths and are **not reconciled**.
 - Source bug: `confirmedMode===mode` becomes true again on A→B→A, reviving a previous confirmation. Added mode-change effect reset in `AdminAcademyMvp.tsx` and source regression in `AdminAcademyMvp.test.tsx` (commits 3993113f, 074a5e55). This is source-only; new exact-head CI, independent review and signed Dev/browser test still required.
