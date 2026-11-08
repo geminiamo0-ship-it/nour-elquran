@@ -192,7 +192,10 @@ describe('signed staff read epoch and revocation fence #315',()=>{
   expect(academyAdminStaffAccessRevoked(401,'UNKNOWN')).toBe(true);
   expect(academyAdminStaffAccessRevoked(403,'STAFF_ACCESS_DENIED')).toBe(true);
   expect(academyAdminStaffAccessRevoked(409,'ACADEMY_STAFF_ACCESS_CHANGED')).toBe(true);
-  expect(academyAdminStaffAccessRevoked(403,'ACADEMY_REFERENCE_UNAVAILABLE')).toBe(false);
+  // A JSON-shaped proxy 403 cannot preserve a previously authorized snapshot.
+  expect(academyAdminStaffAccessRevoked(403,'ACADEMY_REFERENCE_UNAVAILABLE')).toBe(true);
+  expect(academyAdminStaffAccessRevoked(403,'PROXY_UNTRUSTED')).toBe(true);
+  expect(academyAdminStaffAccessRevoked(403,'BAD_ORIGIN')).toBe(true);
   expect(academyAdminStaffAccessRevoked(409,'ACADEMY_CYCLE_OVERLAP')).toBe(false);
   expect(academyAdminStaffAccessRevoked(503,'D1_UNKNOWN')).toBe(false);
  });
