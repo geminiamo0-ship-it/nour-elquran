@@ -48,8 +48,9 @@ const operationErrors:Record<string,string>={
 /** Never render arbitrary HTTP/D1 error codes: a proxy or malformed handler
  * could include private text or an unbounded payload in its code field. */
 export function academyAdminOperationErrorMessage(code:string):string{
- return Object.prototype.hasOwnProperty.call(operationErrors,code)?
-  operationErrors[code]:'تعذّر تنفيذ العملية. راجع السجل وتحقق من حالتها قبل المحاولة مجددًا.';
+ const message=Object.prototype.hasOwnProperty.call(operationErrors,code)?
+  operationErrors[code]:undefined;
+ return message??'تعذّر تنفيذ العملية. راجع السجل وتحقق من حالتها قبل المحاولة مجددًا.';
 }
 class AcademyCommandError extends Error{
  constructor(readonly code:string,readonly status:number,
