@@ -88,6 +88,11 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   const ctrl=new AbortController();
   setData(null);setDataSession(null);setReadError(false);
   setInviteUrl('');setInviteSession(null);
+  // Reset private learner IDs, audit notes and previous staff form selections
+  // before the next actor's authorized snapshot can become visible.
+  setSelectedRequest('');setLearnerId('');setReason('');setConfirmed(false);
+  setSelectedPackage('');setTitle('');setPrice('');setSessions('8');
+  setPackageFormOpen(false);setWhatsapp('');
   const held=academyPendingStore.forActor(session.user.id);
   setPendingOp(held);setPendingSession(session);
   setResult(held?{phase:'uncertain',message:
