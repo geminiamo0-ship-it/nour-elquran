@@ -4,7 +4,8 @@ import type {AccountSession} from '@/features/account';
 import styles from './AdminAcademyMvp.module.css';
 import {academyPendingStore,type AcademyPendingCommand} from './admin-academy-pending';
 import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified} from './admin-academy-write-outcome';
-import {parseAdminAcademyRead,type AdminAcademySnapshot} from './admin-academy-read';
+import {academyAdminReadHttpStatusIsValid,parseAdminAcademyRead,
+ type AdminAcademySnapshot} from './admin-academy-read';
 
 type Academy=AdminAcademySnapshot;
 type Result={phase:'idle'|'busy'|'done'|'error'|'uncertain';message:string};
@@ -16,8 +17,10 @@ function label(v:number){return v.toLocaleString('ar-EG');}
 async function readAcademy(signal:AbortSignal):Promise<Academy>{
  const res=await fetch('/v1/staff/academy',{credentials:'same-origin',cache:'no-store',
   redirect:'error',signal});
+ // An unexpected 2xx (e.g. 202/206) is not a complete authorized D1 snapshot.
+ if(!academyAdminReadHttpStatusIsValid(res.status))
+  throw new Error('تعذّر قراءة الإدارة من الخادم');
  const v:unknown=await res.json();
- if(!res.ok)throw new Error('تعذّر قراءة الإدارة من الخادم');
  try{return parseAdminAcademyRead(v);}
  catch{throw new Error('تعذّر قراءة الإدارة من الخادم');}
 }
