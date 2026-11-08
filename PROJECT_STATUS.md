@@ -1,3 +1,9 @@
+## 2026-11-08 — #315 confirmed academy request selection reset (Draft #325; source-only)
+- Reviewed current main `4c15b59f`, open #315 and overlapping Draft #327. Prior exact-head #325 Verify [42490741159](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42490741159) completed SUCCESS 4/4 on **old** `bcb1e815`; it does not validate this change.
+- Source review found a confirmed activation/rejection left the old selected learner, request and price version in the Admin form after D1 ACK and subsequent roster refresh. Ported the useful post-ACK selection clearing from #327 into #325, **only after** `academyAdminAckIsVerified` and never on a 503/unknown outcome. Uncertain operations retain their immutable operationId/payload for explicit same-ID retry.
+- Changed `apps/web/src/features/admin/{AdminAcademyMvp.tsx,admin-academy-write-outcome.ts,admin-academy-write-outcome.test.ts}`. No D1/schema/price/role/Production/WhatsApp/audio/cumulative-ink change.
+- NEXT: inspect new exact-head Verify, then reconcile remaining #327 overlap, independent staff authorization/finance review, signed isolated Dev staff/guardian/two-sibling replay and 360/390 browser acceptance. #315 OPEN; PR #325 Draft.
+
 ## 2026-11-08 — #315 signed staff academy malformed GET privacy (Draft #325)
 - Source fix `d53edb23` wraps signed academy GET JSON parsing and DTO validation in one fixed-message failure path. A malformed HTTP 200 proxy/D1 JSON SyntaxError can no longer be displayed verbatim in the privileged Admin result message.
 - Synthetic regressions `a70f2028` cover private-looking malformed JSON and structurally invalid signed 200 payloads. Previous exact-head [Verify #42488297090](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42488297090) completed 4/4 on **older** `9e1cf85f`; new HEAD requires its own CI. No local full-suite or Cloudflare Dev acceptance claimed.
