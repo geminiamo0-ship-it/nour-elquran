@@ -1,3 +1,6 @@
+## 2026-11-08 — #315 claimed Sheikh invitation fallback regression
+- `admin-academy-read.test.ts`: a durably claimed invite with a null joined teacher name must say the account is unavailable, **not** “unused”; a genuinely unclaimed invite remains “unused”; a claimed invite with a valid name retains that name. All fixtures synthetic. Run exact-head Verify and signed Dev staff role/privacy checks before acceptance; this source test alone is not runtime proof.
+
 ## #315 signed staff academy stale-read / revocation regression (2026-11-08)
 - Unit: a prior GET epoch, aborted GET or prior AccountSession must never apply to current staff state; an actual staff 401/403 or ACADEMY_STAFF_ACCESS_CHANGED must invalidate the roster and secret invitation, while unrelated 403/409 domain errors do not imply revocation. A late invite ACK must be suppressed after session switch or revocation.
 - Component source: every confirmed write and manual refresh must invalidate in-flight older reads before a new roster can enable another financial action. Exact-head CI includes strict TypeScript/Vitest/build and native D1; it is not signed remote Dev or a substitute for staff revocation and 360/390 browser acceptance. Preserve immutable quote version, pending operationId and default-off Production flags.
