@@ -2,7 +2,7 @@ import {describe,expect,it} from 'vitest';
 import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified,
  academyAdminCanReject,academyAdminAckClearsRequestSelection,
  academyAdminConfirmationMatchesMode,academyAdminSessionLockIsBusy,
- academyAdminReleaseSessionLock} from './admin-academy-write-outcome';
+ academyAdminReleaseSessionLock,academyAdminCanReplay} from './admin-academy-write-outcome';
 
 describe('staff academy D1 receipt integrity #315',()=>{
  it('holds immutable operations after uncertain HTTP outcomes',()=>{
@@ -191,5 +191,15 @@ describe('staff academy in-flight session lock isolation #315',()=>{
   expect(academyAdminReleaseSessionLock(second,firstAttempt)).toBe(second);
   expect(academyAdminReleaseSessionLock(second,secondAttempt)).toBeNull();
   expect(academyAdminReleaseSessionLock(first,firstAttempt)).toBeNull();
+ });
+});
+
+describe('staff academy unresolved retry visibility #315',()=>{
+ it('requires a fresh signed staff snapshot and no revoked or active attempt',()=>{
+  expect(academyAdminCanReplay(true,false,false)).toBe(true);
+  for(const [hasSnapshot,revoked,inFlight] of [
+   [false,false,false],[false,true,false],[true,true,false],
+   [true,false,true],[false,false,true]
+  ] as const)expect(academyAdminCanReplay(hasSnapshot,revoked,inFlight)).toBe(false);
  });
 });
