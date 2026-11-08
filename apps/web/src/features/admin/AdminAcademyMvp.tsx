@@ -188,6 +188,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   return()=>ctrl.abort();
  },[session,refresh]);
  const busy=result.phase==='busy'||result.phase==='uncertain';
+ const selectedQuote=visibleData?.requests.find(r=>r.id===selectedRequest);
  const confirmedForMode=academyAdminConfirmationMatchesMode(confirmed,confirmedMode,mode);
  function confirmForMode(value:boolean){
   setConfirmed(value);setConfirmedMode(value?mode:null);
@@ -354,10 +355,10 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
      onChange={e=>{setSelectedPackage(e.target.value);setSelectedRequest('');
        setConfirmed(false);}}>
      <option value="">اختر الباقة</option>
-     {academyAdminNeedsOriginalQuoteOption(selectedRequest,selectedPackage,
+     {selectedQuote&&academyAdminNeedsOriginalQuoteOption(selectedRequest,selectedPackage,
       visibleData.requests,visibleData.packages)&&
       <option value={selectedPackage}>
-       إصدار السعر الأصلي المرتبط بطلب الطالب
+       إصدار الطلب الأصلي — {label(selectedQuote.priceEgp)} جنيه / {label(selectedQuote.sessions)} حصص
       </option>}
      {visibleData.packages.filter(p=>p.active===1).map(p=><option key={p.id} value={p.id}>
       {p.title} — {p.priceEgp} ج / {p.sessions} حصص</option>)}
