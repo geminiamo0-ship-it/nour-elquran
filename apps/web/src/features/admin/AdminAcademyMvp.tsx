@@ -18,7 +18,7 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
 const iso=()=>crypto.randomUUID();
 const date=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',dateStyle:'medium'});
 function label(v:number){return v.toLocaleString('ar-EG');}
-async function readAcademy(signal:AbortSignal):Promise<Academy>{
+export async function readAcademy(signal:AbortSignal):Promise<Academy>{
  const res=await fetch('/v1/staff/academy',{credentials:'same-origin',cache:'no-store',
   redirect:'error',signal});
  // An unexpected 2xx (e.g. 202/206) is not a complete authorized D1 snapshot.
@@ -26,9 +26,14 @@ async function readAcademy(signal:AbortSignal):Promise<Academy>{
   throw new AcademyCommandError('STAFF_ACCESS_DENIED',res.status,true);
  if(!academyAdminReadHttpStatusIsValid(res.status))
   throw new Error('تعذّر قراءة الإدارة من الخادم');
- const v:unknown=await res.json();
- try{return parseAdminAcademyRead(v);}
- catch{throw new Error('تعذّر قراءة الإدارة من الخادم');}
+ // A malformed 200 JSON body can include private D1/proxy text in the
+ // browser SyntaxError. Never surface that text to a privileged UI.
+ try{
+  const v:unknown=await res.json();
+  return parseAdminAcademyRead(v);
+ }catch{
+  throw new Error('تعذّر قراءة الإدارة من الخادم');
+ }
 }
 const operationErrors:Record<string,string>={
  ACADEMY_REQUEST_ALREADY_ACTIVATED:'الطلب اتفعّل بالفعل. اضغط تحديث وشوف الاشتراك في ملف الطالب.',
