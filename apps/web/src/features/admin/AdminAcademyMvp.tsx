@@ -189,6 +189,11 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  },[session,refresh]);
  const busy=result.phase==='busy'||result.phase==='uncertain';
  const selectedQuote=visibleData?.requests.find(r=>r.id===selectedRequest);
+ // A→B→A must not revive a previously checked financial confirmation.
+ // A mode comparison alone would accept the old check when returning to A.
+ useEffect(()=>{
+  setConfirmed(false);setConfirmedMode(null);
+ },[mode]);
  const confirmedForMode=academyAdminConfirmationMatchesMode(confirmed,confirmedMode,mode);
  function confirmForMode(value:boolean){
   setConfirmed(value);setConfirmedMode(value?mode:null);
