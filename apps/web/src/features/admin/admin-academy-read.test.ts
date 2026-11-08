@@ -1,6 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
- parseAdminAcademyRead,academyAdminInviteStatusLabel,academyAdminReadEpochMayApply,
+ parseAdminAcademyRead,academyAdminInviteStatusLabel,academyAdminInviteDisplayName,
+ academyAdminReadEpochMayApply,
  academyAdminStaffAccessRevoked,academyAdminMutationMayApply} from './admin-academy-read';
 
 const packageRow={id:'version-1',packageId:'package-1',title:'Synthetic package',
@@ -26,6 +27,17 @@ describe('Sheikh invitation expiry status #315',()=>{
    .toBe('انتهت صلاحية الدعوة');
   expect(academyAdminInviteStatusLabel({claimed:1,expiresAtMs:expiry},expiry+1))
    .toBe('تم تسجيل حساب الشيخ');
+ });
+});
+
+describe('durable Sheikh claim display identity #315',()=>{
+ it('never labels a claimed invitation as unused when the joined name is missing',()=>{
+  expect(academyAdminInviteDisplayName({claimed:1,teacherName:null}))
+   .toBe('حساب الشيخ غير متاح');
+  expect(academyAdminInviteDisplayName({claimed:0,teacherName:null}))
+   .toBe('لم يُستخدم الرابط بعد');
+  expect(academyAdminInviteDisplayName({claimed:1,teacherName:'شيخ تجريبي'}))
+   .toBe('شيخ تجريبي');
  });
 });
 
