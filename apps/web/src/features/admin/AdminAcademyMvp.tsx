@@ -8,7 +8,7 @@ import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified,
  academyAdminConfirmationMatchesMode,academyAdminSessionLockIsBusy,
  academyAdminReleaseSessionLock,type AcademySessionAttempt} from './admin-academy-write-outcome';
 import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
- parseAdminAcademyRead,academyAdminInviteStatusLabel,academyAdminInviteDisplayName,
+ parseAdminAcademyRead,academyAdminNeedsOriginalQuoteOption,academyAdminInviteStatusLabel,academyAdminInviteDisplayName,
  academyAdminNextInviteExpiryDelay,academyAdminReadEpochMayApply,academyAdminStaffAccessRevoked,
  academyAdminMutationMayApply,
  type AdminAcademySnapshot} from './admin-academy-read';
@@ -354,7 +354,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
      onChange={e=>{setSelectedPackage(e.target.value);setSelectedRequest('');
        setConfirmed(false);}}>
      <option value="">اختر الباقة</option>
-     {selectedRequest&&!visibleData.packages.some(p=>p.id===selectedPackage)&&
+     {academyAdminNeedsOriginalQuoteOption(selectedRequest,selectedPackage,
+      visibleData.requests,visibleData.packages)&&
       <option value={selectedPackage}>
        إصدار السعر الأصلي المرتبط بطلب الطالب
       </option>}
