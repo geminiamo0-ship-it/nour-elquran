@@ -1,7 +1,8 @@
 import {describe,expect,it} from 'vitest';
 import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified,
  academyAdminCanReject,academyAdminAckClearsRequestSelection,
- academyAdminConfirmationMatchesMode} from './admin-academy-write-outcome';
+ academyAdminConfirmationMatchesMode,academyAdminSessionLockIsBusy,
+ academyAdminReleaseSessionLock} from './admin-academy-write-outcome';
 
 describe('staff academy D1 receipt integrity #315',()=>{
  it('holds immutable operations after uncertain HTTP outcomes',()=>{
@@ -172,5 +173,23 @@ describe('academy staff confirmation is scoped to its section #315',()=>{
    expect(academyAdminConfirmationMatchesMode(false,previous,previous)).toBe(false);
   }
   expect(academyAdminConfirmationMatchesMode(true,null,'requests')).toBe(false);
+ });
+});
+
+describe('staff academy in-flight session lock isolation #315',()=>{
+ it('does not block a new actor while a prior signed POST is unresolved',()=>{
+  const staffA={id:'synthetic-staff-a'};
+  const staffB={id:'synthetic-staff-b'};
+  const firstAttempt={};
+  const secondAttempt={};
+  const first={session:staffA,attempt:firstAttempt};
+  expect(academyAdminSessionLockIsBusy(first,staffA)).toBe(true);
+  expect(academyAdminSessionLockIsBusy(first,staffB)).toBe(false);
+  expect(academyAdminSessionLockIsBusy(null,staffB)).toBe(false);
+  const second={session:staffB,attempt:secondAttempt};
+  // A delayed finally from the old actor must never unlock the new POST.
+  expect(academyAdminReleaseSessionLock(second,firstAttempt)).toBe(second);
+  expect(academyAdminReleaseSessionLock(second,secondAttempt)).toBeNull();
+  expect(academyAdminReleaseSessionLock(first,firstAttempt)).toBeNull();
  });
 });
