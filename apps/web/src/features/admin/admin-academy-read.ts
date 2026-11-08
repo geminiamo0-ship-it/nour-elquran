@@ -31,6 +31,22 @@ export function academyAdminInviteStatusLabel(
  return invite.expiresAtMs<now?'انتهت صلاحية الدعوة':'بانتظار التسجيل';
 }
 
+/** Ignore a signed GET if a newer refresh, write or session change superseded it. */
+export function academyAdminReadEpochMayApply(
+ started:number,current:number,aborted:boolean,sessionSame:boolean):boolean{
+ return started===current&&!aborted&&sessionSame;
+}
+/** Only staff authorization denials revoke the visible privileged snapshot. */
+export function academyAdminStaffAccessRevoked(status:number,code:string):boolean{
+ return status===401||(status===403&&code==='STAFF_ACCESS_DENIED')||
+  ((status===403||status===409)&&code==='ACADEMY_STAFF_ACCESS_CHANGED');
+}
+/** A delayed one-use invite receipt cannot survive a staff revocation. */
+export function academyAdminMutationMayApply<T>(
+ started:T,current:T,revoked:boolean):boolean{
+ return started===current&&!revoked;
+}
+
 export type AdminAcademySnapshot={
  code:'ACADEMY_STAFF';packages:AcademyPackage[];
  requests:AcademyRequest[];invites:AcademyInvite[];
