@@ -139,6 +139,8 @@ describe('staff academy confirmation is bound to unchanged form values #315',()=
    .toHaveLength(4);
   expect(source).toContain('if(!confirmedForMode||busy||!visibleData)return');
   expect(source).not.toContain('disabled={!confirmed||busy');
+  expect(source).toContain('academyAdminSessionLockIsBusy(sending.current,session)');
+  expect(source).toContain('academyAdminReleaseSessionLock(sending.current,attempt)');
   expect(source).toContain('selectedRequest,reason,confirmedForMode,busy');
  });
 
