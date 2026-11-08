@@ -710,6 +710,11 @@ Never write "verified" if the workflow is queued or missing. Never merge without
 - In `santoreno`, PR #216 adds automation to create bucket `noor-quran-hafs-v1`, fetch 1323 files, publish manifest last and deploy isolated read-only Worker. Wait for its actual GitHub Actions pass; may block on missing Cloudflare secrets/access/asset mirror.
 - S04 acceptance: CI Verify, manual compare sample pages (including 1 and 604) to authoritative source, confirm 6236 verse identifiers before claiming global ayah mapping. Word highlights, pens, private persisted notes and licensed audio remain later phases.
 
+## 2026-11-08 — #315 / Draft #325 staff academy read gate
+- Latest `main@4c15b59f713f41e2be9999bb082118cc48496c10`; Draft #325 and #327 OPEN. Previous #325 `dc7d979` exact-head Verify [42435241394](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42435241394) SUCCESS 4/4, prior to this change.
+- Ported strict staff GET HTTP 200 requirement from #327 into #325: `admin-academy-read.ts` exports gate, `AdminAcademyMvp.tsx` rejects any other status before JSON, and `admin-academy-read.test.ts` checks 202/206/other non-200. No privileged data displayed from partial/accepted proxy responses.
+- NEXT: inspect new exact-head Verify; reconcile remaining #327 admin validation without losing #325 atomic guardian quote `packageVersionId`, independent security review, signed isolated Cloudflare Dev guardian/two siblings/staff reprice/replay/role revocation and mobile 360/390. Do not merge, deploy Production, activate finance/WhatsApp/audio or enable cumulative ink; #315/#326 stay OPEN.
+
 ## Handoff — Quran UX #85
 - Branch `feat/85-quran-smooth-reader-notes-search` from `e413cf9d34532cdae847b4c1bebc34665f50eddc`, issue #85. Verify PR CI and mobile visuals before merging.
 - Preview Deployments temporarily disabled for `nour-elquran`, `nour-elquran-422`, `nour-elquran-422o` to prevent exhausting Hobby builds. Production auto deployment unchanged.
