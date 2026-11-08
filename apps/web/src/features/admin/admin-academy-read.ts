@@ -31,6 +31,18 @@ export function academyAdminInviteStatusLabel(
  return invite.expiresAtMs<now?'انتهت صلاحية الدعوة':'بانتظار التسجيل';
 }
 
+/** Keep a long-open Admin invitation list accurate at the exact Worker expiry
+ * boundary (expiresAtMs + 1), without polling claimed or expired invites.
+ * Cap timers to one minute to tolerate long browser sleeps/clock adjustments. */
+export function academyAdminNextInviteExpiryDelay(
+ invites:ReadonlyArray<Pick<AcademyInvite,'claimed'|'expiresAtMs'>>,
+ now:number):number|null{
+ const pending=invites.filter(i=>i.claimed===0&&i.expiresAtMs>=now);
+ if(pending.length===0)return null;
+ const nearest=Math.min(...pending.map(i=>i.expiresAtMs-now+1));
+ return Math.max(1,Math.min(60_000,nearest));
+}
+
 /** A durable claim must not be presented as unused when the joined Sheikh
  * account name is temporarily missing or the account was deactivated. */
 export function academyAdminInviteDisplayName(
