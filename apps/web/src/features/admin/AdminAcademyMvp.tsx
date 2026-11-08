@@ -34,6 +34,7 @@ const operationErrors:Record<string,string>={
  ACADEMY_REQUEST_ALREADY_ACTIVATED:'الطلب اتفعّل بالفعل. اضغط تحديث وشوف الاشتراك في ملف الطالب.',
  ACADEMY_REQUEST_NOT_FOUND:'طلب الاشتراك غير موجود. حدّث قائمة الطلبات.',
  ACADEMY_REQUEST_REJECTED:'الطلب مرفوض ولا يمكن تفعيله. راجع الطلب قبل المحاولة.',
+ ACADEMY_INVITE_ALREADY_ISSUED:'تم إصدار الدعوة السابقة بالفعل، ورابطها السري لا يمكن استعادته. حدّث سجل الدعوات وتحقق من الحالة قبل إنشاء رابط جديد.',
  ACADEMY_REQUEST_MISMATCH:'الطلب لا يطابق الطالب أو سعر الباقة المختار. اختر الطلب الأصلي من القائمة.',
  ACADEMY_PACKAGE_VERSION_UNAVAILABLE:'الباقة دي اتغيّرت أو اتوقفت. حدّث الباقات واختر الإصدار الصحيح.',
  ACADEMY_CYCLE_OVERLAP:'فيه اشتراك متداخل لنفس الطالب. راجع مدة الباقة الحالية قبل التجديد.',
@@ -44,6 +45,12 @@ const operationErrors:Record<string,string>={
  ACADEMY_REFERENCE_UNAVAILABLE:'الطالب أو إصدار الباقة غير موجود في قاعدة البيانات.',
  ACADEMY_ACTIVATION_DENIED:'تعذّر تنفيذ التفعيل بسبب قيد في سجل الاشتراكات. لا تكرر استلام الدفع؛ راجع الاشتراك الحالي أو بلّغ الإدارة.',
 };
+/** Never render arbitrary HTTP/D1 error codes: a proxy or malformed handler
+ * could include private text or an unbounded payload in its code field. */
+export function academyAdminOperationErrorMessage(code:string):string{
+ return Object.prototype.hasOwnProperty.call(operationErrors,code)?
+  operationErrors[code]:'تعذّر تنفيذ العملية. راجع السجل وتحقق من حالتها قبل المحاولة مجددًا.';
+}
 class AcademyCommandError extends Error{
  constructor(readonly code:string,readonly status:number,
   readonly exactCodeOnly:boolean){super(code);}
@@ -235,7 +242,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     academyPendingStore.clearIfSame(operation);
     setPendingOp(null);setPendingSession(null);
     setResult({phase:'error',message:e instanceof AcademyCommandError?
-     (operationErrors[e.code]??'تعذّر تنفيذ العملية: '+e.code):
+     academyAdminOperationErrorMessage(e.code):
      'تعذّر تنفيذ العملية'});
    }
   }finally{
