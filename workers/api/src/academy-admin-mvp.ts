@@ -438,18 +438,50 @@ export async function staffInvite(db:CoreDatabase,subject:string,raw:unknown,now
  if(!object(raw)||!exact(raw,['operationId'])||!uuid(raw.operationId))
  return {status:400,code:'ACADEMY_INVALID_INVITE'} as const;
  if(!await canManageTeachers(db,subject))return {status:403,code:'STAFF_ACCESS_DENIED'} as const;
- // Do not reveal the one-time secret on idempotent replay: server stores hash only.
- const prior=await db.prepare('SELECT id FROM academy_teacher_invites WHERE operation_id=?')
- .bind(raw.operationId).first<{id:string}>();
+ // A replay must not reveal a one-time secret. Only a newly generated
+ // token may be returned, and only after its exact hashed D1 row is proven.
+ type InviteReceipt={actor:string;tokenHash:string;expiresAtMs:number};
+ const readIssued=()=>db.prepare(`SELECT actor_subject AS actor,
+ token_hash AS tokenHash,expires_at_ms AS expiresAtMs
+ FROM academy_teacher_invites WHERE operation_id=?`)
+ .bind(raw.operationId).first<InviteReceipt>();
+ const prior=await readIssued();
  if(prior)return {status:409,code:'ACADEMY_INVITE_ALREADY_ISSUED'} as const;
  const token=hex(crypto.getRandomValues(new Uint8Array(32)));
  const tokenHash=await digest(token);
- try{await db.prepare(`INSERT INTO academy_teacher_invites
+ const expiresAtMs=now+7*86400000;
+ const confirmed=async()=>{
+  const saved=await readIssued();
+  return saved?.actor===subject&&saved.tokenHash===tokenHash&&
+   saved.expiresAtMs===expiresAtMs;
+ };
+ try{
+  const receipt=await db.prepare(`INSERT INTO academy_teacher_invites
   (id,operation_id,token_hash,actor_subject,created_at_ms,expires_at_ms)
   VALUES(?,?,?,?,?,?)`).bind(crypto.randomUUID(),raw.operationId,tokenHash,
-   subject,now,now+7*86400000).run();}
- catch(e){if(allowed(e))return {status:409,code:'ACADEMY_INVITE_DENIED'} as const;throw e;}
- return {status:201,code:'ACADEMY_INVITE_ISSUED',token,expiresAtMs:now+7*86400000} as const;
+   subject,now,expiresAtMs).run();
+  // A resolved D1 response without an affirmative receipt cannot authorize
+  // showing a secret. A readback also detects a conflicting operation race.
+  if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
+     receipt.meta.changes<1){
+   if(!await confirmed())
+    return {status:503,code:'ACADEMY_INVITE_STORAGE_UNAVAILABLE'} as const;
+  }else if(!await confirmed())
+   return {status:503,code:'ACADEMY_INVITE_STORAGE_UNAVAILABLE'} as const;
+ }catch(e){
+  // An ACK can be lost after the INSERT commits. Recover the *new* token
+  // only when its hash, actor and expiry exactly match the durable row.
+  if(await confirmed())
+   return {status:201,code:'ACADEMY_INVITE_ISSUED',token,expiresAtMs} as const;
+  if(allowed(e)){
+   if(e instanceof Error&&/abort/i.test(e.message)&&
+      !/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_INVITE_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:'ACADEMY_INVITE_DENIED'} as const;
+  }
+  throw e;
+ }
+ return {status:201,code:'ACADEMY_INVITE_ISSUED',token,expiresAtMs} as const;
 }
 export async function claimInvite(db:CoreDatabase,subject:string,raw:unknown,now=Date.now()){
  if(!object(raw)||!exact(raw,['token'])||typeof raw.token!=='string'||
@@ -462,17 +494,35 @@ export async function claimInvite(db:CoreDatabase,subject:string,raw:unknown,now
  if(!current||current.expiresAtMs<now)return {status:404,code:'ACADEMY_INVITE_NOT_FOUND'} as const;
  if(current.claimedSubject===subject)return {status:200,code:'ACADEMY_INVITE_CLAIMED'} as const;
  if(current.claimedSubject)return {status:409,code:'ACADEMY_INVITE_USED'} as const;
+ const readClaim=()=>db.prepare(`SELECT claimed_subject AS claimedSubject
+ FROM academy_teacher_invites WHERE id=?`).bind(current.id)
+ .first<{claimedSubject:string|null}>();
  try{
  const response=await db.prepare(`UPDATE academy_teacher_invites SET claimed_subject=?,claimed_at_ms=?
  WHERE id=? AND claimed_subject IS NULL AND expires_at_ms>=?`)
  .bind(subject,now,current.id,now).run();
- // The same atomic UPDATE creates the Sheikh row in an AFTER trigger.
- // D1 meta.changes may count the trigger's write as well; it is not a
- // trustworthy "exactly one invite row" receipt.
- const confirmed=await db.prepare(`SELECT claimed_subject AS claimedSubject
- FROM academy_teacher_invites WHERE id=?`).bind(current.id)
- .first<{claimedSubject:string|null}>();
- if(confirmed?.claimedSubject!==subject)return {status:409,code:'ACADEMY_INVITE_USED'} as const;
- return {status:response.meta.changes>0?201:200,code:'ACADEMY_INVITE_CLAIMED'} as const;
- }catch(e){if(allowed(e))return {status:409,code:'ACADEMY_INVITE_DENIED'} as const;throw e;}
+ // The UPDATE also creates the Sheikh row through a D1 trigger. A
+ // resolved or failed write receipt is not authoritative: confirm the
+ // exact claimant before returning success, including zero-change ACKs.
+ const confirmed=await readClaim();
+ if(confirmed?.claimedSubject===subject)
+  return {status:response.success===true&&Number.isSafeInteger(response.meta?.changes)&&
+   response.meta.changes>0?201:200,code:'ACADEMY_INVITE_CLAIMED'} as const;
+ if(confirmed?.claimedSubject)return {status:409,code:'ACADEMY_INVITE_USED'} as const;
+ return {status:503,code:'ACADEMY_INVITE_STORAGE_UNAVAILABLE'} as const;
+ }catch(e){
+  // An aborted transport can occur AFTER D1 committed. Recover only
+  // this claimant's durable receipt; never report a false rejection.
+  const confirmed=await readClaim();
+  if(confirmed?.claimedSubject===subject)
+   return {status:200,code:'ACADEMY_INVITE_CLAIMED'} as const;
+  if(confirmed?.claimedSubject)return {status:409,code:'ACADEMY_INVITE_USED'} as const;
+  if(allowed(e)){
+   if(e instanceof Error&&/abort/i.test(e.message)&&
+      !/constraint|ACADEMY_|SUBSCRIPTION_|UNIQUE|FOREIGN KEY/i.test(e.message))
+    return {status:503,code:'ACADEMY_INVITE_STORAGE_UNAVAILABLE'} as const;
+   return {status:409,code:'ACADEMY_INVITE_DENIED'} as const;
+  }
+  throw e;
+ }
 }
