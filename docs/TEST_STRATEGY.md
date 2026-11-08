@@ -1,3 +1,7 @@
+## #315 signed staff academy stale-read / revocation regression (2026-11-08)
+- Unit: a prior GET epoch, aborted GET or prior AccountSession must never apply to current staff state; an actual staff 401/403 or ACADEMY_STAFF_ACCESS_CHANGED must invalidate the roster and secret invitation, while unrelated 403/409 domain errors do not imply revocation. A late invite ACK must be suppressed after session switch or revocation.
+- Component source: every confirmed write and manual refresh must invalidate in-flight older reads before a new roster can enable another financial action. Exact-head CI includes strict TypeScript/Vitest/build and native D1; it is not signed remote Dev or a substitute for staff revocation and 360/390 browser acceptance. Preserve immutable quote version, pending operationId and default-off Production flags.
+
 ## #315 uncertain staff academy command gate (2026-11-08 source candidate)
 - `admin-academy-pending.test.ts` (ported from Draft #327) checks in-tab remount preservation of exact immutable payload, one in-flight POST, actor switch cleanup and no false persistence claim across full reload.
 - `admin-academy-write-outcome.test.ts` checks retryable 408/425/429/5xx, unknown 409 vs reviewed terminal conflicts, strict 201/200 command ACKs, activation cycle and one-use invite token/expiry validation. `AdminAcademyMvp.tsx` consumes both gates, blocks a new write until uncertainty resolves and permits read-only refresh.
