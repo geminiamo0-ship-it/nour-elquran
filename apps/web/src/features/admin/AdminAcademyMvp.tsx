@@ -150,7 +150,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   }catch(e){
    if(!stillCurrent())return;
    const uncertain=!(e instanceof AcademyCommandError)||
-    academyAdminOutcomeIsUncertain(e.status,e.code,e.exactCodeOnly);
+    academyAdminOutcomeIsUncertain(path,e.status,e.code,e.exactCodeOnly);
    if(uncertain){
     setResult({phase:'uncertain',message:
      'نتيجة العملية غير مؤكدة. لا تنشئ عملية جديدة؛ أعد نفس الطلب بمعرّفه الأصلي.'});
