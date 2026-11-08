@@ -1,3 +1,8 @@
+## 2026-11-09 — #315 unresolved staff retry requires signed refresh (Draft PR #325)
+- Source review found a dead control: after an uncertain staff academy POST, a subsequent failed/revoked staff GET leaves the exact-operation retry button visible although `send()` silently refuses without an authorized snapshot. This misleads operators handling manual settlement.
+- Added pure `academyAdminCanReplay` gate, fail-closed regression, and disabled retry with an Arabic refresh/authorization explanation until a fresh signed staff snapshot is available. The original operationId/payload remain in memory for exact replay; no new write, payment, schema, secrets or Production changes.
+- Source commits `aa2a14bc`, `568f8c5c`, `a5886342`. Exact-head CI, independent security review and Cloudflare Dev staff/revoked/uncertain-retry mobile acceptance remain pending. Draft #327 overlaps and must be reconciled before merge; #315/#324 remain OPEN.
+
 ## 2026-11-08 — #315 Admin confirmation A→B→A revisit guard (Draft PR #325)
 - Review of exact PR source found `confirmedMode===mode` alone re-accepts a previously checked financial/teacher action if staff navigates A→B→A without editing form values. Added an explicit `[mode]` effect to clear both confirmation state fields on every committed section transition; no D1/API/price/provider change.
 - Added source regression in `AdminAcademyMvp.test.tsx`. **New exact-head CI and signed Dev browser interaction are pending**; do not merge solely on this source change. #327 still overlaps 19 files; independent security review and staff/guardian/sibling/mobile acceptance remain required. No Production or flags changed.
