@@ -92,6 +92,14 @@ export function academyAdminAckIsVerified(path:string,status:number,raw:unknown,
  return true;
 }
 
+/** A pending staff write may be replayed only after a fresh authorized
+ * D1 read. A 403/failed refresh leaves the original operation intact but
+ * must not display a clickable retry that silently does nothing. */
+export function academyAdminCanReplay(
+ hasSignedSnapshot:boolean,revoked:boolean,inFlight:boolean):boolean{
+ return hasSignedSnapshot&&!revoked&&!inFlight;
+}
+
 /** A confirmation belongs to the exact Admin section where it was checked.
  * Next route/mode may reuse the same mounted component and form state.
  * Never let a previous section's consent authorize a different D1 command. */
