@@ -14,6 +14,9 @@ export type AcademyInvite={
  id:string;teacherName:string|null;claimed:0|1;teacherId:string|null;
  createdAtMs:number;expiresAtMs:number;claimedAtMs:number|null;
 };
+/** Privileged staff GET must be a complete 200, never a proxy partial/accepted 2xx. */
+export function academyAdminReadHttpStatusIsValid(status:number){return status===200;}
+
 export type AdminAcademySnapshot={
  code:'ACADEMY_STAFF';packages:AcademyPackage[];
  requests:AcademyRequest[];invites:AcademyInvite[];
