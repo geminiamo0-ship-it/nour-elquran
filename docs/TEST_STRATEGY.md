@@ -1,3 +1,6 @@
+## #315 uncertain D1 package-version write receipt (2026-11-08)
+- Unit: when staff package INSERT resolves with `success=false` or `changes=0`, a readback of the exact immutable operation must return 200 replay only for identical staff actor, package, price, title, session count and active flag. Different actor or price => 409 without leaking a package acknowledgement; absent row => 503, never 201. Native signed D1 and exact-head Verify are required before merge; remote Dev staff/guardian quote race remains a separate gate.
+
 ## #324 academic ledger HTTP status regression (2026-11-07)
 - For signed learner `GET /subscription-ledger`, accept only HTTP 200 as a complete academic balance snapshot; reject 201/202/204/206 before JSON parsing. Preserve explicit 403 and strict ledger DTO checks. Test on Draft PR #325; exact-head Verify and signed remote Dev acceptance are separate gates.
 
