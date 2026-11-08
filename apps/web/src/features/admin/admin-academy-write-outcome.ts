@@ -1,31 +1,43 @@
 /** #315: Treat unknown staff D1 write outcomes as unresolved financial commands.
  * Only reviewed terminal business conflicts release the original operationId.
  */
-const terminalConflicts=new Set([
- 'ACADEMY_REQUEST_MISMATCH','ACADEMY_PACKAGE_VERSION_UNAVAILABLE',
- 'ACADEMY_CYCLE_OVERLAP','ACADEMY_RENEWAL_CONFLICT',
- 'ACADEMY_ROLLOVER_CONFLICT','ACADEMY_REQUEST_ALREADY_ACTIVATED',
- 'ACADEMY_REQUEST_REJECTED','ACADEMY_REQUEST_NOT_FOUND',
- 'ACADEMY_OPERATION_CONFLICT','ACADEMY_PACKAGE_UNAVAILABLE',
- 'ACADEMY_LEARNER_UNAVAILABLE','ACADEMY_REFERENCE_UNAVAILABLE',
- 'ACADEMY_STAFF_ACCESS_CHANGED','ACADEMY_INVITE_ALREADY_ISSUED',
-]);
-// A generic edge/proxy 4xx can arrive AFTER D1 committed the command.
-// Only exact, known Worker pre-write errors (or reviewed 409 conflicts) are
-// terminal. Never release an operationId for a fabricated/partial 4xx body.
+// A 4xx body is terminal only when the SAME Worker command can emit it.
+// Accepting an activation-only 409 on an invitation POST could discard the
+// invitation's immutable operationId after an intermediary replaced its ACK.
+const terminalConflictsByPath:Readonly<Record<string,ReadonlySet<string>>>={
+ packages:new Set(['ACADEMY_OPERATION_CONFLICT']),
+ activate:new Set([
+  'ACADEMY_OPERATION_CONFLICT','ACADEMY_REQUEST_MISMATCH',
+  'ACADEMY_PACKAGE_VERSION_UNAVAILABLE','ACADEMY_CYCLE_OVERLAP',
+  'ACADEMY_RENEWAL_CONFLICT','ACADEMY_ROLLOVER_CONFLICT',
+  'ACADEMY_REQUEST_ALREADY_ACTIVATED','ACADEMY_REQUEST_REJECTED',
+  'ACADEMY_REQUEST_NOT_FOUND','ACADEMY_PACKAGE_UNAVAILABLE',
+  'ACADEMY_LEARNER_UNAVAILABLE','ACADEMY_REFERENCE_UNAVAILABLE',
+  'ACADEMY_STAFF_ACCESS_CHANGED',
+ ]),
+ reject:new Set(['ACADEMY_OPERATION_CONFLICT']),
+ contact:new Set(['ACADEMY_OPERATION_CONFLICT']),
+ invites:new Set(['ACADEMY_INVITE_ALREADY_ISSUED']),
+};
+const invalidByPath:Readonly<Record<string,string>>={
+ packages:'ACADEMY_INVALID_PACKAGE',
+ activate:'ACADEMY_INVALID_ACTIVATION',
+ reject:'ACADEMY_INVALID_REJECTION',
+ contact:'ACADEMY_INVALID_CONTACT',
+ invites:'ACADEMY_INVALID_INVITE',
+};
+// Generic auth/origin/method refusals are common to every staff route.
 const terminalHttpErrors:Readonly<Record<number,ReadonlySet<string>>>={
- 400:new Set(['ACADEMY_INVALID_REQUEST','ACADEMY_INVALID_PACKAGE',
-  'ACADEMY_INVALID_ACTIVATION','ACADEMY_INVALID_REJECTION',
-  'ACADEMY_INVALID_CONTACT','ACADEMY_INVALID_INVITE']),
  401:new Set(['UNAUTHENTICATED']),
  403:new Set(['BAD_ORIGIN','STAFF_ACCESS_DENIED']),
  404:new Set(['NOT_FOUND']),
  405:new Set(['METHOD_NOT_ALLOWED']),
 };
 export function academyAdminOutcomeIsUncertain(
- status:number,code='',exactCodeOnly=true){
+ path:string,status:number,code='',exactCodeOnly=true){
  if(!exactCodeOnly)return true;
- if(status===409)return !terminalConflicts.has(code);
+ if(status===409)return !terminalConflictsByPath[path]?.has(code);
+ if(status===400)return invalidByPath[path]!==code;
  if(status>=400&&status<500)return !terminalHttpErrors[status]?.has(code);
  return true;
 }
