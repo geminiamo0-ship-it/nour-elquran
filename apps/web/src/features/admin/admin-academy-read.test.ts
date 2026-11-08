@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {parseAdminAcademyRead} from './admin-academy-read';
+import {academyAdminReadHttpStatusIsValid,parseAdminAcademyRead} from './admin-academy-read';
 
 const packageRow={id:'version-1',packageId:'package-1',title:'Synthetic package',
  priceEgp:200,sessions:8,active:1,atMs:1700000000000};
@@ -14,6 +14,11 @@ const valid=()=>({status:200,code:'ACADEMY_STAFF',
  invites:[{...inviteRow}],whatsappNumber:'201000000000'});
 
 describe('bounded signed staff academy read #315',()=>{
+ it('requires exact HTTP 200 before parsing any privileged staff snapshot',()=>{
+  expect(academyAdminReadHttpStatusIsValid(200)).toBe(true);
+  for(const status of [0,199,201,202,204,206,299,301,304,400,401,403,404,500,503])
+   expect(academyAdminReadHttpStatusIsValid(status)).toBe(false);
+ });
  it('projects only reviewed fields, never unknown D1/HTTP private keys',()=>{
   const receipt={...valid(),guardianPhone:'secret',
    packages:[{...packageRow,authSubject:'secret'}],
