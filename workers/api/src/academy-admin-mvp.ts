@@ -201,8 +201,13 @@ export async function staffPackage(db:CoreDatabase,subject:string,raw:unknown,no
   // A resolved D1 response is not proof of a committed version. Do not
   // acknowledge a package/price change when the write reports no success.
   if(receipt.success!==true||!Number.isSafeInteger(receipt.meta?.changes)||
-     receipt.meta.changes<1)
-   return {status:503,code:'ACADEMY_PACKAGE_STORAGE_UNAVAILABLE'} as const;
+     receipt.meta.changes<1){
+   // A D1 response can report a failed/zero-row receipt after committing.
+   // Reconcile only this exact immutable staff operation before reporting 503.
+   const raced=await readPrior();
+   return raced?replay(raced):
+    {status:503,code:'ACADEMY_PACKAGE_STORAGE_UNAVAILABLE'} as const;
+  }
  }catch(e){
   if(allowed(e)){
    // A concurrent identical operation can win the UNIQUE constraint.
