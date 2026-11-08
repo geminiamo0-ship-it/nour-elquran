@@ -1,3 +1,7 @@
+## 2026-11-08 — #315 Admin confirmation A→B→A revisit guard (Draft PR #325)
+- Review of exact PR source found `confirmedMode===mode` alone re-accepts a previously checked financial/teacher action if staff navigates A→B→A without editing form values. Added an explicit `[mode]` effect to clear both confirmation state fields on every committed section transition; no D1/API/price/provider change.
+- Added source regression in `AdminAcademyMvp.test.tsx`. **New exact-head CI and signed Dev browser interaction are pending**; do not merge solely on this source change. #327 still overlaps 19 files; independent security review and staff/guardian/sibling/mobile acceptance remain required. No Production or flags changed.
+
 ## 2026-11-08 — #315 historical request quote visibility (Draft #325; source-only)
 - Verified current main/PRs/Issue #315 and previous exact-head Verify #42515749446 (4/4 PASS at f46bc474) before changes. Staff requests can point to a disabled/older immutable package version, while the activation select rendered only active versions; if the historical version still appeared in the catalog as disabled, the original conditional suppressed its option and the browser could visually show another active price while React submitted the old version.
 - Candidate fix in Draft #325: add a pure selected-request/version matching helper in `admin-academy-read.ts`, render the original quote option whenever absent from **visible active** options, and test disabled, missing, active, and unrelated quote cases. No Worker, D1, price, payment or Production mutation.
