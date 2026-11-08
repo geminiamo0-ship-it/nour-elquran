@@ -304,11 +304,11 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
      (e.nativeEvent as SubmitEvent).submitter?.dataset.active!=='false':true
    }))}>
     <label>اسم الباقة<input required minLength={2} maxLength={80}
-     value={title} onChange={e=>setTitle(e.target.value)}/></label>
+     value={title} onChange={e=>{setTitle(e.target.value);setConfirmed(false);}}/></label>
     <label>السعر بالجنيه<input required type="number" min={1} max={100000} step={1}
-     value={price} onChange={e=>setPrice(e.target.value)}/></label>
+     value={price} onChange={e=>{setPrice(e.target.value);setConfirmed(false);}}/></label>
     <label>عدد الحصص<input required type="number" min={1} max={60} step={1}
-     value={sessions} onChange={e=>setSessions(e.target.value)}/></label>
+     value={sessions} onChange={e=>{setSessions(e.target.value);setConfirmed(false);}}/></label>
     <p>السعر الجديد للطلبات القادمة فقط.</p>
     <Confirm checked={confirmed} onChange={setConfirmed}/>
     <button type="submit" disabled={!confirmed||busy} data-active="true">
@@ -340,9 +340,11 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     requestId:selectedRequest||null,note:reason.trim(),manualConfirmed:true
    }))}>
     <label>معرّف ملف الطالب<input required value={learnerId}
-     onChange={e=>{setLearnerId(e.target.value);setSelectedRequest('');}}/></label>
+     onChange={e=>{setLearnerId(e.target.value);setSelectedRequest('');
+       setConfirmed(false);}}/></label>
     <label>الباقة (إصدار سعر ثابت)<select required value={selectedPackage}
-     onChange={e=>{setSelectedPackage(e.target.value);setSelectedRequest('');}}>
+     onChange={e=>{setSelectedPackage(e.target.value);setSelectedRequest('');
+       setConfirmed(false);}}>
      <option value="">اختر الباقة</option>
      {selectedRequest&&!visibleData.packages.some(p=>p.id===selectedPackage)&&
       <option value={selectedPackage}>
@@ -352,7 +354,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
       {p.title} — {p.priceEgp} ج / {p.sessions} حصص</option>)}
     </select></label>
     <label>سبب/مرجع تأكيد الدفع<input required minLength={10} maxLength={500}
-     value={reason} onChange={e=>setReason(e.target.value)}
+     value={reason} onChange={e=>{setReason(e.target.value);setConfirmed(false);}}
      placeholder="تم الاستلام يدويًا بعد التحقق من التحويل"/></label>
     <Confirm checked={confirmed} onChange={setConfirmed}/>
     <button type="submit" disabled={!confirmed||busy||!UUID.test(learnerId)||!UUID.test(selectedPackage)}>
@@ -393,7 +395,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     operationId:iso(),whatsappNumber:whatsapp.trim()}))}>
     <label>رقم واتساب الأكاديمية<input required dir="ltr"
      inputMode="tel" pattern="[1-9][0-9]{9,14}" value={whatsapp}
-     onChange={e=>setWhatsapp(e.target.value)} /></label>
+     onChange={e=>{setWhatsapp(e.target.value);setConfirmed(false);}} /></label>
     <Confirm checked={confirmed} onChange={setConfirmed}/>
     <button type="submit" disabled={!confirmed||busy}>حفظ رقم الواتساب</button>
    </form>
