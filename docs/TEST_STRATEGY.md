@@ -1,3 +1,7 @@
+## #315 Sheikh invitation expiry after background sleep — 2026-11-08
+- Unit: `admin-academy-read.test.ts` checks stale mount-time vs resumed current time and no pending timer for expired invitations; inclusive `expiresAtMs` Worker boundary remains covered.
+- Integration still required on Dev/browser: keep an authorized staff tab open across a synthetic invite expiry, background and resume it, and verify the label changes immediately without revealing an old actor's one-use token; repeat after signed GET refresh, revoked grant, account switch, 360/390 viewport. Unit/CI do **not** substitute for these browser/role checks.
+
 ## 2026-11-08 #315 staff POST malformed 403 regression
 - Vitest `AdminAcademyMvp.test.tsx`: an HTML or code-less 403 must clear privileged academy data/one-use invite via staff revocation, but its D1 mutation outcome stays uncertain (`exactCodeOnly:false`) so the immutable operation ID is retained for same-command replay. A valid exact Worker business 403 must not be confused with revoked staff. 401 does not prove a failed write. Malformed 503 remains a generic error, not an invented staff denial.
 - SSR four modes show only loading before a signed 200 GET; no privileged learner roster or invitation URL in initial HTML. Exact-head GitHub Verify, independent security review and source-pinned Dev signed role/mobile QA still required; source tests alone do not authorize merge or Production.
