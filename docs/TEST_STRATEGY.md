@@ -1,3 +1,7 @@
+## 2026-11-08 — #315 staff academy confirmation-edit regression
+- `apps/web/src/features/admin/AdminAcademyMvp.test.tsx` checks all seven operational `onChange` handlers clear `confirmed` before submission: package title/EGP price/session count, learner ID, package version, manual audit reason, academy WhatsApp number. This is a source-contract guard, not an interactive browser acceptance test.
+- Acceptance still requires real staff Dev browser: check confirmation, edit each field, verify the checkbox becomes unchecked and write button disabled until rechecked; test 360×667 and 390×844 plus revoked staff, sibling isolation and immutable D1 quote replay. No financial settlement or external messaging is enabled by this change.
+
 ## #315 staff request selection after confirmed D1 ACK (2026-11-08)
 - Pure Vitest regression checks only `activate` and `reject` clear selected learner/request/price version after a verified ACK; package/contact/invite writes do not. Unknown 503 and unexpected 202 remain uncertain, retaining the exact operationId/payload and forbidding a new financial command.
 - Full gate: exact-head Verify code-quality, native Cloudflare D1, governance and repository-policy; then signed isolated Dev staff/guardian/two-sibling refresh and uncertain-write replay, 360/390 browser UX, independent finance/auth review. Source tests are not Dev acceptance.
