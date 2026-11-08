@@ -7,6 +7,8 @@ import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified,
  academyAdminCanReject} from './admin-academy-write-outcome';
 import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
  parseAdminAcademyRead,academyAdminInviteStatusLabel,
+ academyAdminReadEpochMayApply,academyAdminStaffAccessRevoked,
+ academyAdminMutationMayApply,
  type AdminAcademySnapshot} from './admin-academy-read';
 
 type Academy=AdminAcademySnapshot;
@@ -20,6 +22,8 @@ async function readAcademy(signal:AbortSignal):Promise<Academy>{
  const res=await fetch('/v1/staff/academy',{credentials:'same-origin',cache:'no-store',
   redirect:'error',signal});
  // An unexpected 2xx (e.g. 202/206) is not a complete authorized D1 snapshot.
+ if(res.status===401||res.status===403)
+  throw new AcademyCommandError('STAFF_ACCESS_DENIED',res.status,true);
  if(!academyAdminReadHttpStatusIsValid(res.status))
   throw new Error('تعذّر قراءة الإدارة من الخادم');
  const v:unknown=await res.json();
@@ -48,6 +52,8 @@ async function submit(path:string,command:unknown){
  const res=await fetch('/v1/staff/academy/'+path,{method:'POST',
   credentials:'same-origin',cache:'no-store',redirect:'error',
   headers:{'Content-Type':'application/json'},body:JSON.stringify(command)});
+ if(res.status===401)
+  throw new AcademyCommandError('STAFF_ACCESS_DENIED',401,true);
  const v:unknown=await res.json();
  if(!v||typeof v!=='object'||Array.isArray(v)||typeof (v as {code?:unknown}).code!=='string')
   throw new Error('استجابة غير صالحة');
@@ -81,7 +87,15 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const [pendingSession,setPendingSession]=useState<AccountSession|null>(null);
  const sending=useRef(false);
  const currentSession=useRef(session);
+ const readEpoch=useRef(0);
+ const revokedStaff=useRef(false);
  currentSession.current=session;
+ function invalidateStaffData(){
+  ++readEpoch.current;
+  revokedStaff.current=true;
+  setData(null);setDataSession(null);setReadError(true);
+  setInviteUrl('');setInviteSession(null);setWhatsapp('');setConfirmed(false);
+ }
  // State survives one render across a prop switch, before effect cleanup runs.
  // Render only data, secret invite URLs and pending retries owned by this session.
  const visibleData=academyAdminSessionViewIsReady(dataSession,session)?data:null;
@@ -89,6 +103,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const visiblePendingOp=academyAdminSessionViewIsReady(pendingSession,session)?pendingOp:null;
  useEffect(()=>{
   const ctrl=new AbortController();
+  const epoch=++readEpoch.current;
   setData(null);setDataSession(null);setReadError(false);
   setInviteUrl('');setInviteSession(null);
   // Reset private learner IDs, audit notes and previous staff form selections
@@ -102,16 +117,26 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    'نتيجة العملية السابقة غير مؤكدة؛ أعد نفس العملية فقط.'}:
    {phase:'idle',message:''});
   void readAcademy(ctrl.signal).then(v=>{
-   if(!ctrl.signal.aborted){setData(v);setDataSession(session);
-    setReadError(false);setWhatsapp(v.whatsappNumber??'');}
-  }).catch(e=>{if(!ctrl.signal.aborted){setReadError(true);
-   setResult({phase:'error',message:e instanceof Error?e.message:'تعذّر تحميل البيانات'});
-  }});
+   if(academyAdminReadEpochMayApply(epoch,readEpoch.current,
+    ctrl.signal.aborted,currentSession.current===session)){
+    revokedStaff.current=false;
+    setData(v);setDataSession(session);
+    setReadError(false);setWhatsapp(v.whatsappNumber??'');
+   }
+  }).catch(e=>{
+   if(!academyAdminReadEpochMayApply(epoch,readEpoch.current,
+    ctrl.signal.aborted,currentSession.current===session))return;
+   if(e instanceof AcademyCommandError&&
+    academyAdminStaffAccessRevoked(e.status,e.code))invalidateStaffData();
+   else setReadError(true);
+   if(!academyPendingStore.forActor(session.user.id))
+    setResult({phase:'error',message:e instanceof Error?e.message:'تعذّر تحميل البيانات'});
+  });
   return()=>ctrl.abort();
  },[session,refresh]);
  const busy=result.phase==='busy'||result.phase==='uncertain';
  async function send(path:string,payload:unknown){
-  if(sending.current||!visibleData)return;
+  if(sending.current||!visibleData||revokedStaff.current)return;
   const held=academyPendingStore.forActor(session.user.id);
   // An unresolved settlement must be retried with the exact original object.
   if(held&&(held.path!==path||held.payload!==payload))return;
@@ -122,7 +147,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   if(!academyPendingStore.beginAttempt(operation,attempt))return;
   sending.current=true;
   const startedSession=session;
-  const stillCurrent=()=>currentSession.current===startedSession;
+  const stillCurrent=()=>academyAdminMutationMayApply(
+   startedSession,currentSession.current,revokedStaff.current);
   setResult({phase:'busy',message:'جارٍ تسجيل العملية لدى الخادم…'});
   setPendingOp(operation);setPendingSession(session);
   try{
@@ -133,23 +159,35 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    setPendingOp(null);setPendingSession(null);
    setResult({phase:'done',message:'سجّل الخادم العملية: '+ack.code});
    setConfirmed(false);setReason('');
+   // A committed write invalidates every earlier GET, including invite writes.
+   // Keep the one-use link only for this still-authorized staff session.
+   const epoch=++readEpoch.current;
+   setData(null);setDataSession(null);setReadError(false);
    if(path==='invites'&&typeof (ack as {token?:unknown}).token==='string'){
     const token=(ack as {code:string;token?:string}).token!;
     setInviteUrl(window.location.origin+'/teacher/join?token='+token);
     setInviteSession(startedSession);
-   }else{
-    // Require a fresh signed roster before another financial command.
-    setData(null);setDataSession(null);setReadError(false);
-    const ctrl=new AbortController();
-    void readAcademy(ctrl.signal).then(v=>{
-     if(stillCurrent()){setData(v);setDataSession(startedSession);setReadError(false);}
-    }).catch(()=>{
-     if(stillCurrent()){setReadError(true);setResult({phase:'error',
-      message:'تعذّر تحديث السجل. راجع العملية المحفوظة قبل متابعة الإدارة.'});}
-    });
    }
+   const ctrl=new AbortController();
+   void readAcademy(ctrl.signal).then(v=>{
+    if(stillCurrent()&&academyAdminReadEpochMayApply(epoch,readEpoch.current,
+     ctrl.signal.aborted,currentSession.current===startedSession)){
+     setData(v);setDataSession(startedSession);setReadError(false);
+     setWhatsapp(v.whatsappNumber??'');
+    }
+   }).catch(e=>{
+    if(currentSession.current!==startedSession||
+     epoch!==readEpoch.current||ctrl.signal.aborted)return;
+    if(e instanceof AcademyCommandError&&
+     academyAdminStaffAccessRevoked(e.status,e.code))invalidateStaffData();
+    else setReadError(true);
+    setResult({phase:'error',
+     message:'تعذّر تحديث السجل. راجع العملية المحفوظة قبل متابعة الإدارة.'});
+   });
   }catch(e){
-   if(!stillCurrent())return;
+   if(currentSession.current!==startedSession)return;
+   if(e instanceof AcademyCommandError&&
+    academyAdminStaffAccessRevoked(e.status,e.code))invalidateStaffData();
    const uncertain=!(e instanceof AcademyCommandError)||
     academyAdminOutcomeIsUncertain(path,e.status,e.code,e.exactCodeOnly);
    if(uncertain){
@@ -158,11 +196,6 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    }else{
     academyPendingStore.clearIfSame(operation);
     setPendingOp(null);setPendingSession(null);
-    if(e instanceof AcademyCommandError&&
-     (e.status===401||(e.status===403&&e.code==='STAFF_ACCESS_DENIED')||
-      e.code==='ACADEMY_STAFF_ACCESS_CHANGED')){
-     setData(null);setDataSession(null);setInviteUrl('');setInviteSession(null);
-    }
     setResult({phase:'error',message:e instanceof AcademyCommandError?
      (operationErrors[e.code]??'تعذّر تنفيذ العملية: '+e.code):
      'تعذّر تنفيذ العملية'});
@@ -181,7 +214,10 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   <h2>{modeTitle}</h2>
   {mode==='packages'?<p>أضف باقة أو عدّل سعرها وعدد حصصها. التعديلات الجديدة لا تغيّر الاشتراكات السابقة.</p>:
    <p>تُراجع كل عملية من الإدارة؛ واتساب ليس إثبات دفع تلقائيًا.</p>}
-  <button type="button" onClick={()=>setRefresh(n=>n+1)} disabled={result.phase==='busy'}>
+  <button type="button" onClick={()=>{
+   ++readEpoch.current;setData(null);setDataSession(null);
+   setRefresh(n=>n+1);
+  }} disabled={result.phase==='busy'}>
    تحديث البيانات</button>
   {!visibleData&&<p role={readError?'alert':'status'}>{readError?
    'تعذّر تحميل بيانات الإدارة. اضغط تحديث البيانات للمحاولة مجددًا.':
