@@ -48,15 +48,28 @@ class AcademyCommandError extends Error{
  constructor(readonly code:string,readonly status:number,
   readonly exactCodeOnly:boolean){super(code);}
 }
-async function submit(path:string,command:unknown){
+/** A malformed 403 from an intermediary must hide privileged staff data,
+ * but it cannot prove whether an earlier D1 mutation committed. Preserve the
+ * original operation for explicit same-ID reconciliation after re-auth. */
+export async function submitAcademyCommand(path:string,command:unknown){
  const res=await fetch('/v1/staff/academy/'+path,{method:'POST',
   credentials:'same-origin',cache:'no-store',redirect:'error',
   headers:{'Content-Type':'application/json'},body:JSON.stringify(command)});
  if(res.status===401)
-  throw new AcademyCommandError('STAFF_ACCESS_DENIED',401,true);
- const v:unknown=await res.json();
- if(!v||typeof v!=='object'||Array.isArray(v)||typeof (v as {code?:unknown}).code!=='string')
+  throw new AcademyCommandError('STAFF_ACCESS_DENIED',401,false);
+ let v:unknown;
+ try{v=await res.json();}
+ catch{
+  if(res.status===403)
+   throw new AcademyCommandError('STAFF_ACCESS_DENIED',403,false);
   throw new Error('استجابة غير صالحة');
+ }
+ if(!v||typeof v!=='object'||Array.isArray(v)||
+  typeof (v as {code?:unknown}).code!=='string'){
+  if(res.status===403)
+   throw new AcademyCommandError('STAFF_ACCESS_DENIED',403,false);
+  throw new Error('استجابة غير صالحة');
+ }
  const code=(v as {code:string}).code;
  if(!res.ok)throw new AcademyCommandError(code,res.status,
   Object.keys(v).length===1);
@@ -152,7 +165,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   setResult({phase:'busy',message:'جارٍ تسجيل العملية لدى الخادم…'});
   setPendingOp(operation);setPendingSession(session);
   try{
-   const ack=await submit(path,payload);
+   const ack=await submitAcademyCommand(path,payload);
    // A late response must never expose a one-use invitation to a new actor.
    if(!stillCurrent())return;
    academyPendingStore.clearIfSame(operation);
