@@ -1,3 +1,7 @@
+## 2026-11-08 — #315 next handoff: live invite expiry in PR #325
+- Working branch `feat/student-subscriptions-clarity-20261101`; commits `5c92b821`, `bb9a3221`, `62360339` add bounded client timer and pure tests so a one-use Sheikh invitation changes from pending to expired at `expiresAtMs+1` while the staff screen stays open. No D1/schema/API mutation.
+- Prior Verify #42470676438 on `3019e2d8` finished 4/4 success; **do not apply that success to new commits**. NEXT: check PR #325 exact HEAD CI, repair failures, compare #327 overlap, then independent security review and isolated signed Cloudflare Dev staff/revoked/guardian/two-sibling and 360/390 acceptance. Keep Draft and #315 OPEN. No Production/paid integrations/WhatsApp sending/private child media/ink flag changes.
+
 ## 2026-11-08 — #315 staff 403 fail-closed continuation (PR #325, Draft)
 - Fresh main `4c15b59f`, open PRs #325/#327 and #315 checked; prior Verify #42468337336 4/4 applies to old PR #325 head `c28ce714`.
 - Source `60f76819`: malformed/HTML HTTP 403 on staff mutation now triggers privileged-view revocation and retains uncertain same-ID operation; do not falsely conclude a D1 write failed merely because proxy JSON parsing failed. 401 also remains unresolved rather than an authoritative financial rejection. Exact Worker business denial codes still follow their reviewed path.
