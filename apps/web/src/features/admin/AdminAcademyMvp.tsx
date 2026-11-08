@@ -7,7 +7,7 @@ import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified,
  academyAdminCanReject} from './admin-academy-write-outcome';
 import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
  parseAdminAcademyRead,academyAdminInviteStatusLabel,academyAdminInviteDisplayName,
- academyAdminReadEpochMayApply,academyAdminStaffAccessRevoked,
+ academyAdminNextInviteExpiryDelay,academyAdminReadEpochMayApply,academyAdminStaffAccessRevoked,
  academyAdminMutationMayApply,
  type AdminAcademySnapshot} from './admin-academy-read';
 
@@ -82,6 +82,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const [data,setData]=useState<Academy|null>(null);
  const [dataSession,setDataSession]=useState<AccountSession|null>(null);
  const [readError,setReadError]=useState(false);
+ const [inviteNow,setInviteNow]=useState(()=>Date.now());
  const [refresh,setRefresh]=useState(0);
  const [result,setResult]=useState<Result>({phase:'idle',message:''});
  const [title,setTitle]=useState('');
@@ -114,6 +115,15 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const visibleData=academyAdminSessionViewIsReady(dataSession,session)?data:null;
  const visibleInviteUrl=academyAdminSessionViewIsReady(inviteSession,session)?inviteUrl:'';
  const visiblePendingOp=academyAdminSessionViewIsReady(pendingSession,session)?pendingOp:null;
+ // A one-use invitation can expire while the Admin page stays open.
+ // Re-render at the Worker boundary rather than leaving a stale "pending" label.
+ useEffect(()=>{
+  if(mode!=='invites'||!visibleData)return;
+  const delay=academyAdminNextInviteExpiryDelay(visibleData.invites,inviteNow);
+  if(delay===null)return;
+  const timer=window.setTimeout(()=>setInviteNow(Date.now()),delay);
+  return()=>window.clearTimeout(timer);
+ },[mode,visibleData,inviteNow]);
  useEffect(()=>{
   const ctrl=new AbortController();
   const epoch=++readEpoch.current;
@@ -335,7 +345,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    <h3>الدعوات المرسلة</h3>
    {visibleData.invites.map(i=><article key={i.id}>
     {academyAdminInviteDisplayName(i)} ·
-    {' '}{academyAdminInviteStatusLabel(i,Date.now())}
+    {' '}{academyAdminInviteStatusLabel(i,inviteNow)}
     {i.teacherId?' · موجود في دليل الشيوخ':''}
     {' · انتهاء: '}{date.format(new Date(i.expiresAtMs))}
     {i.claimed===1&&!i.teacherId&&<p>
