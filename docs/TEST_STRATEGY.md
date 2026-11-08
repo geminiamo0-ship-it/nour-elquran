@@ -1,3 +1,6 @@
+## #315 immutable historical quote display regression (2026-11-08)
+- Staff activation form must display the **selected request's original package version** even if that version is disabled or absent from the current active catalog. A browser select must never visually default to another active price while the request state sends the historical version. Unit coverage: disabled, absent, active (no duplicate), and unrelated request/version (no fabricated option). Exact-head CI and signed Dev visual tests at 360/390 remain required; no financial settlement in synthetic QA.
+
 ## #315 Admin actor-switch in-flight POST lock regression (2026-11-08)
 - Unit: A's active `{session,attempt}` blocks duplicate sends for A, does not block signed actor B; A's late finalizer cannot clear B's new in-flight attempt. Component source contract asserts the helpers guard the actual `send` path.
 - Shared pending store still forbids concurrent duplicate same-actor writes and preserves exact immutable retry; do not persist child IDs or manual payment notes in browser storage.
