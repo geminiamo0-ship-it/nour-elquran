@@ -14,6 +14,19 @@ export type AcademyInvite={
  id:string;teacherName:string|null;claimed:0|1;teacherId:string|null;
  createdAtMs:number;expiresAtMs:number;claimedAtMs:number|null;
 };
+/** A pending request can reference an older or disabled package version.
+ * The select renders only active catalog versions, so always include the
+ * request's exact quoted version when it is not otherwise a visible option.
+ * Otherwise a browser can display the first active option while React still
+ * submits the hidden original version, misleading staff confirmation. */
+export function academyAdminNeedsOriginalQuoteOption(
+ requestId:string,versionId:string,
+ requests:ReadonlyArray<Pick<AcademyRequest,'id'|'packageVersionId'>>,
+ packages:ReadonlyArray<Pick<AcademyPackage,'id'|'active'>>):boolean{
+ return requests.some(r=>r.id===requestId&&r.packageVersionId===versionId)&&
+  !packages.some(p=>p.id===versionId&&p.active===1);
+}
+
 /** Privileged staff GET must be a complete 200, never a proxy partial/accepted 2xx. */
 export function academyAdminReadHttpStatusIsValid(status:number){return status===200;}
 /** A newly signed staff session must never paint the previous session's
