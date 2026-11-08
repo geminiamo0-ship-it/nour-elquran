@@ -131,6 +131,17 @@ describe('staff academy SSR privacy boundary #315',()=>{
  * A previously checked confirmation must never authorize a changed package,
  * learner, audit note or WhatsApp contact without a fresh explicit check. */
 describe('staff academy confirmation is bound to unchanged form values #315',()=>{
+ it('uses the active section confirmation for every write and retry guard',()=>{
+  const source=readFileSync(new URL('./AdminAcademyMvp.tsx',import.meta.url),'utf8');
+  expect(source).toContain('academyAdminConfirmationMatchesMode(confirmed,confirmedMode,mode)');
+  expect(source).toContain('setConfirmedMode(value?mode:null)');
+  expect(source.match(/<Confirm checked=\\{confirmedForMode\\} onChange=\\{confirmForMode\\}\\/>/g))
+   .toHaveLength(4);
+  expect(source).toContain('if(!confirmedForMode||busy||!visibleData)return');
+  expect(source).not.toContain('disabled={!confirmed||busy');
+  expect(source).toContain('selectedRequest,reason,confirmedForMode,busy');
+ });
+
  it('unchecks confirmation on every editable operational value',()=>{
   const source=readFileSync(new URL('./AdminAcademyMvp.tsx',import.meta.url),'utf8');
   const handlers=[...source.matchAll(/onChange=\{e=>\{([\s\S]*?)\}\}/g)]
