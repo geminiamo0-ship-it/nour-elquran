@@ -2,7 +2,8 @@ import {describe,expect,it} from 'vitest';
 import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
  parseAdminAcademyRead,academyAdminInviteStatusLabel,academyAdminInviteDisplayName,
  academyAdminNextInviteExpiryDelay,academyAdminReadEpochMayApply,
- academyAdminStaffAccessRevoked,academyAdminMutationMayApply} from './admin-academy-read';
+ academyAdminStaffAccessRevoked,academyAdminMutationMayApply,
+ academyAdminNeedsOriginalQuoteOption} from './admin-academy-read';
 
 const packageRow={id:'version-1',packageId:'package-1',title:'Synthetic package',
  priceEgp:200,sessions:8,active:1,atMs:1700000000000};
@@ -204,5 +205,29 @@ describe('signed staff read epoch and revocation fence #315',()=>{
   expect(academyAdminMutationMayApply(staff,staff,false)).toBe(true);
   expect(academyAdminMutationMayApply(staff,staff,true)).toBe(false);
   expect(academyAdminMutationMayApply(staff,{...staff},false)).toBe(false);
+ });
+});
+
+
+describe('original request quote option remains visible to staff #315',()=>{
+ it('shows the original version when the catalog version is disabled',()=>{
+  expect(academyAdminNeedsOriginalQuoteOption('request-1','version-1',
+   [requestRow],[{...packageRow,active:0}])).toBe(true);
+ });
+ it('shows the original version when only a newer active quote is listed',()=>{
+  expect(academyAdminNeedsOriginalQuoteOption('request-1','version-1',
+   [requestRow],[{...packageRow,id:'version-2'}])).toBe(true);
+ });
+ it('avoids a duplicate option for a visible active version',()=>{
+  expect(academyAdminNeedsOriginalQuoteOption('request-1','version-1',
+   [requestRow],[packageRow])).toBe(false);
+ });
+ it('does not invent a historical option for an unrelated or changed request',()=>{
+  expect(academyAdminNeedsOriginalQuoteOption('request-2','version-1',
+   [requestRow],[{...packageRow,active:0}])).toBe(false);
+  expect(academyAdminNeedsOriginalQuoteOption('request-1','version-2',
+   [requestRow],[{...packageRow,active:0}])).toBe(false);
+  expect(academyAdminNeedsOriginalQuoteOption('','version-1',
+   [requestRow],[])).toBe(false);
  });
 });
