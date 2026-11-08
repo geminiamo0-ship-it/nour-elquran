@@ -51,3 +51,13 @@ export function academyAdminAckIsVerified(path:string,status:number,raw:unknown,
  }
  return true;
 }
+
+/** A reject button bypasses native form validation. Do not POST unless the
+ * selected signed D1 request is pending and the audit reason is valid. */
+export function academyAdminCanReject(
+ requests:ReadonlyArray<{id:string;state:string}>,
+ requestId:string,reason:string,confirmed:boolean,busy:boolean):boolean{
+ const note=reason.trim();
+ return confirmed&&!busy&&note.length>=10&&note.length<=500&&
+  requests.some(r=>r.id===requestId&&r.state==='pending');
+}
