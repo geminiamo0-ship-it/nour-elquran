@@ -1,3 +1,9 @@
+## 2026-11-08 — #315/#326 invitation receipt reconciliation on Draft PR #325
+- Read-first docs, latest main/PR/Issue and previous CI reviewed. PR #325 and #327 were both Draft with overlapping academy Worker code; previous exact-head Verify on #325 `d29e7451` was green 4/4, but this new source requires fresh CI.
+- Ported #327's staff invitation hash/actor/expiry D1 readback and Sheikh claim lost-ACK/replay semantics into #325 without touching the guardian's displayed `packageVersionId` quote guard. Added both corresponding isolated synthetic tests.
+- Important: #327 is **not** merged into #325 wholesale. Remaining staff admin read DTO/validation and integration differences require deliberate comparison, not a blind merge. Preserve source-first staging, default-OFF flags and immutable D1 history.
+- NEXT: verify latest PR #325 head and its GitHub Verify exact SHA; repair failures, then review remaining #327 overlap. Keep #315/#326 open until independent privacy review, signed Cloudflare Dev and real 360/390 acceptance. No Production, financial changes or child media.
+
 ## 2026-11-08 — #315/#326 contact receipt parity (Draft PR #325, source only)
 - Reconciled the existing staff WhatsApp *contact-setting* D1 write from Draft #327 into Draft #325 without changing any configured number, sending messages or enabling an integration. `staffContact` now checks the exact D1 receipt, replays only the same staff actor and immutable number, reads back an uncertain write and returns safe 503 instead of a false success. Revoked staff remain denied before receipt access.
 - Worker commit [f1f519d](https://github.com/geminiamo0-ship-it/nour-elquran/commit/f1f519dfa3437428a1c786f9fbbf9c5c239362f3); synthetic Node regressions [e6d153b](https://github.com/geminiamo0-ship-it/nour-elquran/commit/e6d153b325a791dd6d1a1f669fda1e4f21d1ba7b) for 201/200/409/503 and staff revocation. No local suite or exact-head CI result claimed yet.
