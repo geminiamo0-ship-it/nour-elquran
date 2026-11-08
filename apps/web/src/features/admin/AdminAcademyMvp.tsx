@@ -2,6 +2,8 @@
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import type {AccountSession} from '@/features/account';
 import styles from './AdminAcademyMvp.module.css';
+import {academyPendingStore,type AcademyPendingCommand} from './admin-academy-pending';
+import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified} from './admin-academy-write-outcome';
 import {parseAdminAcademyRead,type AdminAcademySnapshot} from './admin-academy-read';
 
 type Academy=AdminAcademySnapshot;
@@ -45,6 +47,8 @@ async function submit(path:string,command:unknown){
   throw new Error('استجابة غير صالحة');
  const code=(v as {code:string}).code;
  if(!res.ok)throw new AcademyCommandError(code,res.status);
+ if(!academyAdminAckIsVerified(path,res.status,v,command))
+  throw new Error('استجابة تأكيد غير موثوقة');
  return {code,...(v as object)};
 }
 /** Operations never optimistically claim a payment or an activation. */
@@ -63,44 +67,85 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const [confirmed,setConfirmed]=useState(false);
  const [whatsapp,setWhatsapp]=useState('');
  const [inviteUrl,setInviteUrl]=useState('');
- const [pendingOp,setPendingOp]=useState<{path:string;payload:unknown}|null>(null);
+ const [pendingOp,setPendingOp]=useState<AcademyPendingCommand|null>(null);
  const sending=useRef(false);
+ const currentSession=useRef(session);
+ currentSession.current=session;
  useEffect(()=>{
   const ctrl=new AbortController();
-  setData(null);setResult({phase:'idle',message:''});setInviteUrl('');
+  setData(null);setInviteUrl('');
+  const held=academyPendingStore.forActor(session.user.id);
+  setPendingOp(held);
+  setResult(held?{phase:'uncertain',message:
+   'نتيجة العملية السابقة غير مؤكدة؛ أعد نفس العملية فقط.'}:
+   {phase:'idle',message:''});
   void readAcademy(ctrl.signal).then(v=>{
    if(!ctrl.signal.aborted){setData(v);setWhatsapp(v.whatsappNumber??'');}
   }).catch(e=>{if(!ctrl.signal.aborted)setResult({phase:'error',
    message:e instanceof Error?e.message:'تعذّر تحميل البيانات'});});
   return()=>ctrl.abort();
  },[session,refresh]);
- const busy=result.phase==='busy';
+ const busy=result.phase==='busy'||result.phase==='uncertain';
  async function send(path:string,payload:unknown){
-  if(sending.current)return;
+  if(sending.current||!data)return;
+  const held=academyPendingStore.forActor(session.user.id);
+  // An unresolved settlement must be retried with the exact original object.
+  if(held&&(held.path!==path||held.payload!==payload))return;
+  const operation=held??{actorId:session.user.id,path,payload};
+  if(!academyPendingStore.hold(operation))return;
+  const attempt={};
+  // Prevent a second mounted panel racing an in-flight request.
+  if(!academyPendingStore.beginAttempt(operation,attempt))return;
   sending.current=true;
+  const startedSession=session;
+  const stillCurrent=()=>currentSession.current===startedSession;
   setResult({phase:'busy',message:'جارٍ تسجيل العملية لدى الخادم…'});
-  setPendingOp({path,payload});
+  setPendingOp(operation);
   try{
    const ack=await submit(path,payload);
+   // A late response must never expose a one-use invitation to a new actor.
+   if(!stillCurrent())return;
+   academyPendingStore.clearIfSame(operation);
+   setPendingOp(null);
    setResult({phase:'done',message:'سجّل الخادم العملية: '+ack.code});
-   setConfirmed(false);setReason('');setPendingOp(null);
+   setConfirmed(false);setReason('');
    if(path==='invites'&&typeof (ack as {token?:unknown}).token==='string'){
     const token=(ack as {code:string;token?:string}).token!;
     setInviteUrl(window.location.origin+'/teacher/join?token='+token);
    }else{
-    // Refresh the authoritative list without erasing the confirmed receipt.
+    // Require a fresh signed roster before another financial command.
+    setData(null);
     const ctrl=new AbortController();
-    void readAcademy(ctrl.signal).then(v=>setData(v)).catch(()=>{});
+    void readAcademy(ctrl.signal).then(v=>{
+     if(stillCurrent())setData(v);
+    }).catch(()=>{
+     if(stillCurrent())setResult({phase:'error',
+      message:'تعذّر تحديث السجل. راجع العملية المحفوظة قبل متابعة الإدارة.'});
+    });
    }
   }catch(e){
-   if(e instanceof AcademyCommandError){
-    setPendingOp(null);
-    setResult({phase:'error',message:operationErrors[e.code]??'تعذّر تنفيذ العملية: '+e.code});
-   }else{
+   if(!stillCurrent())return;
+   const uncertain=!(e instanceof AcademyCommandError)||
+    academyAdminOutcomeIsUncertain(e.status,e.code);
+   if(uncertain){
     setResult({phase:'uncertain',message:
-      'تعذّر معرفة نتيجة الاتصال. لا تنشئ طلب تفعيل جديدًا؛ أعد نفس العملية بمعرّفها.'});
+     'نتيجة العملية غير مؤكدة. لا تنشئ عملية جديدة؛ أعد نفس الطلب بمعرّفه الأصلي.'});
+   }else{
+    academyPendingStore.clearIfSame(operation);
+    setPendingOp(null);
+    if(e instanceof AcademyCommandError&&
+     (e.status===401||(e.status===403&&e.code==='STAFF_ACCESS_DENIED')||
+      e.code==='ACADEMY_STAFF_ACCESS_CHANGED')){
+     setData(null);setInviteUrl('');
+    }
+    setResult({phase:'error',message:e instanceof AcademyCommandError?
+     (operationErrors[e.code]??'تعذّر تنفيذ العملية: '+e.code):
+     'تعذّر تنفيذ العملية'});
    }
-  }finally{sending.current=false;}
+  }finally{
+   academyPendingStore.finishAttempt(attempt);
+   sending.current=false;
+  }
  }
  function guard(event:FormEvent,action:()=>void){
   event.preventDefault();if(!confirmed||busy||!data)return;action();
