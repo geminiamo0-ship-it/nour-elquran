@@ -1,5 +1,6 @@
 import {describe,expect,it} from 'vitest';
-import {academyAdminReadHttpStatusIsValid,parseAdminAcademyRead} from './admin-academy-read';
+import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
+ parseAdminAcademyRead} from './admin-academy-read';
 
 const packageRow={id:'version-1',packageId:'package-1',title:'Synthetic package',
  priceEgp:200,sessions:8,active:1,atMs:1700000000000};
@@ -94,5 +95,23 @@ describe('bounded signed staff academy read #315',()=>{
    {...valid(),requests:[requestRow,requestRow]},
    {...valid(),invites:[inviteRow,inviteRow]},
   ])expect(()=>parseAdminAcademyRead(bad)).toThrow('ACADEMY_STAFF_INVALID_RESPONSE');
+ });
+});
+
+// #315: a React prop switch renders once before useEffect cleanup; staff
+// snapshots, invite tokens and retry buttons must be gated during that render.
+describe('academy staff session view isolation #315',()=>{
+ it('hides previous actor records and one-use links before effects can reset state',()=>{
+  const old={user:{id:'synthetic-staff-a'}};
+  const next={user:{id:'synthetic-staff-b'}};
+  expect(academyAdminSessionViewIsReady(old,old)).toBe(true);
+  expect(academyAdminSessionViewIsReady(old,next)).toBe(false);
+  expect(academyAdminSessionViewIsReady(null,next)).toBe(false);
+ });
+ it('treats a new session object for the same staff identity as unverified',()=>{
+  const old={user:{id:'synthetic-staff-a'}};
+  const renewed={...old};
+  expect(academyAdminSessionViewIsReady(old,renewed)).toBe(false);
+  expect(academyAdminSessionViewIsReady(renewed,renewed)).toBe(true);
  });
 });
