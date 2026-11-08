@@ -95,6 +95,21 @@ export function academyAdminAckIsVerified(path:string,status:number,raw:unknown,
 /** A confirmation belongs to the exact Admin section where it was checked.
  * Next route/mode may reuse the same mounted component and form state.
  * Never let a previous section's consent authorize a different D1 command. */
+/** A stale request from another signed actor must not lock this actor's
+ * Admin panel. Keep the attempt identity so an old finally block cannot
+ * release a newer actor's in-flight command. The shared pending store still
+ * enforces exact-operation replay for the same actor. */
+export type AcademySessionAttempt<T>={session:T;attempt:object};
+export function academyAdminSessionLockIsBusy<T>(
+ inFlight:AcademySessionAttempt<T>|null,session:T):boolean{
+ return inFlight!==null&&inFlight.session===session;
+}
+export function academyAdminReleaseSessionLock<T>(
+ inFlight:AcademySessionAttempt<T>|null,attempt:object
+):AcademySessionAttempt<T>|null{
+ return inFlight?.attempt===attempt?null:inFlight;
+}
+
 export function academyAdminConfirmationMatchesMode(
  confirmed:boolean,confirmedMode:string|null,currentMode:string):boolean{
  return confirmed&&confirmedMode===currentMode;
