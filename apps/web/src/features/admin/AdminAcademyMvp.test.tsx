@@ -133,7 +133,7 @@ describe('staff academy SSR privacy boundary #315',()=>{
 describe('staff academy confirmation is bound to unchanged form values #315',()=>{
  it('unchecks confirmation on every editable operational value',()=>{
   const source=readFileSync(new URL('./AdminAcademyMvp.tsx',import.meta.url),'utf8');
-  const handlers=[...source.matchAll(/onChange=\\{e=>\\{([\\s\\S]*?)\\}\\}/g)]
+  const handlers=[...source.matchAll(/onChange=\{e=>\{([\s\S]*?)\}\}/g)]
    .map(match=>match[1]??'');
   for(const field of ['Title','Price','Sessions','LearnerId',
    'SelectedPackage','Reason','Whatsapp']){
