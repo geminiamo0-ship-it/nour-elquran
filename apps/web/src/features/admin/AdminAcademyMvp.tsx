@@ -6,7 +6,7 @@ import {academyPendingStore,type AcademyPendingCommand} from './admin-academy-pe
 import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified,
  academyAdminCanReject,academyAdminAckClearsRequestSelection,
  academyAdminConfirmationMatchesMode,academyAdminSessionLockIsBusy,
- academyAdminReleaseSessionLock,type AcademySessionAttempt} from './admin-academy-write-outcome';
+ academyAdminReleaseSessionLock,academyAdminCanReplay,type AcademySessionAttempt} from './admin-academy-write-outcome';
 import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
  parseAdminAcademyRead,academyAdminNeedsOriginalQuoteOption,academyAdminInviteStatusLabel,academyAdminInviteDisplayName,
  academyAdminNextInviteExpiryDelay,academyAdminReadEpochMayApply,academyAdminStaffAccessRevoked,
@@ -417,8 +417,16 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   </>}
   {result.phase!=='idle'&&<p role={result.phase==='error'?'alert':'status'}>
    {result.message}</p>}
-  {result.phase==='uncertain'&&visiblePendingOp&&<button type="button"
-   onClick={()=>void send(visiblePendingOp.path,visiblePendingOp.payload)}>إعادة نفس العملية بمعرّفها الأصلي</button>}
+  {result.phase==='uncertain'&&visiblePendingOp&&<>
+   {!academyAdminCanReplay(Boolean(visibleData),revokedStaff.current,
+    academyAdminSessionLockIsBusy(sending.current,session))&&
+    <p role="status">حدّث بيانات الإدارة وتحقق من صلاحية الحساب قبل إعادة العملية الأصلية.</p>}
+   <button type="button"
+    disabled={!academyAdminCanReplay(Boolean(visibleData),revokedStaff.current,
+     academyAdminSessionLockIsBusy(sending.current,session))}
+    onClick={()=>void send(visiblePendingOp.path,visiblePendingOp.payload)}>
+    إعادة نفس العملية بمعرّفها الأصلي</button>
+  </>}
  </section>;
 }
 function Confirm({checked,onChange}:{checked:boolean;onChange:(x:boolean)=>void}){
