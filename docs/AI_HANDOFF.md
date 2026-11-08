@@ -1,3 +1,7 @@
+## 2026-11-08 — #315 D1 package receipt follow-up on Draft PR #325
+- Existing integration branch `feat/student-subscriptions-clarity-20261101` now reconciles resolved failed/zero-row staff package write receipts by re-reading the exact immutable operation. Exact actor/package/price/session/title/active replay only; mismatch 409; no durable row 503. Added targeted Node regression for post-commit uncertain receipt and foreign actor/changed-price collision.
+- **NEXT exact action:** check latest PR #325 HEAD and 4/4 Verify, then review #327 overlapping Worker/Admin paths, retain immutable guardian `packageVersionId` fence and test on isolated signed Cloudflare Dev. Do not merge/enable payments/Production on CI alone; #315 and #326 remain open.
+
 ## 2026-11-08 — #315/#326 invitation receipt reconciliation on Draft PR #325
 - Read-first docs, latest main/PR/Issue and previous CI reviewed. PR #325 and #327 were both Draft with overlapping academy Worker code; previous exact-head Verify on #325 `d29e7451` was green 4/4, but this new source requires fresh CI.
 - Ported #327's staff invitation hash/actor/expiry D1 readback and Sheikh claim lost-ACK/replay semantics into #325 without touching the guardian's displayed `packageVersionId` quote guard. Added both corresponding isolated synthetic tests.
