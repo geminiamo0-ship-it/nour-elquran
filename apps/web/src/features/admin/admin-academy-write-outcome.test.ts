@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified,
- academyAdminCanReject} from './admin-academy-write-outcome';
+ academyAdminCanReject,academyAdminAckClearsRequestSelection} from './admin-academy-write-outcome';
 
 describe('staff academy D1 receipt integrity #315',()=>{
  it('holds immutable operations after uncertain HTTP outcomes',()=>{
@@ -138,5 +138,23 @@ describe('staff request rejection audit guard #315',()=>{
   expect(academyAdminCanReject(rows,'synthetic-pending','Reviewed manually',false,false)).toBe(false);
   expect(academyAdminCanReject(rows,'synthetic-pending','Reviewed manually',true,true)).toBe(false);
   expect(academyAdminCanReject(rows,'synthetic-pending','   Reviewed manually   ',true,false)).toBe(true);
+ });
+});
+
+describe('confirmed academy decision clears stale request selection #315',()=>{
+ it('clears only after activation or rejection, not unrelated successful writes',()=>{
+  for(const path of ['activate','reject'])
+   expect(academyAdminAckClearsRequestSelection(path)).toBe(true);
+  for(const path of ['packages','contact','invites','unknown'])
+   expect(academyAdminAckClearsRequestSelection(path)).toBe(false);
+ });
+ it('keeps an uncertain activation pending instead of treating it as an ACK',()=>{
+  const activated={code:'ACADEMY_SUBSCRIPTION_ACTIVATED',
+   startsAtMs:1700000000000,endsAtMs:1702600000000,rolloverSessions:0};
+  expect(academyAdminAckIsVerified('activate',201,activated,{})).toBe(true);
+  expect(academyAdminAckClearsRequestSelection('activate')).toBe(true);
+  expect(academyAdminOutcomeIsUncertain('activate',503,
+   'ACADEMY_ACTIVATION_STORAGE_UNAVAILABLE')).toBe(true);
+  expect(academyAdminAckIsVerified('activate',202,activated,{})).toBe(false);
  });
 });
