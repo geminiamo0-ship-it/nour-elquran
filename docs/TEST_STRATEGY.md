@@ -1,3 +1,8 @@
+## #315 Admin actor-switch in-flight POST lock regression (2026-11-08)
+- Unit: A's active `{session,attempt}` blocks duplicate sends for A, does not block signed actor B; A's late finalizer cannot clear B's new in-flight attempt. Component source contract asserts the helpers guard the actual `send` path.
+- Shared pending store still forbids concurrent duplicate same-actor writes and preserves exact immutable retry; do not persist child IDs or manual payment notes in browser storage.
+- Exact-head GitHub Verify (TypeScript, unit, native D1, governance) plus separate isolated Dev signed staff A→B, staff→guardian, revoked staff and 360×667/390×844 interaction QA required. A passing unit test does not establish remote Dev acceptance.
+
 ## 2026-11-08 — #315 staff academy confirmation-edit regression
 - `apps/web/src/features/admin/AdminAcademyMvp.test.tsx` checks all seven operational `onChange` handlers clear `confirmed` before submission: package title/EGP price/session count, learner ID, package version, manual audit reason, academy WhatsApp number. This is a source-contract guard, not an interactive browser acceptance test.
 - Acceptance still requires real staff Dev browser: check confirmation, edit each field, verify the checkbox becomes unchecked and write button disabled until rechecked; test 360×667 and 390×844 plus revoked staff, sibling isolation and immutable D1 quote replay. No financial settlement or external messaging is enabled by this change.
