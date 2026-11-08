@@ -1,3 +1,8 @@
+## 2026-11-08 — #315 Cross-section Admin confirmation (Draft #325)
+- Actual source fix: `AdminAcademyMvp.tsx` now stores `confirmedMode` with the checkbox and checks `confirmedForMode` for every academy form, request rejection and submit guard. The helper is in `admin-academy-write-outcome.ts`; Vitest regressions cover all four mode transitions and source wiring. This prevents stale confirmation from authorizing a different staff action when React preserves a mounted panel between sections.
+- This is **not** a payment or Dev acceptance claim. Branch `feat/student-subscriptions-clarity-20261101`; linked Issue #315; CI on latest commit needs inspection. Preserve held uncertain operationId behavior and default-off production flags. No merge/Production.
+- Next exact action: verify exact HEAD GitHub Verify 4/4; inspect #325/#327 overlap and obtain independent security + source-pinned synthetic Dev role/360×667/390×844 checks before approval.
+
 ## 2026-11-08 — #315 Admin confirmation edit safety (Draft PR #325)
 - Latest source edit: changing any package title/EGP price/session count, manual learner/package selection, settlement/rejection note or academy WhatsApp number clears the previously checked operator confirmation. Previously a staff member could edit the financial payload after checking confirmation without re-confirming. Source `f6893203`, test `c455123e`, matcher repair `91b81bf4`.
 - Next exact action: inspect GitHub Verify for latest branch HEAD (do not reuse previous 4/4), reconcile #325 vs #327 without regressing immutable guardian quotes, obtain independent finance/privacy review and signed isolated Cloudflare Dev + 360/390 browser acceptance. Keep Draft and #315 OPEN; no main/Production/payment/WhatsApp/audio/ink changes.
