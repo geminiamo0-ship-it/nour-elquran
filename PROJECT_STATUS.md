@@ -1,3 +1,9 @@
+## 2026-11-08 — #315 Admin confirmation scoped to active section (PR #325, source-only)
+- Review found a cross-section consent risk: if the same Admin Academy component survives a route/mode change, its previously checked confirmation could authorize a different package, request, Sheikh invite or contact command. The existing per-field reset does not cover changing sections.
+- The panel now binds each confirmation to its current mode; all four forms and activation/rejection guards require a match. Added unit and source-wiring regressions in `admin-academy-write-outcome.test.ts` and `AdminAcademyMvp.test.tsx`.
+- Source changes are on Draft PR #325 only; exact-head CI, independent security review and signed Cloudflare Dev role/mobile acceptance are **not yet confirmed** for this change. PR #327 overlap remains for review. No Production, payment provider, WhatsApp send, audio or cumulative-ink activation.
+- NEXT: inspect exact-head GitHub Verify, repair any failed check, compare overlapping #327 before requesting review and isolated signed Dev acceptance.
+
 ## 2026-11-08 — #315 admin re-confirmation after operational form edits (Draft #325)
 - Source review found the Admin confirmation checkbox remained checked when staff changed package title/price/session count, selected learner or package version, manual settlement/rejection note, or WhatsApp contact. This could allow a previously approved form to submit changed financial or operational details without a new explicit confirmation.
 - `AdminAcademyMvp.tsx` now unchecks confirmation for all seven editable value handlers. The existing pending-operation/idempotency fence and server-side D1 authorization are unchanged. `AdminAcademyMvp.test.tsx` adds a source contract guard for all seven handlers; it is not a substitute for signed Dev browser interaction QA.
