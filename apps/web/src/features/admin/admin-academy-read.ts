@@ -56,10 +56,13 @@ export function academyAdminReadEpochMayApply(
  started:number,current:number,aborted:boolean,sessionSame:boolean):boolean{
  return started===current&&!aborted&&sessionSame;
 }
-/** Only staff authorization denials revoke the visible privileged snapshot. */
+/** A 403 from an intermediary is not proof that staff access remains valid.
+ * The Worker only emits STAFF_ACCESS_DENIED for this academy route at 403;
+ * never keep a privileged snapshot visible based on an untrusted proxy code.
+ * This display fence does NOT determine whether a D1 write committed. */
 export function academyAdminStaffAccessRevoked(status:number,code:string):boolean{
- return status===401||(status===403&&code==='STAFF_ACCESS_DENIED')||
-  ((status===403||status===409)&&code==='ACADEMY_STAFF_ACCESS_CHANGED');
+ return status===401||status===403||
+  (status===409&&code==='ACADEMY_STAFF_ACCESS_CHANGED');
 }
 /** A delayed one-use invite receipt cannot survive a staff revocation. */
 export function academyAdminMutationMayApply<T>(
