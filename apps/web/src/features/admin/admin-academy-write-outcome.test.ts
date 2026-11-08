@@ -48,6 +48,39 @@ describe('staff academy D1 receipt integrity #315',()=>{
    [201,{code:'ACADEMY_PACKAGE_SAVED'}],
   ] as const)expect(academyAdminAckIsVerified('packages',status,body,command)).toBe(false);
  });
+ it('requires exact Worker ACK fields for every staff write path',()=>{
+  const packageId='11111111-1111-4111-8111-111111111111';
+  const pkg={code:'ACADEMY_PACKAGE_SAVED',packageId};
+  const activation={code:'ACADEMY_SUBSCRIPTION_ACTIVATED',
+   startsAtMs:1700000000000,endsAtMs:1702600000000,rolloverSessions:0};
+  const invite={code:'ACADEMY_INVITE_ISSUED',token:'a'.repeat(64),
+   expiresAtMs:Date.now()+86400000};
+  const receipts=[
+   {path:'packages',status:201,body:pkg,command:{packageId}},
+   {path:'packages',status:200,
+    body:{code:'ACADEMY_PACKAGE_REPLAY',packageId},command:{packageId}},
+   {path:'activate',status:201,body:activation,command:{}},
+   {path:'activate',status:200,body:{code:'ACADEMY_ACTIVATION_REPLAY'},command:{}},
+   {path:'reject',status:201,body:{code:'ACADEMY_REQUEST_REJECTED'},command:{}},
+   {path:'reject',status:200,body:{code:'ACADEMY_REQUEST_REJECTION_REPLAY'},command:{}},
+   {path:'contact',status:201,body:{code:'ACADEMY_WHATSAPP_SAVED'},command:{}},
+   {path:'contact',status:200,body:{code:'ACADEMY_CONTACT_REPLAY'},command:{}},
+   {path:'invites',status:201,body:invite,command:{}}
+  ] as const;
+  for(const receipt of receipts){
+   const {path,status,body,command}=receipt;
+   expect(academyAdminAckIsVerified(path,status,body,command)).toBe(true);
+   // Even a valid-looking code with a second field must remain unresolved.
+   expect(academyAdminAckIsVerified(path,status,{...body,paid:true},command))
+    .toBe(false);
+   const {code:unused,...withoutCode}=body;
+   expect(academyAdminAckIsVerified(path,status,withoutCode,command)).toBe(false);
+  }
+  expect(academyAdminAckIsVerified('activate',201,{
+   ...activation,endsAtMs:undefined},{})).toBe(false);
+  expect(academyAdminAckIsVerified('invites',201,{
+   ...invite,token:undefined},{})).toBe(false);
+ });
  it('validates activation cycle and one-time invite expiry before releasing retry',()=>{
   const good={code:'ACADEMY_SUBSCRIPTION_ACTIVATED',
    startsAtMs:1700000000000,endsAtMs:1702600000000,rolloverSessions:0};
