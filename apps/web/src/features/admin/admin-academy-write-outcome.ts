@@ -10,9 +10,24 @@ const terminalConflicts=new Set([
  'ACADEMY_LEARNER_UNAVAILABLE','ACADEMY_REFERENCE_UNAVAILABLE',
  'ACADEMY_STAFF_ACCESS_CHANGED','ACADEMY_INVITE_ALREADY_ISSUED',
 ]);
-export function academyAdminOutcomeIsUncertain(status:number,code=''){
+// A generic edge/proxy 4xx can arrive AFTER D1 committed the command.
+// Only exact, known Worker pre-write errors (or reviewed 409 conflicts) are
+// terminal. Never release an operationId for a fabricated/partial 4xx body.
+const terminalHttpErrors:Readonly<Record<number,ReadonlySet<string>>>={
+ 400:new Set(['ACADEMY_INVALID_REQUEST','ACADEMY_INVALID_PACKAGE',
+  'ACADEMY_INVALID_ACTIVATION','ACADEMY_INVALID_REJECTION',
+  'ACADEMY_INVALID_CONTACT','ACADEMY_INVALID_INVITE']),
+ 401:new Set(['UNAUTHENTICATED']),
+ 403:new Set(['BAD_ORIGIN','STAFF_ACCESS_DENIED']),
+ 404:new Set(['NOT_FOUND']),
+ 405:new Set(['METHOD_NOT_ALLOWED']),
+};
+export function academyAdminOutcomeIsUncertain(
+ status:number,code='',exactCodeOnly=true){
+ if(!exactCodeOnly)return true;
  if(status===409)return !terminalConflicts.has(code);
- return status===408||status===425||status===429||status>=500;
+ if(status>=400&&status<500)return !terminalHttpErrors[status]?.has(code);
+ return true;
 }
 /** A proxy's 2xx is not evidence that the expected D1 command committed. */
 export function academyAdminAckIsVerified(path:string,status:number,raw:unknown,command:unknown){
