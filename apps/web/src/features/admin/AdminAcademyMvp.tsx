@@ -4,7 +4,8 @@ import type {AccountSession} from '@/features/account';
 import styles from './AdminAcademyMvp.module.css';
 import {academyPendingStore,type AcademyPendingCommand} from './admin-academy-pending';
 import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified,
- academyAdminCanReject,academyAdminAckClearsRequestSelection} from './admin-academy-write-outcome';
+ academyAdminCanReject,academyAdminAckClearsRequestSelection,
+ academyAdminConfirmationMatchesMode} from './admin-academy-write-outcome';
 import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
  parseAdminAcademyRead,academyAdminInviteStatusLabel,academyAdminInviteDisplayName,
  academyAdminNextInviteExpiryDelay,academyAdminReadEpochMayApply,academyAdminStaffAccessRevoked,
@@ -107,6 +108,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const [learnerId,setLearnerId]=useState('');
  const [reason,setReason]=useState('');
  const [confirmed,setConfirmed]=useState(false);
+ const [confirmedMode,setConfirmedMode]=useState<Mode|null>(null);
  const [whatsapp,setWhatsapp]=useState('');
  const [inviteUrl,setInviteUrl]=useState('');
  const [inviteSession,setInviteSession]=useState<AccountSession|null>(null);
@@ -185,6 +187,10 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   return()=>ctrl.abort();
  },[session,refresh]);
  const busy=result.phase==='busy'||result.phase==='uncertain';
+ const confirmedForMode=academyAdminConfirmationMatchesMode(confirmed,confirmedMode,mode);
+ function confirmForMode(value:boolean){
+  setConfirmed(value);setConfirmedMode(value?mode:null);
+ }
  async function send(path:string,payload:unknown){
   if(sending.current||!visibleData||revokedStaff.current)return;
   const held=academyPendingStore.forActor(session.user.id);
@@ -263,7 +269,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   }
  }
  function guard(event:FormEvent,action:()=>void){
-  event.preventDefault();if(!confirmed||busy||!visibleData)return;action();
+  event.preventDefault();if(!confirmedForMode||busy||!visibleData)return;action();
  }
  const modeTitle={packages:'الباقات والأسعار',requests:'طلبات الاشتراك وتفعيل الطلاب',
   invites:'إضافة شيخ بدعوة',contact:'واتساب الأكاديمية'}[mode];
@@ -310,10 +316,10 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     <label>عدد الحصص<input required type="number" min={1} max={60} step={1}
      value={sessions} onChange={e=>{setSessions(e.target.value);setConfirmed(false);}}/></label>
     <p>السعر الجديد للطلبات القادمة فقط.</p>
-    <Confirm checked={confirmed} onChange={setConfirmed}/>
-    <button type="submit" disabled={!confirmed||busy} data-active="true">
+    <Confirm checked={confirmedForMode} onChange={confirmForMode}/>
+    <button type="submit" disabled={!confirmedForMode||busy} data-active="true">
      {selectedPackage?'حفظ السعر والباقة':'إضافة باقة'}</button>
-    {selectedPackage&&<button type="submit" disabled={!confirmed||busy}
+    {selectedPackage&&<button type="submit" disabled={!confirmedForMode||busy}
      data-active="false">تعطيل الباقة</button>}
     <button type="button" onClick={()=>{setPackageFormOpen(false);setConfirmed(false);}}>إلغاء</button>
    </form>}
@@ -356,13 +362,13 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     <label>سبب/مرجع تأكيد الدفع<input required minLength={10} maxLength={500}
      value={reason} onChange={e=>{setReason(e.target.value);setConfirmed(false);}}
      placeholder="تم الاستلام يدويًا بعد التحقق من التحويل"/></label>
-    <Confirm checked={confirmed} onChange={setConfirmed}/>
-    <button type="submit" disabled={!confirmed||busy||!UUID.test(learnerId)||!UUID.test(selectedPackage)}>
+    <Confirm checked={confirmedForMode} onChange={confirmForMode}/>
+    <button type="submit" disabled={!confirmedForMode||busy||!UUID.test(learnerId)||!UUID.test(selectedPackage)}>
      تأكيد الاستلام وتفعيل الاشتراك</button>
     {selectedRequest&&<button type="button"
-     disabled={!academyAdminCanReject(visibleData.requests,selectedRequest,reason,confirmed,busy)}
+     disabled={!academyAdminCanReject(visibleData.requests,selectedRequest,reason,confirmedForMode,busy)}
      onClick={()=>{
-      if(!academyAdminCanReject(visibleData.requests,selectedRequest,reason,confirmed,busy))return;
+      if(!academyAdminCanReject(visibleData.requests,selectedRequest,reason,confirmedForMode,busy))return;
       void send('reject',{operationId:iso(),requestId:selectedRequest,
        reason:reason.trim()});
      }}>رفض الطلب مع تسجيل السبب</button>}
@@ -371,8 +377,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   {visibleData&&mode==='invites'&&<>
    <p>اضغط إنشاء رابط، ابعته للشيخ على واتساب؛ يسجّل بالاسم والموبايل
     وكلمة المرور فقط. الدعوة صالحة ٧ أيام وتُستخدم مرة واحدة.</p>
-   <Confirm checked={confirmed} onChange={setConfirmed}/>
-   <button type="button" disabled={!confirmed||busy}
+   <Confirm checked={confirmedForMode} onChange={confirmForMode}/>
+   <button type="button" disabled={!confirmedForMode||busy}
     onClick={()=>void send('invites',{operationId:iso()})}>إنشاء رابط إضافة شيخ</button>
    {visibleInviteUrl&&<div role="status">
     <label>الرابط يظهر الآن فقط<input readOnly dir="ltr" value={visibleInviteUrl}/></label>
@@ -396,8 +402,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     <label>رقم واتساب الأكاديمية<input required dir="ltr"
      inputMode="tel" pattern="[1-9][0-9]{9,14}" value={whatsapp}
      onChange={e=>{setWhatsapp(e.target.value);setConfirmed(false);}} /></label>
-    <Confirm checked={confirmed} onChange={setConfirmed}/>
-    <button type="submit" disabled={!confirmed||busy}>حفظ رقم الواتساب</button>
+    <Confirm checked={confirmedForMode} onChange={confirmForMode}/>
+    <button type="submit" disabled={!confirmedForMode||busy}>حفظ رقم الواتساب</button>
    </form>
   </>}
   {result.phase!=='idle'&&<p role={result.phase==='error'?'alert':'status'}>
