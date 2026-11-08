@@ -16,6 +16,11 @@ export type AcademyInvite={
 };
 /** Privileged staff GET must be a complete 200, never a proxy partial/accepted 2xx. */
 export function academyAdminReadHttpStatusIsValid(status:number){return status===200;}
+/** A newly signed staff session must never paint the previous session's
+ * learner roster, package decisions, or one-use Sheikh invitation. */
+export function academyAdminSessionViewIsReady<T>(loadedFor:T|null,current:T):boolean{
+ return loadedFor!==null&&loadedFor===current;
+}
 
 export type AdminAcademySnapshot={
  code:'ACADEMY_STAFF';packages:AcademyPackage[];
