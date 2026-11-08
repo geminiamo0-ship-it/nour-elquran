@@ -1,3 +1,9 @@
+## 2026-11-08 — #315 staff snapshot must fail closed on intermediary HTTP 403 (Draft PR #325)
+- Read required governance, security, test and handoff documents; inspected latest main and Draft PR #325/#327 and exact-head CI. Confirmed previous PR #325 head `5eb306bd` had 4/4 success at [Verify #42514005074](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42514005074).
+- New source/test change: `admin-academy-read.ts`, `admin-academy-read.test.ts`, `AdminAcademyMvp.test.tsx`. A JSON-shaped intermediary 403 cannot preserve a privileged staff snapshot even if it supplies an unexpected code. Unknown D1 write outcome stays unresolved with original operationId; no blind financial retry.
+- Local repository clone/test blocked by container DNS (`Could not resolve host: github.com`); **new exact-head CI pending**, no Dev or Production deployment, no merge.
+- NEXT: inspect Verify for final PR #325 head, then independent privacy review and source-pinned signed Dev staff/revoked/guardian/two-actor tests. Reconcile #327 first; do not mark #315 complete on source/CI alone.
+
 ## 2026-11-08 — #315 cross-actor Admin POST lock isolation (Draft PR #325)
 - Inspected current `main@4c15b59f`, overlapping Draft PR #327 and exact-head GitHub Verify #42504977669 (4/4 on OLD #325 HEAD `18715f10`). PR #327's session-scoped lock revealed a genuine omission in #325: a hung staff POST left a component-wide boolean `sending.current=true`, blocking a different signed actor after session swap even when their new authorized D1 snapshot loaded.
 - Ported a minimal **session+attempt identity** lock to #325. Old actor POST remains guarded by the shared in-memory exact-operation store; a new actor is no longer blocked by the old component ref. An old request's `finally` cannot release the new actor's in-flight lock. Added pure identity regression plus UI source wiring checks.
