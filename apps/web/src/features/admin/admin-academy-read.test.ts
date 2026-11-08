@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
- parseAdminAcademyRead} from './admin-academy-read';
+ parseAdminAcademyRead,academyAdminInviteStatusLabel} from './admin-academy-read';
 
 const packageRow={id:'version-1',packageId:'package-1',title:'Synthetic package',
  priceEgp:200,sessions:8,active:1,atMs:1700000000000};
@@ -13,6 +13,20 @@ const inviteRow={id:'invite-1',teacherName:'Synthetic Sheikh',claimed:1,
 const valid=()=>({status:200,code:'ACADEMY_STAFF',
  packages:[{...packageRow}],requests:[{...requestRow}],
  invites:[{...inviteRow}],whatsappNumber:'201000000000'});
+
+describe('Sheikh invitation expiry status #315',()=>{
+ it('matches the Worker inclusive expiry boundary and preserves durable claims',()=>{
+  const expiry=1700600000000;
+  expect(academyAdminInviteStatusLabel({claimed:0,expiresAtMs:expiry},expiry-1))
+   .toBe('بانتظار التسجيل');
+  expect(academyAdminInviteStatusLabel({claimed:0,expiresAtMs:expiry},expiry))
+   .toBe('بانتظار التسجيل');
+  expect(academyAdminInviteStatusLabel({claimed:0,expiresAtMs:expiry},expiry+1))
+   .toBe('انتهت صلاحية الدعوة');
+  expect(academyAdminInviteStatusLabel({claimed:1,expiresAtMs:expiry},expiry+1))
+   .toBe('تم تسجيل حساب الشيخ');
+ });
+});
 
 describe('bounded signed staff academy read #315',()=>{
  it('requires exact HTTP 200 before parsing any privileged staff snapshot',()=>{
