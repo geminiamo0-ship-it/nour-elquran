@@ -6,7 +6,8 @@ import {academyPendingStore,type AcademyPendingCommand} from './admin-academy-pe
 import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified,
  academyAdminCanReject} from './admin-academy-write-outcome';
 import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
- parseAdminAcademyRead,type AdminAcademySnapshot} from './admin-academy-read';
+ parseAdminAcademyRead,academyAdminInviteStatusLabel,
+ type AdminAcademySnapshot} from './admin-academy-read';
 
 type Academy=AdminAcademySnapshot;
 type Result={phase:'idle'|'busy'|'done'|'error'|'uncertain';message:string};
@@ -285,7 +286,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    <h3>الدعوات المرسلة</h3>
    {visibleData.invites.map(i=><article key={i.id}>
     {i.teacherName??'لم يُستخدم الرابط بعد'} ·
-    {' '}{i.claimed===1?'تم تسجيل حساب الشيخ':'بانتظار التسجيل'}
+    {' '}{academyAdminInviteStatusLabel(i,Date.now())}
     {i.teacherId?' · موجود في دليل الشيوخ':''}
     {' · انتهاء: '}{date.format(new Date(i.expiresAtMs))}
     {i.claimed===1&&!i.teacherId&&<p>
