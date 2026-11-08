@@ -1,5 +1,6 @@
 import {describe,expect,it} from 'vitest';
-import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified} from './admin-academy-write-outcome';
+import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified,
+ academyAdminCanReject} from './admin-academy-write-outcome';
 
 describe('staff academy D1 receipt integrity #315',()=>{
  it('holds immutable operations after uncertain HTTP outcomes',()=>{
@@ -40,5 +41,24 @@ describe('staff academy D1 receipt integrity #315',()=>{
   expect(academyAdminAckIsVerified('invites',201,invite,{})).toBe(true);
   expect(academyAdminAckIsVerified('invites',201,
    {...invite,token:'invalid'},{})).toBe(false);
+ });
+});
+
+describe('staff request rejection audit guard #315',()=>{
+ const rows=[{id:'synthetic-pending',state:'pending'},
+  {id:'synthetic-activated',state:'activated'},
+  {id:'synthetic-rejected',state:'rejected'}];
+ it('allows only a confirmed pending signed D1 request with a bounded reason',()=>{
+  expect(academyAdminCanReject(rows,'synthetic-pending','Reviewed manually',true,false)).toBe(true);
+  for(const id of ['synthetic-activated','synthetic-rejected','unknown',''])
+   expect(academyAdminCanReject(rows,id,'Reviewed manually',true,false)).toBe(false);
+  expect(academyAdminCanReject([], 'synthetic-pending','Reviewed manually',true,false)).toBe(false);
+ });
+ it('does not bypass native form constraints with a click',()=>{
+  for(const note of ['', '   ', 'too short', 'a'.repeat(501)])
+   expect(academyAdminCanReject(rows,'synthetic-pending',note,true,false)).toBe(false);
+  expect(academyAdminCanReject(rows,'synthetic-pending','Reviewed manually',false,false)).toBe(false);
+  expect(academyAdminCanReject(rows,'synthetic-pending','Reviewed manually',true,true)).toBe(false);
+  expect(academyAdminCanReject(rows,'synthetic-pending','   Reviewed manually   ',true,false)).toBe(true);
  });
 });
