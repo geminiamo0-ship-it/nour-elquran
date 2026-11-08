@@ -43,6 +43,19 @@ export function academyAdminAckIsVerified(path:string,status:number,raw:unknown,
  const expected=codes[path];
  if(!expected||!((status===201&&v.code===expected[0])||
   (status===200&&v.code===expected[1]&&expected[1]!==undefined)))return false;
+ // The Worker emits a fixed response shape per command/status. A proxy or
+ // stale handler must not attach extra fields (including payment assertions)
+ // and still unlock a new financial operation or reveal an invite token.
+ const fields:Readonly<Record<string,readonly string[]>>={
+  packages:['code','packageId'],
+  activate:status===201?['code','startsAtMs','endsAtMs','rolloverSessions']:['code'],
+  reject:['code'],
+  contact:['code'],
+  invites:['code','token','expiresAtMs'],
+ };
+ const required=fields[path];
+ if(!required||Object.keys(v).length!==required.length||
+  !required.every(k=>Object.prototype.hasOwnProperty.call(v,k)))return false;
  if(path==='packages'){
   if(!command||typeof command!=='object'||Array.isArray(command))return false;
   const packageId=(command as Record<string,unknown>).packageId;
