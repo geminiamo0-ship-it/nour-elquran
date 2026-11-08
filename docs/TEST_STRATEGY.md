@@ -1,3 +1,7 @@
+## 2026-11-08 #315 staff POST malformed 403 regression
+- Vitest `AdminAcademyMvp.test.tsx`: an HTML or code-less 403 must clear privileged academy data/one-use invite via staff revocation, but its D1 mutation outcome stays uncertain (`exactCodeOnly:false`) so the immutable operation ID is retained for same-command replay. A valid exact Worker business 403 must not be confused with revoked staff. 401 does not prove a failed write. Malformed 503 remains a generic error, not an invented staff denial.
+- SSR four modes show only loading before a signed 200 GET; no privileged learner roster or invitation URL in initial HTML. Exact-head GitHub Verify, independent security review and source-pinned Dev signed role/mobile QA still required; source tests alone do not authorize merge or Production.
+
 ## 2026-11-08 — #315 claimed Sheikh invitation fallback regression
 - `admin-academy-read.test.ts`: a durably claimed invite with a null joined teacher name must say the account is unavailable, **not** “unused”; a genuinely unclaimed invite remains “unused”; a claimed invite with a valid name retains that name. All fixtures synthetic. Run exact-head Verify and signed Dev staff role/privacy checks before acceptance; this source test alone is not runtime proof.
 
