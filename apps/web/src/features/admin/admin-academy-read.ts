@@ -31,6 +31,14 @@ export function academyAdminInviteStatusLabel(
  return invite.expiresAtMs<now?'انتهت صلاحية الدعوة':'بانتظار التسجيل';
 }
 
+/** A durable claim must not be presented as unused when the joined Sheikh
+ * account name is temporarily missing or the account was deactivated. */
+export function academyAdminInviteDisplayName(
+ invite:Pick<AcademyInvite,'claimed'|'teacherName'>):string{
+ return invite.teacherName??(invite.claimed===1?
+  'حساب الشيخ غير متاح':'لم يُستخدم الرابط بعد');
+}
+
 /** Ignore a signed GET if a newer refresh, write or session change superseded it. */
 export function academyAdminReadEpochMayApply(
  started:number,current:number,aborted:boolean,sessionSame:boolean):boolean{
