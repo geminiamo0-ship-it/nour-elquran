@@ -3,7 +3,8 @@ import {useEffect,useRef,useState,type FormEvent} from 'react';
 import type {AccountSession} from '@/features/account';
 import styles from './AdminAcademyMvp.module.css';
 import {academyPendingStore,type AcademyPendingCommand} from './admin-academy-pending';
-import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified} from './admin-academy-write-outcome';
+import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified,
+ academyAdminCanReject} from './admin-academy-write-outcome';
 import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
  parseAdminAcademyRead,type AdminAcademySnapshot} from './admin-academy-read';
 
@@ -255,9 +256,13 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     <Confirm checked={confirmed} onChange={setConfirmed}/>
     <button type="submit" disabled={!confirmed||busy||!UUID.test(learnerId)||!UUID.test(selectedPackage)}>
      تأكيد الاستلام وتفعيل الاشتراك</button>
-    {selectedRequest&&<button type="button" disabled={!confirmed||busy}
-     onClick={()=>void send('reject',{operationId:iso(),requestId:selectedRequest,
-      reason:reason.trim()})}>رفض الطلب مع تسجيل السبب</button>}
+    {selectedRequest&&<button type="button"
+     disabled={!academyAdminCanReject(visibleData.requests,selectedRequest,reason,confirmed,busy)}
+     onClick={()=>{
+      if(!academyAdminCanReject(visibleData.requests,selectedRequest,reason,confirmed,busy))return;
+      void send('reject',{operationId:iso(),requestId:selectedRequest,
+       reason:reason.trim()});
+     }}>رفض الطلب مع تسجيل السبب</button>}
    </form>
   </>}
   {visibleData&&mode==='invites'&&<>
