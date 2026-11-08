@@ -54,6 +54,7 @@ async function submit(path:string,command:unknown){
 /** Operations never optimistically claim a payment or an activation. */
 export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode}){
  const [data,setData]=useState<Academy|null>(null);
+ const [readError,setReadError]=useState(false);
  const [refresh,setRefresh]=useState(0);
  const [result,setResult]=useState<Result>({phase:'idle',message:''});
  const [title,setTitle]=useState('');
@@ -73,16 +74,17 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  currentSession.current=session;
  useEffect(()=>{
   const ctrl=new AbortController();
-  setData(null);setInviteUrl('');
+  setData(null);setReadError(false);setInviteUrl('');
   const held=academyPendingStore.forActor(session.user.id);
   setPendingOp(held);
   setResult(held?{phase:'uncertain',message:
    'نتيجة العملية السابقة غير مؤكدة؛ أعد نفس العملية فقط.'}:
    {phase:'idle',message:''});
   void readAcademy(ctrl.signal).then(v=>{
-   if(!ctrl.signal.aborted){setData(v);setWhatsapp(v.whatsappNumber??'');}
-  }).catch(e=>{if(!ctrl.signal.aborted)setResult({phase:'error',
-   message:e instanceof Error?e.message:'تعذّر تحميل البيانات'});});
+   if(!ctrl.signal.aborted){setData(v);setReadError(false);setWhatsapp(v.whatsappNumber??'');}
+  }).catch(e=>{if(!ctrl.signal.aborted){setReadError(true);
+   setResult({phase:'error',message:e instanceof Error?e.message:'تعذّر تحميل البيانات'});
+  }});
   return()=>ctrl.abort();
  },[session,refresh]);
  const busy=result.phase==='busy'||result.phase==='uncertain';
@@ -114,13 +116,13 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     setInviteUrl(window.location.origin+'/teacher/join?token='+token);
    }else{
     // Require a fresh signed roster before another financial command.
-    setData(null);
+    setData(null);setReadError(false);
     const ctrl=new AbortController();
     void readAcademy(ctrl.signal).then(v=>{
-     if(stillCurrent())setData(v);
+     if(stillCurrent()){setData(v);setReadError(false);}
     }).catch(()=>{
-     if(stillCurrent())setResult({phase:'error',
-      message:'تعذّر تحديث السجل. راجع العملية المحفوظة قبل متابعة الإدارة.'});
+     if(stillCurrent()){setReadError(true);setResult({phase:'error',
+      message:'تعذّر تحديث السجل. راجع العملية المحفوظة قبل متابعة الإدارة.'});}
     });
    }
   }catch(e){
@@ -156,9 +158,11 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   <h2>{modeTitle}</h2>
   {mode==='packages'?<p>أضف باقة أو عدّل سعرها وعدد حصصها. التعديلات الجديدة لا تغيّر الاشتراكات السابقة.</p>:
    <p>تُراجع كل عملية من الإدارة؛ واتساب ليس إثبات دفع تلقائيًا.</p>}
-  <button type="button" onClick={()=>setRefresh(n=>n+1)} disabled={busy}>
+  <button type="button" onClick={()=>setRefresh(n=>n+1)} disabled={result.phase==='busy'}>
    تحديث البيانات</button>
-  {!data&&<p role="status">جارٍ تحميل البيانات المصرح بها…</p>}
+  {!data&&<p role={readError?'alert':'status'}>{readError?
+   'تعذّر تحميل بيانات الإدارة. اضغط تحديث البيانات للمحاولة مجددًا.':
+   'جارٍ تحميل البيانات المصرح بها…'}</p>}
   {data&&mode==='packages'&&<>
    <div className={styles.packageHeading}><h3>الباقات الحالية</h3>
     <button type="button" onClick={()=>{
