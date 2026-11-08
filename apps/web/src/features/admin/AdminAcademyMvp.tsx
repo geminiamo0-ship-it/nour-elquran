@@ -6,7 +6,7 @@ import {academyPendingStore,type AcademyPendingCommand} from './admin-academy-pe
 import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified,
  academyAdminCanReject} from './admin-academy-write-outcome';
 import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
- parseAdminAcademyRead,academyAdminInviteStatusLabel,
+ parseAdminAcademyRead,academyAdminInviteStatusLabel,academyAdminInviteDisplayName,
  academyAdminReadEpochMayApply,academyAdminStaffAccessRevoked,
  academyAdminMutationMayApply,
  type AdminAcademySnapshot} from './admin-academy-read';
@@ -321,7 +321,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
      نسخ الرابط</button></div>}
    <h3>الدعوات المرسلة</h3>
    {visibleData.invites.map(i=><article key={i.id}>
-    {i.teacherName??'لم يُستخدم الرابط بعد'} ·
+    {academyAdminInviteDisplayName(i)} ·
     {' '}{academyAdminInviteStatusLabel(i,Date.now())}
     {i.teacherId?' · موجود في دليل الشيوخ':''}
     {' · انتهاء: '}{date.format(new Date(i.expiresAtMs))}
