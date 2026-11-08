@@ -1,7 +1,7 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import type {AccountSession} from '@/features/account';
-import {AdminAcademyMvp,submitAcademyCommand,
+import {AdminAcademyMvp,submitAcademyCommand,readAcademy,
  academyAdminOperationErrorMessage} from './AdminAcademyMvp';
 import {academyAdminOutcomeIsUncertain} from './admin-academy-write-outcome';
 import {academyAdminStaffAccessRevoked} from './admin-academy-read';
@@ -63,6 +63,34 @@ describe('staff academy malformed authorization response #315',()=>{
   response(503,null,true);
   await expect(submitAcademyCommand('activate',{})).rejects.toThrow(
    'استجابة غير صالحة');
+ });
+});
+
+describe('staff academy signed GET error privacy #315',()=>{
+ it('does not echo a malformed JSON response containing private proxy or D1 text',async()=>{
+  const privateBody='SQL_PRIVATE_CHILD_NAME_<script>secret</script>';
+  vi.stubGlobal('fetch',vi.fn(async()=>({
+   status:200,
+   json:vi.fn(async()=>{throw new SyntaxError(privateBody);})
+  })));
+  await expect(readAcademy(new AbortController().signal)).rejects.toThrow(
+   'تعذّر قراءة الإدارة من الخادم');
+  try{await readAcademy(new AbortController().signal);}
+  catch(error){
+   expect(String(error)).not.toContain('SQL_PRIVATE_CHILD_NAME');
+   expect(String(error)).not.toContain('<script>');
+  }
+  expect(fetch).toHaveBeenCalledWith('/v1/staff/academy',
+   expect.objectContaining({credentials:'same-origin',cache:'no-store',
+    redirect:'error'}));
+ });
+ it('sanitizes a malformed signed 200 payload instead of showing raw fields',async()=>{
+  vi.stubGlobal('fetch',vi.fn(async()=>({
+   status:200,json:vi.fn(async()=>({code:'ACADEMY_STAFF',
+    packages:'PRIVATE_CHILD_RECORD',requests:[],invites:[],whatsappNumber:null}))
+  })));
+  await expect(readAcademy(new AbortController().signal)).rejects.toThrow(
+   'تعذّر قراءة الإدارة من الخادم');
  });
 });
 
