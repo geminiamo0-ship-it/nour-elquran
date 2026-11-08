@@ -1,3 +1,7 @@
+## #315 staff request selection after confirmed D1 ACK (2026-11-08)
+- Pure Vitest regression checks only `activate` and `reject` clear selected learner/request/price version after a verified ACK; package/contact/invite writes do not. Unknown 503 and unexpected 202 remain uncertain, retaining the exact operationId/payload and forbidding a new financial command.
+- Full gate: exact-head Verify code-quality, native Cloudflare D1, governance and repository-policy; then signed isolated Dev staff/guardian/two-sibling refresh and uncertain-write replay, 360/390 browser UX, independent finance/auth review. Source tests are not Dev acceptance.
+
 ## #315 Sheikh invitation expiry after background sleep — 2026-11-08
 - Unit: `admin-academy-read.test.ts` checks stale mount-time vs resumed current time and no pending timer for expired invitations; inclusive `expiresAtMs` Worker boundary remains covered.
 - Integration still required on Dev/browser: keep an authorized staff tab open across a synthetic invite expiry, background and resume it, and verify the label changes immediately without revealing an old actor's one-use token; repeat after signed GET refresh, revoked grant, account switch, 360/390 viewport. Unit/CI do **not** substitute for these browser/role checks.
