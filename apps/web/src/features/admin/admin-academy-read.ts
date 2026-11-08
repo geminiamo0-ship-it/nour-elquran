@@ -22,6 +22,15 @@ export function academyAdminSessionViewIsReady<T>(loadedFor:T|null,current:T):bo
  return loadedFor!==null&&loadedFor===current;
 }
 
+/** Match the Worker claim guard: an invitation expires only when now is
+ * strictly greater than expiresAtMs. A claimed link stays claimed after expiry.
+ * Never present an expired one-use link as waiting for the Sheikh. */
+export function academyAdminInviteStatusLabel(
+ invite:Pick<AcademyInvite,'claimed'|'expiresAtMs'>,now:number):string{
+ if(invite.claimed===1)return 'تم تسجيل حساب الشيخ';
+ return invite.expiresAtMs<now?'انتهت صلاحية الدعوة':'بانتظار التسجيل';
+}
+
 export type AdminAcademySnapshot={
  code:'ACADEMY_STAFF';packages:AcademyPackage[];
  requests:AcademyRequest[];invites:AcademyInvite[];
