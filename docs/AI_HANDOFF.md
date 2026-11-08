@@ -1,3 +1,7 @@
+## 2026-11-08 — #315 Admin confirmation edit safety (Draft PR #325)
+- Latest source edit: changing any package title/EGP price/session count, manual learner/package selection, settlement/rejection note or academy WhatsApp number clears the previously checked operator confirmation. Previously a staff member could edit the financial payload after checking confirmation without re-confirming. Source `f6893203`, test `c455123e`, matcher repair `91b81bf4`.
+- Next exact action: inspect GitHub Verify for latest branch HEAD (do not reuse previous 4/4), reconcile #325 vs #327 without regressing immutable guardian quotes, obtain independent finance/privacy review and signed isolated Cloudflare Dev + 360/390 browser acceptance. Keep Draft and #315 OPEN; no main/Production/payment/WhatsApp/audio/ink changes.
+
 ## 2026-11-08 — #315 staff academy post-ACK request selection fence (Draft #325)
 - Source review of #325 against overlapping Draft #327 found the latter cleared selected learner/request/quote fields after confirmed `activate` or `reject`, while #325 left stale selections in the form. The Worker would still guard repeated writes, but UI should not invite an accidental second financial operation.
 - Implemented in #325 only: pure `academyAdminAckClearsRequestSelection` helper and regression; clear selectedRequest/selectedPackage/learnerId only after verified D1 ACK, not on ambiguous 503/network error. Preserve the original in-tab pending command and idempotency key for uncertain outcomes.
