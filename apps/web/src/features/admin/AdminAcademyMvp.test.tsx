@@ -51,7 +51,9 @@ describe('staff academy malformed authorization response #315',()=>{
    code:'ACADEMY_ACTIVATION_DENIED',status:403,exactCodeOnly:true
   });
   const err=failure as {code:string;status:number};
-  expect(academyAdminStaffAccessRevoked(err.status,err.code)).toBe(false);
+  // Even a JSON-shaped proxy 403 must fence privileged staff data.
+   // The D1 write remains uncertain; preserve the original operationId.
+   expect(academyAdminStaffAccessRevoked(err.status,err.code)).toBe(true);
  });
  it('never interprets an unauthenticated 401 as proof the write did not commit',async()=>{
   const json=response(401,null,true);
