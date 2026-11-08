@@ -1,3 +1,8 @@
+## 2026-11-08 — #315 staff invitation status follow-up, Draft #325
+- Read current main and open PRs #325/#327; prior [Verify #42456391463](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42456391463) passed 4/4 at older `794c7d31`.
+- Source: `apps/web/src/features/admin/admin-academy-read.ts` exposes a Worker-matching invite status label; `AdminAcademyMvp.tsx` no longer shows expired unclaimed invitations as awaiting registration. Synthetic Vitest exact-boundary cases added to `admin-academy-read.test.ts`. Commits `5f32cbe7`, `e6932084`, `93ae7815` on Draft #325. No server or Production changes.
+- NEXT: check exact-head GitHub Verify (4 jobs); keep #315 OPEN and #325 Draft pending independent security review, signed Dev staff/guardian/revoked/two-sibling QA and 360/390 touch acceptance. Reconcile #327 without replacing #325's atomic `packageVersionId` quote binding. No Production/payment/WhatsApp/child media/ink rollout.
+
 ## 2026-11-08 — #315 path-specific staff HTTP refusal integrity (Draft #325)
 - Checked latest Noor main and active Draft #325/#327, read mandatory architecture/security/testing documents and verified [Verify #42450325027](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42450325027) 4/4 on **old** #325 `06f98a65`.
 - New source changes on `feat/student-subscriptions-clarity-20261101`: `3e41519b` path-scopes terminal 400/409 errors; `db02c0f0` supplies the originating command path; `a03bcf35` tests cross-route code injection, preserving the original immutable operationId when the wrong Worker error arrives after an uncertain D1 write. Existing successful ACK validation and quote-version CAS remain intact. No local full suite claimed.
