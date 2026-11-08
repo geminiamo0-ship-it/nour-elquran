@@ -1,3 +1,7 @@
+## 2026-11-08 #315 malformed staff 403 transport guard
+- `apps/web/src/features/admin/AdminAcademyMvp.tsx`: a malformed/HTML 403 on a staff mutation fails closed for visible privileged state while preserving uncertain D1 operation identity.
+- `apps/web/src/features/admin/AdminAcademyMvp.test.tsx`: synthetic HTTP malformed 403/401/business denial and initial SSR privilege isolation. Draft PR #325; Dev and independent review pending.
+
 ## #326 guardian immutable quote binding (Draft PR #325; source-only)
 - `workers/api/src/academy-admin-mvp.ts`: owner package request requires the selected packageVersionId; same-operation replay validates version; one atomic INSERT..SELECT rejects stale/disabled quotes with 409.
 - `apps/web/src/features/student/components/ConnectedAcademyOffers.tsx`: sends the displayed immutable version alongside packageId/operationId; `StudentSubscription.test.tsx` validates exact payload.
