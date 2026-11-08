@@ -50,6 +50,15 @@ describe('live Sheikh invite expiry scheduling #315',()=>{
    {claimed:0,expiresAtMs:now-1}
   ],now)).toBeNull();
  });
+ it('uses a fresh clock after an inactive tab or delayed signed snapshot',()=>{
+  const expiry=1700600000000;
+  const invite={claimed:0 as const,expiresAtMs:expiry};
+  const mountTime=expiry-600_000;
+  const resumedTime=expiry+600_000;
+  expect(academyAdminInviteStatusLabel(invite,mountTime)).toBe('بانتظار التسجيل');
+  expect(academyAdminInviteStatusLabel(invite,resumedTime)).toBe('انتهت صلاحية الدعوة');
+  expect(academyAdminNextInviteExpiryDelay([invite],resumedTime)).toBeNull();
+ });
  it('caps long waits to refresh after tab sleep and never polls empty lists',()=>{
   const now=1700600000000;
   expect(academyAdminNextInviteExpiryDelay([],now)).toBeNull();
