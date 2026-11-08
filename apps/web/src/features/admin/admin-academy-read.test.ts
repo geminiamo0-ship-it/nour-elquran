@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
  parseAdminAcademyRead,academyAdminInviteStatusLabel,academyAdminInviteDisplayName,
- academyAdminReadEpochMayApply,
+ academyAdminNextInviteExpiryDelay,academyAdminReadEpochMayApply,
  academyAdminStaffAccessRevoked,academyAdminMutationMayApply} from './admin-academy-read';
 
 const packageRow={id:'version-1',packageId:'package-1',title:'Synthetic package',
@@ -27,6 +27,35 @@ describe('Sheikh invitation expiry status #315',()=>{
    .toBe('انتهت صلاحية الدعوة');
   expect(academyAdminInviteStatusLabel({claimed:1,expiresAtMs:expiry},expiry+1))
    .toBe('تم تسجيل حساب الشيخ');
+ });
+});
+
+describe('live Sheikh invite expiry scheduling #315',()=>{
+ it('schedules the exact Worker boundary, including equality and +1ms',()=>{
+  const invite={claimed:0 as const,expiresAtMs:1700600000000};
+  expect(academyAdminNextInviteExpiryDelay([invite],invite.expiresAtMs-1)).toBe(2);
+  expect(academyAdminNextInviteExpiryDelay([invite],invite.expiresAtMs)).toBe(1);
+  expect(academyAdminNextInviteExpiryDelay([invite],invite.expiresAtMs+1)).toBeNull();
+ });
+ it('ignores claimed/expired rows and picks the earliest pending invite',()=>{
+  const now=1700600000000;
+  expect(academyAdminNextInviteExpiryDelay([
+   {claimed:1,expiresAtMs:now+2},
+   {claimed:0,expiresAtMs:now-1},
+   {claimed:0,expiresAtMs:now+15},
+   {claimed:0,expiresAtMs:now+4}
+  ],now)).toBe(5);
+  expect(academyAdminNextInviteExpiryDelay([
+   {claimed:1,expiresAtMs:now+1},
+   {claimed:0,expiresAtMs:now-1}
+  ],now)).toBeNull();
+ });
+ it('caps long waits to refresh after tab sleep and never polls empty lists',()=>{
+  const now=1700600000000;
+  expect(academyAdminNextInviteExpiryDelay([],now)).toBeNull();
+  expect(academyAdminNextInviteExpiryDelay([
+   {claimed:0,expiresAtMs:now+7*86400000}
+  ],now)).toBe(60_000);
  });
 });
 
