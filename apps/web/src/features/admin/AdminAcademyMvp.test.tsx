@@ -135,7 +135,7 @@ describe('staff academy confirmation is bound to unchanged form values #315',()=
   const source=readFileSync(new URL('./AdminAcademyMvp.tsx',import.meta.url),'utf8');
   expect(source).toContain('academyAdminConfirmationMatchesMode(confirmed,confirmedMode,mode)');
   expect(source).toContain('setConfirmedMode(value?mode:null)');
-  expect(source.match(/<Confirm checked=\\{confirmedForMode\\} onChange=\\{confirmForMode\\}\\/>/g))
+  expect(source.match(/<Confirm checked=\{confirmedForMode\} onChange=\{confirmForMode\}\/>/g))
    .toHaveLength(4);
   expect(source).toContain('if(!confirmedForMode||busy||!visibleData)return');
   expect(source).not.toContain('disabled={!confirmed||busy');
