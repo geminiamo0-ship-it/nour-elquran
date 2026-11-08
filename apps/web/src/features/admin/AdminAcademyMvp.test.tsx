@@ -1,3 +1,4 @@
+import {readFileSync} from 'node:fs';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import type {AccountSession} from '@/features/account';
@@ -122,6 +123,24 @@ describe('staff academy SSR privacy boundary #315',()=>{
    expect(html).not.toContain('teacher/join?token=');
    expect(html).not.toContain('تم الاستلام يدويًا');
    expect(html).not.toContain('synthetic-learner');
+  }
+ });
+});
+
+/** Source contract until signed Dev browser interaction coverage is available.
+ * A previously checked confirmation must never authorize a changed package,
+ * learner, audit note or WhatsApp contact without a fresh explicit check. */
+describe('staff academy confirmation is bound to unchanged form values #315',()=>{
+ it('unchecks confirmation on every editable operational value',()=>{
+  const source=readFileSync(new URL('./AdminAcademyMvp.tsx',import.meta.url),'utf8');
+  const handlers=[...source.matchAll(/onChange=\\{e=>\\{([\\s\\S]*?)\\}\\}/g)]
+   .map(match=>match[1]??'');
+  for(const field of ['Title','Price','Sessions','LearnerId',
+   'SelectedPackage','Reason','Whatsapp']){
+   const setter=`set${field}(e.target.value)`;
+   expect(handlers.some(handler=>handler.includes(setter)&&
+    handler.includes('setConfirmed(false)')),
+    `${field} must invalidate a prior staff confirmation`).toBe(true);
   }
  });
 });
