@@ -1,3 +1,8 @@
+## #315 uncertain staff academy command gate (2026-11-08 source candidate)
+- `admin-academy-pending.test.ts` (ported from Draft #327) checks in-tab remount preservation of exact immutable payload, one in-flight POST, actor switch cleanup and no false persistence claim across full reload.
+- `admin-academy-write-outcome.test.ts` checks retryable 408/425/429/5xx, unknown 409 vs reviewed terminal conflicts, strict 201/200 command ACKs, activation cycle and one-use invite token/expiry validation. `AdminAcademyMvp.tsx` consumes both gates, blocks a new write until uncertainty resolves and permits read-only refresh.
+- GitHub exact-head Verify is required, followed by isolated signed Cloudflare Dev staff grant/revocation, one guardian/two siblings, staff price edit-between-read/click, lost ACK/retry, remount, 360/390 mobile and independent security review. No Production evidence or live payment claim.
+
 ## #315 uncertain D1 package-version write receipt (2026-11-08)
 - Unit: when staff package INSERT resolves with `success=false` or `changes=0`, a readback of the exact immutable operation must return 200 replay only for identical staff actor, package, price, title, session count and active flag. Different actor or price => 409 without leaking a package acknowledgement; absent row => 503, never 201. Native signed D1 and exact-head Verify are required before merge; remote Dev staff/guardian quote race remains a separate gate.
 
