@@ -40,7 +40,8 @@ const operationErrors:Record<string,string>={
  ACADEMY_ACTIVATION_DENIED:'تعذّر تنفيذ التفعيل بسبب قيد في سجل الاشتراكات. لا تكرر استلام الدفع؛ راجع الاشتراك الحالي أو بلّغ الإدارة.',
 };
 class AcademyCommandError extends Error{
- constructor(readonly code:string,readonly status:number){super(code);}
+ constructor(readonly code:string,readonly status:number,
+  readonly exactCodeOnly:boolean){super(code);}
 }
 async function submit(path:string,command:unknown){
  const res=await fetch('/v1/staff/academy/'+path,{method:'POST',
@@ -50,7 +51,8 @@ async function submit(path:string,command:unknown){
  if(!v||typeof v!=='object'||Array.isArray(v)||typeof (v as {code?:unknown}).code!=='string')
   throw new Error('استجابة غير صالحة');
  const code=(v as {code:string}).code;
- if(!res.ok)throw new AcademyCommandError(code,res.status);
+ if(!res.ok)throw new AcademyCommandError(code,res.status,
+  Object.keys(v).length===1);
  if(!academyAdminAckIsVerified(path,res.status,v,command))
   throw new Error('استجابة تأكيد غير موثوقة');
  return {code,...(v as object)};
@@ -148,7 +150,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   }catch(e){
    if(!stillCurrent())return;
    const uncertain=!(e instanceof AcademyCommandError)||
-    academyAdminOutcomeIsUncertain(e.status,e.code);
+    academyAdminOutcomeIsUncertain(e.status,e.code,e.exactCodeOnly);
    if(uncertain){
     setResult({phase:'uncertain',message:
      'نتيجة العملية غير مؤكدة. لا تنشئ عملية جديدة؛ أعد نفس الطلب بمعرّفه الأصلي.'});
