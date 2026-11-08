@@ -1,6 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified,
- academyAdminCanReject,academyAdminAckClearsRequestSelection} from './admin-academy-write-outcome';
+ academyAdminCanReject,academyAdminAckClearsRequestSelection,
+ academyAdminConfirmationMatchesMode} from './admin-academy-write-outcome';
 
 describe('staff academy D1 receipt integrity #315',()=>{
  it('holds immutable operations after uncertain HTTP outcomes',()=>{
@@ -156,5 +157,20 @@ describe('confirmed academy decision clears stale request selection #315',()=>{
   expect(academyAdminOutcomeIsUncertain('activate',503,
    'ACADEMY_ACTIVATION_STORAGE_UNAVAILABLE')).toBe(true);
   expect(academyAdminAckIsVerified('activate',202,activated,{})).toBe(false);
+ });
+});
+
+/** React may retain a mounted Admin panel when the active route changes.
+ * A previous checkbox tick cannot authorize a different financial command. */
+describe('academy staff confirmation is scoped to its section #315',()=>{
+ it('requires an explicit confirmation in the current section',()=>{
+  const sections=['packages','requests','invites','contact'] as const;
+  for(const previous of sections){
+   expect(academyAdminConfirmationMatchesMode(true,previous,previous)).toBe(true);
+   for(const next of sections.filter(section=>section!==previous))
+    expect(academyAdminConfirmationMatchesMode(true,previous,next)).toBe(false);
+   expect(academyAdminConfirmationMatchesMode(false,previous,previous)).toBe(false);
+  }
+  expect(academyAdminConfirmationMatchesMode(true,null,'requests')).toBe(false);
  });
 });
