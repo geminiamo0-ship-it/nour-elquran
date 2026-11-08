@@ -124,6 +124,19 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   const timer=window.setTimeout(()=>setInviteNow(Date.now()),delay);
   return()=>window.clearTimeout(timer);
  },[mode,visibleData,inviteNow]);
+ // Background tabs may suspend timers. Recheck the displayed expiry as soon
+ // as the staff returns, without requesting or caching any additional data.
+ useEffect(()=>{
+  const syncClock=()=>{
+   if(document.visibilityState==='visible')setInviteNow(Date.now());
+  };
+  window.addEventListener('focus',syncClock);
+  document.addEventListener('visibilitychange',syncClock);
+  return()=>{
+   window.removeEventListener('focus',syncClock);
+   document.removeEventListener('visibilitychange',syncClock);
+  };
+ },[]);
  useEffect(()=>{
   const ctrl=new AbortController();
   const epoch=++readEpoch.current;
@@ -143,6 +156,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    if(academyAdminReadEpochMayApply(epoch,readEpoch.current,
     ctrl.signal.aborted,currentSession.current===session)){
     revokedStaff.current=false;
+    setInviteNow(Date.now()); // A delayed signed GET must not reuse the mount-time clock.
     setData(v);setDataSession(session);
     setReadError(false);setWhatsapp(v.whatsappNumber??'');
    }
@@ -195,6 +209,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    void readAcademy(ctrl.signal).then(v=>{
     if(stillCurrent()&&academyAdminReadEpochMayApply(epoch,readEpoch.current,
      ctrl.signal.aborted,currentSession.current===startedSession)){
+     setInviteNow(Date.now());
      setData(v);setDataSession(startedSession);setReadError(false);
      setWhatsapp(v.whatsappNumber??'');
     }
