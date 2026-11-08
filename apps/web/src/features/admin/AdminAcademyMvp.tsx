@@ -4,7 +4,7 @@ import type {AccountSession} from '@/features/account';
 import styles from './AdminAcademyMvp.module.css';
 import {academyPendingStore,type AcademyPendingCommand} from './admin-academy-pending';
 import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified,
- academyAdminCanReject} from './admin-academy-write-outcome';
+ academyAdminCanReject,academyAdminAckClearsRequestSelection} from './admin-academy-write-outcome';
 import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
  parseAdminAcademyRead,academyAdminInviteStatusLabel,academyAdminInviteDisplayName,
  academyAdminNextInviteExpiryDelay,academyAdminReadEpochMayApply,academyAdminStaffAccessRevoked,
@@ -209,6 +209,12 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    setPendingOp(null);setPendingSession(null);
    setResult({phase:'done',message:'سجّل الخادم العملية: '+ack.code});
    setConfirmed(false);setReason('');
+   // A confirmed activation/rejection invalidates the selected D1 request.
+   // Never leave it preselected for an accidental second financial command.
+   // This executes only after a verified ACK, not for an uncertain outcome.
+   if(academyAdminAckClearsRequestSelection(path)){
+    setSelectedRequest('');setSelectedPackage('');setLearnerId('');
+   }
    // A committed write invalidates every earlier GET, including invite writes.
    // Keep the one-use link only for this still-authorized staff session.
    const epoch=++readEpoch.current;
