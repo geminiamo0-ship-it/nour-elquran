@@ -4,8 +4,8 @@ import type {AccountSession} from '@/features/account';
 import styles from './AdminAcademyMvp.module.css';
 import {academyPendingStore,type AcademyPendingCommand} from './admin-academy-pending';
 import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified} from './admin-academy-write-outcome';
-import {academyAdminReadHttpStatusIsValid,parseAdminAcademyRead,
- type AdminAcademySnapshot} from './admin-academy-read';
+import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
+ parseAdminAcademyRead,type AdminAcademySnapshot} from './admin-academy-read';
 
 type Academy=AdminAcademySnapshot;
 type Result={phase:'idle'|'busy'|'done'|'error'|'uncertain';message:string};
@@ -57,6 +57,7 @@ async function submit(path:string,command:unknown){
 /** Operations never optimistically claim a payment or an activation. */
 export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode}){
  const [data,setData]=useState<Academy|null>(null);
+ const [dataSession,setDataSession]=useState<AccountSession|null>(null);
  const [readError,setReadError]=useState(false);
  const [refresh,setRefresh]=useState(0);
  const [result,setResult]=useState<Result>({phase:'idle',message:''});
@@ -71,20 +72,29 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const [confirmed,setConfirmed]=useState(false);
  const [whatsapp,setWhatsapp]=useState('');
  const [inviteUrl,setInviteUrl]=useState('');
+ const [inviteSession,setInviteSession]=useState<AccountSession|null>(null);
  const [pendingOp,setPendingOp]=useState<AcademyPendingCommand|null>(null);
+ const [pendingSession,setPendingSession]=useState<AccountSession|null>(null);
  const sending=useRef(false);
  const currentSession=useRef(session);
  currentSession.current=session;
+ // State survives one render across a prop switch, before effect cleanup runs.
+ // Render only data, secret invite URLs and pending retries owned by this session.
+ const visibleData=academyAdminSessionViewIsReady(dataSession,session)?data:null;
+ const visibleInviteUrl=academyAdminSessionViewIsReady(inviteSession,session)?inviteUrl:'';
+ const visiblePendingOp=academyAdminSessionViewIsReady(pendingSession,session)?pendingOp:null;
  useEffect(()=>{
   const ctrl=new AbortController();
-  setData(null);setReadError(false);setInviteUrl('');
+  setData(null);setDataSession(null);setReadError(false);
+  setInviteUrl('');setInviteSession(null);
   const held=academyPendingStore.forActor(session.user.id);
-  setPendingOp(held);
+  setPendingOp(held);setPendingSession(session);
   setResult(held?{phase:'uncertain',message:
    'نتيجة العملية السابقة غير مؤكدة؛ أعد نفس العملية فقط.'}:
    {phase:'idle',message:''});
   void readAcademy(ctrl.signal).then(v=>{
-   if(!ctrl.signal.aborted){setData(v);setReadError(false);setWhatsapp(v.whatsappNumber??'');}
+   if(!ctrl.signal.aborted){setData(v);setDataSession(session);
+    setReadError(false);setWhatsapp(v.whatsappNumber??'');}
   }).catch(e=>{if(!ctrl.signal.aborted){setReadError(true);
    setResult({phase:'error',message:e instanceof Error?e.message:'تعذّر تحميل البيانات'});
   }});
@@ -92,7 +102,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  },[session,refresh]);
  const busy=result.phase==='busy'||result.phase==='uncertain';
  async function send(path:string,payload:unknown){
-  if(sending.current||!data)return;
+  if(sending.current||!visibleData)return;
   const held=academyPendingStore.forActor(session.user.id);
   // An unresolved settlement must be retried with the exact original object.
   if(held&&(held.path!==path||held.payload!==payload))return;
@@ -105,24 +115,25 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   const startedSession=session;
   const stillCurrent=()=>currentSession.current===startedSession;
   setResult({phase:'busy',message:'جارٍ تسجيل العملية لدى الخادم…'});
-  setPendingOp(operation);
+  setPendingOp(operation);setPendingSession(session);
   try{
    const ack=await submit(path,payload);
    // A late response must never expose a one-use invitation to a new actor.
    if(!stillCurrent())return;
    academyPendingStore.clearIfSame(operation);
-   setPendingOp(null);
+   setPendingOp(null);setPendingSession(null);
    setResult({phase:'done',message:'سجّل الخادم العملية: '+ack.code});
    setConfirmed(false);setReason('');
    if(path==='invites'&&typeof (ack as {token?:unknown}).token==='string'){
     const token=(ack as {code:string;token?:string}).token!;
     setInviteUrl(window.location.origin+'/teacher/join?token='+token);
+    setInviteSession(startedSession);
    }else{
     // Require a fresh signed roster before another financial command.
-    setData(null);setReadError(false);
+    setData(null);setDataSession(null);setReadError(false);
     const ctrl=new AbortController();
     void readAcademy(ctrl.signal).then(v=>{
-     if(stillCurrent()){setData(v);setReadError(false);}
+     if(stillCurrent()){setData(v);setDataSession(startedSession);setReadError(false);}
     }).catch(()=>{
      if(stillCurrent()){setReadError(true);setResult({phase:'error',
       message:'تعذّر تحديث السجل. راجع العملية المحفوظة قبل متابعة الإدارة.'});}
@@ -137,11 +148,11 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
      'نتيجة العملية غير مؤكدة. لا تنشئ عملية جديدة؛ أعد نفس الطلب بمعرّفه الأصلي.'});
    }else{
     academyPendingStore.clearIfSame(operation);
-    setPendingOp(null);
+    setPendingOp(null);setPendingSession(null);
     if(e instanceof AcademyCommandError&&
      (e.status===401||(e.status===403&&e.code==='STAFF_ACCESS_DENIED')||
       e.code==='ACADEMY_STAFF_ACCESS_CHANGED')){
-     setData(null);setInviteUrl('');
+     setData(null);setDataSession(null);setInviteUrl('');setInviteSession(null);
     }
     setResult({phase:'error',message:e instanceof AcademyCommandError?
      (operationErrors[e.code]??'تعذّر تنفيذ العملية: '+e.code):
@@ -153,7 +164,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   }
  }
  function guard(event:FormEvent,action:()=>void){
-  event.preventDefault();if(!confirmed||busy||!data)return;action();
+  event.preventDefault();if(!confirmed||busy||!visibleData)return;action();
  }
  const modeTitle={packages:'الباقات والأسعار',requests:'طلبات الاشتراك وتفعيل الطلاب',
   invites:'إضافة شيخ بدعوة',contact:'واتساب الأكاديمية'}[mode];
@@ -163,18 +174,18 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    <p>تُراجع كل عملية من الإدارة؛ واتساب ليس إثبات دفع تلقائيًا.</p>}
   <button type="button" onClick={()=>setRefresh(n=>n+1)} disabled={result.phase==='busy'}>
    تحديث البيانات</button>
-  {!data&&<p role={readError?'alert':'status'}>{readError?
+  {!visibleData&&<p role={readError?'alert':'status'}>{readError?
    'تعذّر تحميل بيانات الإدارة. اضغط تحديث البيانات للمحاولة مجددًا.':
    'جارٍ تحميل البيانات المصرح بها…'}</p>}
-  {data&&mode==='packages'&&<>
+  {visibleData&&mode==='packages'&&<>
    <div className={styles.packageHeading}><h3>الباقات الحالية</h3>
     <button type="button" onClick={()=>{
      setSelectedPackage('');setTitle('');setPrice('');setSessions('8');
      setConfirmed(false);setPackageFormOpen(true);
     }}>+ إضافة باقة</button></div>
-   {data.packages.length===0?<p>لا توجد باقات مضافة بعد.</p>:
+   {visibleData.packages.length===0?<p>لا توجد باقات مضافة بعد.</p>:
     <div className={styles.options}>
-     {data.packages.map(p=><article key={p.id}>
+     {visibleData.packages.map(p=><article key={p.id}>
       <div className={styles.packageFacts}><strong>{p.title}</strong>
        <span>{label(p.priceEgp)} جنيه / {label(p.sessions)} حصص</span>
        <small>{p.active===1?'متاحة':'موقوفة'}</small></div>
@@ -205,11 +216,11 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     <button type="button" onClick={()=>{setPackageFormOpen(false);setConfirmed(false);}}>إلغاء</button>
    </form>}
   </>}
-  {data&&mode==='requests'&&<>
+  {visibleData&&mode==='requests'&&<>
    <h3>طلبات الطلاب</h3>
    <div className={styles.options}>
-   {data.requests.length===0?<p>لا توجد طلبات اشتراك بعد.</p>:
-    data.requests.map(r=><label key={r.id}>
+   {visibleData.requests.length===0?<p>لا توجد طلبات اشتراك بعد.</p>:
+    visibleData.requests.map(r=><label key={r.id}>
      <input type="radio" name="req" disabled={r.state!=='pending'}
       checked={selectedRequest===r.id}
       onChange={()=>{setSelectedRequest(r.id);setLearnerId(r.learnerId);
@@ -231,11 +242,11 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
     <label>الباقة (إصدار سعر ثابت)<select required value={selectedPackage}
      onChange={e=>{setSelectedPackage(e.target.value);setSelectedRequest('');}}>
      <option value="">اختر الباقة</option>
-     {selectedRequest&&!data.packages.some(p=>p.id===selectedPackage)&&
+     {selectedRequest&&!visibleData.packages.some(p=>p.id===selectedPackage)&&
       <option value={selectedPackage}>
        إصدار السعر الأصلي المرتبط بطلب الطالب
       </option>}
-     {data.packages.filter(p=>p.active===1).map(p=><option key={p.id} value={p.id}>
+     {visibleData.packages.filter(p=>p.active===1).map(p=><option key={p.id} value={p.id}>
       {p.title} — {p.priceEgp} ج / {p.sessions} حصص</option>)}
     </select></label>
     <label>سبب/مرجع تأكيد الدفع<input required minLength={10} maxLength={500}
@@ -249,18 +260,18 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
       reason:reason.trim()})}>رفض الطلب مع تسجيل السبب</button>}
    </form>
   </>}
-  {data&&mode==='invites'&&<>
+  {visibleData&&mode==='invites'&&<>
    <p>اضغط إنشاء رابط، ابعته للشيخ على واتساب؛ يسجّل بالاسم والموبايل
     وكلمة المرور فقط. الدعوة صالحة ٧ أيام وتُستخدم مرة واحدة.</p>
    <Confirm checked={confirmed} onChange={setConfirmed}/>
    <button type="button" disabled={!confirmed||busy}
     onClick={()=>void send('invites',{operationId:iso()})}>إنشاء رابط إضافة شيخ</button>
-   {inviteUrl&&<div role="status">
-    <label>الرابط يظهر الآن فقط<input readOnly dir="ltr" value={inviteUrl}/></label>
-    <button type="button" onClick={()=>void navigator.clipboard.writeText(inviteUrl)}>
+   {visibleInviteUrl&&<div role="status">
+    <label>الرابط يظهر الآن فقط<input readOnly dir="ltr" value={visibleInviteUrl}/></label>
+    <button type="button" onClick={()=>void navigator.clipboard.writeText(visibleInviteUrl)}>
      نسخ الرابط</button></div>}
    <h3>الدعوات المرسلة</h3>
-   {data.invites.map(i=><article key={i.id}>
+   {visibleData.invites.map(i=><article key={i.id}>
     {i.teacherName??'لم يُستخدم الرابط بعد'} ·
     {' '}{i.claimed===1?'تم تسجيل حساب الشيخ':'بانتظار التسجيل'}
     {i.teacherId?' · موجود في دليل الشيوخ':''}
@@ -269,7 +280,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
      ملف الشيخ غير متاح في الدليل بعد؛ راجع السجل قبل الإسناد.</p>}
    </article>)}
   </>}
-  {data&&mode==='contact'&&<>
+  {visibleData&&mode==='contact'&&<>
    <p>رقم دولي من غير علامة + أو مسافات؛ مثل 201xxxxxxxxx.
     زر الطالب يفتح واتساب فقط ولا يُفعّل اشتراكه.</p>
    <form onSubmit={e=>guard(e,()=>void send('contact',{
@@ -283,8 +294,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   </>}
   {result.phase!=='idle'&&<p role={result.phase==='error'?'alert':'status'}>
    {result.message}</p>}
-  {result.phase==='uncertain'&&pendingOp&&<button type="button"
-   onClick={()=>void send(pendingOp.path,pendingOp.payload)}>إعادة نفس العملية بمعرّفها الأصلي</button>}
+  {result.phase==='uncertain'&&visiblePendingOp&&<button type="button"
+   onClick={()=>void send(visiblePendingOp.path,visiblePendingOp.payload)}>إعادة نفس العملية بمعرّفها الأصلي</button>}
  </section>;
 }
 function Confirm({checked,onChange}:{checked:boolean;onChange:(x:boolean)=>void}){
