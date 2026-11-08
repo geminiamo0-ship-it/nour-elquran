@@ -137,6 +137,8 @@ describe('staff academy confirmation is bound to unchanged form values #315',()=
   const source=readFileSync(new URL('./AdminAcademyMvp.tsx',import.meta.url),'utf8');
   expect(source).toContain('academyAdminConfirmationMatchesMode(confirmed,confirmedMode,mode)');
   expect(source).toContain('setConfirmedMode(value?mode:null)');
+  // A→B→A must not restore A's old checkbox: clear on each committed mode visit.
+  expect(source).toMatch(/useEffect\(\(\)=>\{\s*setConfirmed\(false\);setConfirmedMode\(null\);\s*\},\[mode\]\)/);
   expect(source.match(/<Confirm checked=\{confirmedForMode\} onChange=\{confirmForMode\}\/>/g))
    .toHaveLength(4);
   expect(source).toContain('if(!confirmedForMode||busy||!visibleData)return');
