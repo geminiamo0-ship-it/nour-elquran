@@ -73,7 +73,8 @@ describe('staff academy D1 receipt integrity #315',()=>{
    // Even a valid-looking code with a second field must remain unresolved.
    expect(academyAdminAckIsVerified(path,status,{...body,paid:true},command))
     .toBe(false);
-   const {code:unused,...withoutCode}=body;
+   const withoutCode:Record<string,unknown>={...body};
+   delete withoutCode.code;
    expect(academyAdminAckIsVerified(path,status,withoutCode,command)).toBe(false);
   }
   expect(academyAdminAckIsVerified('activate',201,{
