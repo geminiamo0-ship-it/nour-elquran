@@ -1,3 +1,8 @@
+## 2026-11-08 — #315 next cycle: confirmation revisit guard on PR #325
+- Read latest `main`/PR #325/#327, AGENTS/status/plan/test/privacy docs. PR #325 at `4bdaded9` had Verify #42521371408 success 4/4; #327 at `7d55b03c` had Verify #42350942468 success. They share 19 changed paths and are **not reconciled**.
+- Source bug: `confirmedMode===mode` becomes true again on A→B→A, reviving a previous confirmation. Added mode-change effect reset in `AdminAcademyMvp.tsx` and source regression in `AdminAcademyMvp.test.tsx` (commits 3993113f, 074a5e55). This is source-only; new exact-head CI, independent review and signed Dev/browser test still required.
+- NEXT: inspect PR #325 Verify for latest exact HEAD; fix any failure, reconcile #327 without losing historical quote and immutable price guards; independently review, then synthetic staff/guardian/sibling at 360/390. No merge, Production, payment, WhatsApp, audio or cumulative-ink change.
+
 ## 2026-11-08 — #315 old package quote display fix in Draft PR #325
 - Fresh repository/Issue/PR review: main remains at the #325 base; PR #325 and #327 both Draft and overlap in staff academy files. Previous #325 exact-head `f46bc474` Verify #42515749446 passed 4/4; that result does NOT cover this new patch.
 - Concrete UI mismatch: when a selected pending request refers to a package version still in staff catalog but inactive, the old condition omitted the historical `<option>`; the HTML select could visually show an active price while state submitted the original version. Fixed the visible-option condition with `academyAdminNeedsOriginalQuoteOption` and added four pure regressions (disabled, missing, active, unrelated).
