@@ -1,7 +1,8 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import type {AccountSession} from '@/features/account';
-import {AdminAcademyMvp,submitAcademyCommand} from './AdminAcademyMvp';
+import {AdminAcademyMvp,submitAcademyCommand,
+ academyAdminOperationErrorMessage} from './AdminAcademyMvp';
 import {academyAdminOutcomeIsUncertain} from './admin-academy-write-outcome';
 import {academyAdminStaffAccessRevoked} from './admin-academy-read';
 
@@ -62,6 +63,24 @@ describe('staff academy malformed authorization response #315',()=>{
   response(503,null,true);
   await expect(submitAcademyCommand('activate',{})).rejects.toThrow(
    'استجابة غير صالحة');
+ });
+});
+
+describe('staff academy denial message privacy #315',()=>{
+ it('does not echo untrusted codes or private strings from a malformed intermediary',()=>{
+  const unknown='SQL_PRIVATE_CHILD_NAME_<script>alert(1)</script>';
+  const message=academyAdminOperationErrorMessage(unknown);
+  expect(message).toContain('راجع السجل');
+  expect(message).not.toContain('SQL_PRIVATE');
+  expect(message).not.toContain('<script>');
+  expect(academyAdminOperationErrorMessage('a'.repeat(100_000))).toBe(message);
+ });
+ it('explains a durably issued Sheikh invitation cannot reveal its one-use token again',()=>{
+  const message=academyAdminOperationErrorMessage('ACADEMY_INVITE_ALREADY_ISSUED');
+  expect(message).toContain('رابطها السري لا يمكن استعادته');
+  expect(message).toContain('تحقق من الحالة');
+  expect(academyAdminOperationErrorMessage('ACADEMY_CYCLE_OVERLAP'))
+   .toContain('اشتراك متداخل');
  });
 });
 
