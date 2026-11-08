@@ -1,3 +1,9 @@
+## 2026-11-08 — #315 live Sheikh invite expiry (Draft PR #325; source only)
+- Source inspection found an Admin invitation can cross its server-enforced expiry while the staff page remains open, but the displayed status previously used `Date.now()` only at unrelated React renders. A never-refreshed page could continue saying “بانتظار التسجيل” after the one-use link had expired.
+- Added `academyAdminNextInviteExpiryDelay` and a bounded session-scoped timer in `AdminAcademyMvp` to refresh the label at `expiresAtMs + 1ms`, matching the Worker's inclusive claim boundary. Claimed/expired invites do not schedule timers. Added unit regressions for equality, +1ms, multiple invitations and claimed exclusions.
+- Source commits: `5c92b821`, `bb9a3221`, `62360339`. **Exact-head CI on these changes is not yet confirmed**; older Verify #42470676438 passed 4/4 on prior `3019e2d8` only.
+- PR remains Draft; no signed Cloudflare Dev role/sibling or mobile acceptance, independent review or merge. No Production, payment, WhatsApp send, audio, or cumulative ink changes. NEXT: inspect new exact-head Verify; reconcile overlapping PR #327, then signed Dev and independent privacy review.
+
 ## 2026-11-08 — #315 malformed staff 403 transport response (Draft PR #325; source candidate)
 - Rechecked Noor main `4c15b59f713f41e2be9999bb082118cc48496c10`, open PRs #325/#327, Issue #315 and exact prior Verify #42468337336: 4/4 PASS on OLD head `c28ce714`, not the new changes.
 - Found a fail-closed gap in `AdminAcademyMvp`: a staff POST returning an HTML/malformed 403 from an intermediary previously threw a generic JSON error, leaving the prior privileged academy snapshot visible and not explicitly recognizing staff revocation. The Worker might already have committed the D1 operation, so the client must NOT release the original operation ID.
