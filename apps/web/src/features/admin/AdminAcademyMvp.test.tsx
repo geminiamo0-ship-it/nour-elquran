@@ -159,3 +159,14 @@ describe('staff academy confirmation is bound to unchanged form values #315',()=
   }
  });
 });
+
+
+describe('staff activation original request price is explicit #315',()=>{
+ it('renders the selected immutable quote instead of an implicit first active option',()=>{
+  const source=readFileSync(new URL('./AdminAcademyMvp.tsx',import.meta.url),'utf8');
+  expect(source).toContain('selectedQuote&&academyAdminNeedsOriginalQuoteOption(');
+  expect(source).toContain('label(selectedQuote.priceEgp)');
+  expect(source).toContain('label(selectedQuote.sessions)');
+  expect(source).not.toContain('selectedRequest&&!visibleData.packages.some(');
+ });
+});
