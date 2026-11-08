@@ -5,7 +5,8 @@ import styles from './AdminAcademyMvp.module.css';
 import {academyPendingStore,type AcademyPendingCommand} from './admin-academy-pending';
 import {academyAdminOutcomeIsUncertain,academyAdminAckIsVerified,
  academyAdminCanReject,academyAdminAckClearsRequestSelection,
- academyAdminConfirmationMatchesMode} from './admin-academy-write-outcome';
+ academyAdminConfirmationMatchesMode,academyAdminSessionLockIsBusy,
+ academyAdminReleaseSessionLock,type AcademySessionAttempt} from './admin-academy-write-outcome';
 import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
  parseAdminAcademyRead,academyAdminInviteStatusLabel,academyAdminInviteDisplayName,
  academyAdminNextInviteExpiryDelay,academyAdminReadEpochMayApply,academyAdminStaffAccessRevoked,
@@ -114,7 +115,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
  const [inviteSession,setInviteSession]=useState<AccountSession|null>(null);
  const [pendingOp,setPendingOp]=useState<AcademyPendingCommand|null>(null);
  const [pendingSession,setPendingSession]=useState<AccountSession|null>(null);
- const sending=useRef(false);
+ const sending=useRef<AcademySessionAttempt<AccountSession>|null>(null);
  const currentSession=useRef(session);
  const readEpoch=useRef(0);
  const revokedStaff=useRef(false);
@@ -192,7 +193,8 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   setConfirmed(value);setConfirmedMode(value?mode:null);
  }
  async function send(path:string,payload:unknown){
-  if(sending.current||!visibleData||revokedStaff.current)return;
+  if(academyAdminSessionLockIsBusy(sending.current,session)||
+   !visibleData||revokedStaff.current)return;
   const held=academyPendingStore.forActor(session.user.id);
   // An unresolved settlement must be retried with the exact original object.
   if(held&&(held.path!==path||held.payload!==payload))return;
@@ -201,7 +203,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
   const attempt={};
   // Prevent a second mounted panel racing an in-flight request.
   if(!academyPendingStore.beginAttempt(operation,attempt))return;
-  sending.current=true;
+  sending.current={session,attempt};
   const startedSession=session;
   const stillCurrent=()=>academyAdminMutationMayApply(
    startedSession,currentSession.current,revokedStaff.current);
@@ -265,7 +267,7 @@ export function AdminAcademyMvp({session,mode}:{session:AccountSession;mode:Mode
    }
   }finally{
    academyPendingStore.finishAttempt(attempt);
-   sending.current=false;
+   sending.current=academyAdminReleaseSessionLock(sending.current,attempt);
   }
  }
  function guard(event:FormEvent,action:()=>void){
