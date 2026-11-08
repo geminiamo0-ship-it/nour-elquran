@@ -1,3 +1,9 @@
+## 2026-11-08 — #315 staff 403 fail-closed continuation (PR #325, Draft)
+- Fresh main `4c15b59f`, open PRs #325/#327 and #315 checked; prior Verify #42468337336 4/4 applies to old PR #325 head `c28ce714`.
+- Source `60f76819`: malformed/HTML HTTP 403 on staff mutation now triggers privileged-view revocation and retains uncertain same-ID operation; do not falsely conclude a D1 write failed merely because proxy JSON parsing failed. 401 also remains unresolved rather than an authoritative financial rejection. Exact Worker business denial codes still follow their reviewed path.
+- Test `1a2864c0`: `apps/web/src/features/admin/AdminAcademyMvp.test.tsx` adds synthetic fetch failures, no cross-actor invite leak at SSR and uncertain outcome guards. No local test claim; inspect new GitHub exact-head CI.
+- NEXT: verify CI, resolve failures; compare #325 with #327 without losing package quote/version protection; independent privacy review, signed isolated Cloudflare Dev staff/revoked/guardian/two siblings and 360/390 UI. Do not merge/close #315 or touch Production/payments/WhatsApp/audio/ink flag.
+
 ## 2026-11-08 — #315 claimed Sheikh invite fallback (Draft PR #325)
 - Rechecked latest Noor main, open Issues and Draft PRs #325/#327, prior exact-head CI 4/4 on `4f31d69f`, and mandatory AGENTS/status/plan/security/test documents. Existing #327 correctly distinguishes claimed-without-joined-name from never-claimed; #325 did not, displaying a false “لم يُستخدم الرابط بعد” beside the durable claimed state.
 - Carried that small truthfulness guard into #325: `academyAdminInviteDisplayName` in `admin-academy-read.ts`, render wiring in `AdminAcademyMvp.tsx`, synthetic Vitest cases in `admin-academy-read.test.ts`. Commits `5879aa41`, `fa5e5ebe`, `75fc75a3`. No API/SQL/flag changes.
