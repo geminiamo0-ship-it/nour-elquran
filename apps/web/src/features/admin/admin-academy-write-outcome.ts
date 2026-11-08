@@ -92,6 +92,13 @@ export function academyAdminAckIsVerified(path:string,status:number,raw:unknown,
  return true;
 }
 
+/** After a confirmed D1 decision, the old request selection is no longer
+ * actionable. Never clear it for an uncertain write: the original operation
+ * and its payload must remain available for exact-ID reconciliation. */
+export function academyAdminAckClearsRequestSelection(path:string):boolean{
+ return path==='activate'||path==='reject';
+}
+
 /** A reject button bypasses native form validation. Do not POST unless the
  * selected signed D1 request is pending and the audit reason is valid. */
 export function academyAdminCanReject(
