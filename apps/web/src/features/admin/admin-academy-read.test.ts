@@ -6,7 +6,7 @@ import {academyAdminReadHttpStatusIsValid,academyAdminSessionViewIsReady,
  academyAdminNeedsOriginalQuoteOption} from './admin-academy-read';
 
 const packageRow={id:'version-1',packageId:'package-1',title:'Synthetic package',
- priceEgp:200,sessions:8,active:1,atMs:1700000000000};
+ priceEgp:200,sessions:8,active:1 as const,atMs:1700000000000};
 const requestRow={id:'request-1',learnerId:'learner-1',learnerName:'Synthetic learner',
  title:'Synthetic package',priceEgp:200,sessions:8,
  packageVersionId:'version-1',atMs:1700000000000,state:'pending'};
@@ -102,7 +102,7 @@ describe('bounded signed staff academy read #315',()=>{
    whatsappNumber:null})).toEqual({code:'ACADEMY_STAFF',
    packages:[],requests:[],invites:[],whatsappNumber:null});
   expect(parseAdminAcademyRead({...valid(),
-   packages:[{...packageRow,active:0}],
+   packages:[{...packageRow,active:0 as const}],
    requests:[{...requestRow,state:'rejected'}],
    invites:[{...inviteRow,teacherName:null,teacherId:null,claimed:0,
     claimedAtMs:null}]}).invites[0]?.claimed).toBe(0);
@@ -212,7 +212,7 @@ describe('signed staff read epoch and revocation fence #315',()=>{
 describe('original request quote option remains visible to staff #315',()=>{
  it('shows the original version when the catalog version is disabled',()=>{
   expect(academyAdminNeedsOriginalQuoteOption('request-1','version-1',
-   [requestRow],[{...packageRow,active:0}])).toBe(true);
+   [requestRow],[{...packageRow,active:0 as const}])).toBe(true);
  });
  it('shows the original version when only a newer active quote is listed',()=>{
   expect(academyAdminNeedsOriginalQuoteOption('request-1','version-1',
@@ -224,9 +224,9 @@ describe('original request quote option remains visible to staff #315',()=>{
  });
  it('does not invent a historical option for an unrelated or changed request',()=>{
   expect(academyAdminNeedsOriginalQuoteOption('request-2','version-1',
-   [requestRow],[{...packageRow,active:0}])).toBe(false);
+   [requestRow],[{...packageRow,active:0 as const}])).toBe(false);
   expect(academyAdminNeedsOriginalQuoteOption('request-1','version-2',
-   [requestRow],[{...packageRow,active:0}])).toBe(false);
+   [requestRow],[{...packageRow,active:0 as const}])).toBe(false);
   expect(academyAdminNeedsOriginalQuoteOption('','version-1',
    [requestRow],[])).toBe(false);
  });
