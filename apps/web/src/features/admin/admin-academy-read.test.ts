@@ -188,7 +188,7 @@ describe('signed staff read epoch and revocation fence #315',()=>{
   expect(academyAdminReadEpochMayApply(7,7,true,true)).toBe(false);
   expect(academyAdminReadEpochMayApply(7,7,false,false)).toBe(false);
  });
- it('revokes on auth denial, not unrelated business constraints',()=>{
+ it('fences every HTTP 403 and explicit auth changes, not unrelated 409/503',()=>{
   expect(academyAdminStaffAccessRevoked(401,'UNKNOWN')).toBe(true);
   expect(academyAdminStaffAccessRevoked(403,'STAFF_ACCESS_DENIED')).toBe(true);
   expect(academyAdminStaffAccessRevoked(409,'ACADEMY_STAFF_ACCESS_CHANGED')).toBe(true);
