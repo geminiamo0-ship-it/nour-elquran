@@ -92,6 +92,14 @@ export function academyAdminAckIsVerified(path:string,status:number,raw:unknown,
  return true;
 }
 
+/** A confirmation belongs to the exact Admin section where it was checked.
+ * Next route/mode may reuse the same mounted component and form state.
+ * Never let a previous section's consent authorize a different D1 command. */
+export function academyAdminConfirmationMatchesMode(
+ confirmed:boolean,confirmedMode:string|null,currentMode:string):boolean{
+ return confirmed&&confirmedMode===currentMode;
+}
+
 /** After a confirmed D1 decision, the old request selection is no longer
  * actionable. Never clear it for an uncertain write: the original operation
  * and its payload must remain available for exact-ID reconciliation. */
