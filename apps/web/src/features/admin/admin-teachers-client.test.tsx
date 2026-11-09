@@ -1,7 +1,7 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminTeacherDirectory,AdminTeacherReceipt,
- adminTeacherMissingLookupRequiresRefresh} from './AdminTeacherDirectory';
+ adminTeacherMissingLookupRequiresRefresh,adminTeacherCurrentRoster} from './AdminTeacherDirectory';
 import {AdminTeacherIdLookup,adminTeacherLookupMayApply} from './AdminTeacherIdLookup';
 import {AdminTeachersError,fetchAdminTeachers,parseAdminTeachers,isAdminTeacherAccessRevoked,
  reconcileVerifiedTeacherRows} from './admin-teachers-client';
@@ -129,6 +129,21 @@ describe('Admin teacher directory #305',()=>{
    .toEqual([changedFirst,other]);
   expect(roster[0]).toEqual(teacher); // No mutation of the earlier receipt.
   expect(reconcileVerifiedTeacherRows(second,[updated])).toEqual(second);
+ });
+ it('hides a previously verified roster on refresh before a new signed GET resolves (#314)',()=>{
+  const session={user:{id:'staff-1',name:'Synthetic'},phoneVerified:true};
+  const value={asOfMs:good.asOfMs,teachers:[teacher],truncated:false};
+  const previous={phase:'ready' as const,session,revision:0,value};
+  expect(adminTeacherCurrentRoster(previous,session,0)).toEqual(value);
+  // A post-ACK refresh increments revision in the same React update; old
+  // action targets must be hidden even before the effect clears state.
+  expect(adminTeacherCurrentRoster(previous,session,1)).toBeNull();
+  expect(adminTeacherCurrentRoster(previous,{...session},0)).toBeNull();
+  expect(adminTeacherCurrentRoster({phase:'loading'},session,1)).toBeNull();
+  expect(adminTeacherCurrentRoster({phase:'denied'},session,0)).toBeNull();
+  const fresh={...previous,revision:1,value:{...value,teachers:[]}};
+  expect(adminTeacherCurrentRoster(fresh,session,1)?.teachers).toEqual([]);
+  expect(adminTeacherCurrentRoster(fresh,session,0)).toBeNull();
  });
  it('revalidates the signed roster if an already-selectable Sheikh disappears (#314)',()=>{
   const outside={...teacher,id:'teacher-75'};
