@@ -15,9 +15,9 @@ export function adminTeacherLookupMayApply<T>(
 }
 
 /** #314: bounded, signed exact-ID fallback for a Sheikh omitted by the first 50 rows. */
-export function AdminTeacherIdLookup({session,onFound,onAccessRevoked}:{
+export function AdminTeacherIdLookup({session,onFound,onMissing,onAccessRevoked}:{
  session:AccountSession;onFound:(teacher:AdminTeacher)=>void;
- onAccessRevoked:()=>void;
+ onMissing:(teacherId:string)=>void;onAccessRevoked:()=>void;
 }){
  const [boundSession,setBoundSession]=useState(session);
  const [id,setId]=useState('');
@@ -43,7 +43,7 @@ export function AdminTeacherIdLookup({session,onFound,onAccessRevoked}:{
   void fetchAdminTeachers(ctrl.signal,teacherId).then(result=>{
    if(!adminTeacherLookupMayApply(startedSession,currentSession.current,ctrl.signal.aborted))return;
    const teacher=result.teachers[0];
-   if(!teacher){setPhase('missing');return;}
+   if(!teacher){onMissing(teacherId);setPhase('missing');return;}
    onFound(teacher);setPhase('found');
   }).catch(error=>{
    if(!adminTeacherLookupMayApply(startedSession,currentSession.current,ctrl.signal.aborted))return;
