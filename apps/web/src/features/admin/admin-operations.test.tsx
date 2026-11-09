@@ -2,7 +2,7 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminOperations,adminOperationConfirmationMatches,adminOperationConfirmationScope,
  adminOperationScopedValue,adminStaffOptionsError,adminTeacherActionTargetIsVerified,
- claimAdminOperationFlight} from './AdminOperations';
+ claimAdminOperationFlight,adminOperationEditField} from './AdminOperations';
 import {submitAdminAction,validAdminAction,AdminActionError,isAdminActionStaffRevoked}
  from './admin-operations-client';
 
@@ -37,6 +37,18 @@ describe('Admin operational D1 client #309',()=>{
   // Only a new confirmation (or a definitive rejected request) resets it.
   lock.current='idle';
   expect(claimAdminOperationFlight(lock)).toBe(true);
+ });
+ it('invalidates consent synchronously before each controlled field update (#314)',()=>{
+  const events:string[]=[];
+  const clear=()=>events.push('consent-cleared');
+  const set=(value:string)=>events.push('field:'+value);
+  // Even an edit that restores the old text cannot preserve the old consent.
+  adminOperationEditField(clear,set,'changed');
+  adminOperationEditField(clear,set,'original');
+  expect(events).toEqual([
+   'consent-cleared','field:changed',
+   'consent-cleared','field:original',
+  ]);
  });
  it('binds staff confirmation to the exact actor, target, action and reason (#314)',()=>{
   const actor={user:{id:'staff-a'}};
