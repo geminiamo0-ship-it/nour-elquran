@@ -38,6 +38,12 @@ describe('Admin operational D1 client #309',()=>{
   const actor={user:{id:'staff-a',name:'Synthetic Staff'},phoneVerified:true};
   // A new login can carry the same user ID but must never inherit old roster data.
   const reauthenticated={user:{id:'staff-a',name:'Synthetic Staff'},phoneVerified:true};
+  // The entire editable form must be gated before effect cleanup, not just
+  // the signed option lists: old IDs and reasons are sensitive as well.
+  const formGate={session:actor,kind:'teacher' as const,value:true as const};
+  expect(adminOperationScopedValue(formGate,actor,'teacher')).toBe(true);
+  expect(adminOperationScopedValue(formGate,reauthenticated,'teacher')).toBeNull();
+  expect(adminOperationScopedValue(formGate,actor,'schedule')).toBeNull();
   const options={students:[{id:'synthetic-learner',name:'Synthetic Learner'}],
    sheikhs:[{id:'synthetic-teacher',name:'Synthetic Sheikh'}]};
   const entry={session:actor,kind:'schedule' as const,value:options};
