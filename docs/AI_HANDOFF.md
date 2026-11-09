@@ -1,3 +1,4 @@
+- Follow-up `50d6b3de` clears the confirmation token after edits (including edit-and-revert), in addition to synchronous fingerprint mismatch. Recheck the latest HEAD CI; earlier Verify results do not cover this commit.
 ## 2026-11-09 — #314 staff confirmation binding (Draft PR #329)
 - Current work: prevent reusing an AdminOperations confirmation after switching Sheikh target, editing action/reason, or replacing the signed staff session. See `AdminOperations.tsx` and `admin-operations.test.tsx` on `feat/314-admin-teacher-id-lookup`.
 - Source commits: `f81caaaa` (binding) and `82a59dcf` (regression). Exact-head Verify is NOT yet established at this handoff; inspect current PR HEAD and corresponding GitHub Actions before claiming success.
