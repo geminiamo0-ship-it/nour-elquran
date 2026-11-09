@@ -12,6 +12,13 @@ export const isAdminActionStaffRevoked=(error:unknown):error is AdminActionError
  error instanceof AdminActionError&&
  (error.status===401||(error.status===403&&
   (error.code==='STAFF_ACCESS_DENIED'||error.code==='UNAUTHENTICATED')));
+/** A signed staff denial remains authoritative across automatic read revisions.
+ * Only an explicit operator-initiated staff recheck may clear the latch. */
+export function adminStaffSessionRevoked<T>(
+ denial:{session:T}|null,session:T,
+):boolean{
+ return denial?.session===session;
+}
 const paths:Record<AdminOperationKind,string>={
  teacher:'/v1/staff/teacher-actions',
  schedule:'/v1/staff/schedule-actions',

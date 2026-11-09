@@ -3,7 +3,8 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminOperations,adminOperationConfirmationMatches,adminOperationConfirmationScope,
  adminOperationScopedValue,adminStaffOptionsError,adminTeacherActionTargetIsVerified,
  claimAdminOperationFlight,adminOperationEditField} from './AdminOperations';
-import {submitAdminAction,validAdminAction,AdminActionError,isAdminActionStaffRevoked}
+import {submitAdminAction,validAdminAction,AdminActionError,isAdminActionStaffRevoked,
+ adminStaffSessionRevoked}
  from './admin-operations-client';
 
 const operationId='124e4567-e89b-42d3-a456-426614174000';
@@ -18,6 +19,17 @@ const respond=(status:number,body:unknown)=>
  new Response(JSON.stringify(body),{status});
 afterEach(()=>vi.unstubAllGlobals());
 describe('Admin operational D1 client #309',()=>{
+ it('keeps signed staff revocation across automatic refresh and isolates new sessions (#314)',()=>{
+  const session={user:{id:'synthetic-staff'}};
+  const denied={session,revision:0};
+  // A post-ACK or missing-row retry may increment revision, but must not
+  // revive a roster after the same signed staff session was denied.
+  expect(adminStaffSessionRevoked(denied,session)).toBe(true);
+  expect(adminStaffSessionRevoked({...denied,revision:7},session)).toBe(true);
+  expect(adminStaffSessionRevoked(denied,{...session})).toBe(false);
+  // Only the explicit recheck button clears the stored denial.
+  expect(adminStaffSessionRevoked(null,session)).toBe(false);
+ });
  it('allows only one staff operation per confirmation, including rapid submits and uncertain replay (#314)',()=>{
   const lock:{current:'idle'|'sending'|'uncertain'|'done'}={current:'idle'};
   expect(claimAdminOperationFlight(lock)).toBe(true);

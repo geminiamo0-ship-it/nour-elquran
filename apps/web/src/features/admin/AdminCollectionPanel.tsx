@@ -5,7 +5,7 @@ import {fetchAdminCollection,AdminCollectionError,
  type AdminCollection,type AdminDataView,type AdminDataRow} from './admin-collections-client';
 import css from './AdminPortal.module.css';
 import {AdminOperations} from './AdminOperations';
-import type {AdminActionResult} from './admin-operations-client';
+import {adminStaffSessionRevoked,type AdminActionResult} from './admin-operations-client';
 
 type Read=
  |{phase:'idle'}
@@ -89,9 +89,7 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
   session:AccountSession;view:AdminDataView;value:AdminActionResult
  }|null>(null);
  const [query,setQuery]=useState('');
- const [revocation,setRevocation]=useState<{
-  session:AccountSession;view:AdminDataView;revision:number
- }|null>(null);
+ const [revocation,setRevocation]=useState<{session:AccountSession}|null>(null);
  useEffect(()=>{
   const ctrl=new AbortController();
   setQuery('');
@@ -110,8 +108,7 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
   });
   return ()=>ctrl.abort();
  },[view,session,retry]);
- const revoked=revocation?.session===session&&revocation.view===view&&
-  revocation.revision===retry;
+ const revoked=adminStaffSessionRevoked(revocation,session);
  const visible=adminCollectionCurrentRead(read,session,view,retry,revoked);
  const status=revoked?'denied':read.phase==='idle'||!('session' in read)||
   read.session!==session||read.view!==view||
@@ -133,7 +130,7 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
      disabled={!visible} placeholder="ابحث داخل أول ٥٠ سجلًا فقط" />
    </label>
    <button type="button" className={css.staffRefresh}
-    disabled={status==='loading'} onClick={()=>setRetry(n=>n+1)}>تحديث البيانات</button>
+    disabled={status==='loading'} onClick={()=>{setRevocation(null);setRetry(n=>n+1);}}>تحديث البيانات</button>
   </div>
   {status==='loading'&&<p className={css.staffEmpty} role="status">
    جارٍ التحقق من صلاحيات الإدارة وتحميل السجل…</p>}
@@ -141,7 +138,7 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
    ليس لهذا الحساب صلاحية الاطلاع على السجل الحالي. لن نعرض أي بيانات سابقة.</p>}
   {status==='error'&&<div className={css.staffError} role="alert">
    <p>السجل غير متاح حاليًا. لن نعرض أرقامًا صفرية أو بيانات تجريبية بدلًا منه.</p>
-   <button type="button" onClick={()=>setRetry(n=>n+1)}>إعادة المحاولة</button>
+   <button type="button" onClick={()=>{setRevocation(null);setRetry(n=>n+1);}}>إعادة المحاولة</button>
   </div>}
   {visible&&<>
    <p className={css.staffInfo} role="status">
@@ -173,7 +170,7 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
    <AdminOperations kind={view} session={session} rows={visible.rows}
     onAccessRevoked={()=>{
      // The denial latch wins even if a previous signed GET resolves with 200.
-     setRevocation({session,view,revision:retry});
+     setRevocation({session});
      setLatestAck(null);setQuery('');
      setRead({phase:'denied',session,view});
     }}

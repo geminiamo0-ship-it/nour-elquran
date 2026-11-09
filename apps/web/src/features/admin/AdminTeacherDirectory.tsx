@@ -8,7 +8,7 @@ import css from './AdminPortal.module.css';
 import {AdminOperations} from './AdminOperations';
 import {AdminTeacherIdLookup} from './AdminTeacherIdLookup';
 import {AdminAcademyMvp} from './AdminAcademyMvp';
-import type {AdminActionResult} from './admin-operations-client';
+import {adminStaffSessionRevoked,type AdminActionResult} from './admin-operations-client';
 
 type State=
  |{phase:'loading'}
@@ -51,9 +51,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
  const [latestAck,setLatestAck]=useState<StaffReceipt|null>(null);
  // A concurrent older GET must not restore the staff roster after a newer
  // signed 401/403 from exact-ID lookup or an operational mutation.
- const [revocation,setRevocation]=useState<{
-  session:AccountSession;revision:number
- }|null>(null);
+ const [revocation,setRevocation]=useState<{session:AccountSession}|null>(null);
  useEffect(()=>{
   const controller=new AbortController();
   setState({phase:'loading'});setLookup(null);
@@ -70,7 +68,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
   });
   return ()=>controller.abort();
  },[session,retry]);
- const revoked=revocation?.session===session&&revocation.revision===retry;
+ const revoked=adminStaffSessionRevoked(revocation,session);
  const ready=adminTeacherCurrentRoster(state,session,retry,revoked);
  const reloading=!revoked&&state.phase==='ready'&&!ready;
  const lookedUp=lookup?.session===session?lookup.teachers:[];
@@ -78,9 +76,9 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
  // newer signed receipt wins even when that ID was already in the first 50.
  const teachers=ready?reconcileVerifiedTeacherRows(ready.teachers,lookedUp):[];
  const revokeStaffAccess=()=>{
-  // Persist the denial for this exact signed session and read revision;
-  // an older in-flight 200 may settle after this callback.
-  setRevocation({session,revision:retry});
+  // A signed denial persists for this session across automatic refreshes;
+  // only a deliberate operator recheck clears it.
+  setRevocation({session});
   setState(current=>current.phase==='ready'&&current.session===session
    ?{phase:'denied'}:current);
   setLookup(current=>current?.session===session?null:current);
@@ -96,20 +94,20 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
   <div className={css.staffTopline}>
    <h2>سجل الشيوخ</h2>
    <button className={css.staffRefresh} type="button"
-    disabled={state.phase==='loading'} onClick={()=>setRetry(n=>n+1)}>
+    disabled={state.phase==='loading'} onClick={()=>{setRevocation(null);setRetry(n=>n+1);}}>
     تحديث السجل
    </button>
   </div>
-  {(state.phase==='loading'||reloading)&&<div className={css.staffEmpty} role="status">
+  {!revoked&&(state.phase==='loading'||reloading)&&<div className={css.staffEmpty} role="status">
    جارٍ قراءة سجل الشيوخ المصرح به…
   </div>}
   {(revoked||state.phase==='denied')&&<div className={css.staffError} role="alert">
    تعذّر التحقق من صلاحية عرض دليل الشيوخ. لا تظهر أي بيانات محفوظة.
-   <button type="button" onClick={()=>setRetry(n=>n+1)}>إعادة التحقق</button>
+   <button type="button" onClick={()=>{setRevocation(null);setRetry(n=>n+1);}}>إعادة التحقق</button>
   </div>}
   {state.phase==='error'&&<div className={css.staffError} role="alert">
    السجل غير متاح الآن. لن نعرض بيانات تجريبية أو أرقامًا غير موثقة.
-   <button type="button" onClick={()=>setRetry(n=>n+1)}>إعادة المحاولة</button>
+   <button type="button" onClick={()=>{setRevocation(null);setRetry(n=>n+1);}}>إعادة المحاولة</button>
   </div>}
   {ready&&<>
    <div className={css.staffInfo} role="status">

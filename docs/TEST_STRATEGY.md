@@ -1,3 +1,8 @@
+## 2026-11-09 — #314 staff revocation latch across automatic refresh (Draft PR #329)
+- Found a follow-on race: a signed 401/403 latch keyed to `retry` could be bypassed by an automatic post-ACK or missing-row refresh incrementing the revision. Keep the denial session-scoped until an explicit operator recheck; stale 200s and prior receipts stay hidden. Same-user new signed session is isolated.
+- Source: `AdminTeacherDirectory.tsx`, `AdminCollectionPanel.tsx`, shared `adminStaffSessionRevoked` helper and Vitest regression in `admin-operations.test.tsx`. Exact-head GitHub Verify is **not yet proven**; previous run #42671919782 failed before scheduling any jobs (0 jobs), and the retry API rejected it with 403. New commit must be checked for real jobs and tests.
+- Keep PR #329 Draft, #314 OPEN. Independent security review, signed isolated Dev 101+ roster/revocation and 360/390 RTL touch acceptance still pending. No main, Production, payments, WhatsApp, media or feature-flag changes.
+
 ## #314 Admin collection stale-refresh authorization gate (2026-11-09)
 - Pure regression: a signed schedule collection is usable only at its exact session/view/refresh revision. Refresh/post-ACK invalidates old selectable rows before the next effect; a mutation's 401/403 denial overrides an older GET 200; a new login/view never inherits previous staff rows. A newer empty signed collection is authoritative.
 - Verify with exact-head lint, strict TS, Vitest, Next build, native D1 and governance CI. Browser acceptance remains separate: signed Cloudflare Dev 401/403, network races, and RTL 360/390 keyboard/touch before PR review/merge.
