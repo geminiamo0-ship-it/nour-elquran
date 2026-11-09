@@ -1,3 +1,7 @@
+## 2026-11-09 — #314 staff confirmation edit/revert regression
+- Vitest `apps/web/src/features/admin/admin-operations.test.tsx` checks that consent is cleared synchronously **before** each controlled staff field update, including edit→restore. This complements existing session, roster-facts, single-flight and D1 permission tests; it is source-level evidence only.
+- Exact-head GitHub Verify and independent Cloudflare Dev/mobile acceptance remain separate mandatory gates for Draft PR #329. No Production configuration or private data is involved.
+
 ## #314 post-ACK roster refresh isolation (2026-11-09)
 - Regression `adminTeacherCurrentRoster`: a ready signed roster is actionable only at its originating session object and refresh revision. New revision, same-user reauthentication, denial/loading and late prior-revision responses must not re-enable old teacher actions. After a confirmed mutation the parent enters loading immediately, while the confirmed D1 receipt remains separately session-scoped.
 - Source-only until exact-head Verify and signed Dev/viewport acceptance. No Production or feature flag change.
