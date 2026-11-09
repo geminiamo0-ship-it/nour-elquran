@@ -1,3 +1,7 @@
+## #314 — exact-session staff confirmation regression (2026-11-09)
+- Pure Vitest guard: checking an administrative action is valid only for the exact current `AccountSession` object and the exact operator-editable action/target/learner/teacher/resource/time/kind/reason fields. Changed target, action or reason and same-user new login must invalidate consent before submit.
+- This does not replace signed Dev two-staff role revocation and mobile keyboard/touch confirmation E2E. Exact-head GitHub Verify and independent review required before merge.
+
 ## #314 repeated exact-ID Sheikh lookup freshness regression — 2026-11-05
 - A signed exact-ID recheck must replace prior facts for that *same* Sheikh, including when present in the original first 50; other verified actors and stable IDs/order must remain unchanged. The client must not mutate the old server receipt. See `admin-teachers-client.test.tsx` and `reconcileVerifiedTeacherRows`.
 - Exact-head GitHub Verify, independent role/privacy review, real signed Cloudflare Dev revocation/0-1-50-51-100+ and 360/390 keyboard/touch acceptance remain mandatory before merge. No Production or financial changes.
