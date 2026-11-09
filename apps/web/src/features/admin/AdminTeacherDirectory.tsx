@@ -34,9 +34,9 @@ export function AdminTeacherReceipt({session,receipt,denied}:{
 /** A refresh or post-mutation revalidation must hide the previous roster
  * immediately, before React runs the next effect or a late GET settles. */
 export function adminTeacherCurrentRoster(
- state:State,session:AccountSession,revision:number,
+ state:State,session:AccountSession,revision:number,revoked=false,
 ):AdminTeacherDirectoryValue|null{
- return state.phase==='ready'&&state.session===session&&state.revision===revision
+ return !revoked&&state.phase==='ready'&&state.session===session&&state.revision===revision
   ?state.value:null;
 }
 const cairo=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',
@@ -49,6 +49,11 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
  const [retry,setRetry]=useState(0);
  const [lookup,setLookup]=useState<{session:AccountSession;teachers:readonly AdminTeacher[]}|null>(null);
  const [latestAck,setLatestAck]=useState<StaffReceipt|null>(null);
+ // A concurrent older GET must not restore the staff roster after a newer
+ // signed 401/403 from exact-ID lookup or an operational mutation.
+ const [revocation,setRevocation]=useState<{
+  session:AccountSession;revision:number
+ }|null>(null);
  useEffect(()=>{
   const controller=new AbortController();
   setState({phase:'loading'});setLookup(null);
@@ -65,13 +70,17 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
   });
   return ()=>controller.abort();
  },[session,retry]);
- const ready=adminTeacherCurrentRoster(state,session,retry);
- const reloading=state.phase==='ready'&&!ready;
+ const revoked=revocation?.session===session&&revocation.revision===retry;
+ const ready=adminTeacherCurrentRoster(state,session,retry,revoked);
+ const reloading=!revoked&&state.phase==='ready'&&!ready;
  const lookedUp=lookup?.session===session?lookup.teachers:[];
  // An exact-ID recheck may return a changed qualification/status. The
  // newer signed receipt wins even when that ID was already in the first 50.
  const teachers=ready?reconcileVerifiedTeacherRows(ready.teachers,lookedUp):[];
  const revokeStaffAccess=()=>{
+  // Persist the denial for this exact signed session and read revision;
+  // an older in-flight 200 may settle after this callback.
+  setRevocation({session,revision:retry});
   setState(current=>current.phase==='ready'&&current.session===session
    ?{phase:'denied'}:current);
   setLookup(current=>current?.session===session?null:current);
@@ -94,7 +103,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
   {(state.phase==='loading'||reloading)&&<div className={css.staffEmpty} role="status">
    جارٍ قراءة سجل الشيوخ المصرح به…
   </div>}
-  {state.phase==='denied'&&<div className={css.staffError} role="alert">
+  {(revoked||state.phase==='denied')&&<div className={css.staffError} role="alert">
    تعذّر التحقق من صلاحية عرض دليل الشيوخ. لا تظهر أي بيانات محفوظة.
    <button type="button" onClick={()=>setRetry(n=>n+1)}>إعادة التحقق</button>
   </div>}
@@ -142,7 +151,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
    </div>}
   </>}
   <AdminTeacherReceipt session={session} receipt={latestAck}
-   denied={state.phase==='denied'}/>
+   denied={revoked||state.phase==='denied'}/>
   {ready&&<AdminAcademyMvp key={session.user.id}
    session={session} mode="invites"/>}
   {ready&&<AdminOperations kind="teacher" session={session} teachers={teachers}
