@@ -1,3 +1,7 @@
+## #314 post-ACK roster refresh isolation (2026-11-09)
+- Regression `adminTeacherCurrentRoster`: a ready signed roster is actionable only at its originating session object and refresh revision. New revision, same-user reauthentication, denial/loading and late prior-revision responses must not re-enable old teacher actions. After a confirmed mutation the parent enters loading immediately, while the confirmed D1 receipt remains separately session-scoped.
+- Source-only until exact-head Verify and signed Dev/viewport acceptance. No Production or feature flag change.
+
 ## #314 native 101+ Sheikh roster acceptance (2026-11-09)
 - `scripts/cloudflare-auth-smoke.mjs` now creates 101 **synthetic disabled/unqualified** Sheikh records inside disposable local D1 after the normal role/scheduling flow, checks signed staff first 50 deterministic records and truthful truncation, exact-ID lookup of a real out-of-page Sheikh after suspension, no unexpected private response keys, and nonstaff 403. This complements mocked 0/1/50/51/101 tests; it does not exercise a remote Dev deployment.
 - Gate: exact-head GitHub Verify on Draft PR #329, then independent security/privacy review and signed Cloudflare Dev 101+ records/role-revocation/mobile keyboard and touch tests. Keep Issue #314 OPEN until all accepted; no Production enablement.
