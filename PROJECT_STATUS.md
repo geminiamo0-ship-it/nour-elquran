@@ -1,3 +1,7 @@
+## 2026-11-10 — #314 Admin collection refresh hang fix (Draft #329, source only)
+- Found a second hanging signed GET case: `AdminCollectionPanel` disabled its only manual refresh during `loading`, unlike the already-fixed Sheikh directory. Staff could be trapped indefinitely on a stalled schedule/attendance D1 read. Kept the refresh button enabled; existing revision-scoped read/AbortController cleanup hides old data and discards stale responses. Added SSR regression for the loading control.
+- Source-only on Draft PR #329; exact-head GitHub Verify and independent review/Cloudflare Dev + mobile acceptance still required. No `main`, Production, payment, child media, WhatsApp or flags changed.
+
 ## 2026-11-09 — #314 exact-ID receipt scoped to directory refresh (Draft PR #329)
 - Source review found that an out-of-page Sheikh exact-ID lookup was scoped to the signed session but not the roster refresh revision. A late lookup from an older read could repopulate the action selector after a newer signed roster refresh or confirmed D1 mutation.
 - The parent directory now stores each exact-ID receipt with its read revision and only merges it into selectable rows for that same session and revision. A late older lookup cannot overwrite a newer lookup receipt. Added Vitest regression for refresh, re-login and current-revision behavior.
