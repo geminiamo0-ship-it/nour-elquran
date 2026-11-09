@@ -31,6 +31,7 @@ describe('Admin teacher directory #305',()=>{
    {...good,truncated:true},
    {...good,teachers:Array.from({length:51},(_,i)=>({...teacher,id:'teacher-'+i}))},
    {...good,teachers:null},{...good,asOfMs:NaN},
+   {...good,asOfMs:8_640_000_000_000_001},
   ])expect(()=>parseAdminTeachers(bad)).toThrow(AdminTeachersError);
  });
 
