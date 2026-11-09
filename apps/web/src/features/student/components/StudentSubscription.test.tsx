@@ -274,13 +274,23 @@ describe('clean, truthful subscriptions #324',()=>{
    [0,null]
   ] as const)expect(classifyAcademyPackageRequestResponse(status,payload))
    .toBe('uncertain');
-  // The Worker sends these exact pre-write denials; unknown gateway 4xx
-  // cannot prove D1 did not commit an earlier request.
+  // A valid-looking proxy auth/routing denial can arrive after the
+  // immutable D1 request committed. Never unlock a second operationId.
+  expect(classifyAcademyPackageRequestResponse(400,
+   {code:'ACADEMY_INVALID_REQUEST'})).toBe('denied');
   for(const [status,code] of [
-   [400,'ACADEMY_INVALID_REQUEST'],[401,'UNAUTHENTICATED'],
-   [403,'BAD_ORIGIN'],[404,'NOT_FOUND'],[405,'METHOD_NOT_ALLOWED']
-  ] as const)
-   expect(classifyAcademyPackageRequestResponse(status,{code})).toBe('denied');
+   [401,'UNAUTHENTICATED'],[403,'BAD_ORIGIN'],
+   [404,'NOT_FOUND'],[405,'METHOD_NOT_ALLOWED']
+  ] as const){
+   const outcome=classifyAcademyPackageRequestResponse(status,{code});
+   expect(outcome).toBe('uncertain');
+   const gate=createAcademyPackageRequestGate();
+   expect(gate.begin()).toBe(true);
+   gate.finish(outcome==='uncertain');
+   expect(gate.status()).toBe('uncertain');
+   expect(gate.begin()).toBe(false); // never mint a second request
+   expect(gate.begin(true)).toBe(true); // replay original operation
+  }
   for(const status of [400,401,403,404,405,422]){
    for(const payload of [null,{}, {code:'ACADEMY_REQUEST_DENIED'},
     {code:'UNAUTHENTICATED',proxy:true},{gateway:'blocked'}])
