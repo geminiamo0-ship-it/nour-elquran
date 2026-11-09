@@ -135,6 +135,10 @@ describe('Admin teacher directory #305',()=>{
   const value={asOfMs:good.asOfMs,teachers:[teacher],truncated:false};
   const previous={phase:'ready' as const,session,revision:0,value};
   expect(adminTeacherCurrentRoster(previous,session,0)).toEqual(value);
+  // A newer signed 403 from exact-ID lookup must win even if an older
+  // directory GET completes with 200 after the denial was recorded.
+  expect(adminTeacherCurrentRoster(previous,session,0,true)).toBeNull();
+  expect(adminTeacherCurrentRoster(previous,session,0,false)).toEqual(value);
   // A post-ACK refresh increments revision in the same React update; old
   // action targets must be hidden even before the effect clears state.
   expect(adminTeacherCurrentRoster(previous,session,1)).toBeNull();
