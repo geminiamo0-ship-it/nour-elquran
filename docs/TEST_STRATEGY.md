@@ -1,3 +1,7 @@
+## 2026-11-09 — #315 proxy route-error replay regression
+- Every staff academy command (packages, activation, rejection, contact, invitation) must retain its immutable operationId on HTTP 401/403/404/405 even when the intermediary supplies a plausible exact Worker error code. A 404/405 is not proof that an earlier D1 write did not commit. Confirmed Worker ACK or same-ID reconciliation is the only safe release path for an ambiguous proxy outcome.
+- `admin-academy-write-outcome.test.ts` checks all five paths. Exact-head CI and independent signed Cloudflare Dev tests are still pending; no real financial/media actions.
+
 ## #315 intermediary 403 after a committed staff D1 write — regression gate (2026-11-09)
 - For each academy staff POST path, a response `403 {"code":"STAFF_ACCESS_DENIED"}` or `403 {"code":"BAD_ORIGIN"}` must **not** release an unresolved operation ID, even if the JSON shape matches the Worker. It can be an intermediary substitution after the original D1 commit.
 - The UI must hide privileged data on every 403, retain the exact operation in memory, require a fresh signed staff GET before allowing an explicit same-ID replay, and never auto-retry. Unit and HTTP-boundary tests cover exact-shaped and malformed denials. A genuine denial may remain held until explicit reconciliation; safety takes precedence over a silent second charge.
