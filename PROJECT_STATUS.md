@@ -1,3 +1,8 @@
+## 2026-11-09 — #314 staff action consent snapshot (Draft PR #329; source-only)
+- A verified staff operator could check the action confirmation and then change the Sheikh target, action details or reason without unchecking consent. This allowed a different request to reuse an earlier checkbox acknowledgement, although the Worker still independently checks staff authority and validates every write.
+- `AdminOperations` now binds the checkbox to the exact session object and all editable action fields; any change immediately invalidates consent before submit. Regression checks target/action/reason and same-account new-session mismatch. No schema, roles, payment, audio, or Production change.
+- Exact-head CI and independent security review plus signed Cloudflare Dev/mobile acceptance are still required; do not merge PR #329 or close #314 from source-only evidence.
+
 ## 2026-11-09 — #314 staff roster timestamp safety (Draft PR #329)
 - Source-only hardening: signed roster `asOfMs` must be within the ECMAScript Date range (0..8,640,000,000,000,000 ms) before `Intl.DateTimeFormat('ar-EG')` renders it. A malformed yet safe-integer timestamp above this bound previously passed the strict DTO parser and could throw `RangeError`, blanking the Admin Sheikh view.
 - The Worker now fails closed with `CLOCK_UNAVAILABLE` before any D1 roster query for an out-of-range injected clock; the browser rejects out-of-range signed response timestamps. Added focused Vitest and Node regressions. Exact-head CI is pending verification; this is not Dev or independent security acceptance.
