@@ -1,3 +1,8 @@
+## 2026-11-09 — #314 staff confirmation binding (Draft PR #329)
+- Current work: prevent reusing an AdminOperations confirmation after switching Sheikh target, editing action/reason, or replacing the signed staff session. See `AdminOperations.tsx` and `admin-operations.test.tsx` on `feat/314-admin-teacher-id-lookup`.
+- Source commits: `f81caaaa` (binding) and `82a59dcf` (regression). Exact-head Verify is NOT yet established at this handoff; inspect current PR HEAD and corresponding GitHub Actions before claiming success.
+- Next: resolve CI, independent privacy/security review and isolated signed Dev staff role/teacher 0/1/50/51/100+ plus 360×667/390×844 acceptance. Leave PR Draft and #314 OPEN; no Production or sensitive data.
+
 ## 2026-11-09 — #314 staff roster timestamp safety (Draft PR #329)
 - Source-only hardening: signed roster `asOfMs` must be within the ECMAScript Date range (0..8,640,000,000,000,000 ms) before `Intl.DateTimeFormat('ar-EG')` renders it. A malformed yet safe-integer timestamp above this bound previously passed the strict DTO parser and could throw `RangeError`, blanking the Admin Sheikh view.
 - The Worker now fails closed with `CLOCK_UNAVAILABLE` before any D1 roster query for an out-of-range injected clock; the browser rejects out-of-range signed response timestamps. Added focused Vitest and Node regressions. Exact-head CI is pending verification; this is not Dev or independent security acceptance.
