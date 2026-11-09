@@ -15,6 +15,13 @@ type State=
  |{phase:'ready';session:AccountSession;revision:number;value:AdminTeacherDirectoryValue}
  |{phase:'denied'|'error'};
 type StaffReceipt={session:AccountSession;value:AdminActionResult};
+type LookupReceipt={session:AccountSession;revision:number;teachers:readonly AdminTeacher[]};
+/** Exact-ID receipts from a superseded directory read are never actionable. */
+export function adminTeacherCurrentLookup(
+ lookup:LookupReceipt|null,session:AccountSession,revision:number,
+):readonly AdminTeacher[]{
+ return lookup?.session===session&&lookup.revision===revision?lookup.teachers:[];
+}
 /** A missing exact-ID result is material only when the Sheikh was already
  * selectable. Revalidate the whole signed roster before allowing actions. */
 export function adminTeacherMissingLookupRequiresRefresh(
@@ -47,7 +54,7 @@ const cairo=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',
 export function AdminTeacherDirectory({session}:{session:AccountSession}){
  const [state,setState]=useState<State>({phase:'loading'});
  const [retry,setRetry]=useState(0);
- const [lookup,setLookup]=useState<{session:AccountSession;teachers:readonly AdminTeacher[]}|null>(null);
+ const [lookup,setLookup]=useState<LookupReceipt|null>(null);
  const [latestAck,setLatestAck]=useState<StaffReceipt|null>(null);
  // A concurrent older GET must not restore the staff roster after a newer
  // signed 401/403 from exact-ID lookup or an operational mutation.
@@ -71,7 +78,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
  const revoked=adminStaffSessionRevoked(revocation,session);
  const ready=adminTeacherCurrentRoster(state,session,retry,revoked);
  const reloading=!revoked&&state.phase==='ready'&&!ready;
- const lookedUp=lookup?.session===session?lookup.teachers:[];
+ const lookedUp=adminTeacherCurrentLookup(lookup,session,retry);
  // An exact-ID recheck may return a changed qualification/status. The
  // newer signed receipt wins even when that ID was already in the first 50.
  const teachers=ready?reconcileVerifiedTeacherRows(ready.teachers,lookedUp):[];
@@ -117,8 +124,12 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
    </div>
    {ready.truncated&&<AdminTeacherIdLookup session={session}
     onFound={teacher=>setLookup(current=>{
-     const previous=current?.session===session?current.teachers:[];
-     return {session,teachers:reconcileVerifiedTeacherRows(previous,[teacher])};
+     // A delayed lookup from a previous refresh must not replace a newer
+     // signed receipt or re-enable an old action target.
+     if(current?.session===session&&current.revision>retry)return current;
+     const previous=adminTeacherCurrentLookup(current,session,retry);
+     return {session,revision:retry,
+      teachers:reconcileVerifiedTeacherRows(previous,[teacher])};
     })}
     onMissing={teacherId=>{
      if(!adminTeacherMissingLookupRequiresRefresh(teacherId,teachers))return;
