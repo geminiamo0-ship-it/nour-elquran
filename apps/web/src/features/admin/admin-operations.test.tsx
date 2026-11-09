@@ -1,6 +1,6 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {AdminOperations,adminOperationConfirmationMatches} from './AdminOperations';
+import {AdminOperations,adminOperationConfirmationMatches,adminOperationScopedValue} from './AdminOperations';
 import {submitAdminAction,validAdminAction,AdminActionError,isAdminActionStaffRevoked}
  from './admin-operations-client';
 
@@ -33,6 +33,23 @@ describe('Admin operational D1 client #309',()=>{
     .toBe(false);
   }
   expect(adminOperationConfirmationMatches(null,actor,fields)).toBe(false);
+ });
+ it('hides old signed staff options and action receipts immediately on session or section change (#314)',()=>{
+  const actor={user:{id:'staff-a',name:'Synthetic Staff'},phoneVerified:true};
+  // A new login can carry the same user ID but must never inherit old roster data.
+  const reauthenticated={user:{id:'staff-a',name:'Synthetic Staff'},phoneVerified:true};
+  const options={students:[{id:'synthetic-learner',name:'Synthetic Learner'}],
+   sheikhs:[{id:'synthetic-teacher',name:'Synthetic Sheikh'}]};
+  const entry={session:actor,kind:'schedule' as const,value:options};
+  expect(adminOperationScopedValue(entry,actor,'schedule')).toEqual(options);
+  expect(adminOperationScopedValue(entry,reauthenticated,'schedule')).toBeNull();
+  expect(adminOperationScopedValue(entry,actor,'teacher')).toBeNull();
+  expect(adminOperationScopedValue(null,actor,'schedule')).toBeNull();
+  const pending={session:actor,kind:'teacher' as const,
+   value:{phase:'uncertain' as const,operationId,command:teacher}};
+  expect(adminOperationScopedValue(pending,actor,'teacher')).toEqual(pending.value);
+  expect(adminOperationScopedValue(pending,reauthenticated,'teacher')).toBeNull();
+  expect(adminOperationScopedValue(pending,actor,'attendance')).toBeNull();
  });
  it('accepts only exact auditable commands without role headers or accounts',()=>{
   expect(validAdminAction('teacher',teacher)).toBe(true);
