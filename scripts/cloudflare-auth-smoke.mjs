@@ -223,6 +223,8 @@ for(const view of collectionViews){
 }
 assert.equal((await call(adminTeachers)).response.status,401);
 assert.equal((await call(adminTeachers,{cookie:cookieA})).response.status,403);
+assert.equal((await call(adminTeachers+'?id=synthetic-absent',{cookie:cookieA})).response.status,403,
+ 'Exact-ID lookup must recheck the same current staff grant');
 assert.equal((await call(adminTeachers,{cookie:cookieB})).response.status,403);
 assert.equal((await call(adminTeachers,{cookie:cookieA,headers:{'x-user-role':'admin'}})).response.status,403);
 assert.equal((await call(adminOverview)).response.status,401);
@@ -246,6 +248,17 @@ assert.equal(emptyDirectory.response.status,200,JSON.stringify(emptyDirectory.da
 assert.equal(emptyDirectory.data.code,'STAFF_TEACHER_DIRECTORY');
 assert.deepEqual(emptyDirectory.data.teachers,[]);
 assert.equal(emptyDirectory.data.truncated,false);
+// #314: exercise the actual signed Worker + disposable D1 exact-ID route,
+// not only pure adapter mocks; an unknown actor is an empty verified read.
+const absentTeacher=await call(adminTeachers+'?id=synthetic-absent',{cookie:cookieA});
+assert.equal(absentTeacher.response.status,200,JSON.stringify(absentTeacher.data));
+assert.deepEqual(absentTeacher.data.teachers,[]);
+assert.equal(absentTeacher.data.truncated,false);
+assert.equal((await call(adminTeachers+'?id=bad_id',{cookie:cookieA})).response.status,400);
+assert.equal((await call(adminTeachers+'?id=synthetic-absent&id=other',{cookie:cookieA})).response.status,400);
+assert.equal((await call(adminTeachers+'?id=synthetic-absent&limit=1000',{cookie:cookieA})).response.status,400);
+assert.equal((await call(adminTeachers+'?id=synthetic-absent',{cookie:cookieB})).response.status,403);
+assert.equal((await call(adminTeachers+'?id=synthetic-absent',{method:'POST',cookie:cookieA})).response.status,405);
 for(const view of collectionViews){
  const request=await call(adminCollections(view),{cookie:cookieA});
  assert.equal(request.response.status,200,JSON.stringify(request.data));
@@ -304,6 +317,20 @@ const provision=await call('/v1/staff/teacher-actions',{
 assert.equal(provision.response.status,201,JSON.stringify(provision.data));
 assert.equal(provision.data.state,'disabled');
 assert.equal(provision.data.qualified,false);
+const exactProvisioned=await call(adminTeachers+'?id='+encodeURIComponent(provision.data.teacherId),
+ {cookie:cookieA});
+assert.equal(exactProvisioned.response.status,200,JSON.stringify(exactProvisioned.data));
+assert.equal(exactProvisioned.data.code,'STAFF_TEACHER_DIRECTORY');
+assert.equal(exactProvisioned.data.readOnly,true);
+assert.equal(exactProvisioned.response.headers.get('cache-control'),'no-store');
+assert.equal(exactProvisioned.data.truncated,false);
+assert.equal(exactProvisioned.data.teachers.length,1);
+assert.equal(exactProvisioned.data.teachers[0].id,provision.data.teacherId);
+assert.equal(exactProvisioned.data.teachers[0].status,'disabled');
+assert.equal(exactProvisioned.data.teachers[0].qualified,false);
+assert.deepEqual(Object.keys(exactProvisioned.data.teachers[0]).sort(),[
+ 'currentLearners','id','name','qualified','status','upcomingLessons',
+]);
 assert.equal((await call('/v1/teacher/learners',{cookie:cookieB})).response.status,403);
 const sameOp=await call('/v1/staff/teacher-actions',{method:'POST',cookie:cookieA,body:provisionBody});
 assert.equal(sameOp.response.status,200);
@@ -778,6 +805,9 @@ const revokedAdmin=await call(adminOverview,{cookie:cookieA});
 assert.equal(revokedAdmin.response.status,403,'Revoked staff grant must lose overview access immediately');
 assert.equal((await call(adminTeachers,{cookie:cookieA})).response.status,403,
  'Revoked staff grant must lose teacher directory access immediately');
+assert.equal((await call(adminTeachers+'?id='+encodeURIComponent(provision.data.teacherId),
+ {cookie:cookieA})).response.status,403,
+ 'Revoked staff grant must also deny exact-ID lookup on the same session');
 for(const view of collectionViews){
  assert.equal((await call(adminCollections(view),{cookie:cookieA})).response.status,403,
   'Revoked staff must lose '+view+' directory immediately');
