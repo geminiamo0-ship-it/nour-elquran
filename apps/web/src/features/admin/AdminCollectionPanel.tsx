@@ -70,7 +70,7 @@ export function adminCollectionReceiptMayShow<T>(
  receipt:{session:T;view:AdminDataView}|null,
  session:T,view:AdminDataView,denied:boolean,
 ):boolean{
- return !denied&&receipt?.session===session&&receipt.view===view;
+ return !denied&&receipt!==null&&receipt.session===session&&receipt.view===view;
 }
 
 /** A hidden or changing session must never display a previously fetched list. */
