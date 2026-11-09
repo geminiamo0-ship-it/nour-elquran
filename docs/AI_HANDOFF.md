@@ -1,3 +1,8 @@
+## 2026-11-09 — #315 staff write receipt ambiguity, PR #325 (unmerged)
+- An HTTP 403 with an exact-looking Worker code is **not** authenticated proof that a D1 write failed: an intermediary can substitute it after a successful commit. The academy client previously dropped a held operation for `403 STAFF_ACCESS_DENIED` / `403 BAD_ORIGIN` when JSON contained only `code`.
+- Follow-up on existing Draft #325: all 403 staff POST responses now remain uncertain, with old `operationId` retained for explicit same-command replay after authorized signed GET. Privileged snapshot is still cleared on 403. Policy and network boundary regressions added; no automatic payment retry. Keep PR #327 reconciliation open.
+- NEXT: verify new HEAD GitHub Actions 4/4, review financial idempotency/security, then Dev synthetic staff/role denial + guardian sibling matrix and mobile 360/390. No merge, production, child audio, WhatsApp or paid service activation from this source change.
+
 ## 2026-11-09 — #315 staff retry UI after failed signed read
 - Latest checked `main@4c15b59f`; Draft #325 previous head `da8eb2d6` passed [Verify #42524327408](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42524327408) 4/4. Draft #327 `7d55b03c` remains separate; 19 overlapping paths and independent review/Dev acceptance are outstanding.
 - On #325, after an uncertain POST followed by 403/503 or malformed staff GET, the exact-operation retry button was enabled but `send()` refused without `visibleData`. Added `academyAdminCanReplay`, disabled-state explanation and unit tests (source commits `aa2a14bc`, `568f8c5c`, `a5886342`). Never drop the original operationId on failed read or manufacture a new financial action.
