@@ -7,6 +7,13 @@ import css from './AdminPortal.module.css';
 type LookupPhase='idle'|'loading'|'found'|'missing'|'invalid'|'denied'|'error';
 const validId=/^[a-zA-Z0-9-]{1,128}$/;
 
+/** A new signed session can render before the old lookup effect is cleaned up.
+ * A late response must never add a Sheikh to, or revoke, the new actor's UI. */
+export function adminTeacherLookupMayApply<T>(
+ startedSession:T,currentSession:T,aborted:boolean):boolean{
+ return !aborted&&startedSession===currentSession;
+}
+
 /** #314: bounded, signed exact-ID fallback for a Sheikh omitted by the first 50 rows. */
 export function AdminTeacherIdLookup({session,onFound,onAccessRevoked}:{
  session:AccountSession;onFound:(teacher:AdminTeacher)=>void;
@@ -16,6 +23,8 @@ export function AdminTeacherIdLookup({session,onFound,onAccessRevoked}:{
  const [id,setId]=useState('');
  const [phase,setPhase]=useState<LookupPhase>('idle');
  const current=useRef<AbortController|null>(null);
+ const currentSession=useRef(session);
+ currentSession.current=session;
  useEffect(()=>{
   current.current?.abort();
   setBoundSession(session);setId('');setPhase('idle');
@@ -29,14 +38,15 @@ export function AdminTeacherIdLookup({session,onFound,onAccessRevoked}:{
   if(!validId.test(teacherId)){setPhase('invalid');return;}
   current.current?.abort();
   const ctrl=new AbortController();current.current=ctrl;
+  const startedSession=session;
   setPhase('loading');
   void fetchAdminTeachers(ctrl.signal,teacherId).then(result=>{
-   if(ctrl.signal.aborted)return;
+   if(!adminTeacherLookupMayApply(startedSession,currentSession.current,ctrl.signal.aborted))return;
    const teacher=result.teachers[0];
    if(!teacher){setPhase('missing');return;}
    onFound(teacher);setPhase('found');
   }).catch(error=>{
-   if(ctrl.signal.aborted)return;
+   if(!adminTeacherLookupMayApply(startedSession,currentSession.current,ctrl.signal.aborted))return;
    if(isAdminTeacherAccessRevoked(error)){
     // A fresh signed 401/403/404 invalidates the parent roster and actions.
     // Keeping an earlier successful list visible after revocation is unsafe.
