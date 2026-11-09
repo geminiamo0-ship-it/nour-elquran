@@ -64,7 +64,7 @@ function validRow(row:TeacherRow):boolean{
 export async function readAdminTeachers(
  db:CoreDatabase,verifiedSubject:string,now=Date.now(),teacherId?:string,
 ){
- if(!Number.isSafeInteger(now)||now<0)
+ if(!Number.isSafeInteger(now)||now<0||now>8_640_000_000_000_000)
   return {status:503,code:'CLOCK_UNAVAILABLE'} as const;
  if(teacherId!==undefined&&!validAdminTeacherId(teacherId))
   return {status:400,code:'INVALID_TEACHER_LOOKUP'} as const;
