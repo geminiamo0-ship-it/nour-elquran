@@ -1,3 +1,9 @@
+## 2026-11-09 — #314 / Draft PR #329, session-bound AdminOperations follow-up
+- Read AGENTS, status, master plan, design/engineering/repository map, testing, privacy and active #314 before editing. Main remains `4c15b59f`; Draft PR #329 was at `b187d334` with Verify #42571148390 completed 4/4 before this slice.
+- Source `e4968bb2` scopes staff schedule option lists and action receipts to the exact signed session object and section. Old names, uncertain replay commands and success messages are hidden synchronously when session/kind changes; late async options or POST callbacks cannot update the new actor or invoke `onApplied`. Test `6ce0ceb3` exercises same-user reauthentication, section switch, stale options and uncertain replay visibility. All synthetic values.
+- This is **not** signed remote Dev proof or independent review; new exact-head CI needs checking. No merge, Production, R2 child media, WhatsApp, price, payment, or cumulative ink changes.
+- Next exact action: inspect PR #329 latest HEAD GitHub Verify; fix failures; obtain independent privacy review and source-pinned signed Cloudflare Dev same-user session/actor swap and 0/1/50/51/100+ roster + 360/390 mobile. Leave #314 OPEN and PR Draft.
+
 ## 2026-11-09 — #314 staff confirmation binding (Draft PR #329)
 - Follow-up `50d6b3de` clears the confirmation token after edits (including edit-and-revert), in addition to synchronous fingerprint mismatch. Recheck the latest HEAD CI; earlier Verify results do not cover this commit.
 - Current work: prevent reusing an AdminOperations confirmation after switching Sheikh target, editing action/reason, or replacing the signed staff session. See `AdminOperations.tsx` and `admin-operations.test.tsx` on `feat/314-admin-teacher-id-lookup`.
