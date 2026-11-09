@@ -65,6 +65,15 @@ export function claimAdminOperationFlight(
  lock.current='sending';
  return true;
 }
+/** Clear the prior consent synchronously in the same input event, before
+ * updating a controlled field. A rapid edit-and-revert must not reuse consent
+ * if React batches field renders or effect cleanup is delayed. */
+export function adminOperationEditField<T>(
+ clearConsent:()=>void,setField:(value:T)=>void,value:T,
+):void{
+ clearConsent();
+ setField(value);
+}
 const actions:Record<AdminOperationKind,readonly {id:string;label:string}[]>={
  teacher:[
   {id:'provision',label:'تجهيز ملف شيخ غير نشط'},
@@ -120,6 +129,8 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
  const sheikhs=visibleOptions?.sheikhs??[];
  const [reason,setReason]=useState('');
  const [confirmation,setConfirmation]=useState<{session:AccountSession;fields:string}|null>(null);
+ const edit=(setter:(value:string)=>void,value:string)=>
+  adminOperationEditField(()=>setConfirmation(null),setter,value);
  // Bind consent to all operator-editable fields, including the target and reason.
  // A changed field invalidates consent synchronously during render, before submit.
  const confirmationFields=adminOperationConfirmationScope(
@@ -244,9 +255,9 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
     </select></label>
    {kind==='teacher'&&action==='provision'&&<label>معرّف الحساب المسجّل (auth subject)
     <input required disabled={busy} maxLength={128} autoComplete="off"
-     value={target} onChange={e=>setTarget(e.target.value)}/></label>}
+     value={target} onChange={e=>edit(setTarget,e.target.value)}/></label>}
    {kind==='teacher'&&action!=='provision'&&<label>اختر الشيخ من السجل الموثق
-    <select required disabled={busy} value={resource} onChange={e=>setResource(e.target.value)}>
+    <select required disabled={busy} value={resource} onChange={e=>edit(setResource,e.target.value)}>
      <option value="">اختر شيخًا…</option>
      {teachers.map(t=><option key={t.id} value={t.id}>
       {t.name} · {t.status==='active'?'نشط':'موقوف'} · {t.qualified?'مؤهل':'غير مؤهل'}
@@ -255,30 +266,30 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
    {kind==='schedule'&&['assign','book'].includes(action)&&<>
     <label>اختر الطالب
      {students.length>0&&<select disabled={busy} value={learner}
-      onChange={e=>setLearner(e.target.value)}>
+      onChange={e=>edit(setLearner,e.target.value)}>
       <option value="">اختر الطالب من سجلات الأكاديمية</option>
       {students.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}
      </select>}
      <input required disabled={busy} maxLength={128} value={learner}
       aria-label="معرّف الطالب عند عدم ظهوره في السجل"
-      onChange={e=>setLearner(e.target.value)} placeholder="معرّف الطالب"/></label>
+      onChange={e=>edit(setLearner,e.target.value)} placeholder="معرّف الطالب"/></label>
     <label>اختر الشيخ
      {sheikhs.length>0&&<select disabled={busy} value={teacher}
-      onChange={e=>setTeacher(e.target.value)}>
+      onChange={e=>edit(setTeacher,e.target.value)}>
       <option value="">اختر الشيخ النشط</option>
       {sheikhs.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}
      </select>}
      <input required disabled={busy} maxLength={128} value={teacher}
       aria-label="معرّف الشيخ عند عدم ظهوره في السجل"
-      onChange={e=>setTeacher(e.target.value)} placeholder="معرّف الشيخ"/></label>
+      onChange={e=>edit(setTeacher,e.target.value)} placeholder="معرّف الشيخ"/></label>
     <label>بداية الموعد (بتوقيت جهازك)
      <input required disabled={busy} type="datetime-local" value={starts}
-      onChange={e=>setStarts(e.target.value)}/></label>
+      onChange={e=>edit(setStarts,e.target.value)}/></label>
     {action==='assign'&&<label>نهاية الإسناد (بتوقيت جهازك)
      <input required disabled={busy} type="datetime-local" value={ends}
-      onChange={e=>setEnds(e.target.value)}/></label>}
+      onChange={e=>edit(setEnds,e.target.value)}/></label>}
     {action==='book'&&<label>نوع الحصة
-     <select disabled={busy} value={lessonKind} onChange={e=>setLessonKind(e.target.value)}>
+     <select disabled={busy} value={lessonKind} onChange={e=>edit(setLessonKind,e.target.value)}>
       <option value="trial">تجريبية</option><option value="standard">عادية</option>
       <option value="makeup">تعويض</option>
      </select></label>}
@@ -286,16 +297,16 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
    {(kind==='attendance'||kind==='schedule'&&['revoke','cancel'].includes(action))&&
     <label>{kind==='attendance'?'معرّف الاعتراض':'معرّف الحصة أو الإسناد'}
      {choices.length>0&&<select disabled={busy} value={resource}
-      onChange={e=>setResource(e.target.value)}>
+      onChange={e=>edit(setResource,e.target.value)}>
       <option value="">اختر من السجلات أو أدخل معرّفًا</option>
       {choices.map(r=><option key={r.id} value={String(r.id)}>
        {String(r.id)}</option>)}
      </select>}
      <input required disabled={busy} maxLength={128} autoComplete="off"
-      value={resource} onChange={e=>setResource(e.target.value)}/></label>}
+      value={resource} onChange={e=>edit(setResource,e.target.value)}/></label>}
    <label>سبب القرار (يُسجّل دائمًا)
     <textarea rows={3} required disabled={busy} maxLength={500} value={reason}
-     onChange={e=>setReason(e.target.value)}
+     onChange={e=>edit(setReason,e.target.value)}
      placeholder="اكتب سببًا واضحًا لا يقل عن عشرة أحرف"/></label>
    {kind==='teacher'&&action!=='provision'&&resource!==''&&!targetVerified&&
     <p role="alert" className={css.error}>لم يعد الشيخ المحدد موجودًا في السجل الموثق. حدّث السجل واختر الشيخ من جديد.</p>}
