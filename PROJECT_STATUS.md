@@ -1,3 +1,9 @@
+## 2026-11-09 — #315 exact-shaped intermediary 403 cannot release staff operation (PR #325, source candidate)
+- Security review found a remaining ambiguity: a proxy could replace an already-committed staff academy D1 POST with HTTP 403 and the exact JSON `{"code":"STAFF_ACCESS_DENIED"}`. The previous UI classified that shape as terminal and released the original idempotency key, potentially permitting a second manual financial action.
+- Staff academy write-outcome policy now treats **every HTTP 403** as uncertain regardless of apparent code shape; the privileged snapshot is hidden, original operation remains held in memory, and only a fresh signed staff read plus explicit same-ID replay can reconcile. No automatic retry or second payment/activation.
+- Added policy and HTTP boundary regression tests in `admin-academy-write-outcome.test.ts` and `AdminAcademyMvp.test.tsx`. **Exact-head CI and independent security review remain pending** at time of this source change. No Production, payment provider, WhatsApp, private audio or cumulative ink flag change.
+- NEXT: inspect PR #325 Verify on the new exact HEAD; resolve #327 overlap without dropping receipt fences; signed isolated Cloudflare Dev staff/guardian/role-revocation and 360/390 acceptance before merge.
+
 ## 2026-11-09 — #315 unresolved staff retry requires signed refresh (Draft PR #325)
 - Source review found a dead control: after an uncertain staff academy POST, a subsequent failed/revoked staff GET leaves the exact-operation retry button visible although `send()` silently refuses without an authorized snapshot. This misleads operators handling manual settlement.
 - Added pure `academyAdminCanReplay` gate, fail-closed regression, and disabled retry with an Arabic refresh/authorization explanation until a fresh signed staff snapshot is available. The original operationId/payload remain in memory for exact replay; no new write, payment, schema, secrets or Production changes.
