@@ -1,3 +1,8 @@
+## 2026-11-09 — #314 staff roster timestamp safety (Draft PR #329)
+- Source-only hardening: signed roster `asOfMs` must be within the ECMAScript Date range (0..8,640,000,000,000,000 ms) before `Intl.DateTimeFormat('ar-EG')` renders it. A malformed yet safe-integer timestamp above this bound previously passed the strict DTO parser and could throw `RangeError`, blanking the Admin Sheikh view.
+- The Worker now fails closed with `CLOCK_UNAVAILABLE` before any D1 roster query for an out-of-range injected clock; the browser rejects out-of-range signed response timestamps. Added focused Vitest and Node regressions. Exact-head CI is pending verification; this is not Dev or independent security acceptance.
+- NEXT: inspect exact-head Verify for PR #329; independent privacy review; isolated signed Cloudflare Dev role/0/1/50/51/100+ and mobile 360/390 tests. Do not merge, enable Production flags or alter money/child media.
+
 ## 2026-11-09 — #314 stale exact-ID Sheikh lookup session fence (Draft PR #329)
 - Source review found a render-to-effect race: an old exact-ID lookup may resolve after the signed staff session prop changes but before React abort cleanup. Its success could call `onFound` in the next actor's roster; its 401/403 could call `onAccessRevoked` against the new actor. The previous `AbortSignal` check alone does not fence this interval.
 - `AdminTeacherIdLookup` now compares the lookup's captured session with a synchronously updated current-session ref before either callback. Same-account re-login with a new session object is also rejected; a pure Vitest regression covers current, switched, re-login and aborted requests.
