@@ -1,3 +1,9 @@
+## 2026-11-09 — #314 signed staff option denial / collection receipt privacy (PR #329 candidate)
+- Source review found two related fail-closed gaps in the existing Admin UI: a signed schedule-options GET 401/403 was treated like a transient empty list, leaving editable manual-ID controls under a revoked staff session; a separate collection read/mutation denial could still render an earlier confirmed action receipt.
+- PR #329 now classifies 401/403 from the signed schedule options GET as staff revocation (404/429/503 remain non-revocation), invokes the collection's denial gate, clears prior staff option data and any prior action ACK, and hides the collection form until a fresh authorized read. Session and section identity remain checked before applying late responses.
+- Focused Vitest regressions cover 401/403 versus non-auth errors and receipt suppression across same-account reauthentication, section changes and denial. Exact-head GitHub Verify is **pending**, not claimed green. No independent security review, signed Cloudflare Dev staff revocation test, or mobile acceptance yet; keep PR #329 Draft and Issue #314 OPEN.
+- No main/Production change, migration, payment, WhatsApp, child media or cumulative ink flag change.
+
 - Additional source/test `5db8ad40`/`af458e31`: synchronously gate the whole controlled form (not only options and ACK) while session/kind changes, clear old learner/Sheikh IDs, reason and selected action before rendering. Latest CI must be checked anew.
 ## 2026-11-09 — #314 / Draft PR #329, session-bound AdminOperations follow-up
 - Read AGENTS, status, master plan, design/engineering/repository map, testing, privacy and active #314 before editing. Main remains `4c15b59f`; Draft PR #329 was at `b187d334` with Verify #42571148390 completed 4/4 before this slice.
