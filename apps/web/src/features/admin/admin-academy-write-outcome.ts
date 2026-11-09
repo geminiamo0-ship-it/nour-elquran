@@ -26,12 +26,9 @@ const invalidByPath:Readonly<Record<string,string>>={
  contact:'ACADEMY_INVALID_CONTACT',
  invites:'ACADEMY_INVALID_INVITE',
 };
-// Generic auth/origin/method refusals are common to every staff route.
-const terminalHttpErrors:Readonly<Record<number,ReadonlySet<string>>>={
- 401:new Set(['UNAUTHENTICATED']),
- 404:new Set(['NOT_FOUND']),
- 405:new Set(['METHOD_NOT_ALLOWED']),
-};
+// A gateway can replace a committed D1 ACK with a plausible 401/403/404/405
+// (including a valid-looking Worker error code). None of these HTTP responses
+// proves that the original immutable operation did not commit.
 export function academyAdminOutcomeIsUncertain(
  path:string,status:number,code='',exactCodeOnly=true){
  if(!exactCodeOnly)return true;
@@ -39,10 +36,9 @@ export function academyAdminOutcomeIsUncertain(
  // perfectly shaped 403 {code:'STAFF_ACCESS_DENIED'}. The browser cannot
  // authenticate that denial, so retain the immutable operationId for an
  // explicit same-ID replay after a fresh signed staff authorization check.
- if(status===403)return true;
+ if(status===401||status===403||status===404||status===405)return true;
  if(status===409)return !terminalConflictsByPath[path]?.has(code);
  if(status===400)return invalidByPath[path]!==code;
- if(status>=400&&status<500)return !terminalHttpErrors[status]?.has(code);
  return true;
 }
 /** A proxy's 2xx is not evidence that the expected D1 command committed. */
