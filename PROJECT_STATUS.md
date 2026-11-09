@@ -1,3 +1,9 @@
+## 2026-11-09 — #315 proxy 404/405 write-receipt fence (Draft PR #325, source only)
+- Reviewed live main and open Draft #325/#327; exact previous #325 HEAD `81d3e50f` passed Verify 4/4, but this new patch needs its own CI.
+- A gateway may replace a committed academy staff POST acknowledgement with a plausible HTTP 404 `NOT_FOUND` or 405 `METHOD_NOT_ALLOWED`. The previous browser classifier treated those as terminal and released the immutable operationId, permitting a second manual administrative command.
+- Updated `admin-academy-write-outcome.ts` to keep 401/403/404/405 uncertain regardless of body, and extended the shared regression test for every staff mutation path. Same-operation replay still requires fresh authorized D1 staff read; no optimistic payment claim.
+- Draft/unmerged; independent review, overlap reconciliation with #327, exact-head CI and signed isolated Dev + 360/390 browser checks remain required. No Production, financial provider, WhatsApp send, private audio or cumulative ink flag change.
+
 ## 2026-11-09 — #315 exact-shaped intermediary 403 cannot release staff operation (PR #325, source candidate)
 - Security review found a remaining ambiguity: a proxy could replace an already-committed staff academy D1 POST with HTTP 403 and the exact JSON `{"code":"STAFF_ACCESS_DENIED"}`. The previous UI classified that shape as terminal and released the original idempotency key, potentially permitting a second manual financial action.
 - Staff academy write-outcome policy now treats **every HTTP 403** as uncertain regardless of apparent code shape; the privileged snapshot is hidden, original operation remains held in memory, and only a fresh signed staff read plus explicit same-ID replay can reconcile. No automatic retry or second payment/activation.
