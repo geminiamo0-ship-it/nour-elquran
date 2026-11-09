@@ -1,3 +1,9 @@
+## 2026-11-09 — #326 guardian package request: substituted auth/routing responses (Draft #325)
+- Source audit on Draft #325 found the signed guardian POST classifier treated exact-looking HTTP 401/403/404/405 as terminal, even though an intermediary could replace an already-committed D1 acknowledgement. This could drop the original operationId and permit a duplicate package request on a later refresh.
+- `ConnectedAcademyOffers.tsx` now treats those four statuses as **uncertain**, retaining the original immutable operationId for explicit same-ID replay. Strict 400 invalid-payload and reviewed 409 domain conflicts remain terminal. `StudentSubscription.test.tsx` exercises exact-looking proxy codes and verifies the request gate cannot mint another operation before replay.
+- Source commits: `ceb1451d`, `c238dfcc` on [Draft #325](https://github.com/geminiamo0-ship-it/nour-elquran/pull/325). Previous exact-head [Verify #42540615331](https://github.com/geminiamo0-ship-it/nour-elquran/actions/runs/42540615331) passed 4/4 on **older** `72a134a3`; new exact-head CI is **not yet verified**. No local test claimed (GitHub DNS unavailable in runner).
+- Next: exact-head CI; independent review; signed Cloudflare Dev owner/two-sibling proxy/lost-ACK and price-version tests, mobile 360/390; reconcile overlap with Draft #327 before merge. No Production, payments, prices, WhatsApp, child media or cumulative ink changes.
+
 ## 2026-11-09 — #315 proxy 404/405 write-receipt fence (Draft PR #325, source only)
 - Reviewed live main and open Draft #325/#327; exact previous #325 HEAD `81d3e50f` passed Verify 4/4, but this new patch needs its own CI.
 - A gateway may replace a committed academy staff POST acknowledgement with a plausible HTTP 404 `NOT_FOUND` or 405 `METHOD_NOT_ALLOWED`. The previous browser classifier treated those as terminal and released the immutable operationId, permitting a second manual administrative command.
