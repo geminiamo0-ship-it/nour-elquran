@@ -130,7 +130,7 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
      disabled={!visible} placeholder="ابحث داخل أول ٥٠ سجلًا فقط" />
    </label>
    <button type="button" className={css.staffRefresh}
-    disabled={status==='loading'} onClick={()=>{setRevocation(null);setRetry(n=>n+1);}}>تحديث البيانات</button>
+    onClick={()=>{setRevocation(null);setRetry(n=>n+1);}}>تحديث البيانات</button>
   </div>
   {status==='loading'&&<p className={css.staffEmpty} role="status">
    جارٍ التحقق من صلاحيات الإدارة وتحميل السجل…</p>}
