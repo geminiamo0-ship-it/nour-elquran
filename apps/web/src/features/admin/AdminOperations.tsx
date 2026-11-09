@@ -15,6 +15,18 @@ type Result=
 type Props={kind:AdminOperationKind;session:AccountSession;
  rows?:readonly AdminDataRow[];teachers?:readonly AdminTeacher[];
  onApplied?:(result:AdminActionResult)=>void;onAccessRevoked?:()=>void};
+type StaffOptions=Readonly<{
+ students:readonly {id:string;name:string}[];
+ sheikhs:readonly {id:string;name:string}[];
+}>;
+type SessionScoped<T>=Readonly<{session:AccountSession;kind:AdminOperationKind;value:T}>;
+/** Never render prior staff data or an in-flight action under a new signed
+ * session, even for the same account or before effect cleanup runs. */
+export function adminOperationScopedValue<T>(
+ entry:SessionScoped<T>|null,session:AccountSession,kind:AdminOperationKind,
+):T|null{
+ return entry?.session===session&&entry.kind===kind?entry.value:null;
+}
 /** A staff confirmation authorizes only the exact fields and session shown
  * when checked, never a later teacher/learner/action/reason selection. */
 export function adminOperationConfirmationMatches<T>(
@@ -61,8 +73,10 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
  const [starts,setStarts]=useState('');
  const [ends,setEnds]=useState('');
  const [lessonKind,setLessonKind]=useState('trial');
- const [students,setStudents]=useState<{id:string;name:string}[]>([]);
- const [sheikhs,setSheikhs]=useState<{id:string;name:string}[]>([]);
+ const [options,setOptions]=useState<SessionScoped<StaffOptions>|null>(null);
+ const visibleOptions=adminOperationScopedValue(options,session,kind);
+ const students=visibleOptions?.students??[];
+ const sheikhs=visibleOptions?.sheikhs??[];
  const [reason,setReason]=useState('');
  const [confirmation,setConfirmation]=useState<{session:AccountSession;fields:string}|null>(null);
  // Bind consent to all operator-editable fields, including the target and reason.
@@ -73,9 +87,16 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
  // Once any field changes, clear the original consent token. Restoring the
  // old text/target must not silently reactivate a previously checked box.
  useEffect(()=>{setConfirmation(null);},[confirmationFields,session]);
- const [result,setResult]=useState<Result>({phase:'idle'});
+ const [resultState,setResultState]=useState<SessionScoped<Result>|null>(null);
+ const result=adminOperationScopedValue(resultState,session,kind)??{phase:'idle' as const};
+ const setResult=(value:Result)=>setResultState({session,kind,value});
  const current=useRef<AbortController|null>(null);
- useEffect(()=>()=>{current.current?.abort();current.current=null;},[session,kind]);
+ const liveSession=useRef(session);liveSession.current=session;
+ const liveKind=useRef(kind);liveKind.current=kind;
+ useEffect(()=>{
+  setOptions(null);setResultState(null);
+  return ()=>{current.current?.abort();current.current=null;};
+ },[session,kind]);
  useEffect(()=>{
   if(kind!=='schedule')return;
   const ctrl=new AbortController();
@@ -89,10 +110,15 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
    options('/v1/staff/collections?view=students'),
    options('/v1/staff/teachers'),
   ]).then(([a,b])=>{
-   if(ctrl.signal.aborted)return;
-   setStudents((a.rows??[]).filter(x=>typeof x.id==='string'&&typeof x.name==='string'));
-   setSheikhs((b.teachers??[]).filter(x=>x.status==='active'&&x.qualified));
-  }).catch(()=>{if(!ctrl.signal.aborted){setStudents([]);setSheikhs([]);}});
+   if(ctrl.signal.aborted||liveSession.current!==session||liveKind.current!==kind)return;
+   setOptions({session,kind,value:{
+    students:(a.rows??[]).filter(x=>typeof x.id==='string'&&typeof x.name==='string'),
+    sheikhs:(b.teachers??[]).filter(x=>x.status==='active'&&x.qualified),
+   }});
+  }).catch(()=>{
+   if(!ctrl.signal.aborted&&liveSession.current===session&&liveKind.current===kind)
+    setOptions({session,kind,value:{students:[],sheikhs:[]}});
+  });
   return()=>ctrl.abort();
  },[kind,session]);
  const busy=result.phase==='sending'||result.phase==='uncertain';
@@ -118,10 +144,10 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
   setResult({phase:'sending'});
   try{
    const acknowledged=await submitAdminAction(kind,value,ctrl.signal);
-   if(ctrl.signal.aborted)return;
+   if(ctrl.signal.aborted||liveSession.current!==session||liveKind.current!==kind)return;
    setResult({phase:'done',value:acknowledged});setConfirmation(null);onApplied?.(acknowledged);
   }catch(e){
-   if(ctrl.signal.aborted)return;
+   if(ctrl.signal.aborted||liveSession.current!==session||liveKind.current!==kind)return;
    if(e instanceof AdminActionError&&e.uncertain){
     setResult({phase:'uncertain',command:value,operationId});return;
    }
