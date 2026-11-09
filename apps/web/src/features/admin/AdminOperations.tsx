@@ -70,6 +70,9 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
  const confirmationFields=JSON.stringify([kind,action,target,learner,teacher,
   resource,starts,ends,lessonKind,reason]);
  const confirmed=adminOperationConfirmationMatches(confirmation,session,confirmationFields);
+ // Once any field changes, clear the original consent token. Restoring the
+ // old text/target must not silently reactivate a previously checked box.
+ useEffect(()=>{setConfirmation(null);},[confirmationFields,session]);
  const [result,setResult]=useState<Result>({phase:'idle'});
  const current=useRef<AbortController|null>(null);
  useEffect(()=>()=>{current.current?.abort();current.current=null;},[session,kind]);
