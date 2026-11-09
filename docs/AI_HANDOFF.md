@@ -1,3 +1,7 @@
+## 2026-11-10 — #314 collection refresh retry follow-up
+- Draft PR #329: `AdminCollectionPanel.tsx` no longer disables `تحديث البيانات` during a pending signed collection GET; clicking it increments the revision, aborts the old request and keeps prior schedule/attendance rows non-actionable until a new signed response. `AdminCollectionPanel.test.tsx` checks initial loading refresh is enabled.
+- NEXT: inspect exact-head Verify 4/4 after this source change; if green, independent security/privacy review and source-pinned isolated Cloudflare Dev signed staff/denial/101+ Sheikh + 360/390 RTL keyboard/touch acceptance. Keep #314 and PR #329 open/draft; no Production or paid operations.
+
 ## 2026-11-09 — #314 pending exact-head verification
 - Draft PR #329 on `feat/314-admin-teacher-id-lookup`: a signed exact-ID lookup receipt now carries the current directory refresh revision. Old lookup responses cannot be merged into a newer roster or replace newer lookup receipts; same-session refresh and new-login cases covered by a focused Vitest regression.
 - NEXT: inspect GitHub Verify at the **new exact PR head**, repair any strict TS/Vitest/native D1 failure, then record run link on #314. No local full-suite (shell cannot resolve github.com). Do not merge: independent security/privacy review, signed isolated Cloudflare Dev 101+ Sheikh/staff revocation/concurrent requests and real 360/390 RTL keyboard/touch still pending.
