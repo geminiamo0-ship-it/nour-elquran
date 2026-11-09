@@ -1,3 +1,7 @@
+## 2026-11-09 — #315 next checkpoint: proxy 404/405 cannot release staff operationId
+- PR #325 Draft branch `feat/student-subscriptions-clarity-20261101`; source commits `bc61fd51` (classifier) and `51c4fa26` (regression). Previously 404/405 exact-shaped responses could be treated as terminal even when an intermediary substituted a response after D1 commit. They now preserve unresolved operation and require same-ID reconciliation. 401/403 remain uncertain.
+- Previous Verify #42538794998 passed 4/4 on `81d3e50f`, **not** on these new commits. NEXT: inspect exact HEAD Verify, resolve any failure, then independently review and reconcile overlapping Draft #327 files before signed Cloudflare Dev staff/guardian/revoked and 360/390 browser acceptance. Do not merge or deploy Production.
+
 ## 2026-11-09 — #315 staff write receipt ambiguity, PR #325 (unmerged)
 - An HTTP 403 with an exact-looking Worker code is **not** authenticated proof that a D1 write failed: an intermediary can substitute it after a successful commit. The academy client previously dropped a held operation for `403 STAFF_ACCESS_DENIED` / `403 BAD_ORIGIN` when JSON contained only `code`.
 - Follow-up on existing Draft #325: all 403 staff POST responses now remain uncertain, with old `operationId` retained for explicit same-command replay after authorized signed GET. Privileged snapshot is still cleared on 403. Policy and network boundary regressions added; no automatic payment retry. Keep PR #327 reconciliation open.
