@@ -1,7 +1,7 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminTeacherDirectory,AdminTeacherReceipt} from './AdminTeacherDirectory';
-import {AdminTeacherIdLookup} from './AdminTeacherIdLookup';
+import {AdminTeacherIdLookup,adminTeacherLookupMayApply} from './AdminTeacherIdLookup';
 import {AdminTeachersError,fetchAdminTeachers,parseAdminTeachers,isAdminTeacherAccessRevoked,
  reconcileVerifiedTeacherRows} from './admin-teachers-client';
 const teacher={id:'teacher-1',name:'شيخ تجريبي',qualified:true,status:'active' as const,
@@ -127,6 +127,15 @@ describe('Admin teacher directory #305',()=>{
    .toEqual([changedFirst,other]);
   expect(roster[0]).toEqual(teacher); // No mutation of the earlier receipt.
   expect(reconcileVerifiedTeacherRows(second,[updated])).toEqual(second);
+ });
+ it('ignores delayed exact-ID success and denial from a superseded signed session',()=>{
+  const first={user:{id:'staff-1',name:'Synthetic'},phoneVerified:true};
+  const other={user:{id:'staff-2',name:'Synthetic'},phoneVerified:true};
+  expect(adminTeacherLookupMayApply(first,first,false)).toBe(true);
+  expect(adminTeacherLookupMayApply(first,other,false)).toBe(false);
+  // Same account can sign in again; object identity still changes.
+  expect(adminTeacherLookupMayApply(first,{...first},false)).toBe(false);
+  expect(adminTeacherLookupMayApply(first,first,true)).toBe(false);
  });
  it('renders an accessible exact-ID lookup without personal or fake records',()=>{
   const html=renderToStaticMarkup(<AdminTeacherIdLookup
