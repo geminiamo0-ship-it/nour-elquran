@@ -1,6 +1,7 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {AdminTeacherDirectory,AdminTeacherReceipt} from './AdminTeacherDirectory';
+import {AdminTeacherDirectory,AdminTeacherReceipt,
+ adminTeacherMissingLookupRequiresRefresh} from './AdminTeacherDirectory';
 import {AdminTeacherIdLookup,adminTeacherLookupMayApply} from './AdminTeacherIdLookup';
 import {AdminTeachersError,fetchAdminTeachers,parseAdminTeachers,isAdminTeacherAccessRevoked,
  reconcileVerifiedTeacherRows} from './admin-teachers-client';
@@ -129,6 +130,18 @@ describe('Admin teacher directory #305',()=>{
   expect(roster[0]).toEqual(teacher); // No mutation of the earlier receipt.
   expect(reconcileVerifiedTeacherRows(second,[updated])).toEqual(second);
  });
+ it('revalidates the signed roster if an already-selectable Sheikh disappears (#314)',()=>{
+  const outside={...teacher,id:'teacher-75'};
+  // Both a first-page row and a previously appended exact-ID row can vanish.
+  expect(adminTeacherMissingLookupRequiresRefresh('teacher-1',[teacher,outside]))
+   .toBe(true);
+  expect(adminTeacherMissingLookupRequiresRefresh('teacher-75',[teacher,outside]))
+   .toBe(true);
+  // Unknown IDs show missing without resetting unrelated staff choices.
+  expect(adminTeacherMissingLookupRequiresRefresh('never-existed',[teacher,outside]))
+   .toBe(false);
+  expect(adminTeacherMissingLookupRequiresRefresh('teacher-1',[])).toBe(false);
+ });
  it('ignores delayed exact-ID success and denial from a superseded signed session',()=>{
   const first={user:{id:'staff-1',name:'Synthetic'},phoneVerified:true};
   const other={user:{id:'staff-2',name:'Synthetic'},phoneVerified:true};
@@ -141,7 +154,7 @@ describe('Admin teacher directory #305',()=>{
  it('renders an accessible exact-ID lookup without personal or fake records',()=>{
   const html=renderToStaticMarkup(<AdminTeacherIdLookup
    session={{user:{id:'staff-1',name:'Synthetic'},phoneVerified:true}}
-   onFound={()=>{}} onAccessRevoked={()=>{}}/>);
+   onFound={()=>{}} onMissing={()=>{}} onAccessRevoked={()=>{}}/>);
   expect(html).toContain('admin-exact-teacher-id');
   expect(html).toContain('إظهار الشيخ');
   expect(html).not.toContain('شيخ تجريبي');
