@@ -12,7 +12,7 @@ import type {AdminActionResult} from './admin-operations-client';
 
 type State=
  |{phase:'loading'}
- |{phase:'ready';session:AccountSession;value:AdminTeacherDirectoryValue}
+ |{phase:'ready';session:AccountSession;revision:number;value:AdminTeacherDirectoryValue}
  |{phase:'denied'|'error'};
 type StaffReceipt={session:AccountSession;value:AdminActionResult};
 /** A missing exact-ID result is material only when the Sheikh was already
@@ -31,6 +31,14 @@ export function AdminTeacherReceipt({session,receipt,denied}:{
   تم تأكيد الإجراء وحفظه: {receipt.value.code}. جارٍ تحديث السجل من الخادم.
  </p>;
 }
+/** A refresh or post-mutation revalidation must hide the previous roster
+ * immediately, before React runs the next effect or a late GET settles. */
+export function adminTeacherCurrentRoster(
+ state:State,session:AccountSession,revision:number,
+):AdminTeacherDirectoryValue|null{
+ return state.phase==='ready'&&state.session===session&&state.revision===revision
+  ?state.value:null;
+}
 const cairo=new Intl.DateTimeFormat('ar-EG',{timeZone:'Africa/Cairo',
  dateStyle:'medium',timeStyle:'short'});
 /** Mounted only after AdminShell has verified a fresh signed staff overview.
@@ -45,7 +53,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
   const controller=new AbortController();
   setState({phase:'loading'});setLookup(null);
   void fetchAdminTeachers(controller.signal).then(value=>{
-   if(!controller.signal.aborted)setState({phase:'ready',session,value});
+   if(!controller.signal.aborted)setState({phase:'ready',session,revision:retry,value});
   }).catch(error=>{
    if(controller.signal.aborted)return;
    const denied=error instanceof AdminTeachersError&&[401,403,404].includes(error.status);
@@ -57,7 +65,8 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
   });
   return ()=>controller.abort();
  },[session,retry]);
- const ready=state.phase==='ready'&&state.session===session?state.value:null;
+ const ready=adminTeacherCurrentRoster(state,session,retry);
+ const reloading=state.phase==='ready'&&!ready;
  const lookedUp=lookup?.session===session?lookup.teachers:[];
  // An exact-ID recheck may return a changed qualification/status. The
  // newer signed receipt wins even when that ID was already in the first 50.
@@ -82,7 +91,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
     تحديث السجل
    </button>
   </div>
-  {state.phase==='loading'&&<div className={css.staffEmpty} role="status">
+  {(state.phase==='loading'||reloading)&&<div className={css.staffEmpty} role="status">
    جارٍ قراءة سجل الشيوخ المصرح به…
   </div>}
   {state.phase==='denied'&&<div className={css.staffError} role="alert">
@@ -137,6 +146,11 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
   {ready&&<AdminAcademyMvp key={session.user.id}
    session={session} mode="invites"/>}
   {ready&&<AdminOperations kind="teacher" session={session} teachers={teachers}
-   onAccessRevoked={revokeStaffAccess} onApplied={value=>{setLatestAck({session,value});setLookup(null);setRetry(n=>n+1);}}/>}
+   onAccessRevoked={revokeStaffAccess} onApplied={value=>{
+    // Hide stale selectable actors synchronously with the acknowledged write;
+    // a later signed GET must establish the next actionable roster.
+    setState({phase:'loading'});setLatestAck({session,value});
+    setLookup(null);setRetry(n=>n+1);
+   }}/>}
  </div>;
 }
