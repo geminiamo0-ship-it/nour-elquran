@@ -1,7 +1,8 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminOperations,adminOperationConfirmationMatches,adminOperationConfirmationScope,
- adminOperationScopedValue,adminStaffOptionsError,adminTeacherActionTargetIsVerified} from './AdminOperations';
+ adminOperationScopedValue,adminStaffOptionsError,adminTeacherActionTargetIsVerified,
+ claimAdminOperationFlight} from './AdminOperations';
 import {submitAdminAction,validAdminAction,AdminActionError,isAdminActionStaffRevoked}
  from './admin-operations-client';
 
@@ -17,6 +18,26 @@ const respond=(status:number,body:unknown)=>
  new Response(JSON.stringify(body),{status});
 afterEach(()=>vi.unstubAllGlobals());
 describe('Admin operational D1 client #309',()=>{
+ it('allows only one staff operation per confirmation, including rapid submits and uncertain replay (#314)',()=>{
+  const lock:{current:'idle'|'sending'|'uncertain'|'done'}={current:'idle'};
+  expect(claimAdminOperationFlight(lock)).toBe(true);
+  expect(lock.current).toBe('sending');
+  // A second synchronous submit must not generate/send a new operationId.
+  expect(claimAdminOperationFlight(lock)).toBe(false);
+  expect(claimAdminOperationFlight(lock,true)).toBe(false);
+  // Lost network acknowledgement: only an explicit same-command replay.
+  lock.current='uncertain';
+  expect(claimAdminOperationFlight(lock)).toBe(false);
+  expect(claimAdminOperationFlight(lock,true)).toBe(true);
+  expect(claimAdminOperationFlight(lock,true)).toBe(false);
+  // After a confirmed D1 ACK the previous consent cannot submit again.
+  lock.current='done';
+  expect(claimAdminOperationFlight(lock)).toBe(false);
+  expect(claimAdminOperationFlight(lock,true)).toBe(false);
+  // Only a new confirmation (or a definitive rejected request) resets it.
+  lock.current='idle';
+  expect(claimAdminOperationFlight(lock)).toBe(true);
+ });
  it('binds staff confirmation to the exact actor, target, action and reason (#314)',()=>{
   const actor={user:{id:'staff-a'}};
   const nextSession={user:{id:'staff-a'}};
