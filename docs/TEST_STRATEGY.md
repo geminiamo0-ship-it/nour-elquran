@@ -1,3 +1,7 @@
+## #314 native 101+ Sheikh roster acceptance (2026-11-09)
+- `scripts/cloudflare-auth-smoke.mjs` now creates 101 **synthetic disabled/unqualified** Sheikh records inside disposable local D1 after the normal role/scheduling flow, checks signed staff first 50 deterministic records and truthful truncation, exact-ID lookup of a real out-of-page Sheikh after suspension, no unexpected private response keys, and nonstaff 403. This complements mocked 0/1/50/51/101 tests; it does not exercise a remote Dev deployment.
+- Gate: exact-head GitHub Verify on Draft PR #329, then independent security/privacy review and signed Cloudflare Dev 101+ records/role-revocation/mobile keyboard and touch tests. Keep Issue #314 OPEN until all accepted; no Production enablement.
+
 ## 2026-11-09 — #314 stale selected Sheikh action regression
 - Source unit regression: non-provision teacher actions require the selected Sheikh ID in the latest signed roster, including a removed/empty controlled select target; provisioning by auth subject and schedule/attendance are not incorrectly blocked.
 - Browser action gate: after signed roster replacement removes a selected teacher, confirmation and submit must be disabled and a clear Arabic warning shown; the submit handler must independently fail closed. Still requires isolated signed Cloudflare Dev + real 360/390 keyboard/touch verification before acceptance.
