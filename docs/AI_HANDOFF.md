@@ -1,3 +1,8 @@
+## 2026-11-09 — #314 staff form edit/revert consent guard (Draft PR #329)
+- In `AdminOperations.tsx`, every controlled staff-action field now clears the checkbox confirmation synchronously inside its input event, rather than relying only on the later confirmation-scope effect. This closes the rapid edit→revert consent reuse window under React batching. Source `68d9ed7d`; pure Vitest ordering regression `b10aad27`.
+- Exact-head CI pending at authoring. Earlier Verify #42640354328 passed 4/4 on previous head `c32d3980` only. No signed remote Dev or independent review claim.
+- NEXT: inspect latest PR #329 SHA and exact-head Verify, repair failures; then obtain independent security/privacy review, source-pinned signed Cloudflare Dev 101+ Sheikh and staff-revocation E2E, and 360×667/390×844 keyboard/touch evidence. Keep Draft and #314 OPEN; no main/Production/financial/child-media/flag changes.
+
 ## 2026-11-09 — #314 stale staff roster after confirmed mutation (PR #329 candidate)
 - Source review found an immediate post-ACK race: the parent incremented its refresh counter but could still render the previously signed Sheikh roster and privileged actions before the refresh effect entered loading. A delayed old GET could also briefly write a previous-revision receipt. This is not evidence of unauthorized server mutation; the Worker still reauthorizes every request.
 - `AdminTeacherDirectory.tsx` now binds a ready roster to the exact signed `AccountSession` and refresh revision; any new refresh invalidates selectable rows before effect cleanup. A confirmed mutation also sets the directory to loading immediately, keeping the D1 receipt visible separately until a new signed read. A late old-revision response cannot make its roster actionable.
