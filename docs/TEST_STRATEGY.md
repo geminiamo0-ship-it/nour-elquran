@@ -1,3 +1,7 @@
+## #314 Admin collection stale-refresh authorization gate (2026-11-09)
+- Pure regression: a signed schedule collection is usable only at its exact session/view/refresh revision. Refresh/post-ACK invalidates old selectable rows before the next effect; a mutation's 401/403 denial overrides an older GET 200; a new login/view never inherits previous staff rows. A newer empty signed collection is authoritative.
+- Verify with exact-head lint, strict TS, Vitest, Next build, native D1 and governance CI. Browser acceptance remains separate: signed Cloudflare Dev 401/403, network races, and RTL 360/390 keyboard/touch before PR review/merge.
+
 ## 2026-11-09 — #314 staff confirmation edit/revert regression
 - Vitest `apps/web/src/features/admin/admin-operations.test.tsx` checks that consent is cleared synchronously **before** each controlled staff field update, including edit→restore. This complements existing session, roster-facts, single-flight and D1 permission tests; it is source-level evidence only.
 - Exact-head GitHub Verify and independent Cloudflare Dev/mobile acceptance remain separate mandatory gates for Draft PR #329. No Production configuration or private data is involved.
