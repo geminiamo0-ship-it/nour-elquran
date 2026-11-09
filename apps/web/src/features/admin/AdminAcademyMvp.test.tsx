@@ -55,6 +55,21 @@ describe('staff academy malformed authorization response #315',()=>{
    // The D1 write remains uncertain; preserve the original operationId.
    expect(academyAdminStaffAccessRevoked(err.status,err.code)).toBe(true);
  });
+ it('retains the same operation after a forged exact-shaped 403 denial',async()=>{
+  // A proxy can replace the response after D1 has already committed.
+  response(403,{code:'STAFF_ACCESS_DENIED'});
+  const operationId='44444444-4444-4444-8444-444444444444';
+  let failure:unknown;
+  try{await submitAcademyCommand('activate',{operationId});}
+  catch(e){failure=e;}
+  expect(failure).toMatchObject({
+   code:'STAFF_ACCESS_DENIED',status:403,exactCodeOnly:true
+  });
+  const err=failure as {code:string;status:number;exactCodeOnly:boolean};
+  expect(academyAdminStaffAccessRevoked(err.status,err.code)).toBe(true);
+  expect(academyAdminOutcomeIsUncertain('activate',err.status,
+   err.code,err.exactCodeOnly)).toBe(true);
+ });
  it('never interprets an unauthenticated 401 as proof the write did not commit',async()=>{
   const json=response(401,null,true);
   await expect(submitAcademyCommand('activate',{})).rejects.toMatchObject({
