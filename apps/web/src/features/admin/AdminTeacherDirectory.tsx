@@ -15,6 +15,13 @@ type State=
  |{phase:'ready';session:AccountSession;value:AdminTeacherDirectoryValue}
  |{phase:'denied'|'error'};
 type StaffReceipt={session:AccountSession;value:AdminActionResult};
+/** A missing exact-ID result is material only when the Sheikh was already
+ * selectable. Revalidate the whole signed roster before allowing actions. */
+export function adminTeacherMissingLookupRequiresRefresh(
+ teacherId:string,visible:readonly AdminTeacher[],
+):boolean{
+ return visible.some(teacher=>teacher.id===teacherId);
+}
 /** Keep a confirmed D1 receipt through a retry, never after a fresh staff denial. */
 export function AdminTeacherReceipt({session,receipt,denied}:{
  session:AccountSession;receipt:StaffReceipt|null;denied:boolean;
@@ -97,6 +104,13 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
      const previous=current?.session===session?current.teachers:[];
      return {session,teachers:reconcileVerifiedTeacherRows(previous,[teacher])};
     })}
+    onMissing={teacherId=>{
+     if(!adminTeacherMissingLookupRequiresRefresh(teacherId,teachers))return;
+     // The old signed row must not remain actionable after a newer 200/empty
+     // exact-ID receipt. Unmount actions until a fresh staff roster is read.
+     setState({phase:'loading'});setLookup(null);setLatestAck(null);
+     setRetry(n=>n+1);
+    }}
     onAccessRevoked={revokeStaffAccess}/>}
    {teachers.length===0?<div className={css.staffEmpty}>
     لا يوجد شيوخ مسجلون في قاعدة البيانات حاليًا.
