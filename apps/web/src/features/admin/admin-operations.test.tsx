@@ -1,6 +1,7 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {AdminOperations,adminOperationConfirmationMatches,adminOperationScopedValue} from './AdminOperations';
+import {AdminOperations,adminOperationConfirmationMatches,adminOperationScopedValue,
+ adminStaffOptionsError} from './AdminOperations';
 import {submitAdminAction,validAdminAction,AdminActionError,isAdminActionStaffRevoked}
  from './admin-operations-client';
 
@@ -109,6 +110,13 @@ describe('Admin operational D1 client #309',()=>{
    code:'SCHEDULE_ACTION_APPLIED',resourceId:'l1'});
   await expect(submitAdminAction('attendance',review)).rejects.toMatchObject({
    code:'UNKNOWN_SERVER_SUCCESS',uncertain:true});
+ });
+ it('invalidates schedule option receipts only for signed staff GET 401/403 (#314)',()=>{
+  for(const status of [401,403])
+   expect(isAdminActionStaffRevoked(adminStaffOptionsError(status))).toBe(true);
+  for(const status of [404,409,429,503])
+   expect(isAdminActionStaffRevoked(adminStaffOptionsError(status))).toBe(false);
+  expect(adminStaffOptionsError(503).code).toBe('STAFF_OPTIONS_UNAVAILABLE');
  });
  it('revokes cached staff UI only for signed auth denial, not business-rule 403 or target 404',()=>{
   for(const e of [new AdminActionError('UNAUTHENTICATED',401),
