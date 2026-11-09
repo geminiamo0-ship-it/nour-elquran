@@ -1,3 +1,8 @@
+## 2026-11-09 — #314 native signed 101+ directory test, PR #329
+- Latest candidate branch `feat/314-admin-teacher-id-lookup` adds a real disposable local Wrangler/D1 + Better Auth smoke, not an API mock: after completing other teacher flows, create 101 synthetic disabled/unqualified auth users and Sheikh records; verify staff bounded first 50/truncated, exact-ID read of a genuinely out-of-page Sheikh, and nonstaff 403. This specifically closes the missing native 51/100+ data-volume evidence; it is NOT Cloudflare Dev E2E.
+- Source commit `4eb6cf4e726e42c1c7ccc4cfc65027176c0df079` on Draft PR #329. Exact-head CI must be checked before any PASS claim. No main/Production changes, real people, R2, WhatsApp or financial writes.
+- NEXT: inspect Verify exact HEAD, fix SQL fixture or role test if failing; keep #314 OPEN for independent auth/privacy review and signed Dev/mobile acceptance. Full keyset pagination remains unimplemented; the existing exact-ID fallback needs owner/product acceptance if considered sufficient.
+
 ## 2026-11-09 — #314 follow-up: reject stale teacher target before fresh consent
 - Draft PR #329 branch `feat/314-admin-teacher-id-lookup`. The previous confirmation-scope logic invalidated *old* consent when the signed roster removed the selected Sheikh, but a controlled `resource` ID could survive after its `<option>` disappeared and receive *new* consent. This is a browser integrity gap, not evidence of a server authorization bypass.
 - `AdminOperations.tsx` now requires roster membership for non-provision teacher actions before checkbox/submit, warns in Arabic on stale target, and rechecks in submit. `admin-operations.test.tsx` covers selected/missing/empty roster and ensures provision/schedule/attendance remain unchanged.
