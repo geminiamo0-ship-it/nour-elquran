@@ -1,3 +1,8 @@
+## #315 intermediary 403 after a committed staff D1 write — regression gate (2026-11-09)
+- For each academy staff POST path, a response `403 {"code":"STAFF_ACCESS_DENIED"}` or `403 {"code":"BAD_ORIGIN"}` must **not** release an unresolved operation ID, even if the JSON shape matches the Worker. It can be an intermediary substitution after the original D1 commit.
+- The UI must hide privileged data on every 403, retain the exact operation in memory, require a fresh signed staff GET before allowing an explicit same-ID replay, and never auto-retry. Unit and HTTP-boundary tests cover exact-shaped and malformed denials. A genuine denial may remain held until explicit reconciliation; safety takes precedence over a silent second charge.
+- Exact-head CI, independent security review and signed Dev staff/guardian/revoked/role-switch tests are required before merge. No production or financial activation implied.
+
 ## #315 pending staff replay authorization gate (2026-11-09)
 - Regression: `academyAdminCanReplay` permits exact-operation retry only with a current signed staff snapshot, non-revoked access, and no in-flight request. Deny absent snapshot after HTTP 403/503, revoked session, or active request; UI explains refresh/authorization instead of offering an inert enabled button. Keep the immutable pending operation for same-ID reconciliation. This is unit/source coverage, NOT signed Cloudflare Dev acceptance.
 
