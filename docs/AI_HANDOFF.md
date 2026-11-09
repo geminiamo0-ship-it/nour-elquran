@@ -1,3 +1,8 @@
+## 2026-11-09 — #315/#326 immutable historical quote test, Draft #325
+- Baseline `main@4c15b59f`, Draft #325 and Draft #327 open; 19 paths overlap. Latest confirmed prior Verify #42547427736 passed 4/4 on `31408dc9` only.
+- Added `workers/api/tests/academy-activation-receipt.test.ts` regression [e09daeaa](https://github.com/geminiamo0-ship-it/nour-elquran/commit/e09daeaa169442ced095ec829f38765c8ca15351): existing pending guardian request activation uses original signed version after catalog reprice; wrong learner/version, already decided and missing request are 409 without D1 writes. Synthetic only, no Worker source/financial policy change.
+- **Next exact action:** inspect latest Draft #325 HEAD and Verify jobs (strict TS, Node tests, native D1); then independent review, remote signed Cloudflare Dev owner/two siblings/staff reprice + replay and mobile 360/390. Do not merge #325/#327 until their overlapping Worker/Admin changes are reconciled and combined-head CI passes. No Production/paid provider/WhatsApp/audio/ink activation.
+
 ## 2026-11-09 — #326 guardian immutable request receipt hardening (Draft #325)
 - On latest reviewed Draft #325 HEAD `72a134a3`, owner package POST incorrectly marked plausible 401/403/404/405 responses as definitive denial. These can be substituted after D1 commits, losing the immutable retry token and allowing duplicate request issuance. Staff POST had already been hardened against this pattern.
 - Commits `ceb1451d` (source) and `c238dfcc` (Vitest) keep the guardian attempt **uncertain** on these statuses and permit only same-operation replay; 400 strict payload rejection and recognized 409 business conflicts are unchanged.
