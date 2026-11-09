@@ -11,11 +11,17 @@ describe('staff academy D1 receipt integrity #315',()=>{
    for(const status of [0,400,401,403,404,405,408,409,422,425,429,500,502,503,504,599])
     expect(academyAdminOutcomeIsUncertain(path,status)).toBe(true);
    for(const [status,code] of [
-    [401,'UNAUTHENTICATED'],[403,'BAD_ORIGIN'],
-    [403,'STAFF_ACCESS_DENIED'],[404,'NOT_FOUND'],[405,'METHOD_NOT_ALLOWED'],
+    [401,'UNAUTHENTICATED'],[404,'NOT_FOUND'],[405,'METHOD_NOT_ALLOWED'],
    ] as const){
     expect(academyAdminOutcomeIsUncertain(path,status,code)).toBe(false);
     expect(academyAdminOutcomeIsUncertain(path,status,code,false)).toBe(true);
+   }
+   // Even an exact, valid-looking 403 code can be substituted by a proxy
+   // after the Worker has already committed an activation/invitation.
+   // Only a verified ACK or a safe same-ID replay can release the receipt.
+   for(const code of ['STAFF_ACCESS_DENIED','BAD_ORIGIN']){
+    expect(academyAdminOutcomeIsUncertain(path,403,code,true)).toBe(true);
+    expect(academyAdminOutcomeIsUncertain(path,403,code,false)).toBe(true);
    }
    // Neither a familiar code with the wrong HTTP status nor an unreviewed
    // storage/transport denial can unlock the operation.
