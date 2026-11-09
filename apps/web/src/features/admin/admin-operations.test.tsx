@@ -1,7 +1,7 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminOperations,adminOperationConfirmationMatches,adminOperationConfirmationScope,
- adminOperationScopedValue,adminStaffOptionsError} from './AdminOperations';
+ adminOperationScopedValue,adminStaffOptionsError,adminTeacherActionTargetIsVerified} from './AdminOperations';
 import {submitAdminAction,validAdminAction,AdminActionError,isAdminActionStaffRevoked}
  from './admin-operations-client';
 
@@ -68,6 +68,26 @@ describe('Admin operational D1 client #309',()=>{
   expect(adminOperationConfirmationMatches(consent,actor,otherChanged)).toBe(true);
   expect(adminOperationConfirmationScope(fields,'schedule',[selected],'teacher-51'))
    .toBe(adminOperationConfirmationScope(fields,'schedule',[],'teacher-51'));
+ });
+ it('does not allow a new confirmation for a Sheikh removed from the signed roster (#314)',()=>{
+  const selected={id:'teacher-51',name:'Synthetic Sheikh',status:'active' as const,
+   qualified:true,currentLearners:0,upcomingLessons:0};
+  const unrelated={...selected,id:'teacher-2'};
+  expect(adminTeacherActionTargetIsVerified('teacher','activate','teacher-51',
+   [selected,unrelated])).toBe(true);
+  // An old controlled select can still hold an ID after its option disappears.
+  // Do not let a fresh checkbox consent turn that stale value into a write.
+  for(const action of ['activate','qualify','suspend','revoke_qualification']){
+   expect(adminTeacherActionTargetIsVerified('teacher',action,'teacher-51',
+    [unrelated])).toBe(false);
+   expect(adminTeacherActionTargetIsVerified('teacher',action,'',
+    [selected])).toBe(false);
+  }
+  // Provisioning is by verified auth subject, not a roster teacher ID.
+  expect(adminTeacherActionTargetIsVerified('teacher','provision','',[])).toBe(true);
+  // Schedule/attendance have independent server-side resource authorization.
+  expect(adminTeacherActionTargetIsVerified('schedule','assign','',[])).toBe(true);
+  expect(adminTeacherActionTargetIsVerified('attendance','accepted','',[])).toBe(true);
  });
  it('hides old signed staff options and action receipts immediately on session or section change (#314)',()=>{
   const actor={user:{id:'staff-a',name:'Synthetic Staff'},phoneVerified:true};
