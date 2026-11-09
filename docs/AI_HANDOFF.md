@@ -1,3 +1,8 @@
+## 2026-11-09 — #314 next handoff: signed native exact-ID lookup smoke (PR #329)
+- Added signed native Worker/D1 regression in `scripts/cloudflare-auth-smoke.mjs` on `feat/314-admin-teacher-id-lookup`: staff-grant denial, malformed query rejection, unknown exact ID, provisioned exact ID with PII-free DTO and no-store, and same-cookie post-revocation denial. Source commit `16f3bfb4e3ed301fa3230b3a68258d99c8339377`.
+- **Next exact action:** inspect latest PR HEAD and corresponding GitHub Verify four jobs, repair any native smoke failure. If green, obtain an independent privacy/security review and source-pinned signed Cloudflare Dev 0/1/50/51/100+ roster plus 360/390 keyboard/touch acceptance. This source smoke does not prove the 51+ remote case or any Production behavior.
+- PR #329 remains Draft and #314 OPEN; do not merge or toggle Production/admin/ink/financial/media flags without the required approvals.
+
 ## 2026-11-09 — #314 stale exact-ID disappearance follow-up
 - In Draft PR #329, an exact-ID signed 200/empty receipt for a previously selectable Sheikh now invalidates the old roster/action UI and starts a fresh staff-authorized full directory GET. Unknown IDs show a normal missing result without reloading. Regression covers first-page and appended exact-ID records.
 - NEXT: inspect exact-head GitHub Verify for this branch; repair failures, then independent privacy/security review and isolated signed Cloudflare Dev missing-row/role-revocation tests with synthetic Sheikh records, plus 360/390 keyboard/touch. No merge, Production, payments, WhatsApp, private audio or cumulative-ink rollout authorized.
