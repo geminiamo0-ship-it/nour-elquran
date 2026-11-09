@@ -10,7 +10,7 @@ import type {AdminActionResult} from './admin-operations-client';
 type Read=
  |{phase:'idle'}
  |{phase:'loading'|'error'|'denied';session:AccountSession;view:AdminDataView}
- |{phase:'ready';session:AccountSession;view:AdminDataView;data:AdminCollection};
+ |{phase:'ready';session:AccountSession;view:AdminDataView;revision:number;data:AdminCollection};
 type Field=Readonly<{key:string;label:string}>;
 type Config=Readonly<{title:string;intro:string;scope:string;fields:readonly Field[]}>;
 const configurations:Record<AdminDataView,Config>={
@@ -73,6 +73,14 @@ export function adminCollectionReceiptMayShow<T>(
  return !denied&&receipt!==null&&receipt.session===session&&receipt.view===view;
 }
 
+/** #314: a signed read is actionable only for its exact session and refresh.
+ * A prior GET must not restore the action form after a new read or denial. */
+export function adminCollectionCurrentRead(
+ read:Read,session:AccountSession,view:AdminDataView,revision:number,revoked=false,
+):AdminCollection|null{
+ return !revoked&&read.phase==='ready'&&read.session===session&&
+  read.view===view&&read.revision===revision?read.data:null;
+}
 /** A hidden or changing session must never display a previously fetched list. */
 export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:AccountSession}){
  const [read,setRead]=useState<Read>({phase:'idle'});
@@ -81,12 +89,15 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
   session:AccountSession;view:AdminDataView;value:AdminActionResult
  }|null>(null);
  const [query,setQuery]=useState('');
+ const [revocation,setRevocation]=useState<{
+  session:AccountSession;view:AdminDataView;revision:number
+ }|null>(null);
  useEffect(()=>{
   const ctrl=new AbortController();
   setQuery('');
   setRead({phase:'loading',session,view});
   void fetchAdminCollection(view,ctrl.signal).then(data=>{
-   if(!ctrl.signal.aborted)setRead({phase:'ready',session,view,data});
+   if(!ctrl.signal.aborted)setRead({phase:'ready',session,view,revision:retry,data});
   }).catch(error=>{
    if(ctrl.signal.aborted)return;
    const denied=error instanceof AdminCollectionError&&
@@ -99,9 +110,12 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
   });
   return ()=>ctrl.abort();
  },[view,session,retry]);
- const visible=read.phase==='ready'&&read.session===session&&read.view===view?read.data:null;
- const status=read.phase==='idle'||!('session' in read)||read.session!==session||
-  read.view!==view?'loading':read.phase;
+ const revoked=revocation?.session===session&&revocation.view===view&&
+  revocation.revision===retry;
+ const visible=adminCollectionCurrentRead(read,session,view,retry,revoked);
+ const status=revoked?'denied':read.phase==='idle'||!('session' in read)||
+  read.session!==session||read.view!==view||
+  (read.phase==='ready'&&read.revision!==retry)?'loading':read.phase;
  const term=query.trim().toLocaleLowerCase();
  const rows=useMemo(()=>visible?.rows.filter(row=>!term||matching(row,term))??[],
   [visible,term]);
@@ -158,6 +172,8 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
   {visible&&(view==='schedule'||view==='attendance')&&
    <AdminOperations kind={view} session={session} rows={visible.rows}
     onAccessRevoked={()=>{
+     // The denial latch wins even if a previous signed GET resolves with 200.
+     setRevocation({session,view,revision:retry});
      setLatestAck(null);setQuery('');
      setRead({phase:'denied',session,view});
     }}
