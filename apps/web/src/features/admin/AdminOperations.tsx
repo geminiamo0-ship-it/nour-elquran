@@ -54,6 +54,17 @@ export function adminTeacherActionTargetIsVerified(
  return kind!=='teacher'||action==='provision'||
   teachers.some(teacher=>teacher.id===teacherId);
 }
+/** #314: a React state update is not a synchronous submission lock. Two
+ * submits before the next render must never create distinct operationIds.
+ * Uncertain outcomes can only replay the same immutable command. */
+export type AdminOperationFlight='idle'|'sending'|'uncertain'|'done';
+export function claimAdminOperationFlight(
+ lock:{current:AdminOperationFlight},retry=false,
+):boolean{
+ if(lock.current!==(retry?'uncertain':'idle'))return false;
+ lock.current='sending';
+ return true;
+}
 const actions:Record<AdminOperationKind,readonly {id:string;label:string}[]>={
  teacher:[
   {id:'provision',label:'تجهيز ملف شيخ غير نشط'},
@@ -123,6 +134,7 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
  const result=adminOperationScopedValue(resultState,session,kind)??{phase:'idle' as const};
  const setResult=(value:Result)=>setResultState({session,kind,value});
  const current=useRef<AbortController|null>(null);
+ const flight=useRef<AdminOperationFlight>('idle');
  const liveSession=useRef(session);liveSession.current=session;
  const liveKind=useRef(kind);liveKind.current=kind;
  useEffect(()=>{
@@ -132,7 +144,7 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
   setConfirmation(null);setOptions(null);setResultState(null);
   // Reveal the form only after all prior-session fields are cleared.
   setBound({session,kind,value:true});
-  return ()=>{current.current?.abort();current.current=null;};
+  return ()=>{current.current?.abort();current.current=null;flight.current='idle';};
  },[session,kind]);
  useEffect(()=>{
   if(kind!=='schedule')return;
@@ -187,12 +199,15 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
   try{
    const acknowledged=await submitAdminAction(kind,value,ctrl.signal);
    if(ctrl.signal.aborted||liveSession.current!==session||liveKind.current!==kind)return;
+   flight.current='done';
    setResult({phase:'done',value:acknowledged});setConfirmation(null);onApplied?.(acknowledged);
   }catch(e){
    if(ctrl.signal.aborted||liveSession.current!==session||liveKind.current!==kind)return;
    if(e instanceof AdminActionError&&e.uncertain){
+    flight.current='uncertain';
     setResult({phase:'uncertain',command:value,operationId});return;
    }
+   flight.current='idle';
    // A signed mutation denial must also invalidate the already-visible staff
    // roster; business-rule 403, target 404 and transient 503 must not.
    if(isAdminActionStaffRevoked(e))onAccessRevoked?.();
@@ -200,13 +215,17 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
    setResult({phase:'error',message:errors[code]??('رفض الخادم العملية: '+code)});
   }finally{if(current.current===ctrl)current.current=null;}
  }
+ function beginSend(value:unknown,operationId:string,retry=false){
+  if(!claimAdminOperationFlight(flight,retry))return;
+  void send(value,operationId);
+ }
  function handleSubmit(){
-  if(busy||!confirmed||!targetVerified)return;
+  if(!active||flight.current!=='idle'||busy||!confirmed||!targetVerified)return;
   const operationId=crypto.randomUUID(),value=command(operationId);
   if(!validAdminAction(kind,value)){
    setResult({phase:'error',message:errors.INVALID_ACTION_INPUT??'راجع الحقول المطلوبة.'});return;
   }
-  void send(value,operationId);
+  beginSend(value,operationId);
  }
  const choices=kind==='attendance'?rows.filter(r=>r.decision==='pending')
   :kind==='schedule'&&action==='cancel'?rows.filter(r=>r.status==='scheduled'):[];
@@ -282,7 +301,12 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
     <p role="alert" className={css.error}>لم يعد الشيخ المحدد موجودًا في السجل الموثق. حدّث السجل واختر الشيخ من جديد.</p>}
    <label className={css.check}>
     <input type="checkbox" checked={confirmed} disabled={busy||!targetVerified}
-     onChange={e=>setConfirmation(e.target.checked?{session,fields:confirmationFields}:null)}/>
+     onChange={e=>{
+      // After an acknowledged write, require an entirely new user consent.
+      // A double-click before React renders cannot release the flight lock.
+      if(e.target.checked&&flight.current==='done')flight.current='idle';
+      setConfirmation(e.target.checked?{session,fields:confirmationFields}:null);
+     }}/>
     <span>راجعت الحساب والمعرّفات والسياسة وأؤكد التنفيذ على البيانات الحقيقية.</span>
    </label>
    <button disabled={!confirmed||busy||!targetVerified} type="submit">
@@ -296,7 +320,7 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
    <strong>لا يمكن الجزم بنتيجة الاتصال</strong>
    <p>ربما سُجّل الإجراء بالفعل. لا ترسل معرّفًا جديدًا لنفس القرار.</p>
    <code>{result.operationId}</code>
-   <button type="button" onClick={()=>void send(result.command,result.operationId)}>
+   <button type="button" onClick={()=>beginSend(result.command,result.operationId,true)}>
     إعادة إرسال نفس العملية فقط</button>
   </div>}
   <p className={css.note}>لا يتم تغيير أي بيانات بالواجهة قبل تأكيد D1. لا يمكن
