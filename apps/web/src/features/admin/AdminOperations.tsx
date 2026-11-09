@@ -34,6 +34,16 @@ export function adminOperationConfirmationMatches<T>(
 ):boolean{
  return confirmation!==null&&confirmation.session===session&&confirmation.fields===fields;
 }
+/** #314: a fresh signed exact-ID lookup can change a selected Sheikh's
+ * qualification, active state or workload without changing the form inputs.
+ * Consent must be bound to the verified facts the operator actually saw. */
+export function adminOperationConfirmationScope(
+ fields:readonly unknown[],kind:AdminOperationKind,
+ teachers:readonly AdminTeacher[],selectedTeacherId:string,
+):string{
+ const selected=kind==='teacher'?teachers.find(t=>t.id===selectedTeacherId):undefined;
+ return JSON.stringify([...fields,selected??null]);
+}
 const actions:Record<AdminOperationKind,readonly {id:string;label:string}[]>={
  teacher:[
   {id:'provision',label:'تجهيز ملف شيخ غير نشط'},
@@ -91,8 +101,9 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
  const [confirmation,setConfirmation]=useState<{session:AccountSession;fields:string}|null>(null);
  // Bind consent to all operator-editable fields, including the target and reason.
  // A changed field invalidates consent synchronously during render, before submit.
- const confirmationFields=JSON.stringify([kind,action,target,learner,teacher,
-  resource,starts,ends,lessonKind,reason]);
+ const confirmationFields=adminOperationConfirmationScope(
+  [kind,action,target,learner,teacher,resource,starts,ends,lessonKind,reason],
+  kind,teachers,resource);
  const confirmed=adminOperationConfirmationMatches(confirmation,session,confirmationFields);
  // Once any field changes, clear the original consent token. Restoring the
  // old text/target must not silently reactivate a previously checked box.
