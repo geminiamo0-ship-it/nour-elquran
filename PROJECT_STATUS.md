@@ -1,3 +1,8 @@
+## 2026-11-09 — #314 exact-ID receipt scoped to directory refresh (Draft PR #329)
+- Source review found that an out-of-page Sheikh exact-ID lookup was scoped to the signed session but not the roster refresh revision. A late lookup from an older read could repopulate the action selector after a newer signed roster refresh or confirmed D1 mutation.
+- The parent directory now stores each exact-ID receipt with its read revision and only merges it into selectable rows for that same session and revision. A late older lookup cannot overwrite a newer lookup receipt. Added Vitest regression for refresh, re-login and current-revision behavior.
+- **Source candidate only:** inspect exact-head GitHub Verify before claiming success; independent security review, signed isolated Dev 101+ Sheikh/role revocation/concurrent lookup E2E and 360/390 RTL touch acceptance remain required. No main, Production, finance, audio, WhatsApp or feature flag changes.
+
 ## 2026-11-09 — #314 staff revocation latch across automatic refresh (Draft PR #329)
 - Found a follow-on race: a signed 401/403 latch keyed to `retry` could be bypassed by an automatic post-ACK or missing-row refresh incrementing the revision. Keep the denial session-scoped until an explicit operator recheck; stale 200s and prior receipts stay hidden. Same-user new signed session is isolated.
 - Source: `AdminTeacherDirectory.tsx`, `AdminCollectionPanel.tsx`, shared `adminStaffSessionRevoked` helper and Vitest regression in `admin-operations.test.tsx`. Exact-head GitHub Verify is **not yet proven**; previous run #42671919782 failed before scheduling any jobs (0 jobs), and the retry API rejected it with 403. New commit must be checked for real jobs and tests.
