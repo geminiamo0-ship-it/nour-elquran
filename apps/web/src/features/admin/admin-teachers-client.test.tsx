@@ -1,7 +1,8 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminTeacherDirectory,AdminTeacherReceipt,
- adminTeacherMissingLookupRequiresRefresh,adminTeacherCurrentRoster} from './AdminTeacherDirectory';
+ adminTeacherMissingLookupRequiresRefresh,adminTeacherCurrentRoster,
+ adminTeacherCurrentLookup} from './AdminTeacherDirectory';
 import {AdminTeacherIdLookup,adminTeacherLookupMayApply} from './AdminTeacherIdLookup';
 import {AdminTeachersError,fetchAdminTeachers,parseAdminTeachers,isAdminTeacherAccessRevoked,
  reconcileVerifiedTeacherRows} from './admin-teachers-client';
@@ -148,6 +149,20 @@ describe('Admin teacher directory #305',()=>{
   const fresh={...previous,revision:1,value:{...value,teachers:[]}};
   expect(adminTeacherCurrentRoster(fresh,session,1)?.teachers).toEqual([]);
   expect(adminTeacherCurrentRoster(fresh,session,0)).toBeNull();
+ });
+ it('never reuses an exact-ID lookup after the signed roster refreshes (#314)',()=>{
+  const session={user:{id:'staff-1',name:'Synthetic'},phoneVerified:true};
+  const outside={...teacher,id:'teacher-75'};
+  const old={session,revision:3,teachers:[outside]};
+  expect(adminTeacherCurrentLookup(old,session,3)).toEqual([outside]);
+  // A refresh or confirmed staff action moves to a newer read revision.
+  // An older successful lookup must not become an action target there.
+  expect(adminTeacherCurrentLookup(old,session,4)).toEqual([]);
+  expect(adminTeacherCurrentLookup(old,{...session},3)).toEqual([]);
+  expect(adminTeacherCurrentLookup(null,session,3)).toEqual([]);
+  const current={session,revision:4,teachers:[{...outside,status:'disabled' as const}]};
+  expect(adminTeacherCurrentLookup(current,session,4)[0]?.status).toBe('disabled');
+  expect(adminTeacherCurrentLookup(current,session,3)).toEqual([]);
  });
  it('revalidates the signed roster if an already-selectable Sheikh disappears (#314)',()=>{
   const outside={...teacher,id:'teacher-75'};
