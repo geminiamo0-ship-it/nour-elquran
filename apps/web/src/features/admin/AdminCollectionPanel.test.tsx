@@ -33,6 +33,12 @@ describe('Admin Phase B connected four collections (#307)',()=>{
   expect(adminCollectionCurrentRead(refreshed,session,'schedule',1)?.rows).toEqual([]);
   expect(adminCollectionCurrentRead(refreshed,session,'schedule',0)).toBeNull();
  });
+ it('keeps collection refresh available while a signed D1 GET is loading (#314)',()=>{
+  // A hung network read must be abortable through the existing revision-based
+  // retry path; a disabled refresh would trap the staff operator indefinitely.
+  const html=renderToStaticMarkup(<AdminCollectionPanel session={session} view="schedule"/>);
+  expect(html).toMatch(/<button(?![^>]*\bdisabled\b)[^>]*>تحديث البيانات<\/button>/);
+ });
  for(const view of ['students','schedule','subscriptions','attendance'] as const){
   it('starts '+view+' behind a loading gate, without inventing personal records',()=>{
    const html=renderToStaticMarkup(<AdminCollectionPanel session={session} view={view}/>);
