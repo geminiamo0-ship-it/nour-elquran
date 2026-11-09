@@ -1,3 +1,7 @@
+## 2026-11-09 — #314 stale exact-ID disappearance follow-up
+- In Draft PR #329, an exact-ID signed 200/empty receipt for a previously selectable Sheikh now invalidates the old roster/action UI and starts a fresh staff-authorized full directory GET. Unknown IDs show a normal missing result without reloading. Regression covers first-page and appended exact-ID records.
+- NEXT: inspect exact-head GitHub Verify for this branch; repair failures, then independent privacy/security review and isolated signed Cloudflare Dev missing-row/role-revocation tests with synthetic Sheikh records, plus 360/390 keyboard/touch. No merge, Production, payments, WhatsApp, private audio or cumulative-ink rollout authorized.
+
 ## 2026-11-09 — #314 consent bound to refreshed selected Sheikh facts (Draft #329)
 - Read current main, #314, open PRs and required AGENTS/status/plan/design/guardrails/testing/privacy before source edits. Existing PR #329 is Draft and exact previous head `874d97c5` had Verify 42581192832 success 4/4; this does not cover new commits.
 - New branch commits `5ffc5a30` (AdminOperations selected teacher row included in consent scope) and `477311bb` (Vitest changed-status/qualification/name/workload/removal/unrelated-row regressions). A fresh signed exact-ID receipt for the selected Sheikh now invalidates prior checkbox consent before any role transition; unrelated teacher reads do not. Server D1 authorization and transition guards remain authoritative.
