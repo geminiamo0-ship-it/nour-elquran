@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {AdminCollectionPanel,adminCollectionReceiptMayShow} from './AdminCollectionPanel';
+import {AdminCollectionPanel,adminCollectionReceiptMayShow,adminCollectionCurrentRead} from './AdminCollectionPanel';
 import {ADMIN_NAVIGATION,getAdminRoute} from './admin-navigation';
 
 describe('Admin Phase B connected four collections (#307)',()=>{
@@ -13,6 +13,25 @@ describe('Admin Phase B connected four collections (#307)',()=>{
   expect(adminCollectionReceiptMayShow(receipt,sameUserNewSession,'schedule',false)).toBe(false);
   expect(adminCollectionReceiptMayShow(receipt,session,'attendance',false)).toBe(false);
   expect(adminCollectionReceiptMayShow(null,session,'schedule',false)).toBe(false);
+ });
+ it('hides a stale signed collection immediately on refresh or staff revocation (#314)',()=>{
+  const data={view:'schedule' as const,asOfMs:1793600000000,
+   rows:[{id:'lesson-1',startsAtMs:1793600000000,kind:'trial',
+    status:'scheduled',learnerName:'Synthetic learner',teacherName:'Synthetic teacher'}],
+   truncated:false};
+  const old={phase:'ready' as const,session,view:'schedule' as const,
+   revision:0,data};
+  expect(adminCollectionCurrentRead(old,session,'schedule',0)).toEqual(data);
+  // A new refresh or post-ACK invalidates the old action target synchronously,
+  // even before effect cleanup or the next network response.
+  expect(adminCollectionCurrentRead(old,session,'schedule',1)).toBeNull();
+  // A signed 403 from an action must win against a late older GET 200.
+  expect(adminCollectionCurrentRead(old,session,'schedule',0,true)).toBeNull();
+  expect(adminCollectionCurrentRead(old,{...session},'schedule',0)).toBeNull();
+  expect(adminCollectionCurrentRead(old,session,'attendance',0)).toBeNull();
+  const refreshed={...old,revision:1,data:{...data,rows:[]}};
+  expect(adminCollectionCurrentRead(refreshed,session,'schedule',1)?.rows).toEqual([]);
+  expect(adminCollectionCurrentRead(refreshed,session,'schedule',0)).toBeNull();
  });
  for(const view of ['students','schedule','subscriptions','attendance'] as const){
   it('starts '+view+' behind a loading gate, without inventing personal records',()=>{
