@@ -153,7 +153,7 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
   </>}
   {adminCollectionReceiptMayShow(latestAck,session,view,status==='denied')&&
    <p role="status" className={css.staffInfo}>
-    تم تأكيد العملية وحفظها: {latestAck.value.code}. يجري تحديث السجل من الخادم.
+    تم تأكيد العملية وحفظها: {latestAck?.value.code}. يجري تحديث السجل من الخادم.
    </p>}
   {visible&&(view==='schedule'||view==='attendance')&&
    <AdminOperations kind={view} session={session} rows={visible.rows}
