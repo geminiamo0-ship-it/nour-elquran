@@ -66,6 +66,8 @@ test('never replaces malformed or unverifiable directory rows with fabricated da
  const {db,queries}=fake(true,[first]);
  assert.deepEqual(await readAdminTeachers(db,'staff-subject',NaN),
   {status:503,code:'CLOCK_UNAVAILABLE'});
+ assert.deepEqual(await readAdminTeachers(db,'staff-subject',8_640_000_000_000_001),
+  {status:503,code:'CLOCK_UNAVAILABLE'});
  assert.equal(queries.length,0);
 });
 test('empty directory is a truthful empty array and disabled is not active',async()=>{
