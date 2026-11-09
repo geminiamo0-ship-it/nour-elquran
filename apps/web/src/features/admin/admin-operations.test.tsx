@@ -25,7 +25,8 @@ describe('Admin operational D1 client #309',()=>{
   // A post-ACK or missing-row retry may increment revision, but must not
   // revive a roster after the same signed staff session was denied.
   expect(adminStaffSessionRevoked(denied,session)).toBe(true);
-  expect(adminStaffSessionRevoked({...denied,revision:7},session)).toBe(true);
+  const automaticRefresh={...denied,revision:7};
+  expect(adminStaffSessionRevoked(automaticRefresh,session)).toBe(true);
   expect(adminStaffSessionRevoked(denied,{...session})).toBe(false);
   // Only the explicit recheck button clears the stored denial.
   expect(adminStaffSessionRevoked(null,session)).toBe(false);
