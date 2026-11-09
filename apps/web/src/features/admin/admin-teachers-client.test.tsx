@@ -195,6 +195,9 @@ describe('Admin teacher directory #305',()=>{
   const html=renderToStaticMarkup(<AdminTeacherDirectory
    session={{user:{id:'staff-1',name:'Synthetic'},phoneVerified:true}}/>);
   expect(html).toContain('جارٍ قراءة سجل الشيوخ');
+  // A hung signed GET must not trap staff in a disabled loading state:
+  // clicking refresh aborts the previous request and starts a fresh one.
+  expect(html).toMatch(/<button(?![^>]*\bdisabled\b)[^>]*>تحديث السجل<\/button>/);
   // Until a fresh signed roster succeeds, the staff invitation mutation UI
   // must not mount during initial loading (or subsequent refresh/error).
   expect(html).not.toContain('إضافة شيخ بدعوة');
