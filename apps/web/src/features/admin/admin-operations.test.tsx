@@ -1,6 +1,6 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {AdminOperations} from './AdminOperations';
+import {AdminOperations,adminOperationConfirmationMatches} from './AdminOperations';
 import {submitAdminAction,validAdminAction,AdminActionError,isAdminActionStaffRevoked}
  from './admin-operations-client';
 
@@ -16,6 +16,24 @@ const respond=(status:number,body:unknown)=>
  new Response(JSON.stringify(body),{status});
 afterEach(()=>vi.unstubAllGlobals());
 describe('Admin operational D1 client #309',()=>{
+ it('binds staff confirmation to the exact actor, target, action and reason (#314)',()=>{
+  const actor={user:{id:'staff-a'}};
+  const nextSession={user:{id:'staff-a'}};
+  const fields=JSON.stringify(['teacher','activate','teacher-51','verified reason']);
+  const consent={session:actor,fields};
+  expect(adminOperationConfirmationMatches(consent,actor,fields)).toBe(true);
+  // The same staff ID in a fresh login is not the same signed session.
+  expect(adminOperationConfirmationMatches(consent,nextSession,fields)).toBe(false);
+  for(const changed of [
+   ['teacher','activate','teacher-52','verified reason'],
+   ['teacher','suspend','teacher-51','verified reason'],
+   ['teacher','activate','teacher-51','a different reason'],
+  ]){
+   expect(adminOperationConfirmationMatches(consent,actor,JSON.stringify(changed)))
+    .toBe(false);
+  }
+  expect(adminOperationConfirmationMatches(null,actor,fields)).toBe(false);
+ });
  it('accepts only exact auditable commands without role headers or accounts',()=>{
   expect(validAdminAction('teacher',teacher)).toBe(true);
   expect(validAdminAction('teacher',{...teacher,action:'provision',
