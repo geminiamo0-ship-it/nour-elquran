@@ -1,3 +1,7 @@
+## 2026-11-09 — #314 stale selected Sheikh action regression
+- Source unit regression: non-provision teacher actions require the selected Sheikh ID in the latest signed roster, including a removed/empty controlled select target; provisioning by auth subject and schedule/attendance are not incorrectly blocked.
+- Browser action gate: after signed roster replacement removes a selected teacher, confirmation and submit must be disabled and a clear Arabic warning shown; the submit handler must independently fail closed. Still requires isolated signed Cloudflare Dev + real 360/390 keyboard/touch verification before acceptance.
+
 ## 2026-11-09 — #314 signed staff option denial / collection receipt privacy (PR #329 candidate)
 - Source review found two related fail-closed gaps in the existing Admin UI: a signed schedule-options GET 401/403 was treated like a transient empty list, leaving editable manual-ID controls under a revoked staff session; a separate collection read/mutation denial could still render an earlier confirmed action receipt.
 - PR #329 now classifies 401/403 from the signed schedule options GET as staff revocation (404/429/503 remain non-revocation), invokes the collection's denial gate, clears prior staff option data and any prior action ACK, and hides the collection form until a fresh authorized read. Session and section identity remain checked before applying late responses.
