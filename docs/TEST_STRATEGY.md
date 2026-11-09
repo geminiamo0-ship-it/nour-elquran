@@ -1,3 +1,8 @@
+## 2026-11-09 — #326 substituted guardian package POST acknowledgement regression
+- Focused Vitest: for signed guardian POST, exact-looking 401 UNAUTHENTICATED, 403 BAD_ORIGIN, 404 NOT_FOUND and 405 METHOD_NOT_ALLOWED must all be classified **uncertain**; the request gate cannot start a fresh operationId but allows explicit same-ID replay. Preserve deterministic strict 400 invalid request and recognized 409 domain conflict behavior.
+- GitHub exact-head Verify must pass code-quality, native Cloudflare D1, governance and repository policy; local container lacks GitHub DNS, so do not claim local suite success.
+- Dev acceptance (pending): synthetic guardian with two learner profiles; staff package reprice between GET and POST; committed D1 request with lost/replaced ACK, replay same immutable operationId, owner history single request and no sibling leakage. Verify 360×667/390×844 RTL. No Production, payments or WhatsApp sends.
+
 ## 2026-11-09 — #315 proxy route-error replay regression
 - Every staff academy command (packages, activation, rejection, contact, invitation) must retain its immutable operationId on HTTP 401/403/404/405 even when the intermediary supplies a plausible exact Worker error code. A 404/405 is not proof that an earlier D1 write did not commit. Confirmed Worker ACK or same-ID reconciliation is the only safe release path for an ambiguous proxy outcome.
 - `admin-academy-write-outcome.test.ts` checks all five paths. Exact-head CI and independent signed Cloudflare Dev tests are still pending; no real financial/media actions.
