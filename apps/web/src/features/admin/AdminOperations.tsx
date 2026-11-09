@@ -64,6 +64,12 @@ const errors:Record<string,string>={
  ATTENDANCE_REVIEW_DENIED:'لا يمكن اعتماد قرار هذا الاعتراض.',
 };
 const toMillis=(s:string)=>s?new Date(s).getTime():NaN;
+/** A signed staff options GET 401/403 invalidates previously displayed
+ * options. Missing routes and temporary errors are not role revocations. */
+export function adminStaffOptionsError(status:number):AdminActionError{
+ return new AdminActionError(status===401?'UNAUTHENTICATED':
+  status===403?'STAFF_ACCESS_DENIED':'STAFF_OPTIONS_UNAVAILABLE',status);
+}
 export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAccessRevoked}:Props){
  // On a new login or section, do not paint the previous staff actor's
  // editable learner/teacher IDs, reason or pending command even for one frame.
@@ -111,7 +117,7 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
   const ctrl=new AbortController();
   async function options(path:string){
    const r=await fetch(path,{credentials:'same-origin',cache:'no-store',signal:ctrl.signal});
-   if(!r.ok)throw Error('DENIED');
+   if(!r.ok)throw adminStaffOptionsError(r.status);
    return r.json() as Promise<{rows?:{id:string;name:string}[];
     teachers?:{id:string;name:string;status:string;qualified:boolean}[]}>;
   }
@@ -124,9 +130,14 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
     students:(a.rows??[]).filter(x=>typeof x.id==='string'&&typeof x.name==='string'),
     sheikhs:(b.teachers??[]).filter(x=>x.status==='active'&&x.qualified),
    }});
-  }).catch(()=>{
-   if(!ctrl.signal.aborted&&liveSession.current===session&&liveKind.current===kind)
-    setOptions({session,kind,value:{students:[],sheikhs:[]}});
+  }).catch(error=>{
+   if(ctrl.signal.aborted||liveSession.current!==session||liveKind.current!==kind)return;
+   if(isAdminActionStaffRevoked(error)){
+    setOptions(null);
+    onAccessRevoked?.();
+    return;
+   }
+   setOptions({session,kind,value:{students:[],sheikhs:[]}});
   });
   return()=>ctrl.abort();
  },[kind,session]);
