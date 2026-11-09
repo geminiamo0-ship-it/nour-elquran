@@ -94,7 +94,7 @@ export function AdminTeacherDirectory({session}:{session:AccountSession}){
   <div className={css.staffTopline}>
    <h2>سجل الشيوخ</h2>
    <button className={css.staffRefresh} type="button"
-    disabled={state.phase==='loading'} onClick={()=>{setRevocation(null);setRetry(n=>n+1);}}>
+    onClick={()=>{setRevocation(null);setRetry(n=>n+1);}}>
     تحديث السجل
    </button>
   </div>
