@@ -1,3 +1,8 @@
+## #314 staff operations session-scoped privacy regression (2026-11-09)
+- In the schedule Admin UI, an old signed learner/Sheikh options receipt must be invisible **on the first render** of a different `AccountSession` (including same user ID/new login) or another section. No stale POST success, uncertain replay command or operationId may render under the new session/kind.
+- Late old-session GET/POST results must not update the new actor's options, call `onApplied` or revoke the new actor. The old AbortController is cancelled on cleanup and callback identity is checked even before cleanup.
+- Vitest pure scoped-value regression is source-level evidence only. Exact-head Verify (strict TS/lint/unit/build/native D1) and isolated signed Dev session-switch + mobile keyboard/touch E2E remain required. Keep Draft and issue OPEN until those pass.
+
 ## #314 — exact-session staff confirmation regression (2026-11-09)
 - Pure Vitest guard: checking an administrative action is valid only for the exact current `AccountSession` object and the exact operator-editable action/target/learner/teacher/resource/time/kind/reason fields. Changed target, action or reason and same-user new login must invalidate consent before submit.
 - This does not replace signed Dev two-staff role revocation and mobile keyboard/touch confirmation E2E. Exact-head GitHub Verify and independent review required before merge.
