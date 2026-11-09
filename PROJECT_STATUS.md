@@ -1,5 +1,5 @@
-- Follow-up `50d6b3de`: an effect also clears the consent token after any edited field/session change, so reverting a target to its old value cannot reactivate old approval. Latest exact-head CI remains pending.
 ## 2026-11-09 — #314 staff action consent snapshot (Draft PR #329; source-only)
+- Follow-up `50d6b3de`: an effect also clears the consent token after any edited field/session change, so reverting a target to its old value cannot reactivate old approval. Latest exact-head CI remains pending.
 - A verified staff operator could check the action confirmation and then change the Sheikh target, action details or reason without unchecking consent. This allowed a different request to reuse an earlier checkbox acknowledgement, although the Worker still independently checks staff authority and validates every write.
 - `AdminOperations` now binds the checkbox to the exact session object and all editable action fields; any change immediately invalidates consent before submit. Regression checks target/action/reason and same-account new-session mismatch. No schema, roles, payment, audio, or Production change.
 - Exact-head CI and independent security review plus signed Cloudflare Dev/mobile acceptance are still required; do not merge PR #329 or close #314 from source-only evidence.
