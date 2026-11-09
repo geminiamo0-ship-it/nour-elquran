@@ -29,13 +29,17 @@ const invalidByPath:Readonly<Record<string,string>>={
 // Generic auth/origin/method refusals are common to every staff route.
 const terminalHttpErrors:Readonly<Record<number,ReadonlySet<string>>>={
  401:new Set(['UNAUTHENTICATED']),
- 403:new Set(['BAD_ORIGIN','STAFF_ACCESS_DENIED']),
  404:new Set(['NOT_FOUND']),
  405:new Set(['METHOD_NOT_ALLOWED']),
 };
 export function academyAdminOutcomeIsUncertain(
  path:string,status:number,code='',exactCodeOnly=true){
  if(!exactCodeOnly)return true;
+ // An intermediary may replace an already-committed D1 write with a
+ // perfectly shaped 403 {code:'STAFF_ACCESS_DENIED'}. The browser cannot
+ // authenticate that denial, so retain the immutable operationId for an
+ // explicit same-ID replay after a fresh signed staff authorization check.
+ if(status===403)return true;
  if(status===409)return !terminalConflictsByPath[path]?.has(code);
  if(status===400)return invalidByPath[path]!==code;
  if(status>=400&&status<500)return !terminalHttpErrors[status]?.has(code);
