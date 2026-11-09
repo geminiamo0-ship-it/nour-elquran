@@ -1,3 +1,7 @@
+## 2026-11-09 — #314 staff action rapid-submit follow-up (PR #329)
+- Current branch `feat/314-admin-teacher-id-lookup`. Source review found a double-submit race: two clicks before `sending` React state commits could mint separate operationIds; abort is not a D1 rollback. Fixed with synchronous single-flight guard and post-ACK fresh-consent gate, while uncertain response permits only explicit same-operationId replay. Added unit regression for idle/sending/uncertain/done transitions.
+- NEXT exact action: inspect PR #329 latest HEAD GitHub Verify, fix failures; then independent security review, signed Cloudflare Dev 101+ synthetic Sheikh lookup, staff revocation, and mobile keyboard/touch. Do not merge, close #314, enable flags or deploy Production on source/CI alone.
+
 ## 2026-11-09 — #314 native signed 101+ directory test, PR #329
 - Latest candidate branch `feat/314-admin-teacher-id-lookup` adds a real disposable local Wrangler/D1 + Better Auth smoke, not an API mock: after completing other teacher flows, create 101 synthetic disabled/unqualified auth users and Sheikh records; verify staff bounded first 50/truncated, exact-ID read of a genuinely out-of-page Sheikh, and nonstaff 403. This specifically closes the missing native 51/100+ data-volume evidence; it is NOT Cloudflare Dev E2E.
 - Source commit `4eb6cf4e726e42c1c7ccc4cfc65027176c0df079` on Draft PR #329. Exact-head CI must be checked before any PASS claim. No main/Production changes, real people, R2, WhatsApp or financial writes.
