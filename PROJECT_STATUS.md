@@ -1,3 +1,9 @@
+## 2026-11-09 — #314 vanished Sheikh target confirmation guard (Draft PR #329)
+- Source review found a controlled Admin teacher-action select could retain an old Sheikh ID after a signed roster update removed that option. A new checkbox confirmation could then authorize submitting the stale ID from the browser (the Worker still independently reauthorizes mutations).
+- AdminOperations now requires the selected Sheikh ID to be present in the current verified roster for all non-provision teacher actions; absent targets disable the confirmation and submit controls and display an explicit Arabic warning. The submit handler independently checks the same gate. Provisioning by auth subject and separate schedule/attendance workflows remain unchanged.
+- Added focused Vitest regression for selected/missing/empty targets and unaffected operation types. No API, D1 migration, finance, role grant, child data or Production changes.
+- **PENDING:** exact-head GitHub Verify after these commits, independent security/privacy review, signed Cloudflare Dev 0/1/50/51/100+ roster/revocation and 360/390 mobile QA. Keep #314 OPEN and PR #329 Draft.
+
 ## 2026-11-09 — #314 native signed exact-ID Sheikh regression (Draft PR #329; source-only)
 - Added real disposable Better Auth + Worker + D1 HTTP smoke to `scripts/cloudflare-auth-smoke.mjs`: pregrant/other-role 403, staff unknown-ID 200/empty, malformed/duplicate/extra query 400, POST 405, provisioned Sheikh exact-ID 200 with only the six approved fields and no-store, and same-session grant revocation 403.
 - This closes a **test coverage gap**, not the live 51+ roster or mobile acceptance gate. Code commit `16f3bfb4e3ed301fa3230b3a68258d99c8339377`. Exact-head GitHub Verify must be observed after the final documentation commit; no local full-suite or remote Cloudflare Dev run claimed.
