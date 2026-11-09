@@ -8,6 +8,7 @@ const LEARNER='11111111-1111-4111-8111-111111111111';
 const VERSION='22222222-2222-4222-8222-222222222222';
 const PACKAGE='33333333-3333-4333-8333-333333333333';
 const OP='44444444-4444-4444-8444-444444444444';
+const REQUEST='55555555-5555-4555-8555-555555555555';
 const NOW=1700000000000;
 const command={operationId:OP,learnerId:LEARNER,packageVersionId:VERSION,
  requestId:null,note:'Operator verified offline payment',manualConfirmed:true};
@@ -16,8 +17,10 @@ const saved={actor:STAFF,learnerId:LEARNER,packageVersionId:VERSION,
 
 function fixture(options:{authorized?:boolean;prior?:Record<string,unknown>|null;
  afterWrite?:Record<string,unknown>|null;writeError?:string;
+ request?:Record<string,unknown>|null;
  receipt?:{success:boolean;meta:{changes:number}}}={}){
  const writes:Array<{sql:string;values:unknown[]}>=[];
+ const reads:string[]=[];
  let attempted=false;
  const db={
   prepare(sql:string){
@@ -25,11 +28,14 @@ function fixture(options:{authorized?:boolean;prior?:Record<string,unknown>|null
    return {
     bind(...args:unknown[]){values=args;return this;},
     async first(){
+     reads.push(sql);
      if(sql.includes('FROM staff_grants'))
       return options.authorized===false?null:{subject:STAFF};
      if(sql.includes('FROM academy_subscription_activation_events WHERE operation_id=?'))
       return attempted&&options.afterWrite!==undefined?
        options.afterWrite:options.prior??null;
+     if(sql.includes('FROM academy_request_events req WHERE req.id=?'))
+      return options.request??null;
      if(sql.includes('FROM academy_package_events WHERE id=?'))
       return {id:VERSION,packageId:PACKAGE,active:1};
      if(sql.includes('FROM academy_package_events p'))
@@ -45,7 +51,7 @@ function fixture(options:{authorized?:boolean;prior?:Record<string,unknown>|null
    };
   }
  } as unknown as CoreDatabase;
- return {db,writes};
+ return {db,writes,reads};
 }
 
 test('staff activation requires affirmative one-row D1 receipt',async()=>{
@@ -84,6 +90,32 @@ test('replayed activation must match the immutable operator audit note',async()=
   assert.deepEqual(await staffActivate(f.db,STAFF,command,NOW),
    {status:409,code:'ACADEMY_OPERATION_CONFLICT'});
   assert.equal(f.writes.length,0);
+ }
+});
+
+test('staff preserves a pending guardian request original quote after catalog repricing',async()=>{
+ const original={...command,requestId:REQUEST};
+ const pending={learnerId:LEARNER,versionId:VERSION,activated:0,rejected:0};
+ const f=fixture({request:pending});
+ const result=await staffActivate(f.db,STAFF,original,NOW);
+ assert.equal(result.status,201);
+ assert.equal(f.writes.length,1);
+ assert.equal(f.writes[0]!.values[4],REQUEST);
+ assert.equal(f.writes[0]!.values[5],VERSION);
+ // The request's signed immutable quote, not today's catalog, is authority.
+ assert.equal(f.reads.some(sql=>sql.includes('FROM academy_package_events')),false);
+
+ for(const [request,code] of [
+  [null,'ACADEMY_REQUEST_NOT_FOUND'],
+  [{...pending,learnerId:'66666666-6666-4666-8666-666666666666'},'ACADEMY_REQUEST_MISMATCH'],
+  [{...pending,versionId:'77777777-7777-4777-8777-777777777777'},'ACADEMY_REQUEST_MISMATCH'],
+  [{...pending,activated:1},'ACADEMY_REQUEST_ALREADY_ACTIVATED'],
+  [{...pending,rejected:1},'ACADEMY_REQUEST_REJECTED'],
+ ] as const){
+  const denied=fixture({request});
+  assert.deepEqual(await staffActivate(denied.db,STAFF,original,NOW),
+   {status:409,code});
+  assert.equal(denied.writes.length,0);
  }
 });
 
