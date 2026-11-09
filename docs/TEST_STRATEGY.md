@@ -1,3 +1,4 @@
+- Form-gate follow-up: the full staff mutation form must not render prior actor's typed IDs/reason or checked confirmation on the first render after a session/kind switch. Render a neutral shell until all controlled fields are reset. Include same-user new-session regression.
 ## #314 staff operations session-scoped privacy regression (2026-11-09)
 - In the schedule Admin UI, an old signed learner/Sheikh options receipt must be invisible **on the first render** of a different `AccountSession` (including same user ID/new login) or another section. No stale POST success, uncertain replay command or operationId may render under the new session/kind.
 - Late old-session GET/POST results must not update the new actor's options, call `onApplied` or revoke the new actor. The old AbortController is cancelled on cleanup and callback identity is checked even before cleanup.
