@@ -10,10 +10,13 @@ describe('staff academy D1 receipt integrity #315',()=>{
   for(const path of paths){
    for(const status of [0,400,401,403,404,405,408,409,422,425,429,500,502,503,504,599])
     expect(academyAdminOutcomeIsUncertain(path,status)).toBe(true);
+   // A proxy may replace a committed Worker ACK with a perfectly shaped
+   // 401/404/405. Even familiar auth/routing errors cannot release the
+   // original operationId; only an authoritative ACK or same-ID replay can.
    for(const [status,code] of [
     [401,'UNAUTHENTICATED'],[404,'NOT_FOUND'],[405,'METHOD_NOT_ALLOWED'],
    ] as const){
-    expect(academyAdminOutcomeIsUncertain(path,status,code)).toBe(false);
+    expect(academyAdminOutcomeIsUncertain(path,status,code)).toBe(true);
     expect(academyAdminOutcomeIsUncertain(path,status,code,false)).toBe(true);
    }
    // Even an exact, valid-looking 403 code can be substituted by a proxy
