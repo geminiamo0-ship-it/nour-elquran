@@ -644,16 +644,106 @@ const firstOffer=ownerCatalog.data.packages.find(p=>p.packageId===academyPackage
 assert(firstOffer,'Saved EGP package missing from owner signed catalog');
 assert.equal(firstOffer.priceEgp,1600);
 assert.equal((await call(academyOwner,{method:'POST',cookie:cookieB,
- body:{operationId:randomUUID(),packageId:academyPackageId}})).response.status,404);
-const packageRequestCommand={operationId:randomUUID(),packageId:academyPackageId};
-const packageRequest=await call(academyOwner,{
- method:'POST',cookie:cookieA,body:packageRequestCommand});
-assert.equal(packageRequest.response.status,201,JSON.stringify(packageRequest.data));
+ body:{operationId:randomUUID(),packageId:academyPackageId,
+  packageVersionId:firstOffer.versionId}})).response.status,404);
+const packageRequestCommand={operationId:randomUUID(),packageId:academyPackageId,
+ packageVersionId:firstOffer.versionId};
+// #326: exercise two overlapping signed HTTP commands against disposable
+// Better Auth + native D1, not only a mocked UNIQUE exception. Exactly one
+// request is created; the losing request replays the same immutable ACK.
+const [firstConcurrentRequest,secondConcurrentRequest]=await Promise.all([
+ call(academyOwner,{method:'POST',cookie:cookieA,body:packageRequestCommand}),
+ call(academyOwner,{method:'POST',cookie:cookieA,body:packageRequestCommand}),
+]);
+const concurrentStatuses=[firstConcurrentRequest.response.status,
+ secondConcurrentRequest.response.status].sort((a,b)=>a-b);
+assert.deepEqual(concurrentStatuses,[200,201],
+ JSON.stringify([firstConcurrentRequest.data,secondConcurrentRequest.data]));
+assert.equal(firstConcurrentRequest.data.academyRequestId,
+ secondConcurrentRequest.data.academyRequestId,
+ 'Concurrent signed replay must return the same immutable request ID');
+// #326: a different signed household must not discover the committed
+// request by replaying the original operationId against the owner's learner.
+const foreignOperationReplay=await call(academyOwner,{
+ method:'POST',cookie:cookieB,body:packageRequestCommand});
+assert.equal(foreignOperationReplay.response.status,404,
+ JSON.stringify(foreignOperationReplay.data));
+assert.equal(foreignOperationReplay.data.academyRequestId,undefined,
+ 'Foreign household replay must not reveal the original request ID');
+const packageRequest=firstConcurrentRequest.response.status===201?
+ firstConcurrentRequest:secondConcurrentRequest;
 assert.equal((await call(academyOwner,{
  method:'POST',cookie:cookieA,body:packageRequestCommand})).response.status,200);
+// #326: a guardian may own several learner profiles. An operation ID that
+// belongs to one sibling must never replay its request ID on another sibling.
+const academySibling=(await call('/v1/me/learners',{cookie:cookieA}))
+ .data.learners.find(row=>row.id!==learner);
+assert(academySibling,'Signed sibling profile needed for package isolation');
+const siblingAcademyPath='/v1/me/learners/'+academySibling.id+'/academy';
+const siblingReplay=await call(siblingAcademyPath,{
+ method:'POST',cookie:cookieA,body:packageRequestCommand});
+assert.equal(siblingReplay.response.status,409,JSON.stringify(siblingReplay.data));
+assert.equal(siblingReplay.data.code,'ACADEMY_OPERATION_CONFLICT');
+assert.equal(siblingReplay.data.academyRequestId,undefined,
+ 'Sibling replay conflict must not reveal the first learner request ID');
+const siblingRead=await call(siblingAcademyPath,{cookie:cookieA});
+assert.equal(siblingRead.response.status,200,JSON.stringify(siblingRead.data));
+assert(!siblingRead.data.requests.some(r=>r.id===packageRequest.data.academyRequestId),
+ 'Signed sibling academy GET must not include another learner request');
+// A caller cannot reuse the original operation ID with a different quote.
+const quoteReplayConflict=await call(academyOwner,{
+ method:'POST',cookie:cookieA,
+ body:{...packageRequestCommand,packageVersionId:randomUUID()}});
+assert.equal(quoteReplayConflict.response.status,409,
+ JSON.stringify(quoteReplayConflict.data));
+assert.equal(quoteReplayConflict.data.code,'ACADEMY_OPERATION_CONFLICT');
+assert.equal(quoteReplayConflict.data.academyRequestId,undefined);
 const repriced=await staffAcademy('packages',{...priceCommand,
  operationId:randomUUID(),priceEgp:1900});
 assert.equal(repriced.response.status,201,JSON.stringify(repriced.data));
+// #326: stale displayed EGP quote cannot silently become the new price.
+const staleQuote=await call(academyOwner,{method:'POST',cookie:cookieA,
+ body:{operationId:randomUUID(),packageId:academyPackageId,
+  packageVersionId:firstOffer.versionId}});
+assert.equal(staleQuote.response.status,409,JSON.stringify(staleQuote.data));
+assert.equal(staleQuote.data.code,'ACADEMY_PACKAGE_CHANGED');
+// #326: signed sibling has no pending request, so it independently proves
+// a stale quote is rejected without creating a request, while the newly
+// displayed immutable version can be accepted at the new EGP price.
+const siblingCatalogAfterReprice=await call(siblingAcademyPath,{cookie:cookieA});
+assert.equal(siblingCatalogAfterReprice.response.status,200);
+const siblingFreshOffer=siblingCatalogAfterReprice.data.packages.find(
+ p=>p.packageId===academyPackageId);
+assert(siblingFreshOffer,'Repriced offer missing for sibling');
+assert.equal(siblingFreshOffer.priceEgp,1900);
+assert.notEqual(siblingFreshOffer.versionId,firstOffer.versionId);
+const siblingRequestsBefore=siblingCatalogAfterReprice.data.requests.length;
+const siblingStaleQuote=await call(siblingAcademyPath,{
+ method:'POST',cookie:cookieA,body:{operationId:randomUUID(),
+  packageId:academyPackageId,packageVersionId:firstOffer.versionId}});
+assert.equal(siblingStaleQuote.response.status,409,JSON.stringify(siblingStaleQuote.data));
+assert.equal(siblingStaleQuote.data.code,'ACADEMY_PACKAGE_CHANGED');
+const siblingAfterStale=await call(siblingAcademyPath,{cookie:cookieA});
+assert.equal(siblingAfterStale.data.requests.length,siblingRequestsBefore,
+ 'Rejected sibling stale quote must not persist a request');
+const siblingFreshCommand={operationId:randomUUID(),
+ packageId:academyPackageId,packageVersionId:siblingFreshOffer.versionId};
+const siblingAccepted=await call(siblingAcademyPath,{
+ method:'POST',cookie:cookieA,body:siblingFreshCommand});
+assert.equal(siblingAccepted.response.status,201,JSON.stringify(siblingAccepted.data));
+const siblingAfterAccepted=await call(siblingAcademyPath,{cookie:cookieA});
+const siblingSaved=siblingAfterAccepted.data.requests.find(
+ r=>r.id===siblingAccepted.data.academyRequestId);
+assert(siblingSaved,'Sibling fresh quote must be readable only in its owner scope');
+assert.equal(siblingSaved.priceEgp,1900);
+assert(!siblingAfterAccepted.data.requests.some(
+ r=>r.id===packageRequest.data.academyRequestId),
+ 'Sibling request list must not include the other learner immutable quote');
+// The original operation is still replayable after the package was repriced.
+const replayAfterReprice=await call(academyOwner,{
+ method:'POST',cookie:cookieA,body:packageRequestCommand});
+assert.equal(replayAfterReprice.response.status,200,JSON.stringify(replayAfterReprice.data));
+assert.equal(replayAfterReprice.data.academyRequestId,packageRequest.data.academyRequestId);
 const ownerRequestsAfterPrice=await call(academyOwner,{cookie:cookieA});
 assert.equal(ownerRequestsAfterPrice.response.status,200,
  JSON.stringify(ownerRequestsAfterPrice.data));

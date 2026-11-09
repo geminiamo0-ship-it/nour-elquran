@@ -10,6 +10,16 @@ VALUES(?,?,?,?,?,?,?,?,?)"""
 REQUEST="""INSERT INTO academy_request_events
 (id,operation_id,learner_id,actor_subject,package_id,package_version_id,kind,at_ms)
 VALUES(?,?,?,?,?,?,'subscription',?)"""
+# Mirrors the atomic Worker INSERT..SELECT in ownerPackageRequest (#326).
+# A stale guardian quote must never silently resolve to a newer package price.
+REQUEST_QUOTED="""INSERT INTO academy_request_events
+(id,operation_id,learner_id,actor_subject,package_id,package_version_id,kind,at_ms)
+SELECT ?,?,?,?,p.package_id,p.id,'subscription',?
+FROM academy_package_events p
+WHERE p.id=? AND p.package_id=? AND p.active=1
+AND NOT EXISTS(SELECT 1 FROM academy_package_events newer
+ WHERE newer.package_id=p.package_id AND
+ (newer.at_ms>p.at_ms OR (newer.at_ms=p.at_ms AND newer.id>p.id)))"""
 ACT="""INSERT INTO academy_subscription_activation_events
 (id,operation_id,actor_subject,learner_id,request_id,package_version_id,cycle_id,
 previous_cycle_id,rollover_sessions,starts_at_ms,ends_at_ms,note,manually_confirmed,at_ms)
@@ -56,6 +66,100 @@ class AcademyAdminD1(unittest.TestCase):
   self.activate(p,request)
   with self.assertRaises(sqlite3.IntegrityError):
    self.activate(p,None)
+ def test_unknown_post_replay_and_pending_request_are_guarded_by_d1(self):
+  # A lost HTTP response after commit must not create another pending request.
+  # The Worker resolves an exact operation-id replay before attempting INSERT.
+  version=self.version()
+  first=self.request(version)
+  original_op=self.db.execute(
+   'SELECT operation_id FROM academy_request_events WHERE id=?',(first,)).fetchone()[0]
+  with self.assertRaises(sqlite3.IntegrityError):
+   self.db.execute(REQUEST,(str(uuid4()),original_op,'child-a','staff',
+                            self.package,version,T))
+  with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_REQUEST_PENDING'):
+   self.request(version)
+  self.assertEqual(self.db.execute(
+   "SELECT COUNT(*) FROM academy_request_events WHERE learner_id='child-a'"
+  ).fetchone(),(1,))
+  self.assertEqual(self.db.execute(
+   'SELECT id FROM academy_request_events WHERE operation_id=?',(original_op,)
+  ).fetchone(),(first,))
+  # Only a recorded staff settlement unlocks a subsequent distinct request.
+  self.activate(version,first)
+  second=self.request(version)
+  self.assertNotEqual(second,first)
+  self.assertEqual(self.db.execute(
+   "SELECT COUNT(*) FROM academy_request_events WHERE learner_id='child-a'"
+  ).fetchone(),(2,))
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
+ def test_quoted_package_version_is_atomic_and_price_stable(self):
+  original=self.version(price=2000)
+  # The owner read original, then staff changed the catalog before POST.
+  latest=self.version(price=2400,at=T+1)
+  operation=str(uuid4())
+  stale=self.db.execute(REQUEST_QUOTED,(str(uuid4()),operation,'child-a',
+   'staff',T+2,original,self.package))
+  self.assertEqual(stale.rowcount,0,'A stale displayed quote must not create a request')
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM academy_request_events').fetchone(),(0,))
+  accepted=str(uuid4())
+  inserted=self.db.execute(REQUEST_QUOTED,(accepted,operation,'child-a',
+   'staff',T+2,latest,self.package))
+  self.assertEqual(inserted.rowcount,1)
+  self.assertEqual(self.db.execute(
+   'SELECT p.price_egp,p.sessions FROM academy_request_events r '
+   'JOIN academy_package_events p ON p.id=r.package_version_id '
+   'WHERE r.id=?',(accepted,)).fetchone(),(2400,8))
+  # A second INSERT with the same operation is rejected by the D1 key.
+  with self.assertRaises(sqlite3.IntegrityError):
+   self.db.execute(REQUEST_QUOTED,(str(uuid4()),operation,'child-a',
+    'staff',T+2,latest,self.package))
+  # Another staff update cannot change the immutable recorded request.
+  self.version(price=3000,at=T+3)
+  self.assertEqual(self.db.execute(
+   'SELECT p.price_egp FROM academy_request_events r '
+   'JOIN academy_package_events p ON p.id=r.package_version_id '
+   'WHERE r.id=?',(accepted,)).fetchone(),(2400,))
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
+ def test_same_clock_reprice_rejects_stale_guardian_quote(self):
+  # #326 / #315 integration guard: two staff edits in one wall-clock
+  # millisecond must still have deterministic version order. The guardian
+  # cannot request the earlier price after the second D1 write commits.
+  original=self.version(price=2000,at=T)
+  newer=str(uuid4())
+  self.db.execute("""INSERT INTO academy_package_events
+   (id,operation_id,package_id,actor_subject,title,price_egp,sessions,active,at_ms)
+   SELECT ?,?,?,?,?,?,?,?,
+    MAX(?,COALESCE((SELECT MAX(at_ms)+1 FROM academy_package_events
+     WHERE package_id=?),?))""",
+   (newer,str(uuid4()),self.package,'staff','Eight Quran lessons',
+    2400,8,1,T,self.package,T))
+  self.assertEqual(self.db.execute(
+   'SELECT at_ms FROM academy_package_events WHERE id=?',(newer,)
+  ).fetchone(),(T+1,))
+  stale=self.db.execute(REQUEST_QUOTED,(str(uuid4()),str(uuid4()),
+   'child-a','staff',T+2,original,self.package))
+  self.assertEqual(stale.rowcount,0)
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM academy_request_events').fetchone(),(0,))
+  accepted=str(uuid4())
+  current=self.db.execute(REQUEST_QUOTED,(accepted,str(uuid4()),
+   'child-a','staff',T+2,newer,self.package))
+  self.assertEqual(current.rowcount,1)
+  self.assertEqual(self.db.execute(
+   'SELECT p.price_egp,p.sessions FROM academy_request_events r '
+   'JOIN academy_package_events p ON p.id=r.package_version_id '
+   'WHERE r.id=?',(accepted,)).fetchone(),(2400,8))
+  self.assertEqual(self.db.execute('PRAGMA foreign_key_check').fetchall(),[])
+ def test_quoted_request_rejects_disabled_latest_version(self):
+  original=self.version(price=2000)
+  disabled=self.version(price=2000,at=T+1,active=0)
+  for version in (original,disabled):
+   result=self.db.execute(REQUEST_QUOTED,(str(uuid4()),str(uuid4()),
+    'child-a','staff',T+2,version,self.package))
+   self.assertEqual(result.rowcount,0)
+  self.assertEqual(self.db.execute(
+   'SELECT COUNT(*) FROM academy_request_events').fetchone(),(0,))
  def test_foreign_owner_staff_revocation_and_legacy_credit_constraints(self):
   p=self.version()
   with self.assertRaisesRegex(sqlite3.IntegrityError,'ACADEMY_OWNER_DENIED'):

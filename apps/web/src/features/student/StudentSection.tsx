@@ -26,7 +26,7 @@ export function StudentSection({ section }: { section: StudentSectionName }) {
   const meta = section==='progress'||section==='notebook'?sections.lessons:sections[section];
   // Profile key ensures no unsent note/input from another learner survives switching.
   return <div>
-    {!['mushaf','lessons','training','progress','notebook'].includes(section) && <header className={styles.pageHeader}><div>
+    {!['mushaf','lessons','training','subscription','progress','notebook'].includes(section) && <header className={styles.pageHeader}><div>
       <p className={styles.eyebrow}>مساحتي التعليمية / {meta.title}</p>
       <h1>{meta.title}</h1><p>{meta.caption}</p>
     </div></header>}
