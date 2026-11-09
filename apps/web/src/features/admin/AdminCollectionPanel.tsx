@@ -64,6 +64,14 @@ function show(key:string,value:string|number){
 function matching(row:AdminDataRow,term:string){
  return Object.values(row).some(value=>String(value).toLocaleLowerCase().includes(term));
 }
+/** A revoked staff grant supersedes even a previously confirmed D1 action
+ * receipt; a new login or section must not inherit the old actor's receipt. */
+export function adminCollectionReceiptMayShow<T>(
+ receipt:{session:T;view:AdminDataView}|null,
+ session:T,view:AdminDataView,denied:boolean,
+):boolean{
+ return !denied&&receipt?.session===session&&receipt.view===view;
+}
 
 /** A hidden or changing session must never display a previously fetched list. */
 export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:AccountSession}){
@@ -81,8 +89,13 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
    if(!ctrl.signal.aborted)setRead({phase:'ready',session,view,data});
   }).catch(error=>{
    if(ctrl.signal.aborted)return;
-   setRead({phase:error instanceof AdminCollectionError&&
-    [401,403,404].includes(error.status)?'denied':'error',session,view});
+   const denied=error instanceof AdminCollectionError&&
+    [401,403,404].includes(error.status);
+   if(denied){
+    setLatestAck(current=>current?.session===session&&current.view===view?null:current);
+    setQuery('');
+   }
+   setRead({phase:denied?'denied':'error',session,view});
   });
   return ()=>ctrl.abort();
  },[view,session,retry]);
@@ -138,11 +151,16 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
       </div>)}
      </article>)}</div>}
   </>}
-  {latestAck?.session===session&&latestAck.view===view&&<p role="status" className={css.staffInfo}>
+  {adminCollectionReceiptMayShow(latestAck,session,view,status==='denied')&&
+   <p role="status" className={css.staffInfo}>
     تم تأكيد العملية وحفظها: {latestAck.value.code}. يجري تحديث السجل من الخادم.
    </p>}
   {visible&&(view==='schedule'||view==='attendance')&&
    <AdminOperations kind={view} session={session} rows={visible.rows}
+    onAccessRevoked={()=>{
+     setLatestAck(null);setQuery('');
+     setRead({phase:'denied',session,view});
+    }}
     onApplied={value=>{setLatestAck({session,view,value});setRetry(n=>n+1);}}/>}
   <p className={css.collectionDisclaimer}>{config.scope}</p>
  </section>;
