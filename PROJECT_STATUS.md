@@ -1,3 +1,8 @@
+## 2026-11-09 — #314 Admin collection stale-action gate (PR #329; source candidate)
+- Reviewed current `main@4c15b59f`, Draft PR #329 and Verify #42653650833 (4/4 successful). Found that AdminCollectionPanel's refresh increment did not immediately invalidate a prior ready collection, so a schedule/attendance action could remain selectable until the React fetch effect ran. A signed staff denial from a mutation could also race with an older GET 200.
+- Candidate change binds every ready collection to its exact session, view and refresh revision, with a revocation latch that overrides older signed successes. A focused regression checks refresh, staff denial, session switch, view switch and fresh empty response. Worker/D1 permissions remain authoritative; this is additional browser fail-closed behavior.
+- **Pending:** exact-head GitHub Verify for this candidate, independent review, isolated signed Dev 401/403 and mobile 360/390 acceptance. PR remains Draft; no main, Production, payments, audio or flags changed.
+
 ## 2026-11-09 — #314 signed staff revocation vs late roster GET (PR #329 candidate)
 - Source-only race guard: an exact-ID or mutation 401/403 now latches denial for the signed session and directory read revision. A late older 200 cannot restore selectable Sheikh rows, invitation controls or a prior action receipt. Explicit operator recheck creates a new revision; no automatic reauthorization or Production changes.
 - Pure Vitest regression covers previously ready roster rejected by a newer denial even when its 200 remains in state. Exact-head GitHub Verify is pending after these edits; remote signed Cloudflare Dev role-revocation and independent security review remain mandatory. Issue #314 stays OPEN and PR #329 Draft.
