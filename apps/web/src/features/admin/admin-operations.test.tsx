@@ -1,7 +1,7 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {AdminOperations,adminOperationConfirmationMatches,adminOperationScopedValue,
- adminStaffOptionsError} from './AdminOperations';
+import {AdminOperations,adminOperationConfirmationMatches,adminOperationConfirmationScope,
+ adminOperationScopedValue,adminStaffOptionsError} from './AdminOperations';
 import {submitAdminAction,validAdminAction,AdminActionError,isAdminActionStaffRevoked}
  from './admin-operations-client';
 
@@ -34,6 +34,40 @@ describe('Admin operational D1 client #309',()=>{
     .toBe(false);
   }
   expect(adminOperationConfirmationMatches(null,actor,fields)).toBe(false);
+ });
+ it('invalidates exact Sheikh action consent when fresh signed lookup changes visible facts (#314)',()=>{
+  const actor={user:{id:'staff-a'}};
+  const fields=['teacher','suspend','','','','teacher-51','','','trial','Verified reason'];
+  const selected={id:'teacher-51',name:'Synthetic Sheikh',status:'active' as const,
+   qualified:true,currentLearners:0,upcomingLessons:0};
+  const unrelated={...selected,id:'teacher-2'};
+  const original=adminOperationConfirmationScope(fields,'teacher',
+   [selected,unrelated],'teacher-51');
+  const consent={session:actor,fields:original};
+  expect(adminOperationConfirmationMatches(consent,actor,original)).toBe(true);
+  // A new exact-ID receipt changes the facts used for a sensitive transition,
+  // even though no editable field (teacher ID, action, reason) changed.
+  for(const updated of [
+   {...selected,status:'disabled' as const},
+   {...selected,qualified:false},
+   {...selected,currentLearners:1},
+   {...selected,upcomingLessons:1},
+   {...selected,name:'Updated Synthetic Sheikh'},
+  ]){
+   const current=adminOperationConfirmationScope(fields,'teacher',
+    [updated,unrelated],'teacher-51');
+   expect(adminOperationConfirmationMatches(consent,actor,current)).toBe(false);
+  }
+  // A removed selected actor must not inherit consent from its old roster row.
+  const missing=adminOperationConfirmationScope(fields,'teacher',
+   [unrelated],'teacher-51');
+  expect(adminOperationConfirmationMatches(consent,actor,missing)).toBe(false);
+  // Unrelated lookup results do not needlessly invalidate selected consent.
+  const otherChanged=adminOperationConfirmationScope(fields,'teacher',
+   [selected,{...unrelated,status:'disabled'}],'teacher-51');
+  expect(adminOperationConfirmationMatches(consent,actor,otherChanged)).toBe(true);
+  expect(adminOperationConfirmationScope(fields,'schedule',[selected],'teacher-51'))
+   .toBe(adminOperationConfirmationScope(fields,'schedule',[],'teacher-51'));
  });
  it('hides old signed staff options and action receipts immediately on session or section change (#314)',()=>{
   const actor={user:{id:'staff-a',name:'Synthetic Staff'},phoneVerified:true};
