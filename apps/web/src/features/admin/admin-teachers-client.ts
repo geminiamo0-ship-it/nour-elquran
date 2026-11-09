@@ -27,7 +27,7 @@ export function parseAdminTeachers(value:unknown):AdminTeacherDirectoryValue{
  if(!record(value)||Object.keys(value).length!==envelopeKeys.length||
   !envelopeKeys.every(k=>Object.hasOwn(value,k))||
   value.code!=='STAFF_TEACHER_DIRECTORY'||value.readOnly!==true||
-  !integer(value.asOfMs)||typeof value.truncated!=='boolean'||
+  (!integer(value.asOfMs)||value.asOfMs>8_640_000_000_000_000)||typeof value.truncated!=='boolean'||
   !Array.isArray(value.teachers)||value.teachers.length>50)
   throw new AdminTeachersError('INVALID_TEACHER_DIRECTORY');
  const teachers:AdminTeacher[]=[];
