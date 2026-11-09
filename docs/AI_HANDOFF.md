@@ -1,3 +1,7 @@
+## 2026-11-09 — #314 denial latch for concurrent roster GET (Draft PR #329)
+- `AdminTeacherDirectory.tsx` now retains a signed session+revision-scoped revocation gate. When exact-ID lookup or an operational call reports 401/403, a concurrently pending older directory GET returning 200 cannot re-enable actions or show old D1 receipts. Explicit `إعادة التحقق` increments the revision and rechecks permission; session changes cannot inherit the prior gate.
+- `admin-teachers-client.test.tsx` adds the fail-closed stale-200 regression. Exact-head CI must be inspected after commits; do not claim signed Dev or independent security acceptance. NEXT: check PR #329 exact HEAD and Verify; perform synthetic signed Dev concurrent role-revocation test and 360/390 touch/browser review. Keep Draft and Issue #314 OPEN; no main/Production, payment, media or cumulative-ink changes.
+
 ## 2026-11-09 — #314 staff form edit/revert consent guard (Draft PR #329)
 - In `AdminOperations.tsx`, every controlled staff-action field now clears the checkbox confirmation synchronously inside its input event, rather than relying only on the later confirmation-scope effect. This closes the rapid edit→revert consent reuse window under React batching. Source `68d9ed7d`; pure Vitest ordering regression `b10aad27`.
 - Exact-head CI pending at authoring. Earlier Verify #42640354328 passed 4/4 on previous head `c32d3980` only. No signed remote Dev or independent review claim.
