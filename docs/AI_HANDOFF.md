@@ -1,3 +1,8 @@
+## 2026-11-09 — #314 pending exact-head verification
+- Draft PR #329 on `feat/314-admin-teacher-id-lookup`: a signed exact-ID lookup receipt now carries the current directory refresh revision. Old lookup responses cannot be merged into a newer roster or replace newer lookup receipts; same-session refresh and new-login cases covered by a focused Vitest regression.
+- NEXT: inspect GitHub Verify at the **new exact PR head**, repair any strict TS/Vitest/native D1 failure, then record run link on #314. No local full-suite (shell cannot resolve github.com). Do not merge: independent security/privacy review, signed isolated Cloudflare Dev 101+ Sheikh/staff revocation/concurrent requests and real 360/390 RTL keyboard/touch still pending.
+- No main/Production change, paid integration, child media, WhatsApp, or cumulative ink flag change.
+
 ## 2026-11-09 — #314 staff revocation latch across automatic refresh (Draft PR #329)
 - Found a follow-on race: a signed 401/403 latch keyed to `retry` could be bypassed by an automatic post-ACK or missing-row refresh incrementing the revision. Keep the denial session-scoped until an explicit operator recheck; stale 200s and prior receipts stay hidden. Same-user new signed session is isolated.
 - Source: `AdminTeacherDirectory.tsx`, `AdminCollectionPanel.tsx`, shared `adminStaffSessionRevoked` helper and Vitest regression in `admin-operations.test.tsx`. Exact-head GitHub Verify is **not yet proven**; previous run #42671919782 failed before scheduling any jobs (0 jobs), and the retry API rejected it with 403. New commit must be checked for real jobs and tests.
