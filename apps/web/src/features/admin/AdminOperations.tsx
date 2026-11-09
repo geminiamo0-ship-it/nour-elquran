@@ -44,6 +44,16 @@ export function adminOperationConfirmationScope(
  const selected=kind==='teacher'?teachers.find(t=>t.id===selectedTeacherId):undefined;
  return JSON.stringify([...fields,selected??null]);
 }
+/** #314: a removed or stale Sheikh selection is not an authorized roster target.
+ * The server still reauthorizes every mutation, but the browser must not
+ * offer a fresh confirmation for an actor absent from its signed roster. */
+export function adminTeacherActionTargetIsVerified(
+ kind:AdminOperationKind,action:string,teacherId:string,
+ teachers:readonly AdminTeacher[],
+):boolean{
+ return kind!=='teacher'||action==='provision'||
+  teachers.some(teacher=>teacher.id===teacherId);
+}
 const actions:Record<AdminOperationKind,readonly {id:string;label:string}[]>={
  teacher:[
   {id:'provision',label:'تجهيز ملف شيخ غير نشط'},
@@ -104,7 +114,8 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
  const confirmationFields=adminOperationConfirmationScope(
   [kind,action,target,learner,teacher,resource,starts,ends,lessonKind,reason],
   kind,teachers,resource);
- const confirmed=adminOperationConfirmationMatches(confirmation,session,confirmationFields);
+ const targetVerified=adminTeacherActionTargetIsVerified(kind,action,resource,teachers);
+ const confirmed=targetVerified&&adminOperationConfirmationMatches(confirmation,session,confirmationFields);
  // Once any field changes, clear the original consent token. Restoring the
  // old text/target must not silently reactivate a previously checked box.
  useEffect(()=>{setConfirmation(null);},[confirmationFields,session]);
@@ -190,7 +201,7 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
   }finally{if(current.current===ctrl)current.current=null;}
  }
  function handleSubmit(){
-  if(busy||!confirmed)return;
+  if(busy||!confirmed||!targetVerified)return;
   const operationId=crypto.randomUUID(),value=command(operationId);
   if(!validAdminAction(kind,value)){
    setResult({phase:'error',message:errors.INVALID_ACTION_INPUT??'راجع الحقول المطلوبة.'});return;
@@ -267,12 +278,14 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
     <textarea rows={3} required disabled={busy} maxLength={500} value={reason}
      onChange={e=>setReason(e.target.value)}
      placeholder="اكتب سببًا واضحًا لا يقل عن عشرة أحرف"/></label>
+   {kind==='teacher'&&action!=='provision'&&resource!==''&&!targetVerified&&
+    <p role="alert" className={css.error}>لم يعد الشيخ المحدد موجودًا في السجل الموثق. حدّث السجل واختر الشيخ من جديد.</p>}
    <label className={css.check}>
-    <input type="checkbox" checked={confirmed} disabled={busy}
+    <input type="checkbox" checked={confirmed} disabled={busy||!targetVerified}
      onChange={e=>setConfirmation(e.target.checked?{session,fields:confirmationFields}:null)}/>
     <span>راجعت الحساب والمعرّفات والسياسة وأؤكد التنفيذ على البيانات الحقيقية.</span>
    </label>
-   <button disabled={!confirmed||busy} type="submit">
+   <button disabled={!confirmed||busy||!targetVerified} type="submit">
     {result.phase==='sending'?'جارٍ تأكيد الحفظ…':'تنفيذ الإجراء وتسجيله'}</button>
   </form>
   {result.phase==='error'&&<p role="alert" className={css.error}>{result.message}</p>}
