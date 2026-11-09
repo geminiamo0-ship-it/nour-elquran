@@ -1,3 +1,9 @@
+## 2026-11-09 — #314 signed staff option denial / collection receipt privacy (PR #329 candidate)
+- Source review found two related fail-closed gaps in the existing Admin UI: a signed schedule-options GET 401/403 was treated like a transient empty list, leaving editable manual-ID controls under a revoked staff session; a separate collection read/mutation denial could still render an earlier confirmed action receipt.
+- PR #329 now classifies 401/403 from the signed schedule options GET as staff revocation (404/429/503 remain non-revocation), invokes the collection's denial gate, clears prior staff option data and any prior action ACK, and hides the collection form until a fresh authorized read. Session and section identity remain checked before applying late responses.
+- Focused Vitest regressions cover 401/403 versus non-auth errors and receipt suppression across same-account reauthentication, section changes and denial. Exact-head GitHub Verify is **pending**, not claimed green. No independent security review, signed Cloudflare Dev staff revocation test, or mobile acceptance yet; keep PR #329 Draft and Issue #314 OPEN.
+- No main/Production change, migration, payment, WhatsApp, child media or cumulative ink flag change.
+
 - Form-gate follow-up: the full staff mutation form must not render prior actor's typed IDs/reason or checked confirmation on the first render after a session/kind switch. Render a neutral shell until all controlled fields are reset. Include same-user new-session regression.
 ## #314 staff operations session-scoped privacy regression (2026-11-09)
 - In the schedule Admin UI, an old signed learner/Sheikh options receipt must be invisible **on the first render** of a different `AccountSession` (including same user ID/new login) or another section. No stale POST success, uncertain replay command or operationId may render under the new session/kind.
