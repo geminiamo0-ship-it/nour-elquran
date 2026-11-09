@@ -65,6 +65,10 @@ const errors:Record<string,string>={
 };
 const toMillis=(s:string)=>s?new Date(s).getTime():NaN;
 export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAccessRevoked}:Props){
+ // On a new login or section, do not paint the previous staff actor's
+ // editable learner/teacher IDs, reason or pending command even for one frame.
+ const [bound,setBound]=useState<SessionScoped<true>>({session,kind,value:true});
+ const active=adminOperationScopedValue(bound,session,kind)===true;
  const [action,setAction]=useState<string>(actions[kind][0]!.id);
  const [target,setTarget]=useState('');
  const [learner,setLearner]=useState('');
@@ -94,7 +98,12 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
  const liveSession=useRef(session);liveSession.current=session;
  const liveKind=useRef(kind);liveKind.current=kind;
  useEffect(()=>{
-  setOptions(null);setResultState(null);
+  setAction(actions[kind][0]!.id);
+  setTarget('');setLearner('');setTeacher('');setResource('');
+  setStarts('');setEnds('');setLessonKind('trial');setReason('');
+  setConfirmation(null);setOptions(null);setResultState(null);
+  // Reveal the form only after all prior-session fields are cleared.
+  setBound({session,kind,value:true});
   return ()=>{current.current?.abort();current.current=null;};
  },[session,kind]);
  useEffect(()=>{
@@ -168,6 +177,9 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
  }
  const choices=kind==='attendance'?rows.filter(r=>r.decision==='pending')
   :kind==='schedule'&&action==='cancel'?rows.filter(r=>r.status==='scheduled'):[];
+ if(!active)return <section className={css.panel} role="status">
+  جارٍ التحقق من جلسة الإدارة قبل عرض بيانات الإجراءات…
+ </section>;
  return <section className={css.panel} aria-label={titles[kind]}>
   <header className={css.header}>
    <div><small>إجراءات مؤمّنة · سجل تدقيق D1</small><h2>{titles[kind]}</h2></div>
