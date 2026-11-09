@@ -15,6 +15,13 @@ type Result=
 type Props={kind:AdminOperationKind;session:AccountSession;
  rows?:readonly AdminDataRow[];teachers?:readonly AdminTeacher[];
  onApplied?:(result:AdminActionResult)=>void;onAccessRevoked?:()=>void};
+/** A staff confirmation authorizes only the exact fields and session shown
+ * when checked, never a later teacher/learner/action/reason selection. */
+export function adminOperationConfirmationMatches<T>(
+ confirmation:{session:T;fields:string}|null,session:T,fields:string,
+):boolean{
+ return confirmation!==null&&confirmation.session===session&&confirmation.fields===fields;
+}
 const actions:Record<AdminOperationKind,readonly {id:string;label:string}[]>={
  teacher:[
   {id:'provision',label:'تجهيز ملف شيخ غير نشط'},
@@ -57,7 +64,12 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
  const [students,setStudents]=useState<{id:string;name:string}[]>([]);
  const [sheikhs,setSheikhs]=useState<{id:string;name:string}[]>([]);
  const [reason,setReason]=useState('');
- const [confirmed,setConfirmed]=useState(false);
+ const [confirmation,setConfirmation]=useState<{session:AccountSession;fields:string}|null>(null);
+ // Bind consent to all operator-editable fields, including the target and reason.
+ // A changed field invalidates consent synchronously during render, before submit.
+ const confirmationFields=JSON.stringify([kind,action,target,learner,teacher,
+  resource,starts,ends,lessonKind,reason]);
+ const confirmed=adminOperationConfirmationMatches(confirmation,session,confirmationFields);
  const [result,setResult]=useState<Result>({phase:'idle'});
  const current=useRef<AbortController|null>(null);
  useEffect(()=>()=>{current.current?.abort();current.current=null;},[session,kind]);
@@ -83,7 +95,7 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
  const busy=result.phase==='sending'||result.phase==='uncertain';
  function changeAction(v:string){
   if(busy)return;
-  setAction(v);setResource('');setConfirmed(false);setResult({phase:'idle'});
+  setAction(v);setResource('');setConfirmation(null);setResult({phase:'idle'});
  }
  function command(operationId:string):unknown{
   const base={operationId,reason:reason.trim()};
@@ -104,7 +116,7 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
   try{
    const acknowledged=await submitAdminAction(kind,value,ctrl.signal);
    if(ctrl.signal.aborted)return;
-   setResult({phase:'done',value:acknowledged});setConfirmed(false);onApplied?.(acknowledged);
+   setResult({phase:'done',value:acknowledged});setConfirmation(null);onApplied?.(acknowledged);
   }catch(e){
    if(ctrl.signal.aborted)return;
    if(e instanceof AdminActionError&&e.uncertain){
@@ -194,7 +206,7 @@ export function AdminOperations({kind,session,rows=[],teachers=[],onApplied,onAc
      placeholder="اكتب سببًا واضحًا لا يقل عن عشرة أحرف"/></label>
    <label className={css.check}>
     <input type="checkbox" checked={confirmed} disabled={busy}
-     onChange={e=>setConfirmed(e.target.checked)}/>
+     onChange={e=>setConfirmation(e.target.checked?{session,fields:confirmationFields}:null)}/>
     <span>راجعت الحساب والمعرّفات والسياسة وأؤكد التنفيذ على البيانات الحقيقية.</span>
    </label>
    <button disabled={!confirmed||busy} type="submit">
