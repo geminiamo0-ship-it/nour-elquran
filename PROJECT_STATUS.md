@@ -1,3 +1,7 @@
+## 2026-11-09 — #314 signed staff revocation vs late roster GET (PR #329 candidate)
+- Source-only race guard: an exact-ID or mutation 401/403 now latches denial for the signed session and directory read revision. A late older 200 cannot restore selectable Sheikh rows, invitation controls or a prior action receipt. Explicit operator recheck creates a new revision; no automatic reauthorization or Production changes.
+- Pure Vitest regression covers previously ready roster rejected by a newer denial even when its 200 remains in state. Exact-head GitHub Verify is pending after these edits; remote signed Cloudflare Dev role-revocation and independent security review remain mandatory. Issue #314 stays OPEN and PR #329 Draft.
+
 ## 2026-11-09 — #314 synchronous Admin consent invalidation (Draft PR #329)
 - Source review: staff operation inputs previously relied on a post-render `useEffect` to clear checkbox consent when fields changed. Rapid edit-and-revert can be batched before that effect; the new input-event helper clears consent **before** updating any controlled teacher/learner/resource/date/reason field. The existing session, selected-Sheikh and server-side D1 guards remain intact.
 - Source `68d9ed7d`, regression `b10aad27`; only Admin UI and Vitest changed. Exact-head GitHub Verify must be inspected for this candidate; prior 4/4 #42640354328 covers the earlier head only. No independent security review, signed Cloudflare Dev 101+ roster/revocation E2E or mobile 360/390 keyboard/touch acceptance yet.
