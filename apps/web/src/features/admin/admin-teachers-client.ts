@@ -69,15 +69,27 @@ export async function fetchAdminTeachers(signal?:AbortSignal,teacherId?:string):
   throw new AdminTeachersError('INVALID_TEACHER_LOOKUP',400);
  const url=teacherId===undefined?'/v1/staff/teachers':
   `/v1/staff/teachers?id=${encodeURIComponent(teacherId)}`;
+ // A transport may still resolve a late HTTP response (or JSON body) after
+ // AbortController cancellation. Never expose it to another staff consumer.
+ const ensureActive=()=>{
+  if(signal?.aborted)throw new AdminTeachersError('REQUEST_CANCELLED');
+ };
+ ensureActive();
  let response:Response;
  try{
   response=await fetch(url,{method:'GET',credentials:'same-origin',
    cache:'no-store',redirect:'error',...(signal?{signal}:{})});
- }catch{throw new AdminTeachersError('NETWORK_UNAVAILABLE');}
+ }catch{
+  ensureActive();
+  throw new AdminTeachersError('NETWORK_UNAVAILABLE');
+ }
+ ensureActive();
  let payload:unknown;
  try{payload=await response.json();}catch{
+  ensureActive();
   throw new AdminTeachersError('INVALID_TEACHER_DIRECTORY',response.status);
  }
+ ensureActive();
  if(!response.ok){
   throw new AdminTeachersError(record(payload)&&typeof payload.code==='string'
    ?payload.code:'STAFF_TEACHERS_UNAVAILABLE',response.status);
