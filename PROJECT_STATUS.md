@@ -1,3 +1,7 @@
+## 2026-11-10 — #314 real fetch-signal cancellation regression (Draft PR #329)
+- Added a focused Vitest integration regression in `apps/web/src/features/admin/admin-teachers-client.test.tsx`: the signed exact-ID GET receives the active AbortSignal, cancelling a hung request aborts that signal, a deliberately late HTTP 200 is ignored, and a fresh lookup can still succeed. No production logic, D1 schema or API change.
+- Previous exact-head Verify #42724991825 was green 4/4 on `acab0107`; **this test commit requires its own exact-head CI**. This is not a real Chrome interaction or signed Cloudflare Dev acceptance. Independent security review, 101+ Sheikh/role revocation E2E and 360/390 RTL keyboard/touch remain blockers. Keep Draft and #314 OPEN; no main/Production changes.
+
 ## 2026-11-10 — #314 cancellable exact-ID lookup (Draft #329, source candidate)
 - Source review found a stalled `GET /v1/staff/teachers?id=...` trapped the operator: the lookup input and submit were disabled while loading, without a cancel action. Added an explicit Arabic cancel button that aborts the pending signed request, clears the request ref, and restores a fresh attempt without accepting late results. Added an AbortController regression in `admin-teachers-client.test.tsx`.
 - Exact-head Verify for the new commit, independent security review, isolated signed Cloudflare Dev 101+ roster/role revocation and 360/390 keyboard/touch acceptance are still required. PR #329 stays Draft, Issue #314 OPEN. No main/Production, payment, private media, WhatsApp or flags changed.
