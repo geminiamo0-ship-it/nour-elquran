@@ -1,3 +1,8 @@
+## #314 Admin roster exact-ID fallback (source candidate, 2026-11-05)
+- `workers/api/src/staff-teacher-directory.ts` and `workers/api/src/auth/routes.ts`: staff-only bounded `GET /v1/staff/teachers?id=<exact-id>` with strict query validation, fixed `LIMIT 1` D1 lookup and same current staff grant; original 50-row list preserved.
+- `apps/web/src/features/admin/{admin-teachers-client.ts,AdminTeacherIdLookup.tsx,AdminTeacherDirectory.tsx,AdminPortal.module.css}`: validated no-store exact-ID fetch, RTL keyboard/mobile search shown only for truncated lists, de-duplicated verified record in roster/action selector, no previous-session data.
+- `workers/api/tests/staff-teacher-directory.test.ts`, `apps/web/src/features/admin/admin-teachers-client.test.tsx`: focused permission, query, response and SSR regressions; real Dev/visual acceptance remains outstanding.
+
 ## #322 Premium learner portal refresh (PR #323; source candidate)
 - `apps/web/src/features/student/{StudentShell.tsx,StudentPremium.module.css}`: reusable premium RTL sidebar/header/profile/bell and four-item mobile navigation; preserve authenticated session and profile-swap Quran save safeguards.
 - `apps/web/src/features/student/{PremiumHome.tsx,StudentDashboard.tsx,ConnectedStudentDashboard.tsx}`: same screen for demo and signed learner, server-authoritative home lesson/task/report content and fail-closed loading/error states.

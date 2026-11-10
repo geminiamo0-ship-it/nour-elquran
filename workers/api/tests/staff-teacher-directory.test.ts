@@ -1,7 +1,7 @@
 import {strict as assert} from 'node:assert';
 import {test} from 'node:test';
 import type {CoreDatabase} from '../src/bindings.ts';
-import {readAdminTeachers,ADMIN_TEACHERS_SQL,ADMIN_TEACHER_LIMIT} from '../src/staff-teacher-directory.ts';
+import {readAdminTeachers,ADMIN_TEACHERS_SQL,ADMIN_TEACHER_BY_ID_SQL,ADMIN_TEACHER_LIMIT} from '../src/staff-teacher-directory.ts';
 
 const NOW=1793600000000;
 const first={id:'teacher-1',name:'شيخ تجريبي',qualified:1,status:'active',
@@ -14,7 +14,8 @@ function fake(granted:boolean,rows:unknown) {
     first:async()=>sql.includes('FROM staff_grants')
      ?(granted?{subject:'staff-subject'}:null):null,
     all:async()=>{
-     if(sql!==ADMIN_TEACHERS_SQL)throw Error('Unexpected non-directory query');
+     if(sql!==ADMIN_TEACHERS_SQL&&sql!==ADMIN_TEACHER_BY_ID_SQL)
+      throw Error('Unexpected non-directory query');
      return {results:rows};
     },
    };},
@@ -65,6 +66,8 @@ test('never replaces malformed or unverifiable directory rows with fabricated da
  const {db,queries}=fake(true,[first]);
  assert.deepEqual(await readAdminTeachers(db,'staff-subject',NaN),
   {status:503,code:'CLOCK_UNAVAILABLE'});
+ assert.deepEqual(await readAdminTeachers(db,'staff-subject',8_640_000_000_000_001),
+  {status:503,code:'CLOCK_UNAVAILABLE'});
  assert.equal(queries.length,0);
 });
 test('empty directory is a truthful empty array and disabled is not active',async()=>{
@@ -78,4 +81,77 @@ test('empty directory is a truthful empty array and disabled is not active',asyn
  if(disabled.status!==200)throw Error('Unexpected denial');
  assert.deepEqual(disabled.teachers,[{id:'teacher-1',name:'شيخ تجريبي',
   qualified:false,status:'disabled',currentLearners:2,upcomingLessons:3}]);
+});
+
+test('exact teacher ID lookup reaches a record beyond the first 50 without unbounded SQL',async()=>{
+ const {db,queries}=fake(true,[{...first,id:'teacher-75'}]);
+ const result=await readAdminTeachers(db,'staff-subject',NOW,'teacher-75');
+ assert.equal(result.status,200);
+ if(result.status!==200)throw Error('Unexpected denial');
+ assert.deepEqual(result.teachers.map(t=>t.id),['teacher-75']);
+ assert.equal(result.truncated,false);
+ assert.equal(queries.length,2);
+ assert.equal(queries[1]?.sql,ADMIN_TEACHER_BY_ID_SQL);
+ assert.deepEqual(queries[1]?.args,[NOW,NOW,NOW,'teacher-75']);
+ assert.match(ADMIN_TEACHER_BY_ID_SQL,/WHERE teacher.id=\?/);
+ assert.match(ADMIN_TEACHER_BY_ID_SQL,/LIMIT 1/);
+ assert.doesNotMatch(ADMIN_TEACHER_BY_ID_SQL,/phone_number|email|auth_subject AS|learner.display_name|payload_json/);
+ const missing=await readAdminTeachers(fake(true,[]).db,'staff-subject',NOW,'teacher-75');
+ assert.equal(missing.status,200);
+ if(missing.status!==200)throw Error('Unexpected denial');
+ assert.deepEqual(missing.teachers,[]);
+ assert.equal(missing.truncated,false);
+});
+test('exact ID lookup rejects malformed input, revoked grant and duplicate D1 rows',async()=>{
+ for(const id of ['', '../other','teacher_1','a'.repeat(129)]){
+  const {db,queries}=fake(true,[first]);
+  assert.deepEqual(await readAdminTeachers(db,'staff-subject',NOW,id),
+   {status:400,code:'INVALID_TEACHER_LOOKUP'});
+  assert.equal(queries.length,0);
+ }
+ const denied=fake(false,[first]);
+ assert.deepEqual(await readAdminTeachers(denied.db,'staff-subject',NOW,'teacher-1'),
+  {status:403,code:'STAFF_ACCESS_DENIED'});
+ assert(denied.queries.every(q=>q.sql!==ADMIN_TEACHER_BY_ID_SQL));
+ const duplicate=await readAdminTeachers(fake(true,[first,first]).db,
+  'staff-subject',NOW,'teacher-1');
+ assert.deepEqual(duplicate,{status:503,code:'STAFF_TEACHERS_UNAVAILABLE'});
+});
+
+test('Worker fails closed on a mismatched exact-ID adapter receipt and duplicate directory IDs',async()=>{
+ const wrong=await readAdminTeachers(fake(true,[{...first,id:'teacher-74'}]).db,
+  'staff-subject',NOW,'teacher-75');
+ assert.deepEqual(wrong,{status:503,code:'STAFF_TEACHERS_UNAVAILABLE'});
+ const duplicates=await readAdminTeachers(fake(true,[first,first]).db,
+  'staff-subject',NOW);
+ assert.deepEqual(duplicates,{status:503,code:'STAFF_TEACHERS_UNAVAILABLE'});
+ const distinct=await readAdminTeachers(fake(true,[first,{...first,id:'teacher-2'}]).db,
+  'staff-subject',NOW);
+ assert.equal(distinct.status,200);
+ if(distinct.status!==200)throw Error('Unexpected denial');
+ assert.deepEqual(distinct.teachers.map(t=>t.id),['teacher-1','teacher-2']);
+});
+
+test('directory boundaries 0/1/50/51/101 remain bounded without hiding the extra-page indicator',async()=>{
+ for(const total of [0,1,50,51,101]){
+  // The D1 LIMIT 51 adapter can return at most 51 rows, even for 101 teachers.
+  const rows=Array.from({length:Math.min(total,51)},(_,i)=>({
+   ...first,id:`teacher-${String(i+1).padStart(3,'0')}`,
+  }));
+  const {db,queries}=fake(true,rows);
+  const result=await readAdminTeachers(db,'staff-subject',NOW);
+  assert.equal(result.status,200,`total=${total}`);
+  if(result.status!==200)throw Error('Unexpected denial');
+  assert.equal(result.teachers.length,Math.min(total,50),`total=${total}`);
+  assert.equal(result.truncated,total>50,`total=${total}`);
+  assert.equal(new Set(result.teachers.map(t=>t.id)).size,result.teachers.length);
+  assert.equal(queries[1]?.sql,ADMIN_TEACHERS_SQL);
+  assert.deepEqual(queries[1]?.args,[NOW,NOW,NOW]);
+ }
+ // An adapter returning more than the SQL bound must fail closed, not truncate.
+ const oversized=Array.from({length:52},(_,i)=>({
+  ...first,id:`teacher-${i}`,
+ }));
+ assert.deepEqual(await readAdminTeachers(fake(true,oversized).db,'staff-subject',NOW),
+  {status:503,code:'STAFF_TEACHERS_UNAVAILABLE'});
 });

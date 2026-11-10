@@ -5,12 +5,12 @@ import {fetchAdminCollection,AdminCollectionError,
  type AdminCollection,type AdminDataView,type AdminDataRow} from './admin-collections-client';
 import css from './AdminPortal.module.css';
 import {AdminOperations} from './AdminOperations';
-import type {AdminActionResult} from './admin-operations-client';
+import {adminStaffSessionRevoked,type AdminActionResult} from './admin-operations-client';
 
 type Read=
  |{phase:'idle'}
  |{phase:'loading'|'error'|'denied';session:AccountSession;view:AdminDataView}
- |{phase:'ready';session:AccountSession;view:AdminDataView;data:AdminCollection};
+ |{phase:'ready';session:AccountSession;view:AdminDataView;revision:number;data:AdminCollection};
 type Field=Readonly<{key:string;label:string}>;
 type Config=Readonly<{title:string;intro:string;scope:string;fields:readonly Field[]}>;
 const configurations:Record<AdminDataView,Config>={
@@ -64,7 +64,23 @@ function show(key:string,value:string|number){
 function matching(row:AdminDataRow,term:string){
  return Object.values(row).some(value=>String(value).toLocaleLowerCase().includes(term));
 }
+/** A revoked staff grant supersedes even a previously confirmed D1 action
+ * receipt; a new login or section must not inherit the old actor's receipt. */
+export function adminCollectionReceiptMayShow<T>(
+ receipt:{session:T;view:AdminDataView}|null,
+ session:T,view:AdminDataView,denied:boolean,
+):boolean{
+ return !denied&&receipt!==null&&receipt.session===session&&receipt.view===view;
+}
 
+/** #314: a signed read is actionable only for its exact session and refresh.
+ * A prior GET must not restore the action form after a new read or denial. */
+export function adminCollectionCurrentRead(
+ read:Read,session:AccountSession,view:AdminDataView,revision:number,revoked=false,
+):AdminCollection|null{
+ return !revoked&&read.phase==='ready'&&read.session===session&&
+  read.view===view&&read.revision===revision?read.data:null;
+}
 /** A hidden or changing session must never display a previously fetched list. */
 export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:AccountSession}){
  const [read,setRead]=useState<Read>({phase:'idle'});
@@ -73,22 +89,30 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
   session:AccountSession;view:AdminDataView;value:AdminActionResult
  }|null>(null);
  const [query,setQuery]=useState('');
+ const [revocation,setRevocation]=useState<{session:AccountSession}|null>(null);
  useEffect(()=>{
   const ctrl=new AbortController();
   setQuery('');
   setRead({phase:'loading',session,view});
   void fetchAdminCollection(view,ctrl.signal).then(data=>{
-   if(!ctrl.signal.aborted)setRead({phase:'ready',session,view,data});
+   if(!ctrl.signal.aborted)setRead({phase:'ready',session,view,revision:retry,data});
   }).catch(error=>{
    if(ctrl.signal.aborted)return;
-   setRead({phase:error instanceof AdminCollectionError&&
-    [401,403,404].includes(error.status)?'denied':'error',session,view});
+   const denied=error instanceof AdminCollectionError&&
+    [401,403,404].includes(error.status);
+   if(denied){
+    setLatestAck(current=>current?.session===session&&current.view===view?null:current);
+    setQuery('');
+   }
+   setRead({phase:denied?'denied':'error',session,view});
   });
   return ()=>ctrl.abort();
  },[view,session,retry]);
- const visible=read.phase==='ready'&&read.session===session&&read.view===view?read.data:null;
- const status=read.phase==='idle'||!('session' in read)||read.session!==session||
-  read.view!==view?'loading':read.phase;
+ const revoked=adminStaffSessionRevoked(revocation,session);
+ const visible=adminCollectionCurrentRead(read,session,view,retry,revoked);
+ const status=revoked?'denied':read.phase==='idle'||!('session' in read)||
+  read.session!==session||read.view!==view||
+  (read.phase==='ready'&&read.revision!==retry)?'loading':read.phase;
  const term=query.trim().toLocaleLowerCase();
  const rows=useMemo(()=>visible?.rows.filter(row=>!term||matching(row,term))??[],
   [visible,term]);
@@ -106,7 +130,7 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
      disabled={!visible} placeholder="ابحث داخل أول ٥٠ سجلًا فقط" />
    </label>
    <button type="button" className={css.staffRefresh}
-    disabled={status==='loading'} onClick={()=>setRetry(n=>n+1)}>تحديث البيانات</button>
+    onClick={()=>{setRevocation(null);setRetry(n=>n+1);}}>تحديث البيانات</button>
   </div>
   {status==='loading'&&<p className={css.staffEmpty} role="status">
    جارٍ التحقق من صلاحيات الإدارة وتحميل السجل…</p>}
@@ -114,7 +138,7 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
    ليس لهذا الحساب صلاحية الاطلاع على السجل الحالي. لن نعرض أي بيانات سابقة.</p>}
   {status==='error'&&<div className={css.staffError} role="alert">
    <p>السجل غير متاح حاليًا. لن نعرض أرقامًا صفرية أو بيانات تجريبية بدلًا منه.</p>
-   <button type="button" onClick={()=>setRetry(n=>n+1)}>إعادة المحاولة</button>
+   <button type="button" onClick={()=>{setRevocation(null);setRetry(n=>n+1);}}>إعادة المحاولة</button>
   </div>}
   {visible&&<>
    <p className={css.staffInfo} role="status">
@@ -138,11 +162,18 @@ export function AdminCollectionPanel({view,session}:{view:AdminDataView;session:
       </div>)}
      </article>)}</div>}
   </>}
-  {latestAck?.session===session&&latestAck.view===view&&<p role="status" className={css.staffInfo}>
-    تم تأكيد العملية وحفظها: {latestAck.value.code}. يجري تحديث السجل من الخادم.
+  {adminCollectionReceiptMayShow(latestAck,session,view,status==='denied')&&
+   <p role="status" className={css.staffInfo}>
+    تم تأكيد العملية وحفظها: {latestAck?.value.code}. يجري تحديث السجل من الخادم.
    </p>}
   {visible&&(view==='schedule'||view==='attendance')&&
    <AdminOperations kind={view} session={session} rows={visible.rows}
+    onAccessRevoked={()=>{
+     // The denial latch wins even if a previous signed GET resolves with 200.
+     setRevocation({session});
+     setLatestAck(null);setQuery('');
+     setRead({phase:'denied',session,view});
+    }}
     onApplied={value=>{setLatestAck({session,view,value});setRetry(n=>n+1);}}/>}
   <p className={css.collectionDisclaimer}>{config.scope}</p>
  </section>;

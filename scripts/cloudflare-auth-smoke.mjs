@@ -223,6 +223,8 @@ for(const view of collectionViews){
 }
 assert.equal((await call(adminTeachers)).response.status,401);
 assert.equal((await call(adminTeachers,{cookie:cookieA})).response.status,403);
+assert.equal((await call(adminTeachers+'?id=synthetic-absent',{cookie:cookieA})).response.status,403,
+ 'Exact-ID lookup must recheck the same current staff grant');
 assert.equal((await call(adminTeachers,{cookie:cookieB})).response.status,403);
 assert.equal((await call(adminTeachers,{cookie:cookieA,headers:{'x-user-role':'admin'}})).response.status,403);
 assert.equal((await call(adminOverview)).response.status,401);
@@ -246,6 +248,17 @@ assert.equal(emptyDirectory.response.status,200,JSON.stringify(emptyDirectory.da
 assert.equal(emptyDirectory.data.code,'STAFF_TEACHER_DIRECTORY');
 assert.deepEqual(emptyDirectory.data.teachers,[]);
 assert.equal(emptyDirectory.data.truncated,false);
+// #314: exercise the actual signed Worker + disposable D1 exact-ID route,
+// not only pure adapter mocks; an unknown actor is an empty verified read.
+const absentTeacher=await call(adminTeachers+'?id=synthetic-absent',{cookie:cookieA});
+assert.equal(absentTeacher.response.status,200,JSON.stringify(absentTeacher.data));
+assert.deepEqual(absentTeacher.data.teachers,[]);
+assert.equal(absentTeacher.data.truncated,false);
+assert.equal((await call(adminTeachers+'?id=bad_id',{cookie:cookieA})).response.status,400);
+assert.equal((await call(adminTeachers+'?id=synthetic-absent&id=other',{cookie:cookieA})).response.status,400);
+assert.equal((await call(adminTeachers+'?id=synthetic-absent&limit=1000',{cookie:cookieA})).response.status,400);
+assert.equal((await call(adminTeachers+'?id=synthetic-absent',{cookie:cookieB})).response.status,403);
+assert.equal((await call(adminTeachers+'?id=synthetic-absent',{method:'POST',cookie:cookieA})).response.status,405);
 for(const view of collectionViews){
  const request=await call(adminCollections(view),{cookie:cookieA});
  assert.equal(request.response.status,200,JSON.stringify(request.data));
@@ -304,6 +317,20 @@ const provision=await call('/v1/staff/teacher-actions',{
 assert.equal(provision.response.status,201,JSON.stringify(provision.data));
 assert.equal(provision.data.state,'disabled');
 assert.equal(provision.data.qualified,false);
+const exactProvisioned=await call(adminTeachers+'?id='+encodeURIComponent(provision.data.teacherId),
+ {cookie:cookieA});
+assert.equal(exactProvisioned.response.status,200,JSON.stringify(exactProvisioned.data));
+assert.equal(exactProvisioned.data.code,'STAFF_TEACHER_DIRECTORY');
+assert.equal(exactProvisioned.data.readOnly,true);
+assert.equal(exactProvisioned.response.headers.get('cache-control'),'no-store');
+assert.equal(exactProvisioned.data.truncated,false);
+assert.equal(exactProvisioned.data.teachers.length,1);
+assert.equal(exactProvisioned.data.teachers[0].id,provision.data.teacherId);
+assert.equal(exactProvisioned.data.teachers[0].status,'disabled');
+assert.equal(exactProvisioned.data.teachers[0].qualified,false);
+assert.deepEqual(Object.keys(exactProvisioned.data.teachers[0]).sort(),[
+ 'currentLearners','id','name','qualified','status','upcomingLessons',
+]);
 assert.equal((await call('/v1/teacher/learners',{cookie:cookieB})).response.status,403);
 const sameOp=await call('/v1/staff/teacher-actions',{method:'POST',cookie:cookieA,body:provisionBody});
 assert.equal(sameOp.response.status,200);
@@ -773,11 +800,57 @@ assert.equal(suspension.response.status,200,JSON.stringify(suspension.data));
 assert.equal((await call('/v1/teacher/learners',{cookie:cookieB})).response.status,403);
 assert.equal((await call(planWrite,{method:'POST',cookie:cookieB,body:planCommand})).response.status,404,
   'Revoked teacher must not replay a previously saved academic plan');
+// #314: exercise the real signed Worker and native D1 at 101+ Sheikh rows.
+// Use only synthetic disabled, unqualified teachers so scheduling/credits
+// cannot accidentally treat the load-test directory as available staff.
+sql(`
+WITH RECURSIVE synthetic(n) AS (
+ SELECT 0 UNION ALL SELECT n+1 FROM synthetic WHERE n<100
+)
+INSERT INTO auth_users(id,name,email,created_at,updated_at)
+SELECT 'synthetic-directory-user-'||printf('%03d',n),
+       'A Synthetic Sheikh '||printf('%03d',n),
+       'synthetic-directory-'||printf('%03d',n)||'@example.invalid',
+       0,0 FROM synthetic;
+INSERT INTO teachers(id,auth_subject,qualified,status)
+SELECT replace(id,'synthetic-directory-user-','synthetic-directory-teacher-'),
+       id,0,'disabled'
+FROM auth_users WHERE id LIKE 'synthetic-directory-user-%';
+`);
+const largeDirectory=await call(adminTeachers,{cookie:cookieA});
+assert.equal(largeDirectory.response.status,200,JSON.stringify(largeDirectory.data));
+assert.equal(largeDirectory.data.truncated,true,'101+ Sheikh rows must signal truncation');
+assert.equal(largeDirectory.data.teachers.length,50,'Directory must stay bounded at 50');
+assert.equal(new Set(largeDirectory.data.teachers.map(t=>t.id)).size,50);
+assert(largeDirectory.data.teachers.every(t=>
+ t.name.startsWith('A Synthetic Sheikh ')&&t.qualified===false&&t.status==='disabled'));
+assert.equal(largeDirectory.data.teachers[0].id,'synthetic-directory-teacher-000');
+assert.equal(largeDirectory.data.teachers[49].id,'synthetic-directory-teacher-049');
+assert(!largeDirectory.data.teachers.some(t=>t.id===provision.data.teacherId),
+ 'Previously provisioned Sheikh must really be outside the first 50');
+const outsideDirectory=await call(adminTeachers+'?id='+encodeURIComponent(provision.data.teacherId),
+ {cookie:cookieA});
+assert.equal(outsideDirectory.response.status,200,JSON.stringify(outsideDirectory.data));
+assert.equal(outsideDirectory.data.truncated,false);
+assert.equal(outsideDirectory.data.teachers.length,1);
+assert.equal(outsideDirectory.data.teachers[0].id,provision.data.teacherId);
+assert.equal(outsideDirectory.data.teachers[0].status,'disabled',
+ 'Exact-ID lookup must reflect the latest D1 suspension');
+assert.deepEqual(Object.keys(outsideDirectory.data.teachers[0]).sort(),[
+ 'currentLearners','id','name','qualified','status','upcomingLessons',
+]);
+assert.equal((await call(adminTeachers+'?id='+encodeURIComponent(provision.data.teacherId),
+ {cookie:cookieB})).response.status,403,
+ 'A nonstaff signed account cannot query an out-of-page Sheikh');
+console.log('Native signed 101+ Sheikh D1 directory: 50-row bound, truthful truncation, exact out-of-page lookup, role denial PASS');
 sql("UPDATE staff_grants SET revoked_at_ms=1000 WHERE auth_subject='"+teacherActor+"'");
 const revokedAdmin=await call(adminOverview,{cookie:cookieA});
 assert.equal(revokedAdmin.response.status,403,'Revoked staff grant must lose overview access immediately');
 assert.equal((await call(adminTeachers,{cookie:cookieA})).response.status,403,
  'Revoked staff grant must lose teacher directory access immediately');
+assert.equal((await call(adminTeachers+'?id='+encodeURIComponent(provision.data.teacherId),
+ {cookie:cookieA})).response.status,403,
+ 'Revoked staff grant must also deny exact-ID lookup on the same session');
 for(const view of collectionViews){
  assert.equal((await call(adminCollections(view),{cookie:cookieA})).response.status,403,
   'Revoked staff must lose '+view+' directory immediately');

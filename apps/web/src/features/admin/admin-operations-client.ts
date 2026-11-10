@@ -6,6 +6,19 @@ export type AdminActionResult=Readonly<{code:string;resourceId?:string}>;
 export class AdminActionError extends Error{
  constructor(readonly code:string,readonly status=0,readonly uncertain=false){super(code);}
 }
+/** A denied staff grant is different from a domain-specific 403 (for example,
+ * an ineligible teacher transition). Only a fresh auth denial revokes the UI. */
+export const isAdminActionStaffRevoked=(error:unknown):error is AdminActionError=>
+ error instanceof AdminActionError&&
+ (error.status===401||(error.status===403&&
+  (error.code==='STAFF_ACCESS_DENIED'||error.code==='UNAUTHENTICATED')));
+/** A signed staff denial remains authoritative across automatic read revisions.
+ * Only an explicit operator-initiated staff recheck may clear the latch. */
+export function adminStaffSessionRevoked<T>(
+ denial:{session:T}|null,session:T,
+):boolean{
+ return denial?.session===session;
+}
 const paths:Record<AdminOperationKind,string>={
  teacher:'/v1/staff/teacher-actions',
  schedule:'/v1/staff/schedule-actions',

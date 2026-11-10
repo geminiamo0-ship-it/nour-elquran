@@ -1,8 +1,13 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {AdminTeacherDirectory} from './AdminTeacherDirectory';
-import {AdminTeachersError,fetchAdminTeachers,parseAdminTeachers} from './admin-teachers-client';
-const teacher={id:'teacher-1',name:'شيخ تجريبي',qualified:true,status:'active',
+import {AdminTeacherDirectory,AdminTeacherReceipt,
+ adminTeacherMissingLookupRequiresRefresh,adminTeacherCurrentRoster,
+ adminTeacherCurrentLookup} from './AdminTeacherDirectory';
+import {AdminTeacherIdLookup,adminTeacherLookupMayApply,cancelAdminTeacherLookup,
+ restoreCancelledAdminTeacherLookupFocus} from './AdminTeacherIdLookup';
+import {AdminTeachersError,fetchAdminTeachers,parseAdminTeachers,isAdminTeacherAccessRevoked,
+ reconcileVerifiedTeacherRows} from './admin-teachers-client';
+const teacher={id:'teacher-1',name:'شيخ تجريبي',qualified:true,status:'active' as const,
  currentLearners:2,upcomingLessons:3};
 const good={code:'STAFF_TEACHER_DIRECTORY',asOfMs:1793600000000,
  readOnly:true,teachers:[teacher],truncated:false};
@@ -16,6 +21,9 @@ describe('Admin teacher directory #305',()=>{
   });
   for(const bad of [
    {...good,readOnly:false},{...good,code:'DEMO'},
+   {...good,guardianPhone:'private'},
+   {...good,authSubject:'private-staff-subject'},
+   {...good,unexpected:null},
    {...good,teachers:[{...teacher,phone:'private'}]},
    {...good,teachers:[{...teacher,qualified:1}]},
    {...good,teachers:[{...teacher,currentLearners:-1}]},
@@ -26,7 +34,26 @@ describe('Admin teacher directory #305',()=>{
    {...good,truncated:true},
    {...good,teachers:Array.from({length:51},(_,i)=>({...teacher,id:'teacher-'+i}))},
    {...good,teachers:null},{...good,asOfMs:NaN},
+   {...good,asOfMs:8_640_000_000_000_001},
   ])expect(()=>parseAdminTeachers(bad)).toThrow(AdminTeachersError);
+ });
+
+ it('accepts exactly 50 bounded rows and rejects 51 or 101 rows from a malformed receipt',()=>{
+  for(const count of [0,1,50]){
+   const rows=Array.from({length:count},(_,i)=>({
+    ...teacher,id:`teacher-${i}`,
+   }));
+   const value=parseAdminTeachers({...good,teachers:rows,truncated:count===50});
+   expect(value.teachers).toHaveLength(count);
+   expect(value.truncated).toBe(count===50);
+  }
+  for(const count of [51,101]){
+   const rows=Array.from({length:count},(_,i)=>({
+    ...teacher,id:`teacher-${i}`,
+   }));
+   expect(()=>parseAdminTeachers({...good,teachers:rows,truncated:true}))
+    .toThrow(AdminTeachersError);
+  }
  });
  it('only sends same-origin signed GET without role claims or identifiers',async()=>{
   const mock=vi.fn().mockResolvedValue(respond(200,good));vi.stubGlobal('fetch',mock);
@@ -47,10 +74,252 @@ describe('Admin teacher directory #305',()=>{
    await expect(fetchAdminTeachers()).rejects.toMatchObject({code});
   }
  });
+ it('looks up an exact out-of-page Sheikh using only a signed bounded GET',async()=>{
+  const mock=vi.fn().mockResolvedValue(respond(200,{...good,teachers:[{...teacher,id:'teacher-75'}]}));
+  vi.stubGlobal('fetch',mock);
+  const value=await fetchAdminTeachers(undefined,'teacher-75');
+  expect(value.teachers[0]?.id).toBe('teacher-75');
+  expect(value.truncated).toBe(false);
+  expect(mock.mock.calls[0]?.[0]).toBe('/v1/staff/teachers?id=teacher-75');
+  expect(mock.mock.calls[0]?.[1]).toMatchObject({method:'GET',
+   credentials:'same-origin',cache:'no-store',redirect:'error'});
+  for(const id of ['', '../bad','teacher_75','x'.repeat(129)])
+   await expect(fetchAdminTeachers(undefined,id)).rejects.toMatchObject({
+    code:'INVALID_TEACHER_LOOKUP',status:400});
+  expect(mock).toHaveBeenCalledTimes(1);
+ });
+ it('rejects stale or mismatched exact-ID success responses before staff selection',async()=>{
+  const wrong={...good,teachers:[{...teacher,id:'teacher-74'}]};
+  const multiple={...good,teachers:[
+   {...teacher,id:'teacher-75'},{...teacher,id:'teacher-74'}]};
+  const mock=vi.fn()
+   .mockResolvedValueOnce(respond(200,wrong))
+   .mockResolvedValueOnce(respond(200,multiple))
+   .mockResolvedValueOnce(respond(200,{...good,teachers:[]}))
+   .mockResolvedValueOnce(respond(200,{...good,teachers:[{...teacher,id:'teacher-75'}]}));
+  vi.stubGlobal('fetch',mock);
+  for(let i=0;i<2;i++)
+   await expect(fetchAdminTeachers(undefined,'teacher-75')).rejects.toMatchObject({
+    code:'INVALID_TEACHER_LOOKUP_RESPONSE',status:200});
+  expect((await fetchAdminTeachers(undefined,'teacher-75')).teachers).toEqual([]);
+  expect((await fetchAdminTeachers(undefined,'teacher-75')).teachers[0]?.id).toBe('teacher-75');
+  expect(mock).toHaveBeenCalledTimes(4);
+ });
+ it('fresh signed denial invalidates an earlier roster, but storage failures do not',()=>{
+  for(const status of [401,403,404])
+   expect(isAdminTeacherAccessRevoked(new AdminTeachersError('STAFF_ACCESS_DENIED',status)))
+    .toBe(true);
+  for(const status of [0,400,409,500,503])
+   expect(isAdminTeacherAccessRevoked(new AdminTeachersError('RETRYABLE',status)))
+    .toBe(false);
+  expect(isAdminTeacherAccessRevoked(Error('offline'))).toBe(false);
+  expect(isAdminTeacherAccessRevoked(null)).toBe(false);
+ });
+ it('newer signed exact-ID receipts refresh stale Sheikh facts while preserving other actor IDs',()=>{
+  const other={...teacher,id:'teacher-2',name:'شيخ آخر'};
+  const outOfPage={...teacher,id:'teacher-75',name:'شيخ خارج الصفحة'};
+  const roster=[teacher,other];
+  const first=reconcileVerifiedTeacherRows(roster,[outOfPage]);
+  expect(first.map(t=>t.id)).toEqual(['teacher-1','teacher-2','teacher-75']);
+  const updated={...outOfPage,status:'disabled' as const,qualified:false,
+   currentLearners:0,upcomingLessons:0};
+  const second=reconcileVerifiedTeacherRows(first,[updated]);
+  expect(second).toEqual([teacher,other,updated]);
+  // The exact-ID fallback may also refresh a record in the original first 50.
+  const changedFirst={...teacher,status:'disabled' as const,qualified:false};
+  expect(reconcileVerifiedTeacherRows(roster,[changedFirst]))
+   .toEqual([changedFirst,other]);
+  expect(roster[0]).toEqual(teacher); // No mutation of the earlier receipt.
+  expect(reconcileVerifiedTeacherRows(second,[updated])).toEqual(second);
+ });
+ it('hides a previously verified roster on refresh before a new signed GET resolves (#314)',()=>{
+  const session={user:{id:'staff-1',name:'Synthetic'},phoneVerified:true};
+  const value={asOfMs:good.asOfMs,teachers:[teacher],truncated:false};
+  const previous={phase:'ready' as const,session,revision:0,value};
+  expect(adminTeacherCurrentRoster(previous,session,0)).toEqual(value);
+  // A newer signed 403 from exact-ID lookup must win even if an older
+  // directory GET completes with 200 after the denial was recorded.
+  expect(adminTeacherCurrentRoster(previous,session,0,true)).toBeNull();
+  expect(adminTeacherCurrentRoster(previous,session,0,false)).toEqual(value);
+  // A post-ACK refresh increments revision in the same React update; old
+  // action targets must be hidden even before the effect clears state.
+  expect(adminTeacherCurrentRoster(previous,session,1)).toBeNull();
+  expect(adminTeacherCurrentRoster(previous,{...session},0)).toBeNull();
+  expect(adminTeacherCurrentRoster({phase:'loading'},session,1)).toBeNull();
+  expect(adminTeacherCurrentRoster({phase:'denied'},session,0)).toBeNull();
+  const fresh={...previous,revision:1,value:{...value,teachers:[]}};
+  expect(adminTeacherCurrentRoster(fresh,session,1)?.teachers).toEqual([]);
+  expect(adminTeacherCurrentRoster(fresh,session,0)).toBeNull();
+ });
+ it('never reuses an exact-ID lookup after the signed roster refreshes (#314)',()=>{
+  const session={user:{id:'staff-1',name:'Synthetic'},phoneVerified:true};
+  const outside={...teacher,id:'teacher-75'};
+  const old={session,revision:3,teachers:[outside]};
+  expect(adminTeacherCurrentLookup(old,session,3)).toEqual([outside]);
+  // A refresh or confirmed staff action moves to a newer read revision.
+  // An older successful lookup must not become an action target there.
+  expect(adminTeacherCurrentLookup(old,session,4)).toEqual([]);
+  expect(adminTeacherCurrentLookup(old,{...session},3)).toEqual([]);
+  expect(adminTeacherCurrentLookup(null,session,3)).toEqual([]);
+  const current={session,revision:4,teachers:[{...outside,status:'disabled' as const}]};
+  expect(adminTeacherCurrentLookup(current,session,4)[0]?.status).toBe('disabled');
+  expect(adminTeacherCurrentLookup(current,session,3)).toEqual([]);
+ });
+ it('revalidates the signed roster if an already-selectable Sheikh disappears (#314)',()=>{
+  const outside={...teacher,id:'teacher-75'};
+  // Both a first-page row and a previously appended exact-ID row can vanish.
+  expect(adminTeacherMissingLookupRequiresRefresh('teacher-1',[teacher,outside]))
+   .toBe(true);
+  expect(adminTeacherMissingLookupRequiresRefresh('teacher-75',[teacher,outside]))
+   .toBe(true);
+  // Unknown IDs show missing without resetting unrelated staff choices.
+  expect(adminTeacherMissingLookupRequiresRefresh('never-existed',[teacher,outside]))
+   .toBe(false);
+  expect(adminTeacherMissingLookupRequiresRefresh('teacher-1',[])).toBe(false);
+ });
+ it('ignores delayed exact-ID success and denial from a superseded signed session',()=>{
+  const first={user:{id:'staff-1',name:'Synthetic'},phoneVerified:true};
+  const other={user:{id:'staff-2',name:'Synthetic'},phoneVerified:true};
+  expect(adminTeacherLookupMayApply(first,first,false)).toBe(true);
+  expect(adminTeacherLookupMayApply(first,other,false)).toBe(false);
+  // Same account can sign in again; object identity still changes.
+  expect(adminTeacherLookupMayApply(first,{...first},false)).toBe(false);
+  expect(adminTeacherLookupMayApply(first,first,true)).toBe(false);
+ });
+ it('cancels a stalled signed exact-ID lookup without accepting its late receipt (#314)',async()=>{
+  const session={user:{id:'staff-1'}};
+  const controller=new AbortController();
+  const request:{current:AbortController|null}={current:controller};
+  let phase:'loading'|'idle'='loading';
+  const accepted:string[]=[];
+  const delayed=Promise.resolve('teacher-75').then(id=>{
+   if(adminTeacherLookupMayApply(session,session,controller.signal.aborted))
+    accepted.push(id);
+  });
+  cancelAdminTeacherLookup(request,()=>{phase='idle';});
+  expect(controller.signal.aborted).toBe(true);
+  expect(request.current).toBeNull();
+  expect(phase).toBe('idle');
+  await delayed;
+  expect(accepted).toEqual([]);
+  // A fresh operator request gets its own controller and can apply normally.
+  const next=new AbortController();
+  request.current=next;
+  expect(adminTeacherLookupMayApply(session,session,next.signal.aborted)).toBe(true);
+ });
+ it('restores keyboard focus only after a cancelled search is idle and the same session is active (#314)',()=>{
+  const pending={current:true};
+  const focus=vi.fn();
+  // The cancelled button has disappeared but the input is still disabled
+  // until the next React commit: do not attempt focus early.
+  restoreCancelledAdminTeacherLookupFocus(pending,false,focus);
+  expect(pending.current).toBe(true);
+  expect(focus).not.toHaveBeenCalled();
+  // React's post-commit effect sees the enabled input in the same session.
+  restoreCancelledAdminTeacherLookupFocus(pending,true,focus);
+  expect(focus).toHaveBeenCalledTimes(1);
+  expect(pending.current).toBe(false);
+  restoreCancelledAdminTeacherLookupFocus(pending,true,focus);
+  expect(focus).toHaveBeenCalledTimes(1);
+  // A changed session must not steal focus or consume a pending intent.
+  pending.current=true;
+  restoreCancelledAdminTeacherLookupFocus(pending,false,focus);
+  expect(focus).toHaveBeenCalledTimes(1);
+ });
+ it('wires cancel to the signed fetch signal and ignores a late 200 before a fresh retry (#314)',async()=>{
+  const session={user:{id:'synthetic-staff'}};
+  const pending:{signal:AbortSignal;resolve:(response:Response)=>void}[]=[];
+  const fetchMock=vi.fn((_url:string,init:RequestInit)=>new Promise<Response>(resolve=>{
+   if(!init.signal)throw Error('signed lookup must forward AbortSignal');
+   pending.push({signal:init.signal,resolve});
+  }));
+  vi.stubGlobal('fetch',fetchMock);
+  const request:{current:AbortController|null}={current:new AbortController()};
+  const accepted:string[]=[];
+  const run=(controller:AbortController)=>fetchAdminTeachers(controller.signal,'teacher-75')
+   .then(result=>{
+    if(adminTeacherLookupMayApply(session,session,controller.signal.aborted))
+     accepted.push(result.teachers[0]?.id??'missing');
+   }).catch(error=>{
+    if(!controller.signal.aborted)throw error;
+    expect(error).toMatchObject({code:'REQUEST_CANCELLED'});
+   });
+  const first=request.current!;
+  const firstRead=run(first);
+  expect(pending).toHaveLength(1);
+  expect(pending[0]!.signal).toBe(first.signal);
+  cancelAdminTeacherLookup(request,()=>{});
+  expect(pending[0]!.signal.aborted).toBe(true);
+  // Simulate a transport that still resolves an already-cancelled request.
+  pending[0]!.resolve(respond(200,{...good,teachers:[{...teacher,id:'teacher-75'}]}));
+  await firstRead;
+  expect(accepted).toEqual([]);
+  const fresh=new AbortController();
+  request.current=fresh;
+  const freshRead=run(fresh);
+  expect(pending).toHaveLength(2);
+  expect(pending[1]!.signal).toBe(fresh.signal);
+  pending[1]!.resolve(respond(200,{...good,teachers:[{...teacher,id:'teacher-75'}]}));
+  await freshRead;
+  expect(accepted).toEqual(['teacher-75']);
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+ });
+ it('rejects canceled staff GET before dispatch and after a delayed JSON body (#314)',async()=>{
+  let releaseBody:(value:unknown)=>void=()=>{};
+  let signalBodyStarted:()=>void=()=>{};
+  const bodyStarted=new Promise<void>(resolve=>{signalBodyStarted=resolve;});
+  const body=new Promise<unknown>(resolve=>{releaseBody=resolve;});
+  const fetchMock=vi.fn(async()=>({
+   ok:true,status:200,
+   json:()=>{signalBodyStarted();return body;},
+  } as Response));
+  vi.stubGlobal('fetch',fetchMock);
+  const alreadyCancelled=new AbortController();
+  alreadyCancelled.abort();
+  await expect(fetchAdminTeachers(alreadyCancelled.signal,'teacher-75'))
+   .rejects.toMatchObject({code:'REQUEST_CANCELLED'});
+  expect(fetchMock).not.toHaveBeenCalled();
+  const duringBody=new AbortController();
+  const pending=fetchAdminTeachers(duringBody.signal,'teacher-75');
+  await bodyStarted;
+  duringBody.abort();
+  releaseBody({...good,teachers:[{...teacher,id:'teacher-75'}]});
+  await expect(pending).rejects.toMatchObject({code:'REQUEST_CANCELLED'});
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+ });
+ it('renders an accessible exact-ID lookup without personal or fake records',()=>{
+  const html=renderToStaticMarkup(<AdminTeacherIdLookup
+   session={{user:{id:'staff-1',name:'Synthetic'},phoneVerified:true}}
+   onFound={()=>{}} onMissing={()=>{}} onAccessRevoked={()=>{}}/>);
+  expect(html).toContain('admin-exact-teacher-id');
+  expect(html).toContain('إظهار الشيخ');
+  expect(html).not.toContain('شيخ تجريبي');
+  expect(html).not.toContain('private@');
+ });
+ it('keeps confirmed receipts during refresh but hides them after staff revocation or account switch',()=>{
+  const session={user:{id:'staff-1',name:'Synthetic'},phoneVerified:true};
+  const other={user:{id:'staff-2',name:'Synthetic'},phoneVerified:true};
+  const receipt={session,value:{code:'TEACHER_ROLE_CHANGED',resourceId:'teacher-1'}};
+  const render=(denied:boolean,active=session)=>renderToStaticMarkup(
+   <AdminTeacherReceipt session={active} receipt={receipt} denied={denied}/>);
+  expect(render(false)).toContain('تم تأكيد الإجراء وحفظه');
+  expect(render(true)).not.toContain('TEACHER_ROLE_CHANGED');
+  expect(render(false,other)).not.toContain('TEACHER_ROLE_CHANGED');
+  expect(renderToStaticMarkup(<AdminTeacherReceipt session={session}
+   receipt={null} denied={false}/>)).toBe('');
+ });
  it('server-rendered initial state is loading, not synthetic records',()=>{
   const html=renderToStaticMarkup(<AdminTeacherDirectory
    session={{user:{id:'staff-1',name:'Synthetic'},phoneVerified:true}}/>);
   expect(html).toContain('جارٍ قراءة سجل الشيوخ');
+  // A hung signed GET must not trap staff in a disabled loading state:
+  // clicking refresh aborts the previous request and starts a fresh one.
+  expect(html).toMatch(/<button(?![^>]*\bdisabled\b)[^>]*>تحديث السجل<\/button>/);
+  // Until a fresh signed roster succeeds, the staff invitation mutation UI
+  // must not mount during initial loading (or subsequent refresh/error).
+  expect(html).not.toContain('إضافة شيخ بدعوة');
+  expect(html).not.toContain('إنشاء رابط إضافة شيخ');
+  expect(html).not.toContain('تحديث البيانات');
   expect(html).not.toContain('شيخ تجريبي');
   expect(html).not.toContain('موقوف');
  });
