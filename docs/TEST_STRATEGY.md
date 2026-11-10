@@ -1,3 +1,6 @@
+## 2026-11-10 — #314 cancelled exact-ID GET network regression
+- Vitest `admin-teachers-client.test.tsx` must prove the real signed GET receives the active AbortSignal, cancellation marks it aborted, a transport's late 200 cannot be applied, and a new controller permits a successful explicit retry. This is a Node/Vitest integration regression, **not** a browser-click, remote D1 or authenticated Cloudflare Dev acceptance. Require exact-head CI plus independent security review, 101+ Sheikh/revocation E2E and 360/390 RTL keyboard/touch before merging Draft PR #329.
+
 ## 2026-11-10 — #314 hung exact-ID GET cancellation
 - Regression: a staff exact-ID lookup may stall indefinitely; a visible cancel action must abort its current AbortController, clear the in-flight ref and restore the input so a fresh operator request can start. An already queued late success must not invoke the parent `onFound` after cancellation. Vitest covers AbortSignal and fresh-controller scope; actual 360/390 RTL keyboard/touch and signed Cloudflare Dev network throttling remain separate acceptance gates.
 - Exact-head Verify after this commit is required. No live D1, children, payments, media, WhatsApp or Production touched.
