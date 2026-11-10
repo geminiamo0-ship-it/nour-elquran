@@ -1,3 +1,7 @@
+## 2026-11-10 — #314 cancellable out-of-page Sheikh lookup
+- Current branch `feat/314-admin-teacher-id-lookup`, Draft PR #329. Added a visible `إلغاء البحث` control during stalled signed exact-ID GET; it aborts the old request and allows a new attempt, while the existing session/AbortSignal gate rejects late responses. Regression uses a real AbortController and a deferred microtask.
+- NEXT: inspect exact-head GitHub Verify for this change, repair any failures, update Issue #314 with run evidence, then obtain independent privacy/security review and signed isolated Cloudflare Dev 101+ Sheikh, revoked staff and mobile 360/390 keyboard/touch acceptance. Do not merge or change Production/feature flags. Earlier Verify #42718597128 was green on prior HEAD `e7d64d7` only.
+
 ## 2026-11-10 — #314 collection refresh retry follow-up
 - Draft PR #329: `AdminCollectionPanel.tsx` no longer disables `تحديث البيانات` during a pending signed collection GET; clicking it increments the revision, aborts the old request and keeps prior schedule/attendance rows non-actionable until a new signed response. `AdminCollectionPanel.test.tsx` checks initial loading refresh is enabled.
 - NEXT: inspect exact-head Verify 4/4 after this source change; if green, independent security/privacy review and source-pinned isolated Cloudflare Dev signed staff/denial/101+ Sheikh + 360/390 RTL keyboard/touch acceptance. Keep #314 and PR #329 open/draft; no Production or paid operations.
