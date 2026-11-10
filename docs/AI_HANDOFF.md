@@ -1,3 +1,7 @@
+## 2026-11-10 — #314 signed GET cancellation test follow-up
+- Draft PR #329 branch `feat/314-admin-teacher-id-lookup`: new Vitest regression exercises the actual `fetchAdminTeachers` AbortSignal wiring with a delayed 200, then verifies stale-result suppression and successful fresh retry. Prior test only exercised the pure cancellation helper. No UI/API behavior changed.
+- **Next exact action:** inspect the new HEAD GitHub Verify (code-quality/strict TS, native D1, governance, policy); repair failures if any. Do not confuse this test with Chrome UI or signed Dev 101+ roster/role revocation/360×667 and 390×844 acceptance. Independent security/privacy review still required. Leave Draft and Issue #314 open, no Production/flag/finance/media changes.
+
 ## 2026-11-10 — #314 cancellable out-of-page Sheikh lookup
 - Current branch `feat/314-admin-teacher-id-lookup`, Draft PR #329. Added a visible `إلغاء البحث` control during stalled signed exact-ID GET; it aborts the old request and allows a new attempt, while the existing session/AbortSignal gate rejects late responses. Regression uses a real AbortController and a deferred microtask.
 - NEXT: inspect exact-head GitHub Verify for this change, repair any failures, update Issue #314 with run evidence, then obtain independent privacy/security review and signed isolated Cloudflare Dev 101+ Sheikh, revoked staff and mobile 360/390 keyboard/touch acceptance. Do not merge or change Production/feature flags. Earlier Verify #42718597128 was green on prior HEAD `e7d64d7` only.
