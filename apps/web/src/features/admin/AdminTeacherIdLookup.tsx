@@ -14,6 +14,16 @@ export function adminTeacherLookupMayApply<T>(
  return !aborted&&startedSession===currentSession;
 }
 
+/** A stalled signed lookup must be cancellable without accepting its late
+ * response. Clearing the request ref permits an explicit fresh attempt. */
+export function cancelAdminTeacherLookup(
+ request:{current:AbortController|null},onCancelled:()=>void,
+):void{
+ request.current?.abort();
+ request.current=null;
+ onCancelled();
+}
+
 /** #314: bounded, signed exact-ID fallback for a Sheikh omitted by the first 50 rows. */
 export function AdminTeacherIdLookup({session,onFound,onMissing,onAccessRevoked}:{
  session:AccountSession;onFound:(teacher:AdminTeacher)=>void;
@@ -68,6 +78,10 @@ export function AdminTeacherIdLookup({session,onFound,onMissing,onAccessRevoked}
      disabled={!active||phase==='loading'}>
      {phase==='loading'?'جارٍ التحقق…':'إظهار الشيخ'}
     </button>
+    {active&&phase==='loading'&&<button type="button" className={css.staffRefresh}
+     onClick={()=>cancelAdminTeacherLookup(current,()=>setPhase('idle'))}>
+     إلغاء البحث
+    </button>}
    </div>
    <small id="admin-exact-teacher-help">بحث مطابق للمعرّف فقط، لا يعرض أرقام الهواتف أو بيانات الطلاب.</small>
   </form>
