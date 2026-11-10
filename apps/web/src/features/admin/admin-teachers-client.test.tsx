@@ -3,7 +3,8 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminTeacherDirectory,AdminTeacherReceipt,
  adminTeacherMissingLookupRequiresRefresh,adminTeacherCurrentRoster,
  adminTeacherCurrentLookup} from './AdminTeacherDirectory';
-import {AdminTeacherIdLookup,adminTeacherLookupMayApply,cancelAdminTeacherLookup} from './AdminTeacherIdLookup';
+import {AdminTeacherIdLookup,adminTeacherLookupMayApply,cancelAdminTeacherLookup,
+ restoreCancelledAdminTeacherLookupFocus} from './AdminTeacherIdLookup';
 import {AdminTeachersError,fetchAdminTeachers,parseAdminTeachers,isAdminTeacherAccessRevoked,
  reconcileVerifiedTeacherRows} from './admin-teachers-client';
 const teacher={id:'teacher-1',name:'شيخ تجريبي',qualified:true,status:'active' as const,
@@ -205,6 +206,25 @@ describe('Admin teacher directory #305',()=>{
   const next=new AbortController();
   request.current=next;
   expect(adminTeacherLookupMayApply(session,session,next.signal.aborted)).toBe(true);
+ });
+ it('restores keyboard focus only after a cancelled search is idle and the same session is active (#314)',()=>{
+  const pending={current:true};
+  const focus=vi.fn();
+  // The cancelled button has disappeared but the input is still disabled
+  // until the next React commit: do not attempt focus early.
+  restoreCancelledAdminTeacherLookupFocus(pending,false,focus);
+  expect(pending.current).toBe(true);
+  expect(focus).not.toHaveBeenCalled();
+  // React's post-commit effect sees the enabled input in the same session.
+  restoreCancelledAdminTeacherLookupFocus(pending,true,focus);
+  expect(focus).toHaveBeenCalledTimes(1);
+  expect(pending.current).toBe(false);
+  restoreCancelledAdminTeacherLookupFocus(pending,true,focus);
+  expect(focus).toHaveBeenCalledTimes(1);
+  // A changed session must not steal focus or consume a pending intent.
+  pending.current=true;
+  restoreCancelledAdminTeacherLookupFocus(pending,false,focus);
+  expect(focus).toHaveBeenCalledTimes(1);
  });
  it('wires cancel to the signed fetch signal and ignores a late 200 before a fresh retry (#314)',async()=>{
   const session={user:{id:'synthetic-staff'}};
