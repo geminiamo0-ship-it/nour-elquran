@@ -1,3 +1,7 @@
+## 2026-11-10 — #314 cancellable exact-ID lookup (Draft #329, source candidate)
+- Source review found a stalled `GET /v1/staff/teachers?id=...` trapped the operator: the lookup input and submit were disabled while loading, without a cancel action. Added an explicit Arabic cancel button that aborts the pending signed request, clears the request ref, and restores a fresh attempt without accepting late results. Added an AbortController regression in `admin-teachers-client.test.tsx`.
+- Exact-head Verify for the new commit, independent security review, isolated signed Cloudflare Dev 101+ roster/role revocation and 360/390 keyboard/touch acceptance are still required. PR #329 stays Draft, Issue #314 OPEN. No main/Production, payment, private media, WhatsApp or flags changed.
+
 ## 2026-11-10 — #314 Admin collection refresh hang fix (Draft #329, source only)
 - Found a second hanging signed GET case: `AdminCollectionPanel` disabled its only manual refresh during `loading`, unlike the already-fixed Sheikh directory. Staff could be trapped indefinitely on a stalled schedule/attendance D1 read. Kept the refresh button enabled; existing revision-scoped read/AbortController cleanup hides old data and discards stale responses. Added SSR regression for the loading control.
 - Source-only on Draft PR #329; exact-head GitHub Verify and independent review/Cloudflare Dev + mobile acceptance still required. No `main`, Production, payment, child media, WhatsApp or flags changed.
