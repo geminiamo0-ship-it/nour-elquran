@@ -1,3 +1,7 @@
+## 2026-11-10 — #314 hung exact-ID GET cancellation
+- Regression: a staff exact-ID lookup may stall indefinitely; a visible cancel action must abort its current AbortController, clear the in-flight ref and restore the input so a fresh operator request can start. An already queued late success must not invoke the parent `onFound` after cancellation. Vitest covers AbortSignal and fresh-controller scope; actual 360/390 RTL keyboard/touch and signed Cloudflare Dev network throttling remain separate acceptance gates.
+- Exact-head Verify after this commit is required. No live D1, children, payments, media, WhatsApp or Production touched.
+
 ## 2026-11-09 — #314 staff revocation latch across automatic refresh (Draft PR #329)
 - Found a follow-on race: a signed 401/403 latch keyed to `retry` could be bypassed by an automatic post-ACK or missing-row refresh incrementing the revision. Keep the denial session-scoped until an explicit operator recheck; stale 200s and prior receipts stay hidden. Same-user new signed session is isolated.
 - Source: `AdminTeacherDirectory.tsx`, `AdminCollectionPanel.tsx`, shared `adminStaffSessionRevoked` helper and Vitest regression in `admin-operations.test.tsx`. Exact-head GitHub Verify is **not yet proven**; previous run #42671919782 failed before scheduling any jobs (0 jobs), and the retry API rejected it with 403. New commit must be checked for real jobs and tests.
