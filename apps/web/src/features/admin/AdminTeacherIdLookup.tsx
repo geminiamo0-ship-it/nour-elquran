@@ -24,6 +24,16 @@ export function cancelAdminTeacherLookup(
  onCancelled();
 }
 
+/** The cancel control disappears after loading; restore keyboard focus only
+ * after React has enabled the input again, never during a session change. */
+export function restoreCancelledAdminTeacherLookupFocus(
+ pending:{current:boolean},ready:boolean,focus:()=>void,
+):void{
+ if(!pending.current||!ready)return;
+ pending.current=false;
+ focus();
+}
+
 /** #314: bounded, signed exact-ID fallback for a Sheikh omitted by the first 50 rows. */
 export function AdminTeacherIdLookup({session,onFound,onMissing,onAccessRevoked}:{
  session:AccountSession;onFound:(teacher:AdminTeacher)=>void;
@@ -33,14 +43,21 @@ export function AdminTeacherIdLookup({session,onFound,onMissing,onAccessRevoked}
  const [id,setId]=useState('');
  const [phase,setPhase]=useState<LookupPhase>('idle');
  const current=useRef<AbortController|null>(null);
+ const inputRef=useRef<HTMLInputElement|null>(null);
+ const focusAfterCancel=useRef(false);
  const currentSession=useRef(session);
  currentSession.current=session;
  useEffect(()=>{
   current.current?.abort();
+  focusAfterCancel.current=false;
   setBoundSession(session);setId('');setPhase('idle');
   return ()=>current.current?.abort();
  },[session]);
  const active=boundSession===session;
+ useEffect(()=>{
+  restoreCancelledAdminTeacherLookupFocus(focusAfterCancel,
+   active&&phase==='idle',()=>inputRef.current?.focus());
+ },[active,phase]);
  function submit(event:FormEvent<HTMLFormElement>){
   event.preventDefault();
   if(!active||phase==='loading')return;
@@ -69,7 +86,7 @@ export function AdminTeacherIdLookup({session,onFound,onMissing,onAccessRevoked}
   <form className={css.staffLookupForm} onSubmit={submit}>
    <label htmlFor="admin-exact-teacher-id">شيخ غير ظاهر؟ أدخل معرّف ملفه من سجل الدعوة أو الإدارة</label>
    <div className={css.staffLookupControls}>
-    <input id="admin-exact-teacher-id" type="text" autoComplete="off"
+    <input ref={inputRef} id="admin-exact-teacher-id" type="text" autoComplete="off"
      maxLength={128} required pattern="[a-zA-Z0-9-]{1,128}"
      dir="ltr" value={active?id:''} disabled={!active||phase==='loading'}
      onChange={e=>{setId(e.target.value);setPhase('idle');}}
@@ -79,7 +96,10 @@ export function AdminTeacherIdLookup({session,onFound,onMissing,onAccessRevoked}
      {phase==='loading'?'جارٍ التحقق…':'إظهار الشيخ'}
     </button>
     {active&&phase==='loading'&&<button type="button" className={css.staffRefresh}
-     onClick={()=>cancelAdminTeacherLookup(current,()=>setPhase('idle'))}>
+     onClick={()=>cancelAdminTeacherLookup(current,()=>{
+      focusAfterCancel.current=true;
+      setPhase('idle');
+     })}>
      إلغاء البحث
     </button>}
    </div>
