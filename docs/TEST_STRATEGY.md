@@ -1,3 +1,7 @@
+## #314 signed teacher lookup cancellation boundary — 2026-11-10
+- Unit/Vitest: canceled signal before GET must never call fetch; a canceled GET whose transport still returns HTTP 200 must not be accepted; abort while JSON body is pending must reject with `REQUEST_CANCELLED`; a fresh explicit request succeeds with a distinct controller. Retain UI session/revision gating and server-side staff-grant revalidation.
+- Gate: GitHub Verify exact final PR head (strict TypeScript, Vitest/build, native local D1, governance); separate signed Cloudflare Dev 0/1/50/51/101+ Sheikh, revoked-staff and network-stall scenarios; real 360×667/390×844 RTL keyboard/touch; independent security review. No CI green claim until observed.
+
 ## 2026-11-10 — #314 cancel-button keyboard focus regression
 - The exact-ID lookup cancel button disappears after abort; keyboard focus must return to the now-enabled ID field only in the same active staff session, after the React idle commit. Vitest tests the pending-focus gate, no premature focus while disabled, no repeat focus and no cross-session focus. This does **not** replace real Chrome keyboard/touch QA on 360×667/390×844 or signed Cloudflare Dev network throttling. Exact-head CI and independent review remain required.
 
