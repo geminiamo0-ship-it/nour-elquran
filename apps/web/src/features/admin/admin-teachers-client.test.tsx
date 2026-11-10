@@ -206,6 +206,41 @@ describe('Admin teacher directory #305',()=>{
   request.current=next;
   expect(adminTeacherLookupMayApply(session,session,next.signal.aborted)).toBe(true);
  });
+ it('wires cancel to the signed fetch signal and ignores a late 200 before a fresh retry (#314)',async()=>{
+  const session={user:{id:'synthetic-staff'}};
+  const pending:{signal:AbortSignal;resolve:(response:Response)=>void}[]=[];
+  const fetchMock=vi.fn((_url:string,init:RequestInit)=>new Promise<Response>(resolve=>{
+   if(!init.signal)throw Error('signed lookup must forward AbortSignal');
+   pending.push({signal:init.signal,resolve});
+  }));
+  vi.stubGlobal('fetch',fetchMock);
+  const request:{current:AbortController|null}={current:new AbortController()};
+  const accepted:string[]=[];
+  const run=(controller:AbortController)=>fetchAdminTeachers(controller.signal,'teacher-75')
+   .then(result=>{
+    if(adminTeacherLookupMayApply(session,session,controller.signal.aborted))
+     accepted.push(result.teachers[0]?.id??'missing');
+   });
+  const first=request.current!;
+  const firstRead=run(first);
+  expect(pending).toHaveLength(1);
+  expect(pending[0]!.signal).toBe(first.signal);
+  cancelAdminTeacherLookup(request,()=>{});
+  expect(pending[0]!.signal.aborted).toBe(true);
+  // Simulate a transport that still resolves an already-cancelled request.
+  pending[0]!.resolve(respond(200,{...good,teachers:[{...teacher,id:'teacher-75'}]}));
+  await firstRead;
+  expect(accepted).toEqual([]);
+  const fresh=new AbortController();
+  request.current=fresh;
+  const freshRead=run(fresh);
+  expect(pending).toHaveLength(2);
+  expect(pending[1]!.signal).toBe(fresh.signal);
+  pending[1]!.resolve(respond(200,{...good,teachers:[{...teacher,id:'teacher-75'}]}));
+  await freshRead;
+  expect(accepted).toEqual(['teacher-75']);
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+ });
  it('renders an accessible exact-ID lookup without personal or fake records',()=>{
   const html=renderToStaticMarkup(<AdminTeacherIdLookup
    session={{user:{id:'staff-1',name:'Synthetic'},phoneVerified:true}}
