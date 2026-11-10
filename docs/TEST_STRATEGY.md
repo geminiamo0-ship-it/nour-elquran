@@ -1,3 +1,6 @@
+## 2026-11-10 — #314 cancel-button keyboard focus regression
+- The exact-ID lookup cancel button disappears after abort; keyboard focus must return to the now-enabled ID field only in the same active staff session, after the React idle commit. Vitest tests the pending-focus gate, no premature focus while disabled, no repeat focus and no cross-session focus. This does **not** replace real Chrome keyboard/touch QA on 360×667/390×844 or signed Cloudflare Dev network throttling. Exact-head CI and independent review remain required.
+
 ## 2026-11-10 — #314 cancelled exact-ID GET network regression
 - Vitest `admin-teachers-client.test.tsx` must prove the real signed GET receives the active AbortSignal, cancellation marks it aborted, a transport's late 200 cannot be applied, and a new controller permits a successful explicit retry. This is a Node/Vitest integration regression, **not** a browser-click, remote D1 or authenticated Cloudflare Dev acceptance. Require exact-head CI plus independent security review, 101+ Sheikh/revocation E2E and 360/390 RTL keyboard/touch before merging Draft PR #329.
 
