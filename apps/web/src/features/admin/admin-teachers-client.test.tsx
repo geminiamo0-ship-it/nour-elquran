@@ -240,6 +240,9 @@ describe('Admin teacher directory #305',()=>{
    .then(result=>{
     if(adminTeacherLookupMayApply(session,session,controller.signal.aborted))
      accepted.push(result.teachers[0]?.id??'missing');
+   }).catch(error=>{
+    if(!controller.signal.aborted)throw error;
+    expect(error).toMatchObject({code:'REQUEST_CANCELLED'});
    });
   const first=request.current!;
   const firstRead=run(first);
@@ -260,6 +263,29 @@ describe('Admin teacher directory #305',()=>{
   await freshRead;
   expect(accepted).toEqual(['teacher-75']);
   expect(fetchMock).toHaveBeenCalledTimes(2);
+ });
+ it('rejects canceled staff GET before dispatch and after a delayed JSON body (#314)',async()=>{
+  let releaseBody:(value:unknown)=>void=()=>{};
+  let signalBodyStarted:()=>void=()=>{};
+  const bodyStarted=new Promise<void>(resolve=>{signalBodyStarted=resolve;});
+  const body=new Promise<unknown>(resolve=>{releaseBody=resolve;});
+  const fetchMock=vi.fn(async()=>({
+   ok:true,status:200,
+   json:()=>{signalBodyStarted();return body;},
+  } as Response));
+  vi.stubGlobal('fetch',fetchMock);
+  const alreadyCancelled=new AbortController();
+  alreadyCancelled.abort();
+  await expect(fetchAdminTeachers(alreadyCancelled.signal,'teacher-75'))
+   .rejects.toMatchObject({code:'REQUEST_CANCELLED'});
+  expect(fetchMock).not.toHaveBeenCalled();
+  const duringBody=new AbortController();
+  const pending=fetchAdminTeachers(duringBody.signal,'teacher-75');
+  await bodyStarted;
+  duringBody.abort();
+  releaseBody({...good,teachers:[{...teacher,id:'teacher-75'}]});
+  await expect(pending).rejects.toMatchObject({code:'REQUEST_CANCELLED'});
+  expect(fetchMock).toHaveBeenCalledTimes(1);
  });
  it('renders an accessible exact-ID lookup without personal or fake records',()=>{
   const html=renderToStaticMarkup(<AdminTeacherIdLookup
