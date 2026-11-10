@@ -3,7 +3,7 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {AdminTeacherDirectory,AdminTeacherReceipt,
  adminTeacherMissingLookupRequiresRefresh,adminTeacherCurrentRoster,
  adminTeacherCurrentLookup} from './AdminTeacherDirectory';
-import {AdminTeacherIdLookup,adminTeacherLookupMayApply} from './AdminTeacherIdLookup';
+import {AdminTeacherIdLookup,adminTeacherLookupMayApply,cancelAdminTeacherLookup} from './AdminTeacherIdLookup';
 import {AdminTeachersError,fetchAdminTeachers,parseAdminTeachers,isAdminTeacherAccessRevoked,
  reconcileVerifiedTeacherRows} from './admin-teachers-client';
 const teacher={id:'teacher-1',name:'شيخ تجريبي',qualified:true,status:'active' as const,
@@ -184,6 +184,27 @@ describe('Admin teacher directory #305',()=>{
   // Same account can sign in again; object identity still changes.
   expect(adminTeacherLookupMayApply(first,{...first},false)).toBe(false);
   expect(adminTeacherLookupMayApply(first,first,true)).toBe(false);
+ });
+ it('cancels a stalled signed exact-ID lookup without accepting its late receipt (#314)',async()=>{
+  const session={user:{id:'staff-1'}};
+  const controller=new AbortController();
+  const request:{current:AbortController|null}={current:controller};
+  let phase:'loading'|'idle'='loading';
+  const accepted:string[]=[];
+  const delayed=Promise.resolve('teacher-75').then(id=>{
+   if(adminTeacherLookupMayApply(session,session,controller.signal.aborted))
+    accepted.push(id);
+  });
+  cancelAdminTeacherLookup(request,()=>{phase='idle';});
+  expect(controller.signal.aborted).toBe(true);
+  expect(request.current).toBeNull();
+  expect(phase).toBe('idle');
+  await delayed;
+  expect(accepted).toEqual([]);
+  // A fresh operator request gets its own controller and can apply normally.
+  const next=new AbortController();
+  request.current=next;
+  expect(adminTeacherLookupMayApply(session,session,next.signal.aborted)).toBe(true);
  });
  it('renders an accessible exact-ID lookup without personal or fake records',()=>{
   const html=renderToStaticMarkup(<AdminTeacherIdLookup
