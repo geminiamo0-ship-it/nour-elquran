@@ -52,7 +52,7 @@ jobs:
         run: bash scripts/cloudflare-auth-browser.sh
       - name: Upload synthetic Chrome screenshots for review
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: noor-optional-browser-qa
           path: |
